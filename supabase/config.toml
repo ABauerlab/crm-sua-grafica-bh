@@ -1,0 +1,17 @@
+project_id = "bhlosshvwmlyzhbghsrc"
+
+[auth]
+# Cadastro público desativado: só admin cria atendentes (função admin-create-agent)
+enable_signup = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.whatsapp-send]
+verify_jwt = true
+
+[functions.whatsapp-sync-templates]
+verify_jwt = true
+
+[functions.admin-create-agent]
+verify_jwt = true
