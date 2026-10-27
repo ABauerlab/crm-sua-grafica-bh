@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { useState, type KeyboardEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/auth/AuthProvider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +17,8 @@ import type { ConsentSource, ConversationStatus, ConversationWithContact, Market
 
 export function ContactPanel({ conversation }: { conversation: ConversationWithContact }) {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const { profile } = useAuth()
   const { data: profiles } = useProfiles()
   const { contact } = conversation
 
@@ -42,6 +46,23 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
       qc.invalidateQueries({ queryKey: ['contacts'] })
     },
   })
+
+  const deleteContact = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('contacts').delete().eq('id', contact.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+      qc.invalidateQueries({ queryKey: ['contacts'] })
+      navigate('/inbox')
+    },
+  })
+
+  function onDelete() {
+    const who = contact.name || formatPhone(contact.wa_id)
+    if (window.confirm(`Excluir ${who} e todas as conversas dele? Isso não pode ser desfeito.`)) deleteContact.mutate()
+  }
 
   const consentChanged = consent !== contact.marketing_consent || (consent === 'opted_in' && consentSource !== contact.marketing_consent_source)
   const saveConsent = useMutation({
@@ -227,6 +248,22 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
         <Switch id="c-ai" checked={conversation.ai_handled} onCheckedChange={(v) => updateConversation.mutate({ ai_handled: v })} />
       </div>
       {updateConversation.isError && <p className="text-xs text-destructive">Não foi possível salvar a alteração.</p>}
+
+      {profile?.role === 'admin' && (
+        <>
+          <hr />
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">
+              Pedido de exclusão de dados (LGPD): apaga o contato, as conversas e as mensagens. Se ele tinha pedido para parar as promoções, só o telefone fica
+              guardado para respeitar esse pedido.
+            </p>
+            <Button size="sm" variant="outline" className="text-destructive" onClick={onDelete} disabled={deleteContact.isPending}>
+              {deleteContact.isPending ? 'Excluindo…' : 'Excluir contato e dados'}
+            </Button>
+            {deleteContact.isError && <p className="text-xs text-destructive">Não foi possível excluir.</p>}
+          </div>
+        </>
+      )}
     </div>
   )
 }

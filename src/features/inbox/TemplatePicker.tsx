@@ -55,6 +55,9 @@ export function TemplatePicker({ sending, onSend }: Props) {
               ))}
             </div>
           )}
+          {selected.category === 'MARKETING' && !selected.has_opt_out_button && (
+            <p className="text-xs text-amber-700">Este template de marketing não tem o botão &quot;Parar promoções&quot;. Prefira um que tenha.</p>
+          )}
           <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-sm">{preview}</p>
           <Button
             disabled={!ready || sending}

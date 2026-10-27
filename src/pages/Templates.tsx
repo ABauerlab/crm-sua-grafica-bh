@@ -43,6 +43,10 @@ export default function Templates() {
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <p className="mb-3 text-xs text-muted-foreground">
+          Dica: crie os templates de marketing na Meta com um botão de resposta rápida &quot;Parar promoções&quot;. Quando o cliente toca nele, o sistema
+          registra o descadastro e confirma automaticamente.
+        </p>
         {sync.isError && <p role="alert" className="mb-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{sync.error.message}</p>}
         {sync.isSuccess && <p className="mb-3 rounded-md bg-accent p-3 text-sm text-accent-foreground">{sync.data.count} template(s) sincronizado(s).</p>}
         {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
@@ -62,6 +66,11 @@ export default function Templates() {
                   </div>
                   <Badge className={s.className}>{s.label}</Badge>
                 </div>
+                {t.category === 'MARKETING' && (
+                  <Badge className={cn('mt-2', t.has_opt_out_button ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800')}>
+                    {t.has_opt_out_button ? 'Tem botão Parar promoções' : 'Sem botão Parar promoções'}
+                  </Badge>
+                )}
                 <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{t.body ?? 'Sem corpo de texto.'}</p>
               </article>
             )

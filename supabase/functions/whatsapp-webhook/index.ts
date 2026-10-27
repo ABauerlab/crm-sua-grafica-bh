@@ -1,4 +1,5 @@
 import { serviceClient } from '../_shared/http.ts'
+import { confirmOptOut } from '../_shared/optout.ts'
 import { extractEvents, isOptOutMessage, shouldApplyStatus } from '../_shared/parse.ts'
 import { verifySignature } from '../_shared/signature.ts'
 
@@ -57,11 +58,15 @@ Deno.serve(async (req) => {
 
       // "PARAR": registra o descadastro das promoções (mensagens de pedido seguem normalmente)
       if (m.type === 'text' && isOptOutMessage(m.body)) {
-        const { error: optErr } = await db
+        // só na mudança de estado: reenvio do webhook ou PARAR repetido não gera nova confirmação
+        const { data: changed, error: optErr } = await db
           .from('contacts')
           .update({ marketing_consent: 'opted_out', marketing_consent_at: new Date().toISOString(), marketing_consent_source: 'whatsapp' })
           .eq('wa_id', m.waId)
+          .neq('marketing_consent', 'opted_out')
+          .select('id')
         if (optErr) throw optErr
+        if (changed?.length) await confirmOptOut(db, changed[0].id, m.waId)
       }
     }
 

@@ -1,4 +1,5 @@
 import { corsHeaders, json, requireEnv, requireStaff, serviceClient } from '../_shared/http.ts'
+import { isOptOutMessage } from '../_shared/parse.ts'
 
 const GRAPH = 'https://graph.facebook.com/v21.0'
 
@@ -7,7 +8,7 @@ interface MetaTemplate {
   language: string
   category?: string
   status?: string
-  components?: { type: string; text?: string }[]
+  components?: { type: string; text?: string; buttons?: { type: string; text?: string }[] }[]
 }
 
 Deno.serve(async (req) => {
@@ -47,6 +48,9 @@ Deno.serve(async (req) => {
       category: t.category ?? null,
       status: t.status ?? null,
       body: t.components?.find((c) => c.type === 'BODY')?.text ?? null,
+      has_opt_out_button: !!t.components?.some(
+        (c) => c.type === 'BUTTONS' && c.buttons?.some((b) => b.type === 'QUICK_REPLY' && isOptOutMessage(b.text ?? '')),
+      ),
       synced_at: new Date().toISOString(),
     }))
     const { error } = await db.from('templates_cache').upsert(rows, { onConflict: 'name,language' })
