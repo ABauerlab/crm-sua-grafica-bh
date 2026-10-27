@@ -1,5 +1,5 @@
 import { serviceClient } from '../_shared/http.ts'
-import { extractEvents, shouldApplyStatus } from '../_shared/parse.ts'
+import { extractEvents, isOptOutMessage, shouldApplyStatus } from '../_shared/parse.ts'
 import { verifySignature } from '../_shared/signature.ts'
 
 // verify_jwt = false: quem chama é a Meta. A autenticidade vem do X-Hub-Signature-256.
@@ -54,6 +54,15 @@ Deno.serve(async (req) => {
         p_ts: m.timestamp.toISOString(),
       })
       if (error) throw error
+
+      // "PARAR": registra o descadastro das promoções (mensagens de pedido seguem normalmente)
+      if (m.type === 'text' && isOptOutMessage(m.body)) {
+        const { error: optErr } = await db
+          .from('contacts')
+          .update({ marketing_consent: 'opted_out', marketing_consent_at: new Date().toISOString(), marketing_consent_source: 'whatsapp' })
+          .eq('wa_id', m.waId)
+        if (optErr) throw optErr
+      }
     }
 
     for (const s of statuses) {

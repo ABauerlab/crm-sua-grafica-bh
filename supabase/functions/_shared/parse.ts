@@ -99,3 +99,25 @@ export function shouldApplyStatus(current: string | null, next: StatusUpdate['st
   if (!current || current === 'failed') return true
   return (RANK[next] ?? 0) > (RANK[current] ?? 0)
 }
+
+const OPT_OUT_KEYWORDS = new Set([
+  'PARAR',
+  'SAIR',
+  'STOP',
+  'DESCADASTRAR',
+  'PARAR DE RECEBER',
+  'SAIR DA LISTA',
+  'CANCELAR INSCRICAO',
+])
+
+/** Pedido de descadastro das promoções: a mensagem inteira precisa ser a palavra-chave (evita "quero parar o pedido"). */
+export function isOptOutMessage(body: string): boolean {
+  const normalized = body
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return OPT_OUT_KEYWORDS.has(normalized)
+}

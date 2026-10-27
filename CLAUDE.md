@@ -15,7 +15,7 @@ src/
   features/inbox/  ConversationList, ChatPanel, ContactPanel, TemplatePicker
   hooks/queries.ts queries + useRealtimeSync (postgres_changes -> invalida cache)
   lib/         supabase.ts, api.ts (invoke de functions), format.ts, types.ts
-  pages/       Login, Inbox, Funnel, Contacts, Templates, Team, Legal
+  pages/       Login, Inbox, Funnel, Contacts, Templates, Team, Legal (/privacidade, /termos, /exclusao-de-dados)
 supabase/
   migrations/  SQL versionado (ordem pelo prefixo de data)
   functions/   whatsapp-webhook, whatsapp-send, whatsapp-sync-templates, admin-create-agent, _shared/
@@ -24,6 +24,8 @@ scripts/test-webhook.ts   testes de assinatura/parsing (Node)
 
 ### Banco
 `profiles`, `contacts`, `conversations` (uma por contato, `unique(contact_id)`), `messages`, `templates_cache`. RLS ativo em todas; acesso só para quem existe em `profiles` (`private.is_staff()` / `private.is_admin()`, schema `private` para não expor via RPC). `messages` e `templates_cache` são somente leitura para o front; a escrita é feita pelas Edge Functions (service role). Mensagens recebidas entram por `public.ingest_inbound_message` (atômica, idempotente por `wa_message_id`, executável só por `service_role`). Realtime habilitado em `messages` e `conversations`.
+
+Consentimento de promoções: `contacts.marketing_consent` (`none` | `opted_in` | `opted_out`) com `marketing_consent_at` e `marketing_consent_source`. O webhook marca `opted_out` quando o cliente responde PARAR (ver `isOptOutMessage` em `_shared/parse.ts`) e `whatsapp-send` recusa templates de categoria MARKETING para quem não está `opted_in` (templates de utilidade seguem livres).
 
 Extras além do pedido original: `conversations.last_message_preview` (prévia na lista) e a função `admin-create-agent` (admin cria atendentes, já que o cadastro público é desativado).
 

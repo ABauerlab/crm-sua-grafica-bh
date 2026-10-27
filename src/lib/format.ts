@@ -1,4 +1,4 @@
-import type { ConversationStatus, Stage } from './types'
+import type { ConsentSource, ConversationStatus, MarketingConsent, Stage } from './types'
 
 export const STAGES: { value: Stage; label: string; color: string }[] = [
   { value: 'novo', label: 'Novo', color: 'bg-sky-100 text-sky-800' },
@@ -12,6 +12,20 @@ export const STATUSES: { value: ConversationStatus; label: string }[] = [
   { value: 'open', label: 'Aberta' },
   { value: 'pending', label: 'Pendente' },
   { value: 'closed', label: 'Encerrada' },
+]
+
+export const CONSENTS: { value: MarketingConsent; label: string }[] = [
+  { value: 'none', label: 'Sem registro (não enviar promoções)' },
+  { value: 'opted_in', label: 'Autorizou receber promoções' },
+  { value: 'opted_out', label: 'Pediu para não receber' },
+]
+
+export const CONSENT_SOURCES: { value: ConsentSource; label: string }[] = [
+  { value: 'whatsapp', label: 'Pelo WhatsApp' },
+  { value: 'manual', label: 'Combinado com o atendente' },
+  { value: 'formulario', label: 'Formulário / site' },
+  { value: 'loja', label: 'Na loja' },
+  { value: 'outro', label: 'Outro' },
 ]
 
 export const stageInfo = (s: Stage) => STAGES.find((x) => x.value === s) ?? STAGES[0]

@@ -113,6 +113,11 @@ export default function Contacts() {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{contactLabel(c)}</p>
                 <p className="text-xs text-muted-foreground">{formatPhone(c.wa_id)}</p>
+                {c.marketing_consent !== 'none' && (
+                  <Badge className={c.marketing_consent === 'opted_in' ? 'mt-1 bg-emerald-100 text-emerald-800' : 'mt-1 bg-rose-100 text-rose-800'}>
+                    {c.marketing_consent === 'opted_in' ? 'Aceita promoções' : 'Não quer promoções'}
+                  </Badge>
+                )}
                 {c.tags.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">
                     {c.tags.map((t) => (

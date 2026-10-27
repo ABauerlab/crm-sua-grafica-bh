@@ -47,11 +47,13 @@ Deno.serve(async (req) => {
 
   const { data: conv } = await db
     .from('conversations')
-    .select('id, last_inbound_at, contact:contacts(wa_id)')
+    .select('id, last_inbound_at, contact:contacts(wa_id, marketing_consent)')
     .eq('id', input.conversation_id)
     .maybeSingle()
   // deno-lint-ignore no-explicit-any
   const waId = (conv as any)?.contact?.wa_id as string | undefined
+  // deno-lint-ignore no-explicit-any
+  const consent = (conv as any)?.contact?.marketing_consent as string | undefined
   if (!conv || !waId) return json({ error: 'Conversa não encontrada.' }, 404)
 
   let metaBody: Record<string, unknown>
@@ -69,11 +71,24 @@ Deno.serve(async (req) => {
     const vars = (input.variables ?? []).map((v) => String(v))
     if (vars.some((v) => !v.trim())) return json({ error: 'Preencha todas as variáveis do template.' }, 400)
 
-    let q = db.from('templates_cache').select('name, language, status, body').eq('name', templateName!)
+    let q = db.from('templates_cache').select('name, language, status, category, body').eq('name', templateName!)
     if (language) q = q.eq('language', language)
     const { data: tpl } = await q.limit(1).maybeSingle()
     if (!tpl) return json({ error: 'Template não encontrado. Sincronize os templates e tente de novo.' }, 404)
     if (tpl.status !== 'APPROVED') return json({ error: 'Esse template ainda não foi aprovado pela Meta.' }, 409)
+    // Promoções só para quem autorizou; mensagens de pedido (utility) não dependem disso
+    if (tpl.category === 'MARKETING' && consent !== 'opted_in') {
+      return json(
+        {
+          error:
+            consent === 'opted_out'
+              ? 'Este contato pediu para não receber promoções. Use um template de utilidade (ex.: atualização de pedido).'
+              : 'Este contato ainda não autorizou receber promoções. Registre o consentimento no painel do contato.',
+          code: 'no_marketing_consent',
+        },
+        403,
+      )
+    }
     language = tpl.language
 
     metaBody = {
