@@ -10,6 +10,18 @@ export interface InboundMessage {
   body: string
   mediaId: string | null
   timestamp: Date
+  /** Origem do anúncio (click to WhatsApp), presente só na primeira mensagem vinda de anúncio. */
+  referral: Referral | null
+}
+
+export interface Referral {
+  sourceUrl: string | null
+  sourceId: string | null
+  sourceType: string | null
+  headline: string | null
+  body: string | null
+  mediaType: string | null
+  ctwaClid: string | null
 }
 
 export interface StatusUpdate {
@@ -27,6 +39,21 @@ const MEDIA_LABELS: Record<string, [InboundType, string]> = {
   audio: ['audio', '[áudio recebido]'],
   video: ['other', '[vídeo recebido]'],
   sticker: ['other', '[figurinha recebida]'],
+}
+
+function extractReferral(r: Json): Referral | null {
+  if (!r || typeof r !== 'object') return null
+  const str = (v: Json) => (typeof v === 'string' && v ? v : null)
+  const out = {
+    sourceUrl: str(r.source_url),
+    sourceId: str(r.source_id),
+    sourceType: str(r.source_type),
+    headline: str(r.headline),
+    body: str(r.body),
+    mediaType: str(r.media_type),
+    ctwaClid: str(r.ctwa_clid),
+  }
+  return Object.values(out).some(Boolean) ? out : null
 }
 
 export function extractEvents(payload: Json): { messages: InboundMessage[]; statuses: StatusUpdate[] } {
@@ -53,6 +80,7 @@ export function extractEvents(payload: Json): { messages: InboundMessage[]; stat
           name: names.get(String(m.from)) ?? null,
           waMessageId: String(m.id),
           timestamp: Number.isNaN(ts.getTime()) ? new Date() : ts,
+          referral: extractReferral(m.referral),
         }
 
         const media = MEDIA_LABELS[m.type]

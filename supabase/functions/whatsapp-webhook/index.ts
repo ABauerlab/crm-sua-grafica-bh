@@ -53,6 +53,17 @@ Deno.serve(async (req) => {
         p_body: m.body,
         p_media_id: m.mediaId,
         p_ts: m.timestamp.toISOString(),
+        p_referral: m.referral
+          ? {
+              source_url: m.referral.sourceUrl,
+              source_id: m.referral.sourceId,
+              source_type: m.referral.sourceType,
+              headline: m.referral.headline,
+              body: m.referral.body,
+              media_type: m.referral.mediaType,
+              ctwa_clid: m.referral.ctwaClid,
+            }
+          : null,
       })
       if (error) throw error
 
