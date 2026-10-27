@@ -80,6 +80,10 @@ export function useRealtimeSync() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
         qc.invalidateQueries({ queryKey: ['conversations'] })
+        qc.invalidateQueries({ queryKey: ['orders'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        qc.invalidateQueries({ queryKey: ['orders'] })
       })
       .subscribe()
     return () => {

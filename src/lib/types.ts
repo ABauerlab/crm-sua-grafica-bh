@@ -21,6 +21,7 @@ export interface Contact {
   marketing_consent: MarketingConsent
   marketing_consent_at: string | null
   marketing_consent_source: ConsentSource | null
+  first_referral?: Record<string, string> | null
   created_at: string
 }
 

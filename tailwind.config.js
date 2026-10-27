@@ -3,6 +3,10 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -15,8 +19,22 @@ export default {
         accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
         destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+        success: 'hsl(var(--success))',
+        warning: 'hsl(var(--warning))',
+        link: 'hsl(var(--link))',
+        sidebar: { DEFAULT: 'hsl(var(--sidebar))', foreground: 'hsl(var(--sidebar-foreground))' },
+        ink: 'var(--brand-ink)',
+        brand: {
+          cyan: 'var(--brand-cyan)',
+          magenta: 'var(--brand-magenta)',
+          yellow: 'var(--brand-yellow)',
+          blue: 'var(--brand-blue)',
+          green: 'var(--brand-green)',
+          red: 'var(--brand-red)',
+          gray: 'var(--brand-gray)',
+        },
       },
-      borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)', sm: 'calc(var(--radius) - 4px)' },
+      borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 1px)', sm: 'calc(var(--radius) - 2px)' },
     },
   },
   plugins: [],

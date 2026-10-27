@@ -1,45 +1,74 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { CreditCard, ListChecks, Megaphone, Package } from 'lucide-react'
+import { lazy, Suspense } from 'react'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import Layout from '@/components/Layout'
-import Contacts from '@/pages/Contacts'
-import Funnel from '@/pages/Funnel'
-import Inbox from '@/pages/Inbox'
+import { Skeleton } from '@/components/ui/skeleton'
 import { DataDeletion, Privacy, Terms } from '@/pages/Legal'
 import Login from '@/pages/Login'
-import Team from '@/pages/Team'
-import Templates from '@/pages/Templates'
 
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const Kanban = lazy(() => import('@/pages/Kanban'))
+const Inbox = lazy(() => import('@/pages/Inbox'))
+const Contacts = lazy(() => import('@/pages/Contacts'))
+const Templates = lazy(() => import('@/pages/Templates'))
+const Settings = lazy(() => import('@/pages/Settings'))
+const Team = lazy(() => import('@/pages/Team'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
+const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
+
+function PageFallback() {
+  return (
+    <div className="space-y-3 p-4" aria-busy="true">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+  )
+}
+
+/** Sem sessão válida: manda para o login e guarda a rota para voltar depois de entrar. */
 function RequireStaff() {
-  const { loading, session, profile } = useAuth()
-  if (loading) return <p className="p-6 text-sm text-muted-foreground">Carregando…</p>
-  if (!session || !profile) return <Navigate to="/login" replace />
+  const { loading, session, profile, noAccess } = useAuth()
+  const location = useLocation()
+  if (loading) return <PageFallback />
+  if (!session || !profile || noAccess) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   return <Outlet />
 }
 
 function RequireAdmin() {
   const { profile } = useAuth()
-  return profile?.role === 'admin' ? <Outlet /> : <Navigate to="/inbox" replace />
+  return profile?.role === 'admin' ? <Outlet /> : <Navigate to="/painel" replace />
 }
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/privacidade" element={<Privacy />} />
-      <Route path="/termos" element={<Terms />} />
-      <Route path="/exclusao-de-dados" element={<DataDeletion />} />
-      <Route element={<RequireStaff />}>
-        <Route element={<Layout />}>
-          <Route path="/inbox/:conversationId?" element={<Inbox />} />
-          <Route path="/funil" element={<Funnel />} />
-          <Route path="/contatos" element={<Contacts />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route element={<RequireAdmin />}>
-            <Route path="/atendentes" element={<Team />} />
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/redefinir-senha" element={<ResetPassword />} />
+        <Route path="/privacidade" element={<Privacy />} />
+        <Route path="/termos" element={<Terms />} />
+        <Route path="/exclusao-de-dados" element={<DataDeletion />} />
+        <Route element={<RequireStaff />}>
+          <Route element={<Layout />}>
+            <Route path="/painel" element={<Dashboard />} />
+            <Route path="/kanban" element={<Kanban />} />
+            <Route path="/inbox/:conversationId?" element={<Inbox />} />
+            <Route path="/contatos" element={<Contacts />} />
+            <Route path="/catalogo" element={<ComingSoon title="Catálogo e Kits" icon={Package}>Consulta do catálogo do fornecedor com custo, piso e margem, e kits prontos (Barbearia, Delivery, Loja e Lançamento).</ComingSoon>} />
+            <Route path="/campanhas" element={<ComingSoon title="Campanhas" icon={Megaphone}>Conversas, orçamentos, vendas, custo por venda e ROAS por campanha e anúncio.</ComingSoon>} />
+            <Route path="/pagamentos" element={<ComingSoon title="Pagamentos" icon={CreditCard}>Conciliação dos pagamentos por pedido. Chega junto com a integração do Mercado Pago.</ComingSoon>} />
+            <Route path="/tarefas" element={<ComingSoon title="Tarefas" icon={ListChecks}>Lembretes de cobrança, aprovação de prova, entrega e recompra, com visões Hoje e Atrasadas.</ComingSoon>} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="/configuracoes" element={<Settings />} />
+            <Route path="/funil" element={<Navigate to="/kanban" replace />} />
+            <Route element={<RequireAdmin />}>
+              <Route path="/atendentes" element={<Team />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/inbox" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/painel" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
