@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/sheet'
 import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { readTable } from '@/lib/spreadsheet'
+import { extractGrammage, readTable } from '@/lib/spreadsheet'
 import { ImportDialog } from './ImportDialog'
 import { formatBRL, formatNumber, parseMoney } from '@/lib/money'
 import { supabase } from '@/lib/supabase'
@@ -94,6 +94,7 @@ export function ProductsTab() {
           category: f.category.trim() || null,
           colors: f.colors.trim() || null,
           weight: f.weight.trim() ? parseMoney(f.weight) : null,
+          grammage: extractGrammage(f.description),
           qty: f.qty.trim() ? Math.round(parseMoney(f.qty)) : null,
           size: f.size.trim() || null,
           lead_days: f.lead.trim() ? Math.round(parseMoney(f.lead)) : null,
@@ -157,6 +158,7 @@ export function ProductsTab() {
                 <th className="py-2 font-medium">Descrição do serviço</th>
                 <th className="py-2 font-medium">Cores</th>
                 <th className="py-2 text-right font-medium">Peso</th>
+                <th className="py-2 text-right font-medium">Gramatura</th>
                 <th className="py-2 text-right font-medium">Qtde</th>
                 <th className="py-2 pl-4 font-medium">Tam</th>
                 <th className="py-2 text-right font-medium">Prazo</th>
@@ -175,6 +177,7 @@ export function ProductsTab() {
                   <td className="max-w-sm py-2 font-semibold">{p.description}</td>
                   <td className="py-2">{p.colors ?? '—'}</td>
                   <td className="py-2 text-right tabular">{p.weight === null ? '—' : formatNumber(p.weight)}</td>
+                  <td className="py-2 text-right tabular">{p.grammage === null ? '—' : `${p.grammage} g`}</td>
                   <td className="py-2 text-right tabular">{p.qty === null ? '—' : formatNumber(p.qty)}</td>
                   <td className="py-2 pl-4 whitespace-nowrap">{p.size ?? '—'}</td>
                   <td className="py-2 text-right tabular">{p.lead_days === null ? '—' : `${p.lead_days} d`}</td>

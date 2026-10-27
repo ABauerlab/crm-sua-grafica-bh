@@ -126,6 +126,7 @@ export interface Product {
   supplier: string
   colors: string | null
   weight: number | null
+  grammage: number | null
   qty: number | null
   size: string | null
   lead_days: number | null

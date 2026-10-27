@@ -40,6 +40,7 @@ import {
   type OrderStage,
   type PaymentStatus,
 } from '@/lib/orders'
+import { ProductPicker } from '@/features/catalog/KitsTab'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -167,7 +168,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const { data: items, isLoading } = useOrderItems(order.id)
   const { data: settings } = useSettings()
   const rules = settings?.pricing ?? DEFAULT_PRICING
-  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '' })
+  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', lead: '' })
   const [discount, setDiscount] = useState(String(order.discount_pct))
   const [tax, setTax] = useState(String(order.tax_pct))
   const [fee, setFee] = useState(String(order.payment_fee_pct))
@@ -193,7 +194,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
   const saveItem = useMutation({
     mutationFn: async (it: Partial<OrderItem> & { id?: string }) => {
-      const row = { order_id: order.id, code: it.code || null, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price! }
+      const row = { order_id: order.id, code: it.code || null, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       const { error } = it.id ? await supabase.from('order_items').update(row).eq('id', it.id) : await supabase.from('order_items').insert(row)
       if (error) throw new Error(error.message)
     },
@@ -211,12 +212,12 @@ function ItemsTab({ order }: { order: OrderCard }) {
   })
 
   function addItem() {
-    const it = { description: draft.description.trim(), qty: Math.max(1, Math.floor(Number(draft.qty) || 1)), unit_cost: parseMoney(draft.cost), unit_price: parseMoney(draft.price) }
+    const it = { description: draft.description.trim(), qty: Math.max(1, Math.floor(Number(draft.qty) || 1)), unit_cost: parseMoney(draft.cost), unit_price: parseMoney(draft.price), lead_days: draft.lead.trim() ? Math.max(0, Math.round(Number(draft.lead) || 0)) : null }
     if (!it.description) return toast('error', 'Informe a descrição do item.')
     const next = [...(items ?? []), { ...it, id: 'novo', order_id: order.id, code: draft.code || null }]
     guarded({ items: next, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => {
       await saveItem.mutateAsync({ ...it, code: draft.code })
-      setDraft({ code: '', description: '', qty: '1', cost: '', price: '' })
+      setDraft({ code: '', description: '', qty: '1', cost: '', price: '', lead: '' })
     })
   }
 
@@ -268,11 +269,12 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
       <fieldset className="space-y-2 rounded-md border bg-secondary/40 p-3">
         <legend className="px-1 text-xs font-bold uppercase tracking-wide">Adicionar item</legend>
+        <ProductPicker onPick={(p) => setDraft({ code: p.code, description: p.description, qty: String(p.qty ?? 1), cost: String(p.cost), price: String(p.suggested_price), lead: p.lead_days === null ? '' : String(p.lead_days) })} />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
           <Input aria-label="Código" placeholder="Código" className="sm:col-span-1" value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} />
           <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-3" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
           <Input aria-label="Quantidade" type="number" min="1" inputMode="numeric" placeholder="Qtd" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
-          <span />
+          <Input aria-label="Prazo do fornecedor em dias" type="number" min="0" inputMode="numeric" placeholder="Prazo (dias)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
           <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
           <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending}><Plus className="h-4 w-4" /> Adicionar</Button>
@@ -290,6 +292,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       </fieldset>
 
       <dl className="rounded-md border px-3 py-1 divide-y">
+        {order.lead_days != null && <div className="flex justify-between py-2 text-sm"><dt className="text-muted-foreground">Prazo do fornecedor</dt><dd className="font-semibold tabular">{order.lead_days} dia(s)</dd></div>}
         <Money label="Subtotal" value={order.fin.gross} />
         <Money label="Total com desconto" value={order.fin.total} strong />
         <Money label="Custo total" value={order.fin.cost} />
@@ -339,7 +342,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
       <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className={cn('tabular', below ? 'font-bold text-brand-red' : 'text-muted-foreground')}>
           {below ? `Abaixo do piso de ${formatBRL(floor)}. ` : `Piso ${formatBRL(floor)}. `}
-          Linha: {formatBRL(item.qty * item.unit_price)}
+          Linha: {formatBRL(item.qty * item.unit_price)}{item.lead_days != null ? ` · prazo ${item.lead_days} d` : ''}
         </span>
         <span className="flex gap-1">
           {dirty && (

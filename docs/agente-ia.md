@@ -24,13 +24,14 @@ Tabela `products` (e view `products_priced`, que soma os preços calculados). Um
 | `description` | Descrição do serviço | `ABRIDORES E CHAVEIROS - IMPRESSÃO UV - 10g` |
 | `colors` | Cores | `4X0` |
 | `weight` | Peso | `1250` (valor da coluna Peso) |
+| `grammage` | Gramatura (extraída da descrição) | `10` (gramas) |
 | `qty` | Qtde | `25` |
 | `size` | Tam | `57 x 57` |
 | `lead_days` | Prazo | `5` (dias) |
 | `cost` | Preço R$ | `252.99` (custo, o que a Sua Gráfica paga) |
 | `suggested_price`, `floor_price`, `max_discount_price`, `est_net_profit` | calculados | vêm do banco |
 
-O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de interpretar texto. A gramatura do papel, quando existe, está escrita dentro de `description`.
+O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de interpretar texto. A gramatura é extraída da descrição na importação para `grammage` (nulo quando a descrição não traz o número). O prazo do fornecedor (`lead_days`) é copiado para cada item do pedido (`order_items.lead_days`) e o pedido guarda o maior deles em `orders.lead_days`. A data prometida ao cliente (regra de dias úteis, feriados e o dia a mais) será definida à parte.
 
 ## Estado do atendimento
 | Onde | Campo | Significado |

@@ -94,6 +94,7 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
       art_checklist: {},
       supplier_order_no: null,
       due_date: null,
+      lead_days: null,
       delivery_method: null,
       delivery_address: null,
       delivery_fee: null,

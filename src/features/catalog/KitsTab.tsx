@@ -38,7 +38,7 @@ function useKits() {
   })
 }
 
-function ProductPicker({ onPick }: { onPick: (p: Product) => void }) {
+export function ProductPicker({ onPick }: { onPick: (p: Product) => void }) {
   const [q, setQ] = useState('')
   const { data } = useQuery({
     queryKey: ['product-pick', q],
@@ -64,7 +64,7 @@ function ProductPicker({ onPick }: { onPick: (p: Product) => void }) {
                   setQ('')
                 }}
               >
-                <span className="truncate"><span className="font-mono text-xs">{p.code}</span> {p.description}{p.qty ? ` · ${p.qty} un` : ''}{p.size ? ` · ${p.size}` : ''}</span>
+                <span className="truncate"><span className="font-mono text-xs">{p.code}</span> {p.description}{p.grammage ? ` · ${p.grammage} g` : ''}{p.qty ? ` · ${p.qty} un` : ''}{p.size ? ` · ${p.size}` : ''}{p.lead_days ? ` · ${p.lead_days} d` : ''}</span>
                 <span className="tabular">{formatBRL(p.cost)}</span>
               </button>
             </li>

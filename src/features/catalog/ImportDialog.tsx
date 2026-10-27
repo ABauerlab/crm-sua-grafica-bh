@@ -128,13 +128,13 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
-                    <th className="px-3 py-1.5 font-medium">Código</th><th className="font-medium">Categoria</th><th className="font-medium">Descrição</th><th className="font-medium">Cores</th><th className="text-right font-medium">Peso</th><th className="text-right font-medium">Qtde</th><th className="font-medium pl-3">Tam</th><th className="text-right font-medium">Prazo</th><th className="text-right font-medium">Custo</th><th className="px-3 text-right font-medium">Preço</th>
+                    <th className="px-3 py-1.5 font-medium">Código</th><th className="font-medium">Categoria</th><th className="font-medium">Descrição</th><th className="font-medium">Cores</th><th className="text-right font-medium">Peso</th><th className="text-right font-medium">Gramatura</th><th className="text-right font-medium">Qtde</th><th className="font-medium pl-3">Tam</th><th className="text-right font-medium">Prazo</th><th className="text-right font-medium">Custo</th><th className="px-3 text-right font-medium">Preço</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.slice(0, 5).map((i) => (
                     <tr key={i.code} className="border-b last:border-0">
-                      <td className="px-3 py-1.5 font-mono text-xs">{i.code}</td><td>{i.category ?? '—'}</td><td className="max-w-[220px] truncate">{i.description}</td><td>{i.colors ?? '—'}</td><td className="text-right tabular">{i.weight ?? '—'}</td><td className="text-right tabular">{i.qty ?? '—'}</td><td className="pl-3">{i.size ?? '—'}</td><td className="text-right tabular">{i.lead_days ?? '—'}</td><td className="text-right tabular">{formatBRL(i.cost)}</td><td className="px-3 text-right tabular">{formatBRL(i.suggested_price)}</td>
+                      <td className="px-3 py-1.5 font-mono text-xs">{i.code}</td><td>{i.category ?? '—'}</td><td className="max-w-[220px] truncate">{i.description}</td><td>{i.colors ?? '—'}</td><td className="text-right tabular">{i.weight ?? '—'}</td><td className="text-right tabular">{i.grammage === null ? '—' : `${i.grammage} g`}</td><td className="text-right tabular">{i.qty ?? '—'}</td><td className="pl-3">{i.size ?? '—'}</td><td className="text-right tabular">{i.lead_days ?? '—'}</td><td className="text-right tabular">{formatBRL(i.cost)}</td><td className="px-3 text-right tabular">{formatBRL(i.suggested_price)}</td>
                     </tr>
                   ))}
                 </tbody>
