@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,6 +66,11 @@ export default function Login() {
             </Button>
           </form>
         )}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          <Link to="/privacidade" className="underline">Política de Privacidade</Link> ·{' '}
+          <Link to="/termos" className="underline">Termos de Uso</Link> ·{' '}
+          <Link to="/exclusao-de-dados" className="underline">Exclusão de dados</Link>
+        </p>
       </div>
     </div>
   )

@@ -9,9 +9,9 @@ import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useProfiles } from '@/hooks/queries'
-import { STAGES, STATUSES, formatPhone } from '@/lib/format'
+import { CONSENTS, CONSENT_SOURCES, STAGES, STATUSES, formatPhone } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
-import type { ConversationStatus, ConversationWithContact, Stage } from '@/lib/types'
+import type { ConsentSource, ConversationStatus, ConversationWithContact, MarketingConsent, Stage } from '@/lib/types'
 
 export function ContactPanel({ conversation }: { conversation: ConversationWithContact }) {
   const qc = useQueryClient()
@@ -23,6 +23,8 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
   const [tags, setTags] = useState<string[]>(contact.tags)
   const [tagInput, setTagInput] = useState('')
   const [saved, setSaved] = useState(false)
+  const [consent, setConsent] = useState<MarketingConsent>(contact.marketing_consent)
+  const [consentSource, setConsentSource] = useState<ConsentSource>(contact.marketing_consent_source ?? 'manual')
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['conversations'] })
 
@@ -36,6 +38,25 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
     },
     onSuccess: () => {
       setSaved(true)
+      refresh()
+      qc.invalidateQueries({ queryKey: ['contacts'] })
+    },
+  })
+
+  const consentChanged = consent !== contact.marketing_consent || (consent === 'opted_in' && consentSource !== contact.marketing_consent_source)
+  const saveConsent = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('contacts')
+        .update({
+          marketing_consent: consent,
+          marketing_consent_at: consent === 'none' ? null : new Date().toISOString(),
+          marketing_consent_source: consent === 'opted_in' ? consentSource : consent === 'opted_out' ? 'manual' : null,
+        })
+        .eq('id', contact.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
       refresh()
       qc.invalidateQueries({ queryKey: ['contacts'] })
     },
@@ -123,6 +144,44 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
         </Button>
         {saved && <span className="text-xs text-primary">Salvo</span>}
         {saveContact.isError && <span className="text-xs text-destructive">Erro ao salvar</span>}
+      </div>
+
+      <hr />
+
+      <div className="space-y-1.5">
+        <Label htmlFor="c-consent">Consentimento para promoções</Label>
+        <Select id="c-consent" value={consent} onChange={(e) => setConsent(e.target.value as MarketingConsent)}>
+          {CONSENTS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </Select>
+        {consent === 'opted_in' && (
+          <>
+            <Label htmlFor="c-consent-src">Como o cliente autorizou</Label>
+            <Select id="c-consent-src" value={consentSource} onChange={(e) => setConsentSource(e.target.value as ConsentSource)}>
+              {CONSENT_SOURCES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          </>
+        )}
+        {contact.marketing_consent !== 'none' && contact.marketing_consent_at && (
+          <p className="text-xs text-muted-foreground">
+            Registrado em {new Date(contact.marketing_consent_at).toLocaleDateString('pt-BR')}
+            {contact.marketing_consent_source && ` (${CONSENT_SOURCES.find((c) => c.value === contact.marketing_consent_source)?.label.toLowerCase()})`}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">Quando o cliente responde PARAR no WhatsApp, o sistema marca &quot;Pediu para não receber&quot; sozinho.</p>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => saveConsent.mutate()} disabled={!consentChanged || saveConsent.isPending}>
+            {saveConsent.isPending ? 'Salvando…' : 'Salvar consentimento'}
+          </Button>
+          {saveConsent.isError && <span className="text-xs text-destructive">Erro ao salvar</span>}
+        </div>
       </div>
 
       <hr />

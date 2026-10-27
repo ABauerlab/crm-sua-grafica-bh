@@ -4,7 +4,7 @@ import Layout from '@/components/Layout'
 import Contacts from '@/pages/Contacts'
 import Funnel from '@/pages/Funnel'
 import Inbox from '@/pages/Inbox'
-import { Privacy, Terms } from '@/pages/Legal'
+import { DataDeletion, Privacy, Terms } from '@/pages/Legal'
 import Login from '@/pages/Login'
 import Team from '@/pages/Team'
 import Templates from '@/pages/Templates'
@@ -27,6 +27,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/privacidade" element={<Privacy />} />
       <Route path="/termos" element={<Terms />} />
+      <Route path="/exclusao-de-dados" element={<DataDeletion />} />
       <Route element={<RequireStaff />}>
         <Route element={<Layout />}>
           <Route path="/inbox/:conversationId?" element={<Inbox />} />

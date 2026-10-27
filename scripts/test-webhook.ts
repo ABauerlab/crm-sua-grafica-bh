@@ -1,7 +1,7 @@
 // Testes locais (Node >= 22): npm run test:webhook
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
-import { extractEvents, shouldApplyStatus } from '../supabase/functions/_shared/parse.ts'
+import { extractEvents, isOptOutMessage, shouldApplyStatus } from '../supabase/functions/_shared/parse.ts'
 import { verifySignature } from '../supabase/functions/_shared/signature.ts'
 
 const secret = 'segredo-de-teste-nao-real'
@@ -48,4 +48,12 @@ assert.equal(shouldApplyStatus('sent', 'delivered'), true)
 assert.equal(shouldApplyStatus('read', 'failed'), false)
 assert.equal(shouldApplyStatus(null, 'sent'), true)
 
-console.log('OK: assinatura, parsing e ordem de status validados')
+// Descadastro (PARAR)
+for (const ok of ['PARAR', 'parar', ' Parar! ', 'sair', 'STOP', 'Parar de receber', 'Cancelar inscrição']) {
+  assert.equal(isOptOutMessage(ok), true, `"${ok}" deve descadastrar`)
+}
+for (const no of ['quero parar o pedido', 'não parar', 'oi', '', 'saiu?']) {
+  assert.equal(isOptOutMessage(no), false, `"${no}" não deve descadastrar`)
+}
+
+console.log('OK: assinatura, parsing, ordem de status e descadastro validados')

@@ -8,8 +8,8 @@ const COMPANY = {
   address: 'Rua Rio de Janeiro, 462, Salas 2216/2217, Centro, Belo Horizonte/MG, CEP 30160-040',
   owner: 'João Victor Bauer Rocha Gomes',
   email: 'contato@suagraficabh.com.br',
-  phone: '(31) 99802-1169',
-  phoneHref: 'tel:+5531998021169',
+  phone: '(31) 97561-8243',
+  phoneHref: 'tel:+5531975618243',
   updatedAt: '27/10/2026',
 }
 
@@ -22,7 +22,8 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
       </p>
       <div className="space-y-4 text-sm leading-relaxed [&_h2]:mt-6 [&_h2]:text-base [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">{children}</div>
       <p className="mt-10 text-sm">
-        <Link to="/privacidade" className="underline">Privacidade</Link> · <Link to="/termos" className="underline">Termos de uso</Link>
+        <Link to="/privacidade" className="underline">Privacidade</Link> · <Link to="/termos" className="underline">Termos de uso</Link> ·{' '}
+        <Link to="/exclusao-de-dados" className="underline">Exclusão de dados</Link>
       </p>
     </div>
   )
@@ -70,7 +71,7 @@ export function Privacy() {
       <h2>4. Mensagens promocionais e como parar de recebê-las</h2>
       <p>
         Só enviamos mensagens promocionais a quem aceitou recebê-las. Você pode parar a qualquer momento respondendo &quot;PARAR&quot; na conversa ou
-        escrevendo para {COMPANY.email}. Mensagens ligadas a um pedido em andamento continuam sendo enviadas.
+        escrevendo para {COMPANY.email}. Guardamos a data e a origem do seu consentimento (ou do seu pedido para parar) como comprovação. Mensagens ligadas a um pedido em andamento continuam sendo enviadas.
       </p>
       <h2>5. Compartilhamento e operadores</h2>
       <p>
@@ -94,7 +95,8 @@ export function Privacy() {
       <p>
         Nos termos do art. 18 da LGPD, você pode solicitar a qualquer momento: confirmação da existência de tratamento, acesso, correção de dados
         incompletos ou desatualizados, anonimização, bloqueio ou eliminação de dados desnecessários, portabilidade, informação sobre
-        compartilhamento, informação sobre a possibilidade de não consentir e revogação do consentimento. Respondemos em até 15 dias. Você também
+        compartilhamento, informação sobre a possibilidade de não consentir e revogação do consentimento. Respondemos em até 15 dias. Para pedir a exclusão
+        dos seus dados, veja a página <Link to="/exclusao-de-dados" className="underline">Exclusão de dados</Link>. Você também
         pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).
       </p>
       <h2>9. Contato e encarregado de dados</h2>
@@ -152,6 +154,47 @@ export function Terms() {
       <p><ContactLine /></p>
       <h2>8. Foro</h2>
       <p>Fica eleito o foro da comarca de Belo Horizonte/MG, ressalvado o direito do consumidor de ajuizar ação em seu domicílio.</p>
+    </Shell>
+  )
+}
+
+export function DataDeletion() {
+  const mailto = `mailto:${COMPANY.email}?subject=${encodeURIComponent('Exclusão de dados pessoais')}&body=${encodeURIComponent(
+    'Olá, solicito a exclusão dos meus dados pessoais.\n\nNome:\nTelefone (WhatsApp) com DDD:\n',
+  )}`
+  return (
+    <Shell title="Exclusão de Dados">
+      <p>
+        Você pode pedir a exclusão dos seus dados pessoais tratados pela {COMPANY.brand} a qualquer momento, conforme o art. 18 da LGPD. É
+        gratuito.
+      </p>
+      <h2>Como pedir</h2>
+      <ul>
+        <li>
+          Envie um e-mail para <a className="underline" href={mailto}>{COMPANY.email}</a> com seu nome e o telefone (WhatsApp) usado nas conversas;
+        </li>
+        <li>
+          Ou mande uma mensagem pelo WhatsApp para nós com o texto &quot;EXCLUIR MEUS DADOS&quot;, a partir do número que você quer excluir.
+        </li>
+      </ul>
+      <p>Para sua segurança, podemos pedir uma confirmação de que o número é seu antes de excluir.</p>
+      <h2>O que acontece depois</h2>
+      <ul>
+        <li>Respondemos em até 15 dias e excluímos ou anonimizamos seus dados (contato, conversas, arquivos e anotações);</li>
+        <li>
+          Dados que a lei nos obriga a guardar, como notas fiscais e registros de pedidos, ficam armazenados só pelo prazo legal e depois são
+          eliminados;
+        </li>
+        <li>Mantemos o registro mínimo de que você pediu para não receber promoções, para respeitar seu pedido;</li>
+        <li>Os provedores que nos atendem (como Meta e Supabase) mantêm cópias conforme as próprias políticas, e orientamos a exclusão deles quando aplicável.</li>
+      </ul>
+      <h2>Dúvidas</h2>
+      <p>
+        Fale com o responsável pelos dados: <ContactLine />. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+      </p>
+      <p>
+        Para só parar de receber promoções, responda &quot;PARAR&quot; em qualquer conversa nossa no WhatsApp.
+      </p>
     </Shell>
   )
 }

@@ -1,6 +1,8 @@
 export type Role = 'admin' | 'agent'
 export type ConversationStatus = 'open' | 'pending' | 'closed'
 export type Stage = 'novo' | 'orcamento' | 'negociando' | 'fechado' | 'perdido'
+export type MarketingConsent = 'none' | 'opted_in' | 'opted_out'
+export type ConsentSource = 'whatsapp' | 'manual' | 'formulario' | 'loja' | 'outro'
 export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed'
 
 export interface Profile {
@@ -16,6 +18,9 @@ export interface Contact {
   name: string | null
   notes: string | null
   tags: string[]
+  marketing_consent: MarketingConsent
+  marketing_consent_at: string | null
+  marketing_consent_source: ConsentSource | null
   created_at: string
 }
 
