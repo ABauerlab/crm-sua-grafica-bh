@@ -134,7 +134,7 @@ export function ProductsTab() {
           <div className="space-y-2 p-4">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : total === 0 ? (
           <EmptyState icon={Package} title={debounced || category ? 'Nenhum produto encontrado' : 'Catálogo vazio'}>
-            {debounced || category ? 'Tente outro termo ou categoria.' : 'Importe a planilha do fornecedor (ZAP Gráfica, em Excel ou CSV) ou cadastre os produtos um a um.'}
+            {debounced || category ? 'Tente outro termo ou categoria.' : 'Importe a planilha do fornecedor (Excel ou CSV) ou cadastre os produtos um a um.'}
           </EmptyState>
         ) : (
           <table className="w-full min-w-[860px] text-sm">

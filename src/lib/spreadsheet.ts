@@ -14,7 +14,7 @@ export async function readTable(file: File): Promise<string[][]> {
   if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.html') || name.endsWith('.htm')) {
     const XLSX = await import('xlsx')
     const buf = await file.arrayBuffer()
-    // Muitos sistemas "exportam para Excel" gerando uma tabela HTML com extensão .xls (é o caso da tabela da ZAP Gráfica).
+    // Muitos sistemas "exportam para Excel" gerando uma tabela HTML com extensão .xls (é o caso de algumas tabelas de preço de fornecedores).
     // Esse texto vem em ISO-8859-1; lido como UTF-8 os acentos viram "�".
     const html = looksLikeHtml(buf) ? decodeText(buf) : null
     const wb = html !== null ? XLSX.read(html, { type: 'string', cellDates: true }) : XLSX.read(buf, { type: 'array', cellDates: true })
@@ -102,7 +102,7 @@ export interface ImportItem {
   active: boolean
 }
 
-/** Converte as linhas da planilha em produtos. Ignora títulos, linhas de seção e cabeçalhos repetidos (a tabela da ZAP repete o cabeçalho a cada categoria). */
+/** Converte as linhas da planilha em produtos. Ignora títulos, linhas de seção e cabeçalhos repetidos (algumas tabelas de fornecedor repetem o cabeçalho a cada categoria). */
 export function buildProducts(
   rows: string[][],
   headerRow: number,

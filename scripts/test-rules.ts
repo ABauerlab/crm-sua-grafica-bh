@@ -1,5 +1,7 @@
 // Regras de preço e de transição do kanban (Node >= 22): npm run test:rules
 import assert from 'node:assert/strict'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/lib/orders.ts'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
@@ -100,7 +102,7 @@ const wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(
   wb,
   XLSX.utils.aoa_to_sheet([
-    ['TABELA DE PREÇOS ZAP GRÁFICA'],
+    ['TABELA DE PREÇOS'],
     [],
     ['Código', 'Descrição do Produto', 'Categoria', 'Valor Custo', 'Preço de Venda'],
     ['CV-0500', 'Cartão de visita 500 un', 'Cartões', 48.5, 119],
@@ -118,7 +120,7 @@ assert.deepEqual(map, { code: 0, description: 1, category: 2, cost: 3, price: 4 
 assert.equal(rows[hdr + 1][3], '48.5')
 await assert.rejects(() => readTable(new File(['x'], 'catalogo.pdf')), /PDF/)
 
-// Tabela da ZAP Gráfica: HTML salvo como .xls em ISO-8859-1, título e cabeçalho repetido a cada categoria, preço "R$ 1.234,56"
+// Tabela de preços de fornecedor: HTML salvo como .xls em ISO-8859-1, título e cabeçalho repetido a cada categoria, preço "R$ 1.234,56"
 const html = `<html><body><table>
 <tr><td>TABELA DE PREÇOS 27/10/2026</td></tr>
 <tr><td>ACESSÓRIOS</td></tr>
@@ -130,15 +132,36 @@ const html = `<html><body><table>
 <tr><td>ADE9</td><td>ADESIVOS</td><td>ADESIVO REDONDO</td><td>4X0</td><td>100</td><td>200</td><td>50 x 50</td><td>3</td><td>R$ 38,50</td></tr>
 </table></body></html>`
 const latin1 = new Uint8Array([...html].map((c) => c.charCodeAt(0)))
-const zap = await readTable(new File([latin1], 'TabelaPreco.xls'))
-const zh = guessHeaderRow(zap)
-const zmap = guessMapping(zap[zh])
+const sheetHtml = await readTable(new File([latin1], 'TabelaPreco.xls'))
+const zh = guessHeaderRow(sheetHtml)
+const zmap = guessMapping(sheetHtml[zh])
 assert.deepEqual(zmap, { code: 0, description: 2, category: 1, price: -1, cost: 8 }, '"Preço R$" do fornecedor é o custo')
-const built = buildProducts(zap, zh, zmap, guessExtras(zap[zh], zmap), 0)
+const built = buildProducts(sheetHtml, zh, zmap, guessExtras(sheetHtml[zh], zmap), 0)
 assert.equal(built.items.length, 3, 'cabeçalho repetido, título e seções não viram produto')
 assert.equal(built.items[0].description, 'CHAVEIRO UV - 10g · 4X0 · 25 un · 57 x 57', 'cores, quantidade e tamanho diferenciam o item')
 assert.equal(built.items[0].cost, 1252.99)
 assert.equal(built.items[0].category, 'ACESSÓRIOS', 'acentos em ISO-8859-1 preservados')
-assert.equal(buildProducts(zap, zh, zmap, [], 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
+assert.equal(buildProducts(sheetHtml, zh, zmap, [], 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
 
-console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas e importação de planilha')
+// Regra do negócio: o nome do fornecedor nunca aparece no código, nas telas, nos textos, nas mensagens nem na documentação.
+// (O termo é montado em partes para este arquivo não se acusar.)
+const forbidden = new RegExp(['z', 'a', 'p'].join('') + '(?!pier)', 'i')
+const root = new URL('..', import.meta.url).pathname
+const skip = new Set(['node_modules', '.git', 'dist', 'package-lock.json'])
+const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt)$/
+const leaks: string[] = []
+const walk = (dir: string) => {
+  for (const name of readdirSync(dir)) {
+    if (skip.has(name)) continue
+    const full = join(dir, name)
+    if (statSync(full).isDirectory()) walk(full)
+    else if (textExt.test(name) || name === '.env.example') {
+      const text = readFileSync(full, 'utf8')
+      if (forbidden.test(text) || forbidden.test(name)) leaks.push(full.replace(root, ''))
+    }
+  }
+}
+walk(root)
+assert.deepEqual(leaks, [], `nome do fornecedor encontrado em: ${leaks.join(', ')}`)
+
+console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas, importação de planilha e sigilo do fornecedor')

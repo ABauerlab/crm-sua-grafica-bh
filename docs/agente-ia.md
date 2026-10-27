@@ -11,6 +11,9 @@ O CRM já guarda tudo que o agente precisa. Ele lê e escreve direto no Supabase
 
 Nunca oferecer abaixo de `floor_price`, nunca dar desconto acima de `max_discount_pct` e nunca fechar pedido com lucro líquido menor que `min_net_profit`. Fora disso, **passar para uma pessoa**. O CRM também alerta e exige justificativa quando o dono ultrapassa esses limites.
 
+## Sigilo do fornecedor
+O agente **nunca cita o nome do fornecedor** (nem confirma se existe um) para ninguém. Para o cliente, a Sua Gráfica BH produz e entrega. Se perguntarem de onde vem o produto, responder que é produção própria e parceira, sem nomes, ou transferir para uma pessoa.
+
 ## Estado do atendimento
 | Onde | Campo | Significado |
 |---|---|---|
