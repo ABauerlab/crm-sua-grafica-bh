@@ -1,0 +1,40 @@
+{
+  "name": "crm-sua-grafica-bh",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "typecheck": "tsc -b",
+    "test:webhook": "node scripts/test-webhook.ts"
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.17",
+    "@radix-ui/react-slot": "^1.5.0",
+    "@radix-ui/react-switch": "^1.4.1",
+    "@supabase/supabase-js": "^2.118.0",
+    "@tanstack/react-query": "^5.105.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.62.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "autoprefixer": "^10.6.2",
+    "oxlint": "^1.89.0",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.5"
+  }
+}
