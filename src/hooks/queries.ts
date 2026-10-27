@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { notifyInbound } from '@/lib/notify'
 import type { Contact, ConversationWithContact, Message, Profile, Template } from '@/lib/types'
 
 export function useConversations() {
@@ -17,19 +18,20 @@ export function useConversations() {
   })
 }
 
-export function useMessages(conversationId: string | undefined) {
+/** Últimas `limit` mensagens da conversa, em ordem cronológica. Aumentar o limite carrega as anteriores. */
+export function useMessages(conversationId: string | undefined, limit = 60) {
   return useQuery({
-    queryKey: ['messages', conversationId],
+    queryKey: ['messages', conversationId, limit],
     enabled: !!conversationId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId!)
-        .order('created_at', { ascending: true })
-        .limit(500)
+        .order('created_at', { ascending: false })
+        .limit(limit)
       if (error) throw error
-      return data as Message[]
+      return (data as Message[]).reverse()
     },
   })
 }
@@ -76,11 +78,19 @@ export function useRealtimeSync() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
         const row = (payload.new ?? payload.old) as Partial<Message>
         if (row.conversation_id) qc.invalidateQueries({ queryKey: ['messages', row.conversation_id] })
+        if (payload.eventType === 'INSERT' && (payload.new as Partial<Message>).direction === 'in') notifyInbound()
         qc.invalidateQueries({ queryKey: ['conversations'] })
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => {
         qc.invalidateQueries({ queryKey: ['conversations'] })
         qc.invalidateQueries({ queryKey: ['orders'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_notes' }, (payload) => {
+        const row = (payload.new ?? payload.old) as { conversation_id?: string }
+        if (row.conversation_id) qc.invalidateQueries({ queryKey: ['notes', row.conversation_id] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, () => {
+        qc.invalidateQueries({ queryKey: ['setting'] })
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         qc.invalidateQueries({ queryKey: ['orders'] })

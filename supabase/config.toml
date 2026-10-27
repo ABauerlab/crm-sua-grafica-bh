@@ -15,3 +15,10 @@ verify_jwt = true
 
 [functions.admin-create-agent]
 verify_jwt = true
+
+[functions.whatsapp-media]
+verify_jwt = true
+
+# verify_jwt = false porque o agendamento diário não tem JWT; a função valida o dono ou o x-cron-secret por conta própria
+[functions.meta-ads-sync]
+verify_jwt = false

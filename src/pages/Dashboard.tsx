@@ -8,6 +8,9 @@ import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { buildDemo } from '@/features/dashboard/demo'
+import { useAdTotals } from '@/hooks/campaigns'
+import { useSetting } from '@/hooks/settings'
+import { goalState, metrics as adMetrics } from '@/lib/campaigns'
 import { useOrders, useSettings } from '@/hooks/orders'
 import { useContacts } from '@/hooks/queries'
 import { BRAND, SERIES } from '@/lib/brand'
@@ -114,6 +117,9 @@ export default function Dashboard() {
   const [demo, setDemo] = useState(false)
   const [period, setPeriod] = useState<Period>(30)
   const demoData = useMemo(() => (demo ? buildDemo() : null), [demo])
+  const adReal = useAdTotals(period, !demo)
+  const { data: goalsData } = useSetting('campaign_goals')
+  const goals = goalsData ?? { max_cost_per_conversation: 6, max_cost_per_sale: 60, min_roas: 4 }
 
   const orders = useMemo<OrderCard[]>(() => (demo ? demoData!.orders : (realOrders ?? [])), [demo, demoData, realOrders])
   const contacts = useMemo<Contact[]>(() => (demo ? demoData!.contacts : (realContacts ?? [])), [demo, demoData, realContacts])
@@ -177,6 +183,17 @@ export default function Dashboard() {
     return { cur, prev, series, funnel, stalled, origins, open, inPeriod, consent, weekly }
   }, [orders, contacts, period, kanban])
 
+  // Campanhas: dados reais do banco ou, no modo demonstração, números de exemplo coerentes com os pedidos
+  const ads = useMemo(() => {
+    if (demo) {
+      const spend = Math.round(model.cur.revenue * 0.14)
+      const convs = Math.round(model.cur.created * 1.4)
+      return adMetrics({ spend, conversations: convs, quotes: Math.round(convs * 0.5), paid_orders: model.cur.paid, revenue: model.cur.revenue, net_profit: model.cur.profit })
+    }
+    return adReal.data ?? null
+  }, [demo, model.cur, adReal.data])
+  const showAds = !!ads && (ads.spend > 0 || ads.conversations > 0)
+
   const noData = !demo && !isLoading && orders.length === 0
 
   return (
@@ -233,6 +250,29 @@ export default function Dashboard() {
               </span>
             </Tile>
           </div>
+
+          {showAds && ads && (
+            <section aria-label="Campanhas" className="rounded-md border bg-card p-4">
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <h2 className="text-base font-black">Campanhas no período</h2>
+                <Link to="/campanhas" className="text-sm font-semibold text-link underline">Ver detalhes</Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                {[
+                  { l: 'Investimento', v: formatBRL(ads.spend), st: 'none' as const },
+                  { l: 'Custo por conversa', v: ads.cpc === null ? '—' : formatBRL(ads.cpc), st: goalState('cost', ads.cpc, goals.max_cost_per_conversation) },
+                  { l: 'Custo por venda', v: ads.cps === null ? '—' : formatBRL(ads.cps), st: goalState('cost', ads.cps, goals.max_cost_per_sale) },
+                  { l: 'ROAS', v: ads.roas === null ? '—' : `${ads.roas.toFixed(1).replace('.', ',')}x`, st: goalState('roas', ads.roas, goals.min_roas) },
+                  { l: 'Lucro após anúncio', v: formatBRL(ads.profitAfterAds), st: (ads.profitAfterAds >= 0 ? 'good' : 'bad') as 'good' | 'bad' },
+                ].map((t) => (
+                  <div key={t.l} className={cn('min-w-0 border-l-4 pl-3', t.st === 'good' ? 'border-brand-green' : t.st === 'bad' ? 'border-brand-red' : 'border-brand-cyan')}>
+                    <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{t.l}</p>
+                    <p className="truncate text-xl font-black tabular">{t.v}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <div className="grid gap-4 xl:grid-cols-2">
             <ChartCard

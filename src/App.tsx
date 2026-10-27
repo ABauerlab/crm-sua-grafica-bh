@@ -1,4 +1,3 @@
-import { CreditCard, ListChecks, Megaphone, Package } from 'lucide-react'
 import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
@@ -15,7 +14,10 @@ const Templates = lazy(() => import('@/pages/Templates'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const Team = lazy(() => import('@/pages/Team'))
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
-const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
+const Catalog = lazy(() => import('@/pages/Catalog'))
+const Campaigns = lazy(() => import('@/pages/Campaigns'))
+const Payments = lazy(() => import('@/pages/Payments'))
+const Tasks = lazy(() => import('@/pages/Tasks'))
 
 function PageFallback() {
   return (
@@ -55,10 +57,10 @@ export default function App() {
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/inbox/:conversationId?" element={<Inbox />} />
             <Route path="/contatos" element={<Contacts />} />
-            <Route path="/catalogo" element={<ComingSoon title="Catálogo e Kits" icon={Package}>Consulta do catálogo do fornecedor com custo, piso e margem, e kits prontos (Barbearia, Delivery, Loja e Lançamento).</ComingSoon>} />
-            <Route path="/campanhas" element={<ComingSoon title="Campanhas" icon={Megaphone}>Conversas, orçamentos, vendas, custo por venda e ROAS por campanha e anúncio.</ComingSoon>} />
-            <Route path="/pagamentos" element={<ComingSoon title="Pagamentos" icon={CreditCard}>Conciliação dos pagamentos por pedido. Chega junto com a integração do Mercado Pago.</ComingSoon>} />
-            <Route path="/tarefas" element={<ComingSoon title="Tarefas" icon={ListChecks}>Lembretes de cobrança, aprovação de prova, entrega e recompra, com visões Hoje e Atrasadas.</ComingSoon>} />
+            <Route path="/catalogo" element={<Catalog />} />
+            <Route path="/campanhas" element={<Campaigns />} />
+            <Route path="/pagamentos" element={<Payments />} />
+            <Route path="/tarefas" element={<Tasks />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/funil" element={<Navigate to="/kanban" replace />} />

@@ -4,6 +4,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
+import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
 
@@ -59,4 +60,34 @@ assert.equal(lockSeconds(3), 10)
 assert.equal(lockSeconds(5), 40)
 assert.equal(lockSeconds(20), 300)
 
-console.log('OK: regras de preço, transições do kanban, pedidos parados e bloqueio de login')
+// Campanhas: custo por conversa/venda, ROAS e lucro depois do anúncio
+const m = metrics({ spend: 100, conversations: 20, quotes: 10, paid_orders: 4, revenue: 800, net_profit: 360 })
+assert.equal(m.cpc, 5)
+assert.equal(m.cps, 25)
+assert.equal(m.roas, 8)
+assert.equal(m.profitAfterAds, 260)
+assert.equal(m.quoteRate, 50)
+assert.equal(m.paidRate, 20)
+assert.equal(metrics({ spend: 50, conversations: 0, quotes: 0, paid_orders: 0, revenue: 0, net_profit: 0 }).cpc, null, 'sem conversas não divide por zero')
+assert.equal(metrics({ spend: 0, conversations: 3, quotes: 1, paid_orders: 1, revenue: 100, net_profit: 50 }).roas, null)
+assert.equal(goalState('cost', 5, 6), 'good')
+assert.equal(goalState('cost', 7, 6), 'bad')
+assert.equal(goalState('roas', 4, 4), 'good')
+assert.equal(goalState('roas', 3.9, 4), 'bad')
+assert.equal(goalState('cost', null, 6), 'none')
+
+const ad = (id: string, campaign: string, spend: number, paid: number, revenue: number) => ({
+  ad_id: id, ad_name: id, adset_id: 's', adset_name: 's', campaign_id: campaign, campaign_name: `Campanha ${campaign}`, spend, impressions: 0, clicks: 0,
+  meta_conversations: 0, conversations: 10, quotes: 5, paid_orders: paid, revenue, net_profit: revenue / 2,
+})
+const groups = groupCampaigns([ad('a1', 'X', 40, 1, 100), ad('a2', 'X', 60, 2, 300), ad('b1', 'Y', 10, 0, 0)], [
+  { id: '1', day: '2026-10-01', campaign_name: 'campanha x', amount: 25, note: null },
+  { id: '2', day: '2026-10-01', campaign_name: 'Panfleto de rua', amount: 80, note: null },
+])
+assert.equal(groups.length, 3)
+assert.equal(groups[0].name, 'Campanha X')
+assert.equal(groups[0].m.spend, 125, 'gasto da Meta (100) + manual de mesmo nome (25)')
+assert.equal(groups[0].m.paid, 3)
+assert.equal(groups.find((g) => g.name === 'Panfleto de rua')?.m.spend, 80, 'investimento manual sem anúncio vira linha própria')
+
+console.log('OK: regras de preço, transições do kanban, pedidos parados, login e campanhas')

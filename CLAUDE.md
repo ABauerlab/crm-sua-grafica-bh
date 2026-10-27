@@ -31,6 +31,8 @@ Consentimento de promoções: `contacts.marketing_consent` (`none` | `opted_in` 
 
 Pedidos: `orders` (etapa, pagamento, arte, entrega), `order_items`, `order_events` (histórico), `order_files` (bucket privado `order-files`) e a view `order_financials` (total, custo, impostos, taxa e lucro líquido calculados no banco). Triggers bloqueiam mover para Pago sem pagamento confirmado e para Produção sem arte aprovada. `app_settings` guarda os parâmetros de preço (`pricing`), limites por etapa (`kanban`) e o e-mail do dono (`owner`), que `private.is_staff()` exige. Origem do anúncio: `contacts.first_referral` e `conversations.last_referral`, gravados pelo webhook.
 
+Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `labels`, `ad_window_until` (72 h para anúncio) e usa `ai_handled` como chave IA/humano; `conversation_notes` (notas internas), `quick_replies`, `tasks`, `products` + view `products_priced` (piso, desconto máximo e lucro estimado calculados no banco), `kits`/`kit_items`, `ad_entities`/`ad_daily`/`ad_manual_spend` + função `ad_performance(from, to)` (cruza gasto da Meta com `origin_ad_id` dos pedidos e `first_referral` dos contatos), `agent_logs`, view `contact_stats`. Integração do agente de IA em `docs/agente-ia.md`.
+
 Extras além do pedido original: `conversations.last_message_preview` (prévia na lista) e a função `admin-create-agent` (admin cria atendentes, já que o cadastro público é desativado).
 
 ### Edge Functions
@@ -40,6 +42,8 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `whatsapp-send` | sim + existir em `profiles` | texto (janela 24h) ou template |
 | `whatsapp-sync-templates` | sim + `profiles` | sincroniza `templates_cache` com a Meta |
 | `admin-create-agent` | sim + role admin | cria usuário Auth + profile |
+| `whatsapp-media` | sim + `profiles` | entrega imagem, áudio ou documento recebido (o token fica no servidor) |
+| `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ## Convenções
 - UI, mensagens de erro e commits em português do Brasil; código (identificadores) em inglês.
@@ -49,7 +53,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 - Commits pequenos, uma mudança por commit.
 
 ## Segredos necessários (somente nomes)
-Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`.
+Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`; para campanhas: `META_ADS_TOKEN` (token com permissão `ads_read`) e `META_AD_ACCOUNT_ID` (1783199576217713, conta CA SUA GRÁFICA BH).
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
 
@@ -69,6 +73,8 @@ supabase functions deploy whatsapp-webhook --no-verify-jwt
 supabase functions deploy whatsapp-send
 supabase functions deploy whatsapp-sync-templates
 supabase functions deploy admin-create-agent
+supabase functions deploy whatsapp-media
+supabase functions deploy meta-ads-sync
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.
