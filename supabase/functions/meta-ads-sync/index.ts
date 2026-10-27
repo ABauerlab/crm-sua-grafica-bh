@@ -40,8 +40,12 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405)
 
+  // Autorização: o dono logado, ou o agendamento diário (cabeçalho x-cron-secret igual ao segredo CRON_SECRET)
   const db = serviceClient()
-  if (!(await requireStaff(req, db))) return json({ error: 'Não autorizado.' }, 401)
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  const sentSecret = req.headers.get('x-cron-secret')
+  const fromCron = !!cronSecret && !!sentSecret && sentSecret.length === cronSecret.length && sentSecret === cronSecret
+  if (!fromCron && !(await requireStaff(req, db))) return json({ error: 'Não autorizado.' }, 401)
 
   const env = requireEnv('META_ADS_TOKEN', 'META_AD_ACCOUNT_ID')
   if (!env) {
