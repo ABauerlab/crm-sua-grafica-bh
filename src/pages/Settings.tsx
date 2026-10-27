@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { Download, Plus, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useQuickReplies } from '@/hooks/crm'
@@ -18,6 +18,8 @@ import { useSettings } from '@/hooks/orders'
 import { ORDER_STAGES, type OrderStage } from '@/lib/orders'
 import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
+
+const TemplatesPanel = lazy(() => import('@/pages/Templates'))
 
 function NumberField({ id, label, hint, value, onChange, step = '0.1' }: { id: string; label: string; hint: string; value: number; onChange: (v: number) => void; step?: string }) {
   return (
@@ -307,13 +309,17 @@ function WhatsAppTab() {
   })
   const fmt = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : 'nenhum ainda')
   return (
-    <div className="max-w-xl space-y-4 text-sm">
-      <dl className="space-y-2 rounded-md border p-3">
+    <div className="max-w-3xl space-y-4 text-sm">
+      <dl className="max-w-xl space-y-2 rounded-md border p-3">
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Última mensagem recebida (webhook)</dt><dd className="font-semibold tabular">{fmt(last.data?.inbound)}</dd></div>
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Última mensagem enviada</dt><dd className="font-semibold tabular">{fmt(last.data?.outbound)}</dd></div>
       </dl>
-      <p>Templates, status de aprovação e sincronização com a Meta:</p>
-      <Button asChild variant="outline"><Link to="/templates">Abrir templates do WhatsApp</Link></Button>
+      <p className="text-muted-foreground">Os templates abaixo vêm da Meta. Clique em <strong>Sincronizar</strong> para atualizar a lista e o status de aprovação.</p>
+      <div className="overflow-hidden rounded-md border">
+      <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+        <div className="h-[34rem]"><TemplatesPanel /></div>
+      </Suspense>
+      </div>
     </div>
   )
 }
@@ -368,7 +374,7 @@ export default function Settings() {
           <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger>
           <TabsTrigger value="etiquetas">Etiquetas</TabsTrigger>
           <TabsTrigger value="metas">Metas</TabsTrigger>
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>

@@ -34,7 +34,7 @@ export function TemplatePicker({ sending, onSend }: Props) {
             setValues({})
           }}
         >
-          <option value="">{isLoading ? 'Carregando…' : approved.length ? 'Selecione um template' : 'Nenhum template aprovado (sincronize em Templates)'}</option>
+          <option value="">{isLoading ? 'Carregando…' : approved.length ? 'Selecione um template' : 'Nenhum template aprovado (sincronize em Templates, no menu)'}</option>
           {approved.map((t) => (
             <option key={`${t.name}|${t.language}`} value={`${t.name}|${t.language}`}>
               {t.name} ({t.language})

@@ -12,7 +12,8 @@ export const formatPct = (v: number, digits = 0) => `${v.toLocaleString('pt-BR',
 export function parseMoney(input: string): number {
   const s = input.trim().replace(/[^\d,.-]/g, '')
   if (!s) return 0
-  const normalized = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s
+  // "1.234" (milhar brasileiro) vs "12.5" (decimal): pontos a cada 3 dígitos sem vírgula são milhar
+  const normalized = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : /^-?\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '') : s
   const n = Number(normalized)
   return Number.isFinite(n) ? n : 0
 }
