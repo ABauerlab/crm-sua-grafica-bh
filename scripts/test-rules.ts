@@ -6,7 +6,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
-import { buildProducts, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
+import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
@@ -135,11 +135,17 @@ const latin1 = new Uint8Array([...html].map((c) => c.charCodeAt(0)))
 const sheetHtml = await readTable(new File([latin1], 'TabelaPreco.xls'))
 const zh = guessHeaderRow(sheetHtml)
 const zmap = guessMapping(sheetHtml[zh])
+assert.equal(extractGrammage('CHAVEIRO UV - 10g'), 10)
+assert.equal(extractGrammage('PANFLETO 150 g/m² COUCHE'), 150)
+assert.equal(extractGrammage('CARTAO 300G LAM'), 300)
+assert.equal(extractGrammage('ADESIVO 90 gramas'), 90)
+assert.equal(extractGrammage('TAG 250gr'), 250)
+assert.equal(extractGrammage('GIFT 4x0 gift'), null, 'sem número de gramatura')
 assert.deepEqual(zmap, { code: 0, category: 1, description: 2, colors: 3, weight: 4, qty: 5, size: 6, lead: 7, price: -1, cost: 8 }, 'cada coluna da planilha tem o seu campo; "Preço R$" do fornecedor é o custo')
 const built = buildProducts(sheetHtml, zh, zmap, 0)
 assert.equal(built.items.length, 3, 'cabeçalho repetido, título e seções não viram produto')
 assert.deepEqual(built.items[0], {
-  code: 'GIFT1', category: 'ACESSÓRIOS', description: 'CHAVEIRO UV - 10g', colors: '4X0', weight: 1250, qty: 25, size: '57 x 57', lead_days: 5, cost: 1252.99, suggested_price: 0, active: true,
+  code: 'GIFT1', category: 'ACESSÓRIOS', description: 'CHAVEIRO UV - 10g', colors: '4X0', weight: 1250, grammage: 10, qty: 25, size: '57 x 57', lead_days: 5, cost: 1252.99, suggested_price: 0, active: true,
 }, 'nada é comprimido dentro da descrição e os acentos em ISO-8859-1 ficam preservados')
 assert.equal(buildProducts(sheetHtml, zh, zmap, 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
 

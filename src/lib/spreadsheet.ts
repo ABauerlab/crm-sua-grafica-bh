@@ -91,12 +91,19 @@ export function guessMapping(header: string[]): Record<Field, number> {
   return out
 }
 
+/** Gramatura em gramas escrita na descrição ("10g", "300 g", "150g/m²", "90 gramas"). Sem número claro, devolve null. */
+export function extractGrammage(description: string): number | null {
+  const m = /(\d{1,4})\s*(?:g\/m|gr?(?![a-z0-9])|gramas)/i.exec(description)
+  return m ? Number(m[1]) : null
+}
+
 export interface ImportItem {
   code: string
   category: string | null
   description: string
   colors: string | null
   weight: number | null
+  grammage: number | null
   qty: number | null
   size: string | null
   lead_days: number | null
@@ -135,6 +142,7 @@ export function buildProducts(rows: string[][], headerRow: number, map: Record<F
       description,
       colors: text(r, 'colors') || null,
       weight: num(r, 'weight'),
+      grammage: extractGrammage(description),
       qty: qty === null ? null : Math.round(qty),
       size: text(r, 'size') || null,
       lead_days: lead === null ? null : Math.round(lead),

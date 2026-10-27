@@ -83,6 +83,7 @@ export interface Order {
   art_checklist: Record<string, boolean>
   supplier_order_no: string | null
   due_date: string | null
+  lead_days: number | null
   delivery_method: 'retirada' | 'uber' | null
   delivery_address: string | null
   delivery_fee: number | null
@@ -107,6 +108,7 @@ export interface OrderItem {
   qty: number
   unit_cost: number
   unit_price: number
+  lead_days: number | null
 }
 
 export interface OrderEvent {
