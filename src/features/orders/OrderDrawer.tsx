@@ -588,6 +588,7 @@ function DeliveryTab({ order }: { order: OrderCard }) {
             patch: {
               supplier_order_no: f.supplier.trim() || null,
               due_date: f.due || null,
+              due_date_manual: !!f.due && f.due !== (order.due_date ?? '') ? true : f.due ? order.due_date_manual : false,
               delivery_method: (f.method || null) as OrderCard['delivery_method'],
               delivery_address: f.address.trim() || null,
               delivery_fee: f.fee ? parseMoney(f.fee) : null,
@@ -600,7 +601,16 @@ function DeliveryTab({ order }: { order: OrderCard }) {
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nº do pedido no fornecedor"><Input value={f.supplier} onChange={(e) => setF({ ...f, supplier: e.target.value })} /></Field>
-        <Field label="Prazo previsto"><Input type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} /></Field>
+        <Field label="Prazo previsto">
+          <Input type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {order.due_date_manual
+              ? 'Data ajustada à mão. Apague o campo e salve para voltar ao cálculo automático.'
+              : order.lead_days != null
+                ? `Automático: ${order.lead_days} dia(s) úteis do fornecedor a partir do pagamento confirmado, mais a margem, sem fins de semana e feriados.`
+                : 'Calculado sozinho quando o pagamento for confirmado e algum item tiver prazo.'}
+          </p>
+        </Field>
         <Field label="Forma de entrega">
           <Select value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })}>
             <option value="">Não definida</option>
