@@ -10,11 +10,11 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { Filter, KanbanSquare, Plus, Save, Trash2 } from 'lucide-react'
+import { Filter, Plus, Save, Trash2 } from 'lucide-react'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { EmptyState, ErrorState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/sheet'
 import { Select } from '@/components/ui/select'
@@ -50,6 +50,7 @@ function Column({
   return (
     <section
       ref={setNodeRef}
+      id={`col-${stage.value}`}
       aria-label={stage.label}
       className={cn('flex w-72 shrink-0 flex-col rounded-md border bg-secondary/50', isOver && 'border-primary bg-accent')}
     >
@@ -200,6 +201,22 @@ export default function Kanban() {
           <Kpi label="Parados" value={String(stalledCount)} hint="acima do limite da etapa" />
         </div>
 
+        <nav aria-label="Etapas do pedido" className="flex gap-1.5 overflow-x-auto rounded-md border bg-card p-1.5">
+          {ORDER_STAGES.map((st) => (
+            <button
+              key={st.value}
+              onClick={() => {
+                setMobileStage(st.value)
+                document.getElementById(`col-${st.value}`)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+              }}
+              className={cn('flex min-h-11 shrink-0 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-xs font-bold md:min-h-9', st.chip, mobileStage === st.value && 'ring-2 ring-ring')}
+            >
+              {st.short}
+              <span className="rounded-sm bg-background/80 px-1.5 tabular">{byStage.get(st.value)?.length ?? 0}</span>
+            </button>
+          ))}
+        </nav>
+
         {showFilters && (
           <div className="space-y-3 rounded-md border bg-secondary/40 p-3">
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -280,16 +297,14 @@ export default function Kanban() {
         <div className="flex gap-3 overflow-hidden p-4">
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-64 w-72 shrink-0" />)}
         </div>
-      ) : (orders?.length ?? 0) === 0 ? (
-        <EmptyState
-          icon={KanbanSquare}
-          title="Nenhum pedido ainda"
-          action={<Button onClick={() => setNewOrder({ contactId: '', title: '' })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>}
-        >
-          Cada pedido nasce de uma conversa. Crie um pedido para um contato e acompanhe do orçamento até a entrega.
-        </EmptyState>
       ) : (
         <>
+          {(orders?.length ?? 0) === 0 && (
+            <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 text-sm">
+              <p><strong>Nenhum pedido ainda.</strong> Cada pedido nasce de uma conversa e anda por estas etapas até a entrega.</p>
+              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '' })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
+            </div>
+          )}
           {/* Desktop e tablet: quadro com arrastar e soltar */}
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
             <div className="hidden min-h-0 flex-1 gap-3 overflow-x-auto p-4 md:flex">

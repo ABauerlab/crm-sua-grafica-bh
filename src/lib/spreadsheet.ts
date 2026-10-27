@@ -51,29 +51,33 @@ export function guessHeaderRow(rows: string[][]): number {
   return i < 0 ? 0 : i
 }
 
-export type Field = 'code' | 'description' | 'category' | 'cost' | 'price'
+export type Field = 'code' | 'category' | 'description' | 'colors' | 'weight' | 'qty' | 'size' | 'lead' | 'cost' | 'price'
 
 const HINTS: Record<Field, string[]> = {
   code: ['codigo', 'cod', 'code', 'sku', 'ref'],
-  description: ['descricao', 'produto', 'nome', 'item', 'description'],
   category: ['categoria', 'grupo', 'familia', 'category'],
+  description: ['descricao', 'produto', 'nome', 'item', 'description'],
+  colors: ['cores', 'cor'],
+  weight: ['peso'],
+  qty: ['qtde', 'quantidade', 'qtd'],
+  size: ['tam', 'tamanho', 'medida'],
+  lead: ['prazo'],
   cost: ['custo', 'cost', 'preco de custo', 'preco fornecedor', 'valor un', 'valor'],
   // só preço de VENDA: numa tabela de fornecedor o "Preço" simples é o nosso custo
   price: ['preco de venda', 'preco venda', 'venda', 'sugerido', 'price'],
 }
 
-/** Colunas que diferenciam produtos de mesma descrição (ex.: 4x0, quantidade, tamanho) e entram no nome do produto. */
-const EXTRA_HINTS = ['cores', 'qtde', 'quantidade', 'tam', 'tamanho', 'medida']
+const ORDER: Field[] = ['code', 'category', 'description', 'colors', 'weight', 'qty', 'size', 'lead', 'price', 'cost']
 
 /** Sugere qual coluna é cada campo pelo nome do cabeçalho; -1 quando não achar. */
 export function guessMapping(header: string[]): Record<Field, number> {
   const h = header.map(normalize)
   const used = new Set<number>()
   const out = {} as Record<Field, number>
-  for (const f of ['code', 'description', 'category', 'price', 'cost'] as Field[]) {
+  for (const f of ORDER) {
     let idx = -1
     for (const hint of HINTS[f]) {
-      idx = h.findIndex((x, i) => !used.has(i) && x.includes(hint))
+      idx = h.findIndex((x, i) => !used.has(i) && (hint.length <= 3 ? x === hint || x.startsWith(hint + ' ') : x.includes(hint)))
       if (idx >= 0) break
     }
     out[f] = idx
@@ -87,51 +91,53 @@ export function guessMapping(header: string[]): Record<Field, number> {
   return out
 }
 
-/** Colunas extras sugeridas para compor a descrição. */
-export function guessExtras(header: string[], map: Record<Field, number>): number[] {
-  const taken = new Set(Object.values(map))
-  return header.flatMap((h, i) => (!taken.has(i) && EXTRA_HINTS.some((k) => normalize(h).startsWith(k)) ? [i] : []))
-}
-
 export interface ImportItem {
   code: string
-  description: string
   category: string | null
+  description: string
+  colors: string | null
+  weight: number | null
+  qty: number | null
+  size: string | null
+  lead_days: number | null
   cost: number
   suggested_price: number
   active: boolean
 }
 
-/** Converte as linhas da planilha em produtos. Ignora títulos, linhas de seção e cabeçalhos repetidos (algumas tabelas de fornecedor repetem o cabeçalho a cada categoria). */
-export function buildProducts(
-  rows: string[][],
-  headerRow: number,
-  map: Record<Field, number>,
-  extras: number[],
-  markup: number,
-): { items: ImportItem[]; skipped: number } {
+/** Converte as linhas da planilha em produtos, uma coluna para cada campo. Ignora títulos, linhas de seção e cabeçalhos repetidos (algumas tabelas de fornecedor repetem o cabeçalho a cada categoria). */
+export function buildProducts(rows: string[][], headerRow: number, map: Record<Field, number>, markup: number): { items: ImportItem[]; skipped: number } {
   const header = rows[headerRow] ?? []
   const codeLabel = map.code >= 0 ? normalize(header[map.code] ?? '') : ''
+  const text = (r: string[], f: Field) => (map[f] >= 0 ? (r[map[f]] ?? '').trim() : '')
+  const num = (r: string[], f: Field) => {
+    const t = text(r, f)
+    if (!t) return null
+    const n = parseMoney(t)
+    return Number.isFinite(n) ? n : null
+  }
   const items: ImportItem[] = []
   let skipped = 0
   for (const r of rows.slice(headerRow + 1)) {
-    const code = map.code >= 0 ? (r[map.code] ?? '').trim() : ''
-    const base = map.description >= 0 ? (r[map.description] ?? '').trim() : ''
-    if (!code || !base || normalize(code) === codeLabel) {
+    const code = text(r, 'code')
+    const description = text(r, 'description')
+    if (!code || !description || normalize(code) === codeLabel) {
       skipped++
       continue
     }
-    const parts = extras.flatMap((i) => {
-      const v = (r[i] ?? '').trim()
-      if (!v) return []
-      return /^(qtde|quantidade)/.test(normalize(header[i] ?? '')) ? [`${v} un`] : [v]
-    })
-    const cost = map.cost >= 0 ? parseMoney(r[map.cost] ?? '') : 0
-    const given = map.price >= 0 ? parseMoney(r[map.price] ?? '') : 0
+    const cost = num(r, 'cost') ?? 0
+    const given = num(r, 'price') ?? 0
+    const qty = num(r, 'qty')
+    const lead = num(r, 'lead')
     items.push({
       code,
-      description: [base, ...parts].join(' · '),
-      category: map.category >= 0 ? (r[map.category] ?? '').trim() || null : null,
+      category: text(r, 'category') || null,
+      description,
+      colors: text(r, 'colors') || null,
+      weight: num(r, 'weight'),
+      qty: qty === null ? null : Math.round(qty),
+      size: text(r, 'size') || null,
+      lead_days: lead === null ? null : Math.round(lead),
       cost,
       suggested_price: given > 0 ? given : markup > 0 ? Math.round(Math.round(cost * 100) * markup) / 100 : 0,
       active: true,

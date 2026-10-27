@@ -34,7 +34,7 @@ export function useProducts(search: string, category: string, page: number) {
     queryFn: async () => {
       let q = supabase.from('products_priced').select('*', { count: 'exact' }).eq('active', true).order('description').range(page * PAGE, page * PAGE + PAGE - 1)
       const t = search.trim().replace(/[%,()]/g, ' ')
-      if (t) q = q.or(`description.ilike.%${t}%,code.ilike.%${t}%`)
+      if (t) q = q.or(`description.ilike.%${t}%,code.ilike.%${t}%,size.ilike.%${t}%,colors.ilike.%${t}%`)
       if (category) q = q.eq('category', category)
       const { data, error, count } = await q
       if (error) throw error
@@ -65,7 +65,7 @@ export function ProductsTab() {
   const { data, isLoading, error, refetch, isFetching } = useProducts(debounced, category, page)
   const { data: categories } = useCategories()
   const file = useRef<HTMLInputElement>(null)
-  const [form, setForm] = useState<{ code: string; description: string; category: string; cost: string; price: string } | null>(null)
+  const [form, setForm] = useState<{ code: string; description: string; category: string; colors: string; weight: string; qty: string; size: string; lead: string; cost: string; price: string } | null>(null)
 
   useEffect(() => setPage(0), [debounced, category])
 
@@ -88,7 +88,19 @@ export function ProductsTab() {
   const saveOne = useMutation({
     mutationFn: async (f: NonNullable<typeof form>) => {
       const { error } = await supabase.from('products').upsert(
-        { code: f.code.trim(), description: f.description.trim(), category: f.category.trim() || null, cost: parseMoney(f.cost), suggested_price: parseMoney(f.price), active: true },
+        {
+          code: f.code.trim(),
+          description: f.description.trim(),
+          category: f.category.trim() || null,
+          colors: f.colors.trim() || null,
+          weight: f.weight.trim() ? parseMoney(f.weight) : null,
+          qty: f.qty.trim() ? Math.round(parseMoney(f.qty)) : null,
+          size: f.size.trim() || null,
+          lead_days: f.lead.trim() ? Math.round(parseMoney(f.lead)) : null,
+          cost: parseMoney(f.cost),
+          suggested_price: parseMoney(f.price),
+          active: true,
+        },
         { onConflict: 'code' },
       )
       if (error) throw new Error(error.message)
@@ -120,10 +132,10 @@ export function ProductsTab() {
           <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={reading}>
             <FileUp className="h-4 w-4" /> {reading ? 'Lendo…' : 'Importar planilha'}
           </Button>
-          <Button size="sm" onClick={() => setForm({ code: '', description: '', category: '', cost: '', price: '' })}><Plus className="h-4 w-4" /> Novo produto</Button>
+          <Button size="sm" onClick={() => setForm({ code: '', description: '', category: '', colors: '', weight: '', qty: '', size: '', lead: '', cost: '', price: '' })}><Plus className="h-4 w-4" /> Novo produto</Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Preço sugerido, piso (custo x multiplicador), preço com desconto máximo e lucro líquido estimado vêm do banco e acompanham os parâmetros de Configurações. Importe a planilha do fornecedor em Excel (.xlsx ou .xls) ou CSV: você escolhe quais colunas são código, descrição, custo e preço.
+          Cada coluna da planilha do fornecedor fica separada (código, categoria, descrição, cores, peso, quantidade, tamanho, prazo e custo). Preço sugerido, piso, preço com desconto máximo e lucro líquido estimado vêm do banco e acompanham os parâmetros de Configurações.
         </p>
       </div>
 
@@ -137,11 +149,17 @@ export function ProductsTab() {
             {debounced || category ? 'Tente outro termo ou categoria.' : 'Importe a planilha do fornecedor (Excel ou CSV) ou cadastre os produtos um a um.'}
           </EmptyState>
         ) : (
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[1280px] text-sm">
             <thead className="sticky top-0 bg-background">
               <tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2 font-medium">Código</th>
-                <th className="py-2 font-medium">Descrição</th>
+                <th className="py-2 font-medium">Categoria</th>
+                <th className="py-2 font-medium">Descrição do serviço</th>
+                <th className="py-2 font-medium">Cores</th>
+                <th className="py-2 text-right font-medium">Peso</th>
+                <th className="py-2 text-right font-medium">Qtde</th>
+                <th className="py-2 pl-4 font-medium">Tam</th>
+                <th className="py-2 text-right font-medium">Prazo</th>
                 <th className="py-2 text-right font-medium">Custo</th>
                 <th className="py-2 text-right font-medium">Preço sugerido</th>
                 <th className="py-2 text-right font-medium">Piso</th>
@@ -153,7 +171,13 @@ export function ProductsTab() {
               {data!.rows.map((p) => (
                 <tr key={p.id} className="border-b hover:bg-secondary/50">
                   <td className="px-4 py-2 font-mono text-xs">{p.code}</td>
-                  <td className="py-2"><p className="font-semibold">{p.description}</p>{p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}</td>
+                  <td className="py-2 text-xs text-muted-foreground">{p.category ?? '—'}</td>
+                  <td className="max-w-sm py-2 font-semibold">{p.description}</td>
+                  <td className="py-2">{p.colors ?? '—'}</td>
+                  <td className="py-2 text-right tabular">{p.weight === null ? '—' : formatNumber(p.weight)}</td>
+                  <td className="py-2 text-right tabular">{p.qty === null ? '—' : formatNumber(p.qty)}</td>
+                  <td className="py-2 pl-4 whitespace-nowrap">{p.size ?? '—'}</td>
+                  <td className="py-2 text-right tabular">{p.lead_days === null ? '—' : `${p.lead_days} d`}</td>
                   <td className="py-2 text-right tabular">{formatBRL(p.cost)}</td>
                   <td className="py-2 text-right font-bold tabular">{formatBRL(p.suggested_price)}</td>
                   <td className="py-2 text-right tabular">{formatBRL(p.floor_price)}</td>
@@ -189,6 +213,13 @@ export function ProductsTab() {
             <div className="space-y-1.5"><Label htmlFor="pr-code">Código</Label><Input id="pr-code" required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
             <div className="space-y-1.5"><Label htmlFor="pr-desc">Descrição</Label><Input id="pr-desc" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div className="space-y-1.5"><Label htmlFor="pr-cat">Categoria</Label><Input id="pr-cat" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1.5"><Label htmlFor="pr-col">Cores</Label><Input id="pr-col" placeholder="4X0" value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label htmlFor="pr-qty">Qtde</Label><Input id="pr-qty" inputMode="numeric" value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label htmlFor="pr-size">Tam</Label><Input id="pr-size" placeholder="90 x 50" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label htmlFor="pr-w">Peso</Label><Input id="pr-w" inputMode="decimal" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label htmlFor="pr-lead">Prazo (dias)</Label><Input id="pr-lead" inputMode="numeric" value={form.lead} onChange={(e) => setForm({ ...form, lead: e.target.value })} /></div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5"><Label htmlFor="pr-cost">Custo (R$)</Label><Input id="pr-cost" inputMode="decimal" required value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} /></div>
               <div className="space-y-1.5"><Label htmlFor="pr-price">Preço sugerido (R$)</Label><Input id="pr-price" inputMode="decimal" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>

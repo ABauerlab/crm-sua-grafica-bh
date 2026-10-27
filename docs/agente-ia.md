@@ -14,6 +14,24 @@ Nunca oferecer abaixo de `floor_price`, nunca dar desconto acima de `max_discoun
 ## Sigilo do fornecedor
 O agente **nunca cita o nome do fornecedor** (nem confirma se existe um) para ninguém. Para o cliente, a Sua Gráfica BH produz e entrega. Se perguntarem de onde vem o produto, responder que é produção própria e parceira, sem nomes, ou transferir para uma pessoa.
 
+## Catálogo (produtos)
+Tabela `products` (e view `products_priced`, que soma os preços calculados). Uma linha por variação vendável, com as mesmas colunas da planilha do fornecedor:
+
+| Campo | Planilha | Exemplo |
+|---|---|---|
+| `code` | Código | `GIFT1515` (único) |
+| `category` | Categoria | `ABRIDORES E CHAVEIROS` |
+| `description` | Descrição do serviço | `ABRIDORES E CHAVEIROS - IMPRESSÃO UV - 10g` |
+| `colors` | Cores | `4X0` |
+| `weight` | Peso | `1250` (valor da coluna Peso) |
+| `qty` | Qtde | `25` |
+| `size` | Tam | `57 x 57` |
+| `lead_days` | Prazo | `5` (dias) |
+| `cost` | Preço R$ | `252.99` (custo, o que a Sua Gráfica paga) |
+| `suggested_price`, `floor_price`, `max_discount_price`, `est_net_profit` | calculados | vêm do banco |
+
+O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de interpretar texto. A gramatura do papel, quando existe, está escrita dentro de `description`.
+
 ## Estado do atendimento
 | Onde | Campo | Significado |
 |---|---|---|

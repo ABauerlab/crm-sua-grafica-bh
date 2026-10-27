@@ -3,6 +3,8 @@
 const { chromium } = require('playwright')
 const path = require('node:path')
 
+const ONLY = (process.env.ONLY ?? '').split(',').filter(Boolean)
+const want = (n) => ONLY.length === 0 || ONLY.includes(n)
 const BASE = 'http://localhost:5199'
 const OUT = path.join(__dirname, '..', 'docs', 'telas')
 const ago = (h) => new Date(Date.now() - h * 3600_000).toISOString()
@@ -53,10 +55,10 @@ const notes = [{ id: 'n1', conversation_id: 'cv1041', body: 'Cliente indicado pe
 const quick = [{ id: 'q1', shortcut: 'prazo', title: 'Prazo de produção', body: 'Nosso prazo é de 3 a 5 dias úteis após a aprovação da arte.' }, { id: 'q2', shortcut: 'pix', title: 'Formas de pagamento', body: 'Aceitamos Pix e cartão de crédito.' }]
 const stats = [{ contact_id: 'c1', orders_count: 3, paid_orders: 2, ltv: 808, profit: 390, last_order_at: ago(24 * 20) }]
 const products = [
-  { id: 'p1', code: 'CV-0500', description: 'Cartão de visita 500 un couchê 300g frente e verso', category: 'Cartões de visita', supplier: 'Fornecedor', cost: 48, suggested_price: 119, active: true, floor_price: 72, max_discount_price: 107.1, est_net_profit: 62.08 },
-  { id: 'p2', code: 'PF-A5-1000', description: 'Panfleto A5 1.000 un couchê 115g 4x0', category: 'Panfletos', supplier: 'Fornecedor', cost: 95, suggested_price: 219, active: true, floor_price: 142.5, max_discount_price: 197.1, est_net_profit: 107.58 },
-  { id: 'p3', code: 'AD-R5-200', description: 'Adesivo redondo 5 cm 200 un vinil', category: 'Adesivos', supplier: 'Fornecedor', cost: 38, suggested_price: 99, active: true, floor_price: 57, max_discount_price: 89.1, est_net_profit: 53.58 },
-  { id: 'p4', code: 'BN-80120', description: 'Banner 80x120 cm lona 440g com ilhós', category: 'Banners', supplier: 'Fornecedor', cost: 55, suggested_price: 139, active: true, floor_price: 82.5, max_discount_price: 125.1, est_net_profit: 73.58 },
+  { id: 'p1', code: 'CV-0500', description: 'Cartão de visita 500 un couchê 300g frente e verso', category: 'Cartões de visita', supplier: 'Fornecedor', colors: '4X0', weight: 500, qty: 500, size: '90 x 50', lead_days: 3, cost: 48, suggested_price: 119, active: true, floor_price: 72, max_discount_price: 107.1, est_net_profit: 62.08 },
+  { id: 'p2', code: 'PF-A5-1000', description: 'Panfleto A5 1.000 un couchê 115g 4x0', category: 'Panfletos', supplier: 'Fornecedor', colors: '4X0', weight: 500, qty: 500, size: '90 x 50', lead_days: 3, cost: 95, suggested_price: 219, active: true, floor_price: 142.5, max_discount_price: 197.1, est_net_profit: 107.58 },
+  { id: 'p3', code: 'AD-R5-200', description: 'Adesivo redondo 5 cm 200 un vinil', category: 'Adesivos', supplier: 'Fornecedor', colors: '4X0', weight: 500, qty: 500, size: '90 x 50', lead_days: 3, cost: 38, suggested_price: 99, active: true, floor_price: 57, max_discount_price: 89.1, est_net_profit: 53.58 },
+  { id: 'p4', code: 'BN-80120', description: 'Banner 80x120 cm lona 440g com ilhós', category: 'Banners', supplier: 'Fornecedor', colors: '4X0', weight: 500, qty: 500, size: '90 x 50', lead_days: 3, cost: 55, suggested_price: 139, active: true, floor_price: 82.5, max_discount_price: 125.1, est_net_profit: 73.58 },
 ]
 const kits = [{ id: 'k1', name: 'Kit Barbearia', segment: 'barbearia', description: 'Cartões, adesivos e panfletos para barbearias', price: 459, active: true }, { id: 'k2', name: 'Kit Delivery', segment: 'delivery', description: 'Cardápio, adesivos de lacre e cartões', price: 349, active: true }]
 const kitItems = [{ id: 'ki1', kit_id: 'k1', product_id: 'p1', description: 'Cartão de visita 500 un', qty: 1, unit_cost: 48 }, { id: 'ki2', kit_id: 'k1', product_id: 'p3', description: 'Adesivo redondo 5 cm 200 un', qty: 2, unit_cost: 38 }, { id: 'ki3', kit_id: 'k1', product_id: 'p2', description: 'Panfleto A5 1.000 un', qty: 1, unit_cost: 95 }]
@@ -108,27 +110,32 @@ async function login(ctx) {
     await mock(ctx)
     const page = await ctx.newPage()
     page.on('pageerror', (e) => console.log('pageerror:', name, e.message))
-    await page.goto(`${BASE}/login`)
-    await page.waitForSelector('text=Entrar')
-    await page.screenshot({ path: path.join(OUT, `login-${name}.png`) })
+    if (want('login')) {
+      await page.goto(`${BASE}/login`)
+      await page.waitForSelector('text=Entrar')
+      await page.screenshot({ path: path.join(OUT, `login-${name}.png`) })
+    }
 
     await login(ctx)
-    await page.goto(`${BASE}/kanban`)
-    await page.locator('text=Marcos Barbearia').locator('visible=true').first().waitFor()
-    await page.screenshot({ path: path.join(OUT, `kanban-${name}.png`) })
+    if (want('kanban') || want('pedido') || want('painel')) {
+      await page.goto(`${BASE}/kanban`)
+      await page.locator('text=Marcos Barbearia').locator('visible=true').first().waitFor()
+      await page.screenshot({ path: path.join(OUT, `kanban-${name}.png`) })
 
-    await page.goto(`${BASE}/kanban?pedido=o1`)
-    await page.waitForSelector('text=Pedido #1041')
-    await page.getByRole('tab', { name: 'Itens' }).click()
-    await page.waitForTimeout(400)
-    await page.screenshot({ path: path.join(OUT, `pedido-${name}.png`) })
+      await page.goto(`${BASE}/kanban?pedido=o1`)
+      await page.waitForSelector('text=Pedido #1041')
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await page.waitForTimeout(400)
+      await page.screenshot({ path: path.join(OUT, `pedido-${name}.png`) })
 
-    await page.goto(`${BASE}/painel`)
-    await page.getByRole('heading', { name: 'Painel' }).waitFor()
-    await page.getByRole('switch', { name: 'Modo demonstração' }).click()
-    await page.waitForSelector('text=Funil de pedidos')
-    await page.waitForTimeout(2200)
-    await page.screenshot({ path: path.join(OUT, `painel-${name}.png`), fullPage: name === 'celular' })
+      await page.goto(`${BASE}/painel`)
+      await page.getByRole('heading', { name: 'Painel' }).waitFor()
+      await page.getByRole('switch', { name: 'Modo demonstração' }).click()
+      await page.waitForSelector('text=Funil de pedidos')
+      await page.waitForTimeout(2200)
+      await page.screenshot({ path: path.join(OUT, `painel-${name}.png`), fullPage: name === 'celular' })
+
+    }
     for (const [file, route, ready] of [
       ['conversa', `/inbox/cv1041`, 'text=Quero um kit com cartões e adesivos'],
       ['contatos', '/contatos', 'text=Marcos Barbearia'],
@@ -137,6 +144,7 @@ async function login(ctx) {
       ['tarefas', '/tarefas', 'text=Ligar para Studio Fit BH'],
       ['configuracoes', '/configuracoes', 'text=Dados da empresa'],
     ]) {
+      if (!want(file)) continue
       await page.goto(`${BASE}${route}`)
       await page.locator(ready).locator('visible=true').first().waitFor().catch(() => {})
       await page.waitForTimeout(file === 'campanhas' ? 2200 : 500)

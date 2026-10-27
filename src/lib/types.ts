@@ -124,6 +124,11 @@ export interface Product {
   description: string
   category: string | null
   supplier: string
+  colors: string | null
+  weight: number | null
+  qty: number | null
+  size: string | null
+  lead_days: number | null
   cost: number
   suggested_price: number
   active: boolean

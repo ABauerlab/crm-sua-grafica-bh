@@ -64,7 +64,7 @@ function ProductPicker({ onPick }: { onPick: (p: Product) => void }) {
                   setQ('')
                 }}
               >
-                <span className="truncate"><span className="font-mono text-xs">{p.code}</span> {p.description}</span>
+                <span className="truncate"><span className="font-mono text-xs">{p.code}</span> {p.description}{p.qty ? ` · ${p.qty} un` : ''}{p.size ? ` · ${p.size}` : ''}</span>
                 <span className="tabular">{formatBRL(p.cost)}</span>
               </button>
             </li>

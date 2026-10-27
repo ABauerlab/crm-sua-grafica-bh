@@ -7,16 +7,23 @@ import { Select } from '@/components/ui/select'
 import { Sheet } from '@/components/ui/sheet'
 import { useToast } from '@/components/ui/toast'
 import { formatBRL, formatNumber, parseMoney } from '@/lib/money'
-import { buildProducts, guessExtras, guessHeaderRow, guessMapping, type Field } from '@/lib/spreadsheet'
+import { buildProducts, guessHeaderRow, guessMapping, type Field } from '@/lib/spreadsheet'
 import { supabase } from '@/lib/supabase'
 
 const LABELS: Record<Field, string> = {
   code: 'Código',
-  description: 'Descrição',
-  category: 'Categoria (opcional)',
-  cost: 'Custo',
+  category: 'Categoria',
+  description: 'Descrição do serviço',
+  colors: 'Cores',
+  weight: 'Peso',
+  qty: 'Quantidade (Qtde)',
+  size: 'Tamanho (Tam)',
+  lead: 'Prazo (dias)',
+  cost: 'Custo (preço do fornecedor)',
   price: 'Preço de venda (opcional)',
 }
+
+const REQUIRED: Field[] = ['code', 'description', 'cost']
 
 /** Importa o catálogo do fornecedor de qualquer planilha: o dono confere quais colunas são o quê antes de gravar. */
 export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fileName: string; onClose: () => void }) {
@@ -33,13 +40,9 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
     }
   })
 
-  const [extras, setExtras] = useState<number[]>(() => {
-    const h = rows[guessHeaderRow(rows)] ?? []
-    return guessExtras(h, guessMapping(h))
-  })
   const [progress, setProgress] = useState(0)
 
-  const { items, skipped } = useMemo(() => buildProducts(rows, headerRow, map, extras, parseMoney(markup)), [rows, headerRow, map, extras, markup])
+  const { items, skipped } = useMemo(() => buildProducts(rows, headerRow, map, parseMoney(markup)), [rows, headerRow, map, markup])
 
   const ready = map.code >= 0 && map.description >= 0 && map.cost >= 0 && items.length > 0
   const dup = items.length - new Set(items.map((i) => i.code)).size
@@ -81,9 +84,7 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
             onChange={(e) => {
               const n = Number(e.target.value)
               setHeaderRow(n)
-              const m = guessMapping(rows[n] ?? [])
-              setMap(m)
-              setExtras(guessExtras(rows[n] ?? [], m))
+              setMap(guessMapping(rows[n] ?? []))
             }}
           >
             {rows.slice(0, 15).map((r, i) => (
@@ -97,9 +98,9 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
         <div className="grid gap-3 sm:grid-cols-2">
           {(Object.keys(LABELS) as Field[]).map((f) => (
             <div key={f} className="space-y-1.5">
-              <Label htmlFor={`imp-${f}`}>{LABELS[f]}</Label>
+              <Label htmlFor={`imp-${f}`}>{LABELS[f]}{REQUIRED.includes(f) ? ' *' : ''}</Label>
               <Select id={`imp-${f}`} value={map[f]} onChange={(e) => setMap({ ...map, [f]: Number(e.target.value) })}>
-                <option value={-1}>{f === 'category' || f === 'price' ? 'Não tem' : 'Escolha a coluna'}</option>
+                <option value={-1}>{REQUIRED.includes(f) ? 'Escolha a coluna' : 'Não tem'}</option>
                 {header.map((h, i) => (
                   <option key={i} value={i}>
                     {h || `Coluna ${i + 1}`}
@@ -109,21 +110,6 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
             </div>
           ))}
         </div>
-
-        <fieldset className="space-y-1.5">
-          <legend className="text-sm font-medium">Colunas que entram no nome do produto</legend>
-          <p className="text-xs text-muted-foreground">Na tabela do fornecedor o mesmo serviço aparece várias vezes (cores, quantidade, tamanho). Marque o que diferencia cada item.</p>
-          <div className="flex flex-wrap gap-2">
-            {header.map((h, i) =>
-              Object.values(map).includes(i) ? null : (
-                <label key={i} className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm border px-2.5 text-sm md:min-h-9">
-                  <input type="checkbox" className="h-4 w-4 accent-[var(--brand-blue)]" checked={extras.includes(i)} onChange={(e) => setExtras(e.target.checked ? [...extras, i].sort((a, b) => a - b) : extras.filter((x) => x !== i))} />
-                  {h || `Coluna ${i + 1}`}
-                </label>
-              ),
-            )}
-          </div>
-        </fieldset>
 
         {map.price < 0 && (
           <div className="space-y-1.5">
@@ -139,11 +125,17 @@ export function ImportDialog({ rows, fileName, onClose }: { rows: string[][]; fi
             <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">Escolha as colunas de código, descrição e custo para ver a prévia.</p>
           ) : (
             <div className="overflow-x-auto rounded-md border">
-              <table className="w-full min-w-[480px] text-sm">
-                <thead><tr className="border-b text-left text-[11px] uppercase text-muted-foreground"><th className="px-3 py-1.5 font-medium">Código</th><th className="font-medium">Descrição</th><th className="text-right font-medium">Custo</th><th className="px-3 text-right font-medium">Preço</th></tr></thead>
+              <table className="w-full min-w-[820px] text-sm">
+                <thead>
+                  <tr className="border-b text-left text-[11px] uppercase text-muted-foreground">
+                    <th className="px-3 py-1.5 font-medium">Código</th><th className="font-medium">Categoria</th><th className="font-medium">Descrição</th><th className="font-medium">Cores</th><th className="text-right font-medium">Peso</th><th className="text-right font-medium">Qtde</th><th className="font-medium pl-3">Tam</th><th className="text-right font-medium">Prazo</th><th className="text-right font-medium">Custo</th><th className="px-3 text-right font-medium">Preço</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {items.slice(0, 5).map((i) => (
-                    <tr key={i.code} className="border-b last:border-0"><td className="px-3 py-1.5 font-mono text-xs">{i.code}</td><td>{i.description}</td><td className="text-right tabular">{formatBRL(i.cost)}</td><td className="px-3 text-right tabular">{formatBRL(i.suggested_price)}</td></tr>
+                    <tr key={i.code} className="border-b last:border-0">
+                      <td className="px-3 py-1.5 font-mono text-xs">{i.code}</td><td>{i.category ?? '—'}</td><td className="max-w-[220px] truncate">{i.description}</td><td>{i.colors ?? '—'}</td><td className="text-right tabular">{i.weight ?? '—'}</td><td className="text-right tabular">{i.qty ?? '—'}</td><td className="pl-3">{i.size ?? '—'}</td><td className="text-right tabular">{i.lead_days ?? '—'}</td><td className="text-right tabular">{formatBRL(i.cost)}</td><td className="px-3 text-right tabular">{formatBRL(i.suggested_price)}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
