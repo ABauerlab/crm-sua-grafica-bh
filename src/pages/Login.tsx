@@ -103,7 +103,7 @@ export default function Login() {
           <h2 className="mt-4 font-display text-5xl font-black leading-[1] tracking-tight">Ideias impressas em todo lugar.</h2>
           <p className="mt-4 max-w-sm text-base text-white/70">Atendimento, pedidos e vendas da Sua Gráfica BH em um só lugar.</p>
         </div>
-        <LogoMark className="pointer-events-none absolute -bottom-16 -right-16 h-96 opacity-90" />
+        <LogoMark className="pointer-events-none absolute -right-24 -top-24 h-[28rem] opacity-95" />
       </aside>
 
       <main className="flex items-center justify-center px-4 py-10">

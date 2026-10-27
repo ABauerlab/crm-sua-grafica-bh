@@ -319,10 +319,22 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
   return (
     <li className={cn('rounded-md border p-2.5', below && 'border-brand-red')}>
       <div className="grid grid-cols-6 gap-2">
-        <Input aria-label="Descrição" className="col-span-4" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
-        <Input aria-label="Quantidade" type="number" min="1" className="col-span-2" value={v.qty} onChange={(e) => setV({ ...v, qty: e.target.value })} />
-        <Input aria-label="Custo unitário" inputMode="decimal" className="col-span-3" value={v.cost} onChange={(e) => setV({ ...v, cost: e.target.value })} />
-        <Input aria-label="Preço unitário" inputMode="decimal" className={cn('col-span-3', below && 'border-brand-red')} value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} />
+        <label className="col-span-4 space-y-1 text-xs font-medium text-muted-foreground">
+          Descrição
+          <Input className="text-foreground" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
+        </label>
+        <label className="col-span-2 space-y-1 text-xs font-medium text-muted-foreground">
+          Quantidade
+          <Input type="number" min="1" className="text-foreground" value={v.qty} onChange={(e) => setV({ ...v, qty: e.target.value })} />
+        </label>
+        <label className="col-span-3 space-y-1 text-xs font-medium text-muted-foreground">
+          Custo unitário (R$)
+          <Input inputMode="decimal" className="text-foreground" value={v.cost} onChange={(e) => setV({ ...v, cost: e.target.value })} />
+        </label>
+        <label className="col-span-3 space-y-1 text-xs font-medium text-muted-foreground">
+          Preço unitário (R$)
+          <Input inputMode="decimal" className={cn('text-foreground', below && 'border-brand-red')} value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} />
+        </label>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className={cn('tabular', below ? 'font-bold text-brand-red' : 'text-muted-foreground')}>

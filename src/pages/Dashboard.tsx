@@ -48,6 +48,7 @@ function summarize(orders: OrderCard[], from: number, to: number) {
 function Delta({ now, before, invert = false }: { now: number; before: number; invert?: boolean }) {
   if (!before) return <span className="text-xs text-muted-foreground">sem período anterior</span>
   const pct = ((now - before) / before) * 100
+  if (Math.round(pct) === 0) return <span className="text-xs text-muted-foreground">sem variação vs período anterior</span>
   const good = invert ? pct <= 0 : pct >= 0
   return (
     <span className={cn('text-xs font-semibold tabular', good ? 'text-brand-green' : 'text-brand-red')}>
@@ -58,9 +59,9 @@ function Delta({ now, before, invert = false }: { now: number; before: number; i
 
 function Tile({ label, value, children }: { label: string; value: string; children?: ReactNode }) {
   return (
-    <div className="rounded-md border bg-card p-4">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1 text-3xl font-black leading-none tabular">{value}</p>
+    <div className="min-w-0 rounded-md border bg-card p-3 sm:p-4">
+      <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-2xl font-black leading-none tabular sm:text-3xl">{value}</p>
       <div className="mt-2 min-h-4">{children}</div>
     </div>
   )
@@ -216,7 +217,7 @@ export default function Dashboard() {
         </EmptyState>
       ) : (
         <div className="space-y-4 p-4">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-6">
             <Tile label="Faturamento" value={formatBRL(model.cur.revenue)}><Delta now={model.cur.revenue} before={model.prev.revenue} /></Tile>
             <Tile label="Lucro líquido" value={formatBRL(model.cur.profit)}>
               <span className="text-xs text-muted-foreground tabular">{model.cur.revenue ? `${formatPct((model.cur.profit / model.cur.revenue) * 100, 1)} de margem` : '—'}</span>
@@ -244,7 +245,7 @@ export default function Dashboard() {
                   <LineChart data={model.series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#ececec" vertical={false} />
                     <XAxis dataKey="label" tick={axis} tickLine={false} axisLine={{ stroke: '#d4d4d4' }} minTickGap={24} />
-                    <YAxis tick={axis} tickLine={false} axisLine={false} tickFormatter={formatBRLCompact} width={64} />
+                    <YAxis tick={axis} tickLine={false} axisLine={false} tickFormatter={formatBRLCompact} width={76} />
                     <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatBRL(Number(v))} />
                     <Legend iconType="plainline" wrapperStyle={{ fontSize: 12 }} />
                     <Line type="monotone" dataKey="Faturamento" stroke={SERIES[0]} strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: '#fff', strokeWidth: 2 }} />

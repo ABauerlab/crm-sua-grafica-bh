@@ -43,7 +43,7 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
     })
   }
 
-  for (let i = 0; i < 130; i++) {
+  for (let i = 0; i < 260; i++) {
     const created = now - Math.floor(Math.pow(r(), 1.15) * 89) * day - Math.floor(r() * day)
     const ageDays = (now - created) / day
     const p = PRODUCTS[Math.floor(r() * PRODUCTS.length)]
@@ -53,8 +53,8 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
     let stage: OrderStage
     const roll = r()
     if (ageDays > 12) stage = roll < 0.12 ? 'novo' : roll < 0.2 ? 'cotando' : roll < 0.28 ? 'aguardando_pagamento' : roll < 0.8 ? 'entregue' : 'recompra'
-    else if (ageDays > 4) stage = ORDER_STAGES[Math.floor(r() * 9)].value
-    else stage = ORDER_STAGES[Math.floor(r() * 5)].value
+    else if (ageDays > 4) stage = roll < 0.3 ? ORDER_STAGES[Math.floor(r() * 3)].value : ORDER_STAGES[3 + Math.floor(r() * 6)].value
+    else stage = ORDER_STAGES[Math.floor(r() * 7)].value
     const paid = ['pago', 'arte', 'prova', 'producao', 'entregue', 'recompra'].includes(stage)
     const gross = p.price * qty
     const discount = r() < 0.2 ? 5 : 0
@@ -72,7 +72,7 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
       conversation_id: `c${i}`,
       title: p.name,
       stage,
-      stage_entered_at: new Date(now - Math.min(ageDays, r() * 6) * day).toISOString(),
+      stage_entered_at: new Date(now - Math.min(ageDays, r() * 1.4) * day).toISOString(),
       notes: null,
       origin_ad_id: origin ? 'ad' : null,
       origin_label: origin,
