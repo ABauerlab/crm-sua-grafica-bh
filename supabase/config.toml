@@ -15,3 +15,9 @@ verify_jwt = true
 
 [functions.admin-create-agent]
 verify_jwt = true
+
+[functions.whatsapp-media]
+verify_jwt = true
+
+[functions.meta-ads-sync]
+verify_jwt = true

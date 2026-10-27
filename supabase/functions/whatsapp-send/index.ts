@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
   const { data: conv } = await db
     .from('conversations')
-    .select('id, last_inbound_at, contact:contacts(wa_id, marketing_consent)')
+    .select('id, last_inbound_at, ad_window_until, contact:contacts(wa_id, marketing_consent)')
     .eq('id', input.conversation_id)
     .maybeSingle()
   // deno-lint-ignore no-explicit-any
@@ -61,9 +61,14 @@ Deno.serve(async (req) => {
   let language = input.language
 
   if (text) {
-    const open = conv.last_inbound_at && Date.now() - new Date(conv.last_inbound_at).getTime() < WINDOW_MS
+    // 24 h desde a última mensagem do cliente, ou 72 h quando a conversa veio de anúncio (clique para o WhatsApp)
+    const until = Math.max(
+      conv.last_inbound_at ? new Date(conv.last_inbound_at).getTime() + WINDOW_MS : 0,
+      conv.ad_window_until ? new Date(conv.ad_window_until).getTime() : 0,
+    )
+    const open = until > Date.now()
     if (!open) {
-      return json({ error: 'A janela de 24h está fechada. Envie um template aprovado.', code: 'window_closed' }, 409)
+      return json({ error: 'A janela de atendimento está fechada. Envie um template aprovado.', code: 'window_closed' }, 409)
     }
     metaBody = { messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: text, preview_url: false } }
     storedBody = text

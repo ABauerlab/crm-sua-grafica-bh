@@ -18,3 +18,22 @@ export async function invokeFunction<T = unknown>(name: string, body: unknown = 
   }
   return data as T
 }
+
+/** Baixa a mídia de uma mensagem (via Edge Function, o token do WhatsApp nunca chega ao navegador). */
+export async function fetchMedia(messageId: string): Promise<Blob> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-media?message_id=${encodeURIComponent(messageId)}`, {
+    headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string },
+  })
+  if (!res.ok) {
+    let msg = 'Não foi possível carregar o arquivo.'
+    try {
+      msg = (await res.json()).error ?? msg
+    } catch {
+      /* mantém */
+    }
+    throw new Error(msg)
+  }
+  return res.blob()
+}

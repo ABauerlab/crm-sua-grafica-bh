@@ -94,6 +94,15 @@ export function extractEvents(payload: Json): { messages: InboundMessage[]; stat
             body: caption ? `${media[1]} ${caption}` : media[1],
             mediaId: m[m.type]?.id ?? null,
           })
+        } else if (m.type === 'location' && m.location) {
+          const { latitude, longitude, name, address } = m.location
+          const label = [name, address].filter(Boolean).join(', ')
+          messages.push({
+            ...base,
+            type: 'other',
+            body: `[localização] ${label ? `${label} ` : ''}https://www.google.com/maps?q=${latitude},${longitude}`,
+            mediaId: null,
+          })
         } else if (m.type === 'button' && m.button?.text) {
           messages.push({ ...base, type: 'text', body: String(m.button.text), mediaId: null })
         } else if (m.type === 'interactive') {

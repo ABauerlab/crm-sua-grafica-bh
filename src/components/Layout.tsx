@@ -2,6 +2,9 @@ import * as Dialog from '@radix-ui/react-dialog'
 import {
   AlertTriangle,
   BarChart3,
+  Bot,
+  Volume2,
+  VolumeX,
   Bell,
   ChevronsLeft,
   ChevronsRight,
@@ -24,6 +27,9 @@ import { useAuth } from '@/auth/AuthProvider'
 import { Logo, LogoMark } from '@/components/brand/Logo'
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { useConversations, useQualityAlerts, useRealtimeSync } from '@/hooks/queries'
+import { DEFAULTS, useSaveSetting, useSetting } from '@/hooks/settings'
+import { setSoundEnabled, soundEnabled } from '@/lib/notify'
+import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
@@ -85,12 +91,53 @@ function timeAgo(iso: string): string {
   return `${Math.round(mins / 1440)} d`
 }
 
+/** Estado global do agente de IA com botão para pausar todo o atendimento automático. */
+function AgentSwitch() {
+  const toast = useToast()
+  const { data } = useSetting('agent')
+  const save = useSaveSetting('agent')
+  const agent = data ?? DEFAULTS.agent
+  const on = agent.enabled
+
+  function toggle() {
+    if (on && !window.confirm('Pausar a IA em todas as conversas? Ninguém será respondido automaticamente até você ligar de novo.')) return
+    save.mutate(
+      { ...agent, enabled: !on },
+      {
+        onSuccess: () => {
+          void supabase.from('agent_logs').insert({ actor: 'humano', action: on ? 'pausou_ia' : 'ligou_ia', detail: {}, result: 'ok' })
+          toast('ok', on ? 'IA pausada em todas as conversas.' : 'IA ligada.')
+        },
+        onError: (e) => toast('error', e.message),
+      },
+    )
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={save.isPending}
+      aria-pressed={on}
+      title={on ? 'A IA está atendendo. Clique para pausar tudo.' : 'A IA está pausada. Clique para ligar.'}
+      className={cn(
+        'flex min-h-11 items-center gap-2 rounded-md border px-2.5 text-xs font-bold md:min-h-9',
+        on ? 'border-brand-blue bg-brand-blue text-white' : 'border-brand-yellow bg-brand-yellow/30 text-ink',
+      )}
+    >
+      <Bot className="h-4 w-4" aria-hidden />
+      <span className="hidden sm:inline">{on ? 'IA ligada · Pausar IA' : 'IA pausada · Ligar IA'}</span>
+      <span className="sm:hidden">{on ? 'IA' : 'Pausada'}</span>
+    </button>
+  )
+}
+
 function Topbar({ onMenu }: { onMenu: () => void }) {
   const { session, signOut } = useAuth()
   const navigate = useNavigate()
   const { data: convs } = useConversations()
   const { data: lastMsg, isError } = useWhatsAppStatus()
   const [q, setQ] = useState('')
+  const [sound, setSound] = useState(soundEnabled)
   const unread = (convs ?? []).reduce((n, c) => n + c.unread_count, 0)
   const recent = lastMsg && Date.now() - new Date(lastMsg).getTime() < 24 * 3_600_000
 
@@ -99,6 +146,17 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
     const t = q.trim()
     if (t) navigate(`/kanban?q=${encodeURIComponent(t)}`)
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        document.querySelector<HTMLInputElement>('input[aria-label="Busca global"]')?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     document.title = unread > 0 ? `(${unread}) Sua Gráfica BH | CRM` : 'Sua Gráfica BH | CRM'
@@ -115,12 +173,13 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar pedido, cliente ou produto"
+          placeholder="Buscar pedido, cliente ou produto (Ctrl+K)"
           aria-label="Busca global"
           className="h-10 w-full rounded-md border border-input bg-secondary/60 pl-9 pr-3 text-base placeholder:text-muted-foreground md:text-sm"
         />
       </form>
       <div className="ml-auto flex items-center gap-1">
+        <AgentSwitch />
         <span
           className="hidden items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium sm:flex"
           title={lastMsg ? `Última mensagem há ${timeAgo(lastMsg)}` : 'Nenhuma mensagem ainda'}
@@ -145,6 +204,17 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
             <MenuSeparator />
             <MenuItem onSelect={() => navigate('/configuracoes')}>
               <Settings className="h-4 w-4" /> Configurações
+            </MenuItem>
+            <MenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                setSound((v) => {
+                  setSoundEnabled(!v)
+                  return !v
+                })
+              }}
+            >
+              {sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />} Som de mensagem: {sound ? 'ligado' : 'desligado'}
             </MenuItem>
             <MenuItem onSelect={signOut}>
               <LogOut className="h-4 w-4" /> Sair
