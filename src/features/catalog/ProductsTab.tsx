@@ -9,7 +9,8 @@ import { Modal } from '@/components/ui/sheet'
 import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { parseCsv } from '@/lib/csv'
+import { readTable } from '@/lib/spreadsheet'
+import { ImportDialog } from './ImportDialog'
 import { formatBRL, formatNumber, parseMoney } from '@/lib/money'
 import { supabase } from '@/lib/supabase'
 import type { Product } from '@/lib/types'
@@ -68,39 +69,21 @@ export function ProductsTab() {
 
   useEffect(() => setPage(0), [debounced, category])
 
-  const importCsv = useMutation({
-    mutationFn: async (f: File) => {
-      const rows = parseCsv(await f.text())
+  const [sheet, setSheet] = useState<{ rows: string[][]; name: string } | null>(null)
+  const [reading, setReading] = useState(false)
+
+  async function pickFile(f: File) {
+    setReading(true)
+    try {
+      const rows = await readTable(f)
       if (rows.length < 2) throw new Error('O arquivo está vazio.')
-      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
-      const head = rows[0].map(norm)
-      const col = (names: string[]) => head.findIndex((h) => names.some((n) => h.includes(n)))
-      const iCode = col(['codigo', 'code', 'sku'])
-      const iDesc = col(['descricao', 'produto', 'nome', 'description'])
-      const iCat = col(['categoria', 'category'])
-      const iCost = col(['custo', 'cost'])
-      const iPrice = col(['preco', 'price', 'venda'])
-      if (iCode < 0 || iDesc < 0 || iCost < 0) throw new Error('Não encontrei as colunas código, descrição e custo na primeira linha.')
-      const items = rows.slice(1).flatMap((r) => {
-        const code = r[iCode]?.trim()
-        const description = r[iDesc]?.trim()
-        if (!code || !description) return []
-        return [{ code, description, category: iCat >= 0 ? r[iCat]?.trim() || null : null, cost: parseMoney(r[iCost] ?? ''), suggested_price: iPrice >= 0 ? parseMoney(r[iPrice] ?? '') : 0, active: true }]
-      })
-      if (!items.length) throw new Error('Nenhuma linha válida encontrada.')
-      for (let i = 0; i < items.length; i += 500) {
-        const { error } = await supabase.from('products').upsert(items.slice(i, i + 500), { onConflict: 'code' })
-        if (error) throw new Error(error.message)
-      }
-      return items.length
-    },
-    onSuccess: (n) => {
-      toast('ok', `${formatNumber(n)} produto(s) importado(s).`)
-      qc.invalidateQueries({ queryKey: ['products'] })
-      qc.invalidateQueries({ queryKey: ['product-categories'] })
-    },
-    onError: (e: Error) => toast('error', e.message),
-  })
+      setSheet({ rows, name: f.name })
+    } catch (e) {
+      toast('error', e instanceof Error ? e.message : 'Não foi possível ler o arquivo.')
+    } finally {
+      setReading(false)
+    }
+  }
 
   const saveOne = useMutation({
     mutationFn: async (f: NonNullable<typeof form>) => {
@@ -133,14 +116,14 @@ export function ProductsTab() {
             <option value="">Todas as categorias</option>
             {(categories ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <input ref={file} type="file" accept=".csv,text/csv" className="sr-only" aria-label="Arquivo CSV do catálogo" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCsv.mutate(f); e.target.value = '' }} />
-          <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={importCsv.isPending}>
-            <FileUp className="h-4 w-4" /> {importCsv.isPending ? 'Importando…' : 'Importar CSV'}
+          <input ref={file} type="file" accept=".xlsx,.xls,.csv,text/csv" className="sr-only" aria-label="Planilha do catálogo (Excel ou CSV)" onChange={(e) => { const f = e.target.files?.[0]; if (f) void pickFile(f); e.target.value = '' }} />
+          <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={reading}>
+            <FileUp className="h-4 w-4" /> {reading ? 'Lendo…' : 'Importar planilha'}
           </Button>
           <Button size="sm" onClick={() => setForm({ code: '', description: '', category: '', cost: '', price: '' })}><Plus className="h-4 w-4" /> Novo produto</Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Preço sugerido, piso (custo x multiplicador), preço com desconto máximo e lucro líquido estimado vêm do banco e acompanham os parâmetros de Configurações. O CSV precisa de colunas: código, descrição, categoria, custo e preço sugerido.
+          Preço sugerido, piso (custo x multiplicador), preço com desconto máximo e lucro líquido estimado vêm do banco e acompanham os parâmetros de Configurações. Importe a planilha do fornecedor em Excel (.xlsx ou .xls) ou CSV: você escolhe quais colunas são código, descrição, custo e preço.
         </p>
       </div>
 
@@ -151,7 +134,7 @@ export function ProductsTab() {
           <div className="space-y-2 p-4">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
         ) : total === 0 ? (
           <EmptyState icon={Package} title={debounced || category ? 'Nenhum produto encontrado' : 'Catálogo vazio'}>
-            {debounced || category ? 'Tente outro termo ou categoria.' : 'Importe o CSV do fornecedor (ZAP Gráfica) ou cadastre os produtos um a um.'}
+            {debounced || category ? 'Tente outro termo ou categoria.' : 'Importe a planilha do fornecedor (ZAP Gráfica, em Excel ou CSV) ou cadastre os produtos um a um.'}
           </EmptyState>
         ) : (
           <table className="w-full min-w-[860px] text-sm">
@@ -191,6 +174,8 @@ export function ProductsTab() {
           <Button variant="outline" size="icon" aria-label="Próxima página" disabled={page + 1 >= pages} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
         </span>
       </footer>
+
+      {sheet && <ImportDialog rows={sheet.rows} fileName={sheet.name} onClose={() => setSheet(null)} />}
 
       <Modal open={!!form} onOpenChange={(o) => !o && setForm(null)} title="Produto" description="Se o código já existir, o produto é atualizado.">
         {form && (

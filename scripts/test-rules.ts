@@ -4,6 +4,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
+import { guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
@@ -90,4 +91,31 @@ assert.equal(groups[0].m.spend, 125, 'gasto da Meta (100) + manual de mesmo nome
 assert.equal(groups[0].m.paid, 3)
 assert.equal(groups.find((g) => g.name === 'Panfleto de rua')?.m.spend, 80, 'investimento manual sem anúncio vira linha própria')
 
-console.log('OK: regras de preço, transições do kanban, pedidos parados, login e campanhas')
+// Planilha do fornecedor: .xlsx com título acima, cabeçalho com acentos e números
+assert.equal(parseMoney('1.234'), 1234, 'ponto de milhar')
+assert.equal(parseMoney('12.5'), 12.5)
+assert.equal(parseMoney('1.234,56'), 1234.56)
+const XLSX = await import('xlsx')
+const wb = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(
+  wb,
+  XLSX.utils.aoa_to_sheet([
+    ['TABELA DE PREÇOS ZAP GRÁFICA'],
+    [],
+    ['Código', 'Descrição do Produto', 'Categoria', 'Valor Custo', 'Preço de Venda'],
+    ['CV-0500', 'Cartão de visita 500 un', 'Cartões', 48.5, 119],
+    ['PF-1000', 'Panfleto A5 1.000 un', 'Panfletos', '95,00', ''],
+  ]),
+  'Tabela',
+)
+const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' })
+const rows = await readTable(new File([buf], 'tabela.xlsx'))
+const hdr = guessHeaderRow(rows)
+assert.equal(hdr, 1, 'o título (1 célula) é ignorado e o cabeçalho é a linha seguinte')
+assert.deepEqual(rows[hdr], ['Código', 'Descrição do Produto', 'Categoria', 'Valor Custo', 'Preço de Venda'])
+const map = guessMapping(rows[hdr])
+assert.deepEqual(map, { code: 0, description: 1, category: 2, cost: 3, price: 4 })
+assert.equal(rows[hdr + 1][3], '48.5')
+await assert.rejects(() => readTable(new File(['x'], 'catalogo.pdf')), /PDF/)
+
+console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas e importação de planilha')
