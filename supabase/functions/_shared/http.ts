@@ -48,3 +48,19 @@ export function requireEnv(...names: string[]): Record<string, string> | null {
   }
   return out
 }
+
+/** Chamador autorizado a cobrar: o dono logado (JWT) ou outro servidor da própria Sua Gráfica usando a service role key. */
+export async function requireOwnerOrServer(req: Request, db: SupabaseClient): Promise<'dono' | 'servidor' | null> {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+  if (!token) return null
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (serviceKey && token.length === serviceKey.length && token === serviceKey) return 'servidor'
+  const { data: userData, error } = await db.auth.getUser(token)
+  if (error || !userData.user) return null
+  const { data: profile } = await db.from('profiles').select('id').eq('id', userData.user.id).maybeSingle()
+  if (!profile) return null
+  const { data: owner } = await db.from('app_settings').select('value').eq('key', 'owner').maybeSingle()
+  const ownerEmail = String((owner?.value as { email?: string } | null)?.email ?? '').toLowerCase()
+  if (ownerEmail && (userData.user.email ?? '').toLowerCase() !== ownerEmail) return null
+  return 'dono'
+}

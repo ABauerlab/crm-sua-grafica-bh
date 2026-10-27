@@ -33,6 +33,8 @@ Pedidos: `orders` (etapa, pagamento, arte, entrega), `order_items`, `order_event
 
 Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `labels`, `ad_window_until` (72 h para anúncio) e usa `ai_handled` como chave IA/humano; `conversation_notes` (notas internas), `quick_replies`, `tasks`, `products` + view `products_priced` (piso, desconto máximo e lucro estimado calculados no banco), `kits`/`kit_items`, `ad_entities`/`ad_daily`/`ad_manual_spend` + função `ad_performance(from, to)` (cruza gasto da Meta com `origin_ad_id` dos pedidos e `first_referral` dos contatos), `agent_logs`, view `contact_stats`. Integração do agente de IA em `docs/agente-ia.md`.
 
+Mercado Pago: `pagamentos` (links e tentativas), `eventos_pagamento` (contrato com o agente), `pagamentos_alertas`, `orders.teste`. Um só caminho para marcar pago (`private.confirmar_pagamento`, usado pelo webhook e por `confirmar_pagamento_manual`). Detalhes em `docs/pagamento-mercadopago.md`.
+
 Extras além do pedido original: `conversations.last_message_preview` (prévia na lista) e a função `admin-create-agent` (admin cria atendentes, já que o cadastro público é desativado).
 
 ### Edge Functions
@@ -43,6 +45,8 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `whatsapp-sync-templates` | sim + `profiles` | sincroniza `templates_cache` com a Meta |
 | `admin-create-agent` | sim + role admin | cria usuário Auth + profile |
 | `whatsapp-media` | sim + `profiles` | entrega imagem, áudio ou documento recebido (o token fica no servidor) |
+| `mp-criar-link` | não (confere dono ou service role) | cria ou devolve o link do Checkout Pro do pedido (valor vem do banco) |
+| `mp-webhook` | não (assinatura `x-signature`) | valida o aviso, consulta o pagamento no Mercado Pago e confirma o pedido pelo banco |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ## Convenções
@@ -55,6 +59,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 
 ## Segredos necessários (somente nomes)
 Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`; para campanhas: `META_ADS_TOKEN` (token com permissão `ads_read`) e `META_AD_ACCOUNT_ID` (1783199576217713, conta CA SUA GRÁFICA BH).
+Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
 
@@ -64,7 +69,7 @@ npm install
 cp .env.example .env     # preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
 npm run dev              # http://localhost:5173
 npm run typecheck && npm run build
-npm test                 # webhook (HMAC + parsing) e regras (preço, kanban, login)
+npm test                 # webhook (HMAC + parsing), regras (preço, kanban, login) e Mercado Pago
 ```
 
 ## Deploy das funções
@@ -76,6 +81,8 @@ supabase functions deploy whatsapp-sync-templates
 supabase functions deploy admin-create-agent
 supabase functions deploy whatsapp-media
 supabase functions deploy meta-ads-sync
+supabase functions deploy mp-webhook --no-verify-jwt
+supabase functions deploy mp-criar-link --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

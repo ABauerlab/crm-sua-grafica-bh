@@ -10,6 +10,7 @@ import { Modal, Sheet } from '@/components/ui/sheet'
 import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import {
@@ -23,6 +24,7 @@ import {
   useSettings,
   useUpdateOrder,
 } from '@/hooks/orders'
+import { useConfirmarManual, useCriarLink, useMpStatus } from '@/hooks/payments'
 import { invokeFunction } from '@/lib/api'
 import { contactLabel, formatPhone } from '@/lib/format'
 import { formatBRL, formatPct, parseMoney } from '@/lib/money'
@@ -364,6 +366,21 @@ function PaymentTab({ order }: { order: OrderCard }) {
   const [link, setLink] = useState(order.payment_link ?? '')
   const [method, setMethod] = useState(order.payment_method ?? '')
   const [confirm, setConfirm] = useState(false)
+  const [horas, setHoras] = useState('48')
+  const criar = useCriarLink()
+  const confirmar = useConfirmarManual()
+  const { data: mp } = useMpStatus()
+  const gerar = (novo: boolean) =>
+    criar.mutate(
+      { pedidoId: order.id, novo, horas: Number(horas) !== 48 ? Number(horas) : undefined },
+      {
+        onSuccess: (r) => {
+          setLink(r.link)
+          toast('ok', r.reutilizado ? 'Este pedido já tinha um link válido com o mesmo valor. Ele foi mantido.' : 'Link do Mercado Pago gerado.')
+        },
+        onError: (e) => toast('error', e.message),
+      },
+    )
 
   const send = useMutation({
     mutationFn: () => invokeFunction('whatsapp-send', { conversation_id: order.conversation_id, text: `Segue o link para pagamento do seu pedido (${formatBRL(order.fin.total)}): ${link}` }),
@@ -388,7 +405,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Status do pagamento" hint="O Mercado Pago atualizará este campo automaticamente quando a integração estiver ligada.">
+        <Field label="Status do pagamento" hint="O Mercado Pago atualiza este campo sozinho quando o cliente paga.">
           <Select
             value={order.payment_status}
             onChange={(e) => {
@@ -412,6 +429,23 @@ function PaymentTab({ order }: { order: OrderCard }) {
         <Field label="Confirmado em"><Input value={dt(order.payment_confirmed_at)} readOnly /></Field>
       </div>
 
+      <fieldset className="space-y-3 rounded-md border p-3">
+        <legend className="px-1 text-xs font-bold uppercase tracking-wide">Mercado Pago</legend>
+        {mp?.modo === 'teste' && <p className="rounded-sm bg-brand-yellow/40 px-2 py-1 text-xs font-bold">MODO TESTE: nenhum pedido real é alterado.</p>}
+        {mp && !mp.pronto && <p className="text-xs text-brand-red" role="alert">Mercado Pago ainda não configurado no servidor. Faltam: {mp.faltando.join(', ')}.</p>}
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label="Validade (horas)"><Input type="number" min="0.1" max="168" step="1" className="w-28" value={horas} onChange={(e) => setHoras(e.target.value)} /></Field>
+          <Button onClick={() => gerar(false)} disabled={criar.isPending || order.payment_status === 'aprovado' || !mp?.pronto}>
+            {criar.isPending ? 'Gerando…' : order.payment_link ? 'Pegar link atual' : 'Gerar link de pagamento'}
+          </Button>
+          {order.payment_link && <Button variant="outline" onClick={() => gerar(true)} disabled={criar.isPending || order.payment_status === 'aprovado' || !mp?.pronto}>Gerar novo link</Button>}
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <Switch checked={order.teste} onCheckedChange={(v) => update.mutate({ id: order.id, patch: { teste: v } })} aria-label="Pedido de teste" />
+          Pedido de teste (só ele muda de etapa em modo teste)
+        </label>
+      </fieldset>
+
       <Field label="Link de pagamento">
         <div className="flex gap-2">
           <Input value={link} onChange={(e) => setLink(e.target.value)} onBlur={() => link !== (order.payment_link ?? '') && update.mutate({ id: order.id, patch: { payment_link: link.trim() || null } })} placeholder="https://..." />
@@ -425,7 +459,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
       <Modal open={confirm} onOpenChange={setConfirm} title="Confirmar pagamento manualmente?" description="Use só se você já recebeu o valor. Fica registrado no histórico.">
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setConfirm(false)}>Cancelar</Button>
-          <Button onClick={() => { update.mutate({ id: order.id, patch: { payment_status: 'aprovado', payment_manual: true, payment_method: order.payment_method ?? 'manual' } }); setConfirm(false) }}>Sim, já recebi</Button>
+          <Button onClick={() => { confirmar.mutate(order.id, { onError: (e) => toast('error', e.message) }); setConfirm(false) }}>Sim, já recebi</Button>
         </div>
       </Modal>
     </div>

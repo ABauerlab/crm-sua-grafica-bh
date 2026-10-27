@@ -22,3 +22,11 @@ verify_jwt = true
 # verify_jwt = false porque o agendamento diário não tem JWT; a função valida o dono ou o x-cron-secret por conta própria
 [functions.meta-ads-sync]
 verify_jwt = false
+
+# Webhook do Mercado Pago: sem JWT, a função valida o cabeçalho x-signature (HMAC) por conta própria
+[functions.mp-webhook]
+verify_jwt = false
+
+# verify_jwt = false porque aceita o dono logado ou outro servidor com a service role key; a função confere os dois
+[functions.mp-criar-link]
+verify_jwt = false

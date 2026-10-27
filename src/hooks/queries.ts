@@ -95,6 +95,12 @@ export function useRealtimeSync() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         qc.invalidateQueries({ queryKey: ['orders'] })
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamentos' }, () => {
+        qc.invalidateQueries({ queryKey: ['pagamentos'] })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamentos_alertas' }, () => {
+        qc.invalidateQueries({ queryKey: ['pagamentos-alertas'] })
+      })
       .subscribe()
     return () => {
       supabase.removeChannel(channel)
