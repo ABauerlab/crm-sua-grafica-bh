@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { useContacts } from '@/hooks/queries'
-import { contactLabel, formatPhone } from '@/lib/format'
+import { CONSENTS, contactLabel, formatPhone } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
+import type { MarketingConsent } from '@/lib/types'
 
 export default function Contacts() {
   const { data: contacts, isLoading, error } = useContacts()
@@ -17,6 +18,7 @@ export default function Contacts() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [tag, setTag] = useState('')
+  const [consent, setConsent] = useState<MarketingConsent | ''>('')
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
@@ -28,9 +30,10 @@ export default function Contacts() {
     return (contacts ?? []).filter(
       (c) =>
         (!tag || c.tags.includes(tag)) &&
+        (!consent || c.marketing_consent === consent) &&
         (!q || (c.name ?? '').toLowerCase().includes(q) || (digits && c.wa_id.includes(digits))),
     )
-  }, [contacts, search, tag])
+  }, [contacts, search, tag, consent])
 
   // Abre (criando se preciso) a conversa do contato
   const openChat = useMutation({
@@ -83,6 +86,14 @@ export default function Contacts() {
             {allTags.map((t) => (
               <option key={t} value={t}>
                 {t}
+              </option>
+            ))}
+          </Select>
+          <Select className="w-56" aria-label="Filtrar por consentimento" value={consent} onChange={(e) => setConsent(e.target.value as MarketingConsent | '')}>
+            <option value="">Todos os consentimentos</option>
+            {CONSENTS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
               </option>
             ))}
           </Select>

@@ -1,8 +1,8 @@
-import { Kanban, LogOut, MessageSquare, Users, FileText, UserCog } from 'lucide-react'
+import { AlertTriangle, Kanban, LogOut, MessageSquare, Users, FileText, UserCog } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { Button } from '@/components/ui/button'
-import { useRealtimeSync } from '@/hooks/queries'
+import { useQualityAlerts, useRealtimeSync } from '@/hooks/queries'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -15,6 +15,7 @@ const links = [
 export default function Layout() {
   const { profile, signOut } = useAuth()
   useRealtimeSync()
+  const { data: alerts } = useQualityAlerts()
 
   const items = profile?.role === 'admin' ? [...links, { to: '/atendentes', label: 'Atendentes', icon: UserCog }] : links
 
@@ -51,8 +52,25 @@ export default function Layout() {
           </Button>
         </div>
       </nav>
-      <main className="min-h-0 flex-1">
-        <Outlet />
+      <main className="flex min-h-0 flex-1 flex-col">
+        {alerts?.map((a) => (
+          <div
+            key={a.title}
+            role="alert"
+            className={cn(
+              'flex items-start gap-2 border-b px-4 py-2 text-sm',
+              a.level === 'danger' ? 'bg-rose-50 text-rose-900' : 'bg-amber-50 text-amber-900',
+            )}
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              <strong>{a.title}.</strong> {a.detail}
+            </p>
+          </div>
+        ))}
+        <div className="min-h-0 flex-1">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
