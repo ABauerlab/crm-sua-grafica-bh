@@ -87,3 +87,52 @@ export function useRealtimeSync() {
     }
   }, [qc])
 }
+
+export interface QualityAlert {
+  level: 'warning' | 'danger'
+  title: string
+  detail: string
+}
+
+const QUALITY_DAYS = 7
+
+/** Sinais de risco para a qualidade do número no WhatsApp (falhas de entrega e pedidos de PARAR nos últimos 7 dias). */
+export function useQualityAlerts() {
+  return useQuery({
+    queryKey: ['quality-alerts'],
+    refetchInterval: 5 * 60_000,
+    queryFn: async (): Promise<QualityAlert[]> => {
+      const since = new Date(Date.now() - QUALITY_DAYS * 86_400_000).toISOString()
+      const count = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
+        const { count: n, error } = await q
+        if (error) throw error
+        return n ?? 0
+      }
+      const [sent, failed, templates, optOuts] = await Promise.all([
+        count(supabase.from('messages').select('id', { count: 'exact', head: true }).eq('direction', 'out').gte('created_at', since)),
+        count(supabase.from('messages').select('id', { count: 'exact', head: true }).eq('direction', 'out').eq('status', 'failed').gte('created_at', since)),
+        count(supabase.from('messages').select('id', { count: 'exact', head: true }).eq('direction', 'out').eq('type', 'template').gte('created_at', since)),
+        count(supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('marketing_consent', 'opted_out').eq('marketing_consent_source', 'whatsapp').gte('marketing_consent_at', since)),
+      ])
+
+      const alerts: QualityAlert[] = []
+      if (sent >= 20 && failed / sent >= 0.1) {
+        const pct = Math.round((failed / sent) * 100)
+        alerts.push({
+          level: failed / sent >= 0.2 ? 'danger' : 'warning',
+          title: `${pct}% das mensagens falharam nos últimos ${QUALITY_DAYS} dias`,
+          detail: 'Muitas falhas derrubam a qualidade do número. Confira se os telefones têm WhatsApp e evite listas antigas.',
+        })
+      }
+      if (optOuts >= 3 && templates >= 30 && optOuts / templates >= 0.03) {
+        const pct = Math.round((optOuts / templates) * 100)
+        alerts.push({
+          level: optOuts / templates >= 0.05 ? 'danger' : 'warning',
+          title: `${optOuts} pedidos de PARAR em ${QUALITY_DAYS} dias (${pct}% dos templates enviados)`,
+          detail: 'Muitos descadastros e denúncias reduzem seu limite de envio. Reduza a frequência e envie só para quem autorizou.',
+        })
+      }
+      return alerts
+    },
+  })
+}
