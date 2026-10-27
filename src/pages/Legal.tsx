@@ -185,7 +185,7 @@ export function DataDeletion() {
           Dados que a lei nos obriga a guardar, como notas fiscais e registros de pedidos, ficam armazenados só pelo prazo legal e depois são
           eliminados;
         </li>
-        <li>Mantemos o registro mínimo de que você pediu para não receber promoções, para respeitar seu pedido;</li>
+        <li>Se você tinha pedido para não receber promoções, guardamos apenas o seu telefone numa lista de bloqueio, só para respeitar esse pedido;</li>
         <li>Os provedores que nos atendem (como Meta e Supabase) mantêm cópias conforme as próprias políticas, e orientamos a exclusão deles quando aplicável.</li>
       </ul>
       <h2>Dúvidas</h2>

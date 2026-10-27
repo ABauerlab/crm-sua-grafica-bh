@@ -108,6 +108,9 @@ const OPT_OUT_KEYWORDS = new Set([
   'PARAR DE RECEBER',
   'SAIR DA LISTA',
   'CANCELAR INSCRICAO',
+  'PARAR PROMOCOES',
+  'PARAR DE RECEBER PROMOCOES',
+  'NAO QUERO RECEBER',
 ])
 
 /** Pedido de descadastro das promoções: a mensagem inteira precisa ser a palavra-chave (evita "quero parar o pedido"). */

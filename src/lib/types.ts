@@ -63,5 +63,6 @@ export interface Template {
   category: string | null
   status: string | null
   body: string | null
+  has_opt_out_button: boolean
   synced_at: string
 }
