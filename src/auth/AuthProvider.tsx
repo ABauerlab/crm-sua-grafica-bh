@@ -12,6 +12,8 @@ interface AuthState {
   signOut: () => Promise<void>
 }
 
+const ALLOWED_EMAIL = (import.meta.env.VITE_ALLOWED_EMAIL as string | undefined)?.trim().toLowerCase()
+
 const AuthContext = createContext<AuthState | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -58,9 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     session,
     profile,
-    noAccess: !!session && !loading && !profile,
+    noAccess: !!session && !loading && (!profile || (!!ALLOWED_EMAIL && session.user.email?.toLowerCase() !== ALLOWED_EMAIL)),
     signOut: async () => {
       await supabase.auth.signOut()
+      try {
+        localStorage.removeItem('sgbh.remember')
+        sessionStorage.removeItem('sgbh.remember')
+      } catch {
+        /* armazenamento indisponível */
+      }
     },
   }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

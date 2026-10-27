@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "test:webhook": "node scripts/test-webhook.ts"
+    "test:webhook": "node scripts/test-webhook.ts",
+    "test:rules": "node scripts/test-rules.ts",
+    "test": "npm run test:webhook && npm run test:rules"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
