@@ -48,9 +48,9 @@ function useCategories() {
     queryKey: ['product-categories'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('category').not('category', 'is', null).limit(5000)
+      const { data, error } = await supabase.from('product_categories').select('category').order('category').limit(1000)
       if (error) throw error
-      return [...new Set((data as { category: string }[]).map((r) => r.category))].sort()
+      return (data as { category: string }[]).map((r) => r.category)
     },
   })
 }

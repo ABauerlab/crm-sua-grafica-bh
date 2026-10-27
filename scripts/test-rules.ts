@@ -4,7 +4,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
-import { guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
+import { buildProducts, guessExtras, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
@@ -117,5 +117,28 @@ const map = guessMapping(rows[hdr])
 assert.deepEqual(map, { code: 0, description: 1, category: 2, cost: 3, price: 4 })
 assert.equal(rows[hdr + 1][3], '48.5')
 await assert.rejects(() => readTable(new File(['x'], 'catalogo.pdf')), /PDF/)
+
+// Tabela da ZAP Gráfica: HTML salvo como .xls em ISO-8859-1, título e cabeçalho repetido a cada categoria, preço "R$ 1.234,56"
+const html = `<html><body><table>
+<tr><td>TABELA DE PREÇOS 27/10/2026</td></tr>
+<tr><td>ACESSÓRIOS</td></tr>
+<tr><td>Código</td><td>Categoria</td><td>Descrição do Serviço</td><td>Cores</td><td>Peso</td><td>Qtde</td><td>Tam</td><td>Prazo</td><td>Preço R$</td></tr>
+<tr><td>GIFT1</td><td>ACESSÓRIOS</td><td>CHAVEIRO UV - 10g</td><td>4X0</td><td>1250</td><td>25</td><td>57 x 57</td><td>5</td><td>R$ 1.252,99</td></tr>
+<tr><td>GIFT2</td><td>ACESSÓRIOS</td><td>CHAVEIRO UV - 10g</td><td>4X0</td><td>500</td><td>10</td><td>57 x 57</td><td>5</td><td>R$ 106,99</td></tr>
+<tr><td>ADESIVOS</td></tr>
+<tr><td>Código</td><td>Categoria</td><td>Descrição do Serviço</td><td>Cores</td><td>Peso</td><td>Qtde</td><td>Tam</td><td>Prazo</td><td>Preço R$</td></tr>
+<tr><td>ADE9</td><td>ADESIVOS</td><td>ADESIVO REDONDO</td><td>4X0</td><td>100</td><td>200</td><td>50 x 50</td><td>3</td><td>R$ 38,50</td></tr>
+</table></body></html>`
+const latin1 = new Uint8Array([...html].map((c) => c.charCodeAt(0)))
+const zap = await readTable(new File([latin1], 'TabelaPreco.xls'))
+const zh = guessHeaderRow(zap)
+const zmap = guessMapping(zap[zh])
+assert.deepEqual(zmap, { code: 0, description: 2, category: 1, price: -1, cost: 8 }, '"Preço R$" do fornecedor é o custo')
+const built = buildProducts(zap, zh, zmap, guessExtras(zap[zh], zmap), 0)
+assert.equal(built.items.length, 3, 'cabeçalho repetido, título e seções não viram produto')
+assert.equal(built.items[0].description, 'CHAVEIRO UV - 10g · 4X0 · 25 un · 57 x 57', 'cores, quantidade e tamanho diferenciam o item')
+assert.equal(built.items[0].cost, 1252.99)
+assert.equal(built.items[0].category, 'ACESSÓRIOS', 'acentos em ISO-8859-1 preservados')
+assert.equal(buildProducts(zap, zh, zmap, [], 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
 
 console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas e importação de planilha')
