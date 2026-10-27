@@ -13,6 +13,15 @@
     --brand-green: #0e8a3e;
     --brand-red: #e3061e;
     --brand-gray: #a7a7a7;
+    /* mesmas cores em canais RGB: permitem transparência no Tailwind (ex.: bg-brand-cyan/15) */
+    --brand-cyan-rgb: 0 166 214;
+    --brand-magenta-rgb: 230 0 126;
+    --brand-yellow-rgb: 255 213 0;
+    --brand-ink-rgb: 23 23 23;
+    --brand-blue-rgb: 31 42 134;
+    --brand-green-rgb: 14 138 62;
+    --brand-red-rgb: 227 6 30;
+    --brand-gray-rgb: 167 167 167;
 
     /* Tokens semânticos (HSL para o Tailwind). Ação principal = ciano com texto preto (contraste 6:1). */
     --background: 0 0% 100%;

@@ -5,6 +5,8 @@ export type ArtStatus = 'aguardando' | 'em_criacao' | 'enviada' | 'aprovada' | '
 export interface StageInfo {
   value: OrderStage
   label: string
+  /** Nome curto para faixas e chips */
+  short: string
   /** Faixa de cor no topo da coluna */
   bar: string
   /** Chip: fundo translúcido da cor da marca + texto escuro (contraste AA) */
@@ -12,15 +14,15 @@ export interface StageInfo {
 }
 
 export const ORDER_STAGES: StageInfo[] = [
-  { value: 'novo', label: 'Novo', bar: 'bg-brand-cyan', chip: 'bg-brand-cyan/15 text-ink' },
-  { value: 'cotando', label: 'Cotando', bar: 'bg-brand-blue', chip: 'bg-brand-blue/10 text-brand-blue' },
-  { value: 'aguardando_pagamento', label: 'Aguardando pagamento', bar: 'bg-brand-yellow', chip: 'bg-brand-yellow/30 text-ink' },
-  { value: 'pago', label: 'Pago', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
-  { value: 'arte', label: 'Arte', bar: 'bg-brand-magenta', chip: 'bg-brand-magenta/10 text-ink' },
-  { value: 'prova', label: 'Prova', bar: 'bg-[#FF8A00]', chip: 'bg-[#FF8A00]/20 text-ink' },
-  { value: 'producao', label: 'Produção', bar: 'bg-ink', chip: 'bg-ink/10 text-ink' },
-  { value: 'entregue', label: 'Entregue', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
-  { value: 'recompra', label: 'Recompra', bar: 'bg-brand-red', chip: 'bg-brand-red/10 text-brand-red' },
+  { value: 'novo', short: 'Novo', label: 'Novo', bar: 'bg-brand-cyan', chip: 'bg-brand-cyan/15 text-ink' },
+  { value: 'cotando', short: 'Cotando', label: 'Cotando', bar: 'bg-brand-blue', chip: 'bg-brand-blue/10 text-brand-blue' },
+  { value: 'aguardando_pagamento', short: 'Aguardando pgto', label: 'Aguardando pagamento', bar: 'bg-brand-yellow', chip: 'bg-brand-yellow/30 text-ink' },
+  { value: 'pago', short: 'Pago', label: 'Pago', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
+  { value: 'arte', short: 'Arte', label: 'Arte', bar: 'bg-brand-magenta', chip: 'bg-brand-magenta/10 text-ink' },
+  { value: 'prova', short: 'Prova', label: 'Prova', bar: 'bg-[#FF8A00]', chip: 'bg-[#FF8A00]/20 text-ink' },
+  { value: 'producao', short: 'Produção', label: 'Produção', bar: 'bg-ink', chip: 'bg-ink/10 text-ink' },
+  { value: 'entregue', short: 'Entregue', label: 'Entregue', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
+  { value: 'recompra', short: 'Recompra', label: 'Recompra', bar: 'bg-brand-red', chip: 'bg-brand-red/10 text-brand-red' },
 ]
 
 export const stageInfo = (s: OrderStage) => ORDER_STAGES.find((x) => x.value === s) ?? ORDER_STAGES[0]

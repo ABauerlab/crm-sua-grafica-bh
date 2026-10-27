@@ -6,7 +6,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
-import { buildProducts, guessExtras, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
+import { buildProducts, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
@@ -116,7 +116,7 @@ const hdr = guessHeaderRow(rows)
 assert.equal(hdr, 1, 'o título (1 célula) é ignorado e o cabeçalho é a linha seguinte')
 assert.deepEqual(rows[hdr], ['Código', 'Descrição do Produto', 'Categoria', 'Valor Custo', 'Preço de Venda'])
 const map = guessMapping(rows[hdr])
-assert.deepEqual(map, { code: 0, description: 1, category: 2, cost: 3, price: 4 })
+assert.deepEqual(map, { code: 0, description: 1, category: 2, colors: -1, weight: -1, qty: -1, size: -1, lead: -1, cost: 3, price: 4 })
 assert.equal(rows[hdr + 1][3], '48.5')
 await assert.rejects(() => readTable(new File(['x'], 'catalogo.pdf')), /PDF/)
 
@@ -135,13 +135,13 @@ const latin1 = new Uint8Array([...html].map((c) => c.charCodeAt(0)))
 const sheetHtml = await readTable(new File([latin1], 'TabelaPreco.xls'))
 const zh = guessHeaderRow(sheetHtml)
 const zmap = guessMapping(sheetHtml[zh])
-assert.deepEqual(zmap, { code: 0, description: 2, category: 1, price: -1, cost: 8 }, '"Preço R$" do fornecedor é o custo')
-const built = buildProducts(sheetHtml, zh, zmap, guessExtras(sheetHtml[zh], zmap), 0)
+assert.deepEqual(zmap, { code: 0, category: 1, description: 2, colors: 3, weight: 4, qty: 5, size: 6, lead: 7, price: -1, cost: 8 }, 'cada coluna da planilha tem o seu campo; "Preço R$" do fornecedor é o custo')
+const built = buildProducts(sheetHtml, zh, zmap, 0)
 assert.equal(built.items.length, 3, 'cabeçalho repetido, título e seções não viram produto')
-assert.equal(built.items[0].description, 'CHAVEIRO UV - 10g · 4X0 · 25 un · 57 x 57', 'cores, quantidade e tamanho diferenciam o item')
-assert.equal(built.items[0].cost, 1252.99)
-assert.equal(built.items[0].category, 'ACESSÓRIOS', 'acentos em ISO-8859-1 preservados')
-assert.equal(buildProducts(sheetHtml, zh, zmap, [], 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
+assert.deepEqual(built.items[0], {
+  code: 'GIFT1', category: 'ACESSÓRIOS', description: 'CHAVEIRO UV - 10g', colors: '4X0', weight: 1250, qty: 25, size: '57 x 57', lead_days: 5, cost: 1252.99, suggested_price: 0, active: true,
+}, 'nada é comprimido dentro da descrição e os acentos em ISO-8859-1 ficam preservados')
+assert.equal(buildProducts(sheetHtml, zh, zmap, 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
 
 // Regra do negócio: o nome do fornecedor nunca aparece no código, nas telas, nos textos, nas mensagens nem na documentação.
 // (O termo é montado em partes para este arquivo não se acusar.)
