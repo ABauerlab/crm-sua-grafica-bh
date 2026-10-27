@@ -118,7 +118,7 @@ create table if not exists public.products (
   code text not null unique,
   description text not null,
   category text,
-  supplier text not null default 'ZAP GRÁFICA',
+  supplier text not null default 'Fornecedor',
   cost numeric(12, 2) not null default 0 check (cost >= 0),
   suggested_price numeric(12, 2) not null default 0 check (suggested_price >= 0),
   active boolean not null default true,

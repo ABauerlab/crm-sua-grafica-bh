@@ -46,6 +46,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ## Convenções
+- **Sigilo do fornecedor (regra do dono): nunca escrever o nome do fornecedor em lugar nenhum** (código, textos de tela, mensagens e templates do WhatsApp, documentação, comentários, testes, exemplos, commits e PRs). Usar sempre "fornecedor". O front é público e o repositório não pode ser público. `npm test` falha se o nome aparecer no repositório.
 - UI, mensagens de erro e commits em português do Brasil; código (identificadores) em inglês.
 - Nada de segredos no front, no repositório ou em logs. Logs de função não incluem conteúdo de mensagens.
 - Erros das functions voltam como `{ "error": "mensagem clara" }`; o front lê via `invokeFunction` (`src/lib/api.ts`).

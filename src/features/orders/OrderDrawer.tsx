@@ -596,7 +596,7 @@ function DeliveryTab({ order }: { order: OrderCard }) {
       }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nº do pedido no fornecedor (ZAP Gráfica)"><Input value={f.supplier} onChange={(e) => setF({ ...f, supplier: e.target.value })} /></Field>
+        <Field label="Nº do pedido no fornecedor"><Input value={f.supplier} onChange={(e) => setF({ ...f, supplier: e.target.value })} /></Field>
         <Field label="Prazo previsto"><Input type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} /></Field>
         <Field label="Forma de entrega">
           <Select value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })}>
