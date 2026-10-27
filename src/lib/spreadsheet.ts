@@ -91,8 +91,10 @@ export function guessMapping(header: string[]): Record<Field, number> {
   return out
 }
 
-/** Gramatura em gramas escrita na descrição ("10g", "300 g", "150g/m²", "90 gramas"). Sem número claro, devolve null. */
+/** Gramatura em gramas escrita na descrição ("10g", "300 g", "150g/m²", "90 gramas"). Se a descrição cita mais de uma (capa e miolo), vale o sufixo final da tabela do fornecedor. Sem número claro, devolve null. */
 export function extractGrammage(description: string): number | null {
+  const tail = /(\d{1,4})\s*g\s*$/i.exec(description)
+  if (tail) return Number(tail[1])
   const m = /(\d{1,4})\s*(?:g\/m|gr?(?![a-z0-9])|gramas)/i.exec(description)
   return m ? Number(m[1]) : null
 }
