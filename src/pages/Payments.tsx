@@ -147,7 +147,7 @@ function CobrancasTab() {
                     <span className="flex justify-end gap-1">
                       <Button variant="outline" size="sm" disabled={!usable} onClick={async () => { await navigator.clipboard.writeText(c.link!); toast('ok', 'Link copiado.') }}><Copy className="h-4 w-4" /> Copiar link</Button>
                       {c.order_id && st !== 'aprovado' && (
-                        <Button variant="outline" size="sm" disabled={criar.isPending} onClick={() => criar.mutate({ pedidoId: c.order_id, novo: true }, { onSuccess: () => toast('ok', 'Novo link gerado. O anterior foi invalidado.'), onError: (e) => toast('error', e.message) })}><RefreshCw className="h-4 w-4" /> Gerar novo link</Button>
+                        <Button variant="outline" size="sm" disabled={criar.isPending} onClick={() => criar.mutate({ pedidoId: c.order_id, novo: true }, { onSuccess: (r) => (r.aviso ? toast('error', r.aviso) : toast('ok', 'Novo link gerado. O anterior foi invalidado.')), onError: (e) => toast('error', e.message) })}><RefreshCw className="h-4 w-4" /> Gerar novo link</Button>
                       )}
                     </span>
                   )}

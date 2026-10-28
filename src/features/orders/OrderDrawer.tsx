@@ -376,7 +376,8 @@ function PaymentTab({ order }: { order: OrderCard }) {
       {
         onSuccess: (r) => {
           setLink(r.link)
-          toast('ok', r.reutilizado ? 'Este pedido já tinha um link válido com o mesmo valor. Ele foi mantido.' : 'Link do Mercado Pago gerado.')
+          if (r.aviso) toast('error', r.aviso)
+          else toast('ok', r.reutilizado ? 'Este pedido já tinha um link válido com o mesmo valor, então foi mantido. Para mudar a validade, use "Gerar novo link".' : 'Link do Mercado Pago gerado.')
         },
         onError: (e) => toast('error', e.message),
       },
@@ -434,7 +435,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
         {mp?.modo === 'teste' && <p className="rounded-sm bg-brand-yellow/40 px-2 py-1 text-xs font-bold">MODO TESTE: nenhum pedido real é alterado.</p>}
         {mp && !mp.pronto && <p className="text-xs text-brand-red" role="alert">Mercado Pago ainda não configurado no servidor. Faltam: {mp.faltando.join(', ')}.</p>}
         <div className="flex flex-wrap items-end gap-2">
-          <Field label="Validade (horas)"><Input type="number" min="0.1" max="168" step="1" className="w-28" value={horas} onChange={(e) => setHoras(e.target.value)} /></Field>
+          <Field label="Validade (horas)"><Input type="number" min="0.1" max="168" step="any" className="w-28" value={horas} onChange={(e) => setHoras(e.target.value)} /></Field>
           <Button onClick={() => gerar(false)} disabled={criar.isPending || order.payment_status === 'aprovado' || !mp?.pronto}>
             {criar.isPending ? 'Gerando…' : order.payment_link ? 'Pegar link atual' : 'Gerar link de pagamento'}
           </Button>

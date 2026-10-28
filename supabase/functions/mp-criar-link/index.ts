@@ -59,8 +59,9 @@ Deno.serve(async (req) => {
   const items = buildItems((itens ?? []).map((i) => ({ description: i.description, qty: i.qty, unit_price: Number(i.unit_price) })), totalCents)
   if (totalCents <= 0 || items.length === 0) return json({ error: 'O pedido precisa ter itens e valor maior que zero.' }, 422)
 
+  let aviso: string | undefined
   const resposta = (l: { id: string; link: string | null; valor: number; expira_em: string | null }, reutilizado: boolean) =>
-    json({ link: l.link, pagamento_id: l.id, valor: Number(l.valor), expira_em: l.expira_em, modo: cfg.modo, referencia: formatReference(order.number), reutilizado })
+    json({ link: l.link, pagamento_id: l.id, valor: Number(l.valor), expira_em: l.expira_em, modo: cfg.modo, referencia: formatReference(order.number), reutilizado, ...(aviso ? { aviso } : {}) })
 
   // Mesmo pedido, mesmo valor, link ainda válido: devolve o mesmo link
   const { data: ativo } = await db.from('pagamentos').select('*').eq('order_id', orderId).eq('modo', cfg.modo).eq('eh_link', true).eq('link_ativo', true).maybeSingle()
@@ -70,11 +71,17 @@ Deno.serve(async (req) => {
     // Valor mudou, expirou ou foi pedido um novo: invalida o anterior (também no Mercado Pago, sem expor nada)
     await db.from('pagamentos').update({ link_ativo: false, status: ativo.mp_payment_id ? ativo.status : 'invalidado', atualizado_em: new Date().toISOString() }).eq('id', ativo.id)
     if (ativo.mp_preference_id && valido) {
-      await fetch(`${API}/checkout/preferences/${encodeURIComponent(ativo.mp_preference_id)}`, {
+      // Expira o link antigo no Mercado Pago para ninguém pagar o valor errado. Confere a resposta e avisa se não deu certo.
+      const fim = new Date(Date.now() - 1000).toISOString()
+      const put = await fetch(`${API}/checkout/preferences/${encodeURIComponent(ativo.mp_preference_id)}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${cfg.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expires: true, expiration_date_to: new Date().toISOString() }),
-      }).catch(() => console.error('Não foi possível expirar a preferência anterior.'))
+        body: JSON.stringify({ expires: true, expiration_date_from: new Date(ativo.criado_em).toISOString(), expiration_date_to: fim }),
+      }).catch(() => null)
+      if (!put || !put.ok) {
+        console.error('Mercado Pago não expirou a preferência anterior', put?.status ?? 'sem resposta')
+        aviso = 'O link antigo não foi desativado no Mercado Pago. Se o cliente ainda tiver o link antigo, o pagamento chega como divergência em Alertas e o pedido não muda sozinho.'
+      }
     }
   }
 
