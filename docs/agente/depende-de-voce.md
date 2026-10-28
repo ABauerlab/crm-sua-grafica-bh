@@ -1,4 +1,20 @@
-# O que depende de você (Etapa 2)
+# O que depende de você
+
+## Etapa 3 (aberto, 28/10/2026)
+
+1. **Aplicar** `docs/agente/aplicar-etapa3.sql` no SQL Editor (faça o backup antes; é aditivo e idempotente, não apaga dados). Depois rode `supabase/tests/preco_etapa3.sql` (deve terminar com "OK: 67 testes passaram...") e os advisors de segurança. Só então mesclar o PR (o CRM novo já espera as funções).
+2. **Instalar a busca no Coolify** seguindo `docs/agente/infra-busca.md` (SearXNG e leitor Playwright, rede interna, sem domínio). Não consegui acessar o Coolify desta sessão.
+3. **Criar no n8n a credencial `GBH Supabase (service role)`** e escolher a credencial nos nós HTTP dos 4 workflows. Chaves de busca (Tavily, Serper, Firecrawl) são opcionais, com o passo a passo no mesmo documento.
+4. **Termos de uso do concorrente prioritário (alfacards.com.br):** o `robots.txt` libera, mas não achei página de termos. Confirme (ou me diga) se posso ler a página pública do produto com 1 requisição a cada 15 s; até lá `fontes_pesquisa.termos_ok` fica vazio, o que **não** bloqueia, só registra a dúvida. Para bloquear o domínio, marque `termos_ok = false` ou `ativo = false` em `fontes_pesquisa`.
+5. **Revisar os parâmetros novos** (`parametros_comerciais.campos_revisar`): meta de margem líquida para o aprendizado (20%), mínimo de 8 orçamentos em 30 dias, limites 15% e 45%, passo de 0,01, alerta de consumo de margem (40%), tempo máximo da pesquisa (45 s), tempo sem repetir pesquisa sem resultado (30 min).
+6. **Decisão sua:** ligar o aquecimento de cache de madrugada? (`aquecer_cache_ligado`, desligado; só renova SKUs já orçados, até 10 por noite.)
+7. **Testar no CRM:** Configurações > Política de desconto (mude o percentual e veja o pior caso); Catálogo > Saúde de preços; um pedido com item de teste, editando o preço abaixo do piso.
+
+Sugestões (insights): (a) para o concorrente prioritário, o ganho real vem de uma receita de cliques no leitor (escolher quantidade e papel) por tipo de produto, só vale depois de ver quantas pesquisas voltam `sem_dado`; (b) comece a pesquisa pelos 20 SKUs mais orçados de cartão, panfleto e adesivo e olhe a cobertura antes de ligar o aquecimento; (c) com 30 dias de dados, a tela Saúde de preços mostra onde subir ou baixar o fator sem achismo.
+
+---
+
+# Etapa 2 (histórico)
 
 ## Estado em 28/10/2026: Etapa 2 concluída
 
