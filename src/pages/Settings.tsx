@@ -20,6 +20,7 @@ import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 
 import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
+const KnowledgeTab = lazy(() => import('@/features/agent/KnowledgeTab'))
 
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
 
@@ -453,6 +454,7 @@ export default function Settings() {
           <TabsTrigger value="metas">Metas</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
+          <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>
         <TabsContent value="empresa"><CompanyTab /></TabsContent>
@@ -464,6 +466,7 @@ export default function Settings() {
         <TabsContent value="metas"><GoalsTab /></TabsContent>
         <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>
+        <TabsContent value="conhecimento"><Suspense fallback={<Skeleton className="h-40 w-full" />}><KnowledgeTab /></Suspense></TabsContent>
         <TabsContent value="dados"><DataTab /></TabsContent>
       </Tabs>
     </div>

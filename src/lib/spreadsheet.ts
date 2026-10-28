@@ -23,10 +23,28 @@ export async function readTable(file: File): Promise<string[][]> {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, raw: true, defval: '', blankrows: false })
     return rows.map((r) => r.map(cell)).filter((r) => r.some((c) => c !== ''))
   }
-  if (name.endsWith('.pdf')) {
-    throw new Error('PDF não dá para ler com segurança. Abra o PDF no Excel ou no Google Planilhas, salve como .xlsx e envie de novo (ou me mande o PDF para eu converter).')
+  if (name.endsWith('.pdf') || file.type === 'application/pdf') return (await readCatalogFile(file)).rows
+  throw new Error('Formato não suportado. Use .pdf, .xlsx, .xls ou .csv.')
+}
+
+export interface CatalogFile {
+  rows: string[][]
+  /** Só PDF: linhas que terminam em preço, contadas à parte do leitor de colunas (conferência do total). */
+  candidatas: number | null
+  emitidoEm: string | null
+  avisos: string[]
+}
+
+/** Lê a tabela do fornecedor (PDF, Excel ou CSV). O PDF original é guardado em bucket privado pela tela antes de importar. */
+export async function readCatalogFile(file: File): Promise<CatalogFile> {
+  const name = file.name.toLowerCase()
+  if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+    const { readPdfTable } = await import('./catalog-pdf.ts')
+    const r = await readPdfTable(await file.arrayBuffer())
+    if (r.rows.length < 2) throw new Error('Não encontrei linhas de produtos no PDF. Confira se é a tabela de preços completa.')
+    return { rows: r.rows, candidatas: r.candidatas, emitidoEm: r.emitidoEm, avisos: r.avisos }
   }
-  throw new Error('Formato não suportado. Use .xlsx, .xls ou .csv.')
+  return { rows: await readTable(file), candidatas: null, emitidoEm: null, avisos: [] }
 }
 
 function looksLikeHtml(buf: ArrayBuffer): boolean {
@@ -51,7 +69,7 @@ export function guessHeaderRow(rows: string[][]): number {
   return i < 0 ? 0 : i
 }
 
-export type Field = 'code' | 'category' | 'description' | 'colors' | 'weight' | 'qty' | 'size' | 'lead' | 'cost' | 'price'
+export type Field = 'code' | 'category' | 'description' | 'colors' | 'weight' | 'qty' | 'size' | 'lead' | 'cost'
 
 const HINTS: Record<Field, string[]> = {
   code: ['codigo', 'cod', 'code', 'sku', 'ref'],
@@ -63,11 +81,9 @@ const HINTS: Record<Field, string[]> = {
   size: ['tam', 'tamanho', 'medida'],
   lead: ['prazo'],
   cost: ['custo', 'cost', 'preco de custo', 'preco fornecedor', 'valor un', 'valor'],
-  // só preço de VENDA: numa tabela de fornecedor o "Preço" simples é o nosso custo
-  price: ['preco de venda', 'preco venda', 'venda', 'sugerido', 'price'],
 }
 
-const ORDER: Field[] = ['code', 'category', 'description', 'colors', 'weight', 'qty', 'size', 'lead', 'price', 'cost']
+const ORDER: Field[] = ['code', 'category', 'description', 'colors', 'weight', 'qty', 'size', 'lead', 'cost']
 
 /** Sugere qual coluna é cada campo pelo nome do cabeçalho; -1 quando não achar. */
 export function guessMapping(header: string[]): Record<Field, number> {
@@ -100,22 +116,23 @@ export function extractGrammage(description: string): number | null {
 }
 
 export interface ImportItem {
-  code: string
-  category: string | null
-  description: string
-  colors: string | null
-  weight: number | null
-  grammage: number | null
-  qty: number | null
-  size: string | null
-  lead_days: number | null
-  cost: number
-  suggested_price: number
-  active: boolean
+  /** Número da linha no arquivo (1 = primeira linha da planilha), para achar a linha no relatório. */
+  n: number
+  /** Nulo quando a linha não tem código: entra como sem_sku e não é vendável. */
+  sku: string | null
+  categoria: string | null
+  descricao: string
+  cores: string | null
+  peso_g: number | null
+  quantidade: number | null
+  tamanho_mm: string | null
+  prazo: number | null
+  custo: number | null
 }
 
-/** Converte as linhas da planilha em produtos, uma coluna para cada campo. Ignora títulos, linhas de seção e cabeçalhos repetidos (algumas tabelas de fornecedor repetem o cabeçalho a cada categoria). */
-export function buildProducts(rows: string[][], headerRow: number, map: Record<Field, number>, markup: number): { items: ImportItem[]; skipped: number } {
+/** Converte as linhas da planilha em itens, uma coluna para cada campo. Ignora só títulos, linhas de seção e cabeçalhos repetidos.
+ *  Linha de dados sem código NÃO é ignorada (entra como sem_sku) e linha com dado faltando NÃO some: o servidor rejeita com motivo. */
+export function buildProducts(rows: string[][], headerRow: number, map: Record<Field, number>): { items: ImportItem[]; skipped: number; ignoradas: string[] } {
   const header = rows[headerRow] ?? []
   const codeLabel = map.code >= 0 ? normalize(header[map.code] ?? '') : ''
   const text = (r: string[], f: Field) => (map[f] >= 0 ? (r[map[f]] ?? '').trim() : '')
@@ -126,32 +143,36 @@ export function buildProducts(rows: string[][], headerRow: number, map: Record<F
     return Number.isFinite(n) ? n : null
   }
   const items: ImportItem[] = []
+  const ignoradas: string[] = []
   let skipped = 0
-  for (const r of rows.slice(headerRow + 1)) {
+  rows.forEach((r, idx) => {
+    if (idx <= headerRow) return
     const code = text(r, 'code')
     const description = text(r, 'description')
-    if (!code || !description || normalize(code) === codeLabel) {
+    const hasCost = text(r, 'cost') !== ''
+    const hasQty = text(r, 'qty') !== ''
+    const repeatedHeader = code !== '' && normalize(code) === codeLabel
+    // dado = tem preço, ou tem quantidade junto de código ou descrição. O resto é título, seção ou cabeçalho repetido.
+    const isData = !repeatedHeader && (hasCost || (hasQty && (code !== '' || description !== '')))
+    if (!isData) {
       skipped++
-      continue
+      if (r.some((c) => c !== '') && ignoradas.length < 20) ignoradas.push(`linha ${idx + 1}: ${r.filter(Boolean).slice(0, 4).join(' | ')}`)
+      return
     }
-    const cost = num(r, 'cost') ?? 0
-    const given = num(r, 'price') ?? 0
     const qty = num(r, 'qty')
     const lead = num(r, 'lead')
     items.push({
-      code,
-      category: text(r, 'category') || null,
-      description,
-      colors: text(r, 'colors') || null,
-      weight: num(r, 'weight'),
-      grammage: extractGrammage(description),
-      qty: qty === null ? null : Math.round(qty),
-      size: text(r, 'size') || null,
-      lead_days: lead === null ? null : Math.round(lead),
-      cost,
-      suggested_price: given > 0 ? given : markup > 0 ? Math.round(Math.round(cost * 100) * markup) / 100 : 0,
-      active: true,
+      n: idx + 1,
+      sku: code || null,
+      categoria: text(r, 'category') || null,
+      descricao: description,
+      cores: text(r, 'colors') || null,
+      peso_g: num(r, 'weight'),
+      quantidade: qty === null ? null : Math.round(qty),
+      tamanho_mm: text(r, 'size') || null,
+      prazo: lead === null ? null : Math.round(lead),
+      custo: hasCost ? num(r, 'cost') : null,
     })
-  }
-  return { items, skipped }
+  })
+  return { items, skipped, ignoradas }
 }

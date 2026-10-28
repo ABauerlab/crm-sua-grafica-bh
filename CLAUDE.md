@@ -31,7 +31,7 @@ Consentimento de promoções: `contacts.marketing_consent` (`none` | `opted_in` 
 
 Pedidos: `orders` (etapa, pagamento, arte, entrega), `order_items`, `order_events` (histórico), `order_files` (bucket privado `order-files`) e a view `order_financials` (total, custo, impostos, taxa e lucro líquido calculados no banco). Triggers bloqueiam mover para Pago sem pagamento confirmado e para Produção sem arte aprovada. `app_settings` guarda os parâmetros de preço (`pricing`), limites por etapa (`kanban`) e o e-mail do dono (`owner`), que `private.is_staff()` exige. Origem do anúncio: `contacts.first_referral` e `conversations.last_referral`, gravados pelo webhook.
 
-Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `labels`, `ad_window_until` (72 h para anúncio) e usa `ai_handled` como chave IA/humano; `conversation_notes` (notas internas), `quick_replies`, `tasks`, `products` + view `products_priced` (piso, desconto máximo e lucro estimado calculados no banco), `kits`/`kit_items`, `ad_entities`/`ad_daily`/`ad_manual_spend` + função `ad_performance(from, to)` (cruza gasto da Meta com `origin_ad_id` dos pedidos e `first_referral` dos contatos), `agent_logs`, view `contact_stats`. Integração do agente de IA em `docs/agente-ia.md`.
+Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `labels`, `ad_window_until` (72 h para anúncio) e usa `ai_handled` como chave IA/humano; `conversation_notes` (notas internas), `quick_replies`, `tasks`, `catalogo` (antiga `products`; `products` e `products_priced` seguem como visões de compatibilidade) com SKU, status de venda, piso e flags por linha, `kits`/`kit_items`, `ad_entities`/`ad_daily`/`ad_manual_spend` + função `ad_performance(from, to)` (cruza gasto da Meta com `origin_ad_id` dos pedidos e `first_referral` dos contatos), `agent_logs`, view `contact_stats`. Integração do agente de IA em `docs/agente-ia.md`.
 
 Mercado Pago: `pagamentos` (links e tentativas), `eventos_pagamento` (contrato com o agente), `pagamentos_alertas`, `orders.teste`. Um só caminho para marcar pago (`private.confirmar_pagamento`, usado pelo webhook e por `confirmar_pagamento_manual`). Detalhes em `docs/pagamento-mercadopago.md`.
 
@@ -48,7 +48,11 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `mp-criar-link` | não (confere dono ou service role) | cria ou devolve o link do Checkout Pro do pedido (valor vem do banco) |
 | `mp-webhook` | não (assinatura `x-signature`) | valida o aviso, consulta o pagamento no Mercado Pago e confirma o pedido pelo banco |
 | `mp-conferir` | não (dono, service role ou `x-cron-secret`) | consulta o Mercado Pago pelos pagamentos do pedido e grava pelo mesmo caminho do webhook (botão "Conferir agora" e agendamento de 10 min) |
+| `conhecimento` | não (dono, service role ou `x-cron-secret`) | gera vetores `gte-small` do banco de conhecimento, reindexa e busca trechos para o agente |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
+
+### Catálogo do fornecedor e SKU (Etapa 2)
+A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco`. Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
 
 ## Convenções
 - **Sigilo do fornecedor (regra do dono): nunca escrever o nome do fornecedor em lugar nenhum** (código, textos de tela, mensagens e templates do WhatsApp, documentação, comentários, testes, exemplos, commits e PRs). Usar sempre "fornecedor". O front é público e o repositório não pode ser público. `npm test` falha se o nome aparecer no repositório.
@@ -82,6 +86,7 @@ supabase functions deploy whatsapp-sync-templates
 supabase functions deploy admin-create-agent
 supabase functions deploy whatsapp-media
 supabase functions deploy meta-ads-sync
+supabase functions deploy conhecimento --no-verify-jwt
 supabase functions deploy mp-webhook --no-verify-jwt
 supabase functions deploy mp-criar-link --no-verify-jwt
 supabase functions deploy mp-conferir --no-verify-jwt

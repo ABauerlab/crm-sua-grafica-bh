@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { AlertTriangle, Bot, Clock, MessageSquare, MoreHorizontal, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { SkuBadge } from '@/components/SkuBadge'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatBRL, formatPct } from '@/lib/money'
 import { contactLabel } from '@/lib/format'
@@ -92,6 +93,13 @@ export function OrderCardView({
           </MenuContent>
         </Menu>
       </div>
+
+      {order.items.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1" aria-label="SKUs do pedido">
+          {order.items.slice(0, 3).map((i, n) => <SkuBadge key={`${i.code}-${n}`} sku={i.code} />)}
+          {order.items.length > 3 && <span className="text-[11px] text-muted-foreground">+{order.items.length - 3}</span>}
+        </div>
+      )}
 
       <div className="mt-2 flex items-end justify-between gap-2">
         <div>

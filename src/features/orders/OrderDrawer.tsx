@@ -1,7 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Check, Copy, ExternalLink, FileUp, MessageSquare, Plus, Send, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { SkuBadge } from '@/components/SkuBadge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -170,7 +171,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const { data: items, isLoading } = useOrderItems(order.id)
   const { data: settings } = useSettings()
   const rules = settings?.pricing ?? DEFAULT_PRICING
-  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', lead: '' })
+  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
   const [discount, setDiscount] = useState(String(order.discount_pct))
   const [tax, setTax] = useState(String(order.tax_pct))
   const [fee, setFee] = useState(String(order.payment_fee_pct))
@@ -215,11 +216,12 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
   function addItem() {
     const it = { description: draft.description.trim(), qty: Math.max(1, Math.floor(Number(draft.qty) || 1)), unit_cost: parseMoney(draft.cost), unit_price: parseMoney(draft.price), lead_days: draft.lead.trim() ? Math.max(0, Math.round(Number(draft.lead) || 0)) : null }
+    if (!draft.code) return toast('error', 'Escolha o produto pela busca do catálogo. Todo item precisa de SKU.')
     if (!it.description) return toast('error', 'Informe a descrição do item.')
     const next = [...(items ?? []), { ...it, id: 'novo', order_id: order.id, code: draft.code || null }]
     guarded({ items: next, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => {
       await saveItem.mutateAsync({ ...it, code: draft.code })
-      setDraft({ code: '', description: '', qty: '1', cost: '', price: '', lead: '' })
+      setDraft({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
     })
   }
 
@@ -271,15 +273,26 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
       <fieldset className="space-y-2 rounded-md border bg-secondary/40 p-3">
         <legend className="px-1 text-xs font-bold uppercase tracking-wide">Adicionar item</legend>
-        <ProductPicker onPick={(p) => setDraft({ code: p.code, description: p.description, qty: String(p.qty ?? 1), cost: String(p.cost), price: String(p.suggested_price), lead: p.lead_days === null ? '' : String(p.lead_days) })} />
+        <ProductPicker onPick={async (p) => {
+          // o preço vem de calcular_preco (mercado, histórico e trava de lucro); o custo vem do catálogo; a linha é UMA opção fechada de quantidade
+          const { data, error } = await supabase.rpc('calcular_preco', { p_sku: p.sku, p_quantidade: 1, p_contexto: {} })
+          const r = data as { ok: boolean; preco_total?: number; regra?: string; confianca?: string; erro?: string } | null
+          if (error || !r?.ok) return toast('error', r?.erro === 'item_nao_vendavel' ? 'Este item não está disponível para venda.' : 'Não foi possível calcular o preço deste item.')
+          setDraft({
+            code: p.sku ?? '',
+            description: `${p.category ?? ''} ${p.description} ${p.colors ?? ''} ${p.size && !/^0\s*x\s*0$/i.test(p.size) ? p.size : ''} (${p.qty ?? 1} un)`.replace(/\s+/g, ' ').trim(),
+            qty: '1', cost: String(p.cost), price: String(r.preco_total), lead: p.lead_days === null ? '' : String(p.lead_days),
+            origem: `Preço de calcular_preco (${r.regra}, confiança ${r.confianca}).`,
+          })
+        }} />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
-          <Input aria-label="Código" placeholder="Código" className="sm:col-span-1" value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })} />
-          <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-3" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          <Input aria-label="Quantidade" type="number" min="1" inputMode="numeric" placeholder="Qtd" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
-          <Input aria-label="Prazo do fornecedor em dias" type="number" min="0" inputMode="numeric" placeholder="Prazo (dias)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
-          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
+          <div className="col-span-2 flex items-center gap-2 sm:col-span-6"><span className="text-xs font-medium text-muted-foreground">SKU escolhido:</span><SkuBadge sku={draft.code || null} />{draft.origem && <span className="text-xs text-muted-foreground">{draft.origem}</span>}</div>
+          <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-4" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+          <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
+          <Input aria-label="Prazo do fornecedor em dias úteis" type="number" min="0" inputMode="numeric" placeholder="Prazo (d.u.)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
+          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
-          <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending}><Plus className="h-4 w-4" /> Adicionar</Button>
+          <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || !draft.code}><Plus className="h-4 w-4" /> Adicionar</Button>
         </div>
       </fieldset>
 
@@ -323,6 +336,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
   const dirty = v.description !== item.description || Number(v.qty) !== item.qty || parseMoney(v.cost) !== item.unit_cost || parseMoney(v.price) !== item.unit_price
   return (
     <li className={cn('rounded-md border p-2.5', below && 'border-brand-red')}>
+      <div className="mb-2 flex items-center gap-2"><SkuBadge sku={item.code} />{!item.code && <span className="text-xs text-brand-red">Informe o SKU antes de mandar para Produção.</span>}</div>
       <div className="grid grid-cols-6 gap-2">
         <label className="col-span-4 space-y-1 text-xs font-medium text-muted-foreground">
           Descrição
@@ -688,6 +702,79 @@ function HistoryTab({ order }: { order: OrderCard }) {
   )
 }
 
+/* ---------- Pedido para a fábrica ---------- */
+interface Fabrica {
+  ok: boolean
+  pedido: string
+  pronto_ate: string | null
+  pago: boolean
+  entrega: string | null
+  cliente: { nome: string | null; whatsapp: string | null; bairro: string | null }
+  itens: { sku: string | null; quantidade_pedida: number; descricao: string; especificacao: string; prazo_dias_uteis: number | null }[]
+  arquivos_arte_aprovada: { arquivo: string; path: string; versao: number }[]
+  itens_sem_sku: number
+}
+
+/** Tudo o que se manda ao fornecedor depois que o pedido foi pago: SKUs, quantidades, especificação, prazo, arte aprovada e dados do cliente. Uso interno. */
+function FactoryTab({ order }: { order: OrderCard }) {
+  const toast = useToast()
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['pedido-fabrica', order.id, order.updated_at],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('pedido_para_fabrica', { p_order: order.id })
+      if (error) throw error
+      return data as Fabrica
+    },
+  })
+  if (isLoading) return <Skeleton className="h-40 w-full" />
+  if (error || !data?.ok) return <p className="text-sm text-brand-red">Não foi possível montar o pedido para a fábrica.</p>
+
+  const resumo = [
+    `Pedido ${data.pedido}`,
+    ...data.itens.map((i) => `${i.sku ?? 'SEM SKU'} x ${i.quantidade_pedida} | ${i.especificacao || i.descricao}${i.prazo_dias_uteis != null ? ` | prazo ${i.prazo_dias_uteis} dias úteis` : ''}`),
+    data.arquivos_arte_aprovada.length ? `Arte aprovada: ${data.arquivos_arte_aprovada.map((a) => a.arquivo).join(', ')}` : 'Arte aprovada: ainda não enviada',
+    `Cliente: ${data.cliente.nome ?? 'sem nome'} | ${data.cliente.whatsapp ?? ''}${data.cliente.bairro ? ` | ${data.cliente.bairro}` : ''}`,
+    `Entrega: ${data.entrega ?? 'a definir'}${data.pronto_ate ? ` | previsto ${new Date(data.pronto_ate + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}`,
+  ].join('\n')
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(resumo)
+      toast('ok', 'Resumo copiado.')
+    } catch {
+      toast('error', 'Não foi possível copiar. Selecione o texto abaixo e copie à mão.')
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {!data.pago && <p role="alert" className="rounded-md border border-brand-yellow bg-brand-yellow/10 p-2.5 text-sm">Este pedido ainda não foi pago. Só peça ao fornecedor depois da confirmação do pagamento.</p>}
+      {data.itens_sem_sku > 0 && <p role="alert" className="rounded-md border border-brand-red/40 bg-brand-red/5 p-2.5 text-sm font-semibold">{data.itens_sem_sku} item(ns) sem SKU. Informe o código na aba Itens antes de produzir.</p>}
+      <ul className="space-y-2">
+        {data.itens.map((i, n) => (
+          <li key={n} className="rounded-md border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2"><SkuBadge sku={i.sku} /><span className="text-sm font-black tabular">x {i.quantidade_pedida}</span></div>
+            <p className="mt-1 text-sm font-semibold">{i.descricao}</p>
+            {i.especificacao && <p className="text-xs text-muted-foreground">{i.especificacao}</p>}
+            {i.prazo_dias_uteis != null && <p className="text-xs text-muted-foreground">Prazo do fornecedor: {i.prazo_dias_uteis} dias úteis (conta com pagamento e arte até 12h)</p>}
+          </li>
+        ))}
+      </ul>
+      <div className="rounded-md border p-3 text-sm">
+        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide">Arte aprovada</h3>
+        {data.arquivos_arte_aprovada.length === 0 ? <p className="text-muted-foreground">Nenhum arquivo aprovado ainda.</p> : <ul className="list-disc pl-5">{data.arquivos_arte_aprovada.map((a) => <li key={a.path}>{a.arquivo} (versão {a.versao})</li>)}</ul>}
+      </div>
+      <div className="rounded-md border p-3 text-sm">
+        <h3 className="mb-1 text-xs font-bold uppercase tracking-wide">Cliente e entrega</h3>
+        <p>{data.cliente.nome ?? 'Sem nome'}{data.cliente.whatsapp ? ` · ${formatPhone(data.cliente.whatsapp)}` : ''}{data.cliente.bairro ? ` · ${data.cliente.bairro}` : ''}</p>
+        <p className="text-muted-foreground">Entrega: {data.entrega ?? 'a definir'}{data.pronto_ate ? ` · previsto ${new Date(data.pronto_ate + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}</p>
+      </div>
+      <pre className="whitespace-pre-wrap rounded-md border bg-secondary/40 p-3 text-xs">{resumo}</pre>
+      <Button onClick={copiar}><Copy className="h-4 w-4" /> Copiar resumo</Button>
+    </div>
+  )
+}
+
 /* ---------- Gaveta ---------- */
 export default function OrderDrawer({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const { data: orders } = useOrders()
@@ -714,6 +801,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
             <TabsTrigger value="arte">Arte e prova</TabsTrigger>
             <TabsTrigger value="entrega">Entrega</TabsTrigger>
+            {(order.payment_status === 'aprovado' || order.payment_manual) && <TabsTrigger value="fabrica">Pedido para a fábrica</TabsTrigger>}
             <TabsTrigger value="historico">Histórico</TabsTrigger>
           </TabsList>
           <TabsContent value="resumo"><SummaryTab key={order.id} order={order} /></TabsContent>
@@ -721,6 +809,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
           <TabsContent value="pagamento"><PaymentTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="arte"><ArtTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="entrega"><DeliveryTab key={order.id} order={order} /></TabsContent>
+          {(order.payment_status === 'aprovado' || order.payment_manual) && <TabsContent value="fabrica"><FactoryTab key={order.id} order={order} /></TabsContent>}
           <TabsContent value="historico"><HistoryTab order={order} /></TabsContent>
         </Tabs>
       )}
