@@ -34,3 +34,7 @@ verify_jwt = false
 # Aceita o dono logado, a service role ou o agendamento (x-cron-secret); a função confere por conta própria
 [functions.mp-conferir]
 verify_jwt = false
+
+# Banco de conhecimento: aceita o dono logado, a service role (n8n) ou o agendamento (x-cron-secret); a função confere por conta própria
+[functions.conhecimento]
+verify_jwt = false
