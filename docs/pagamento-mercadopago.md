@@ -62,12 +62,14 @@ Nada disso fica no repositório, no front ou em logs. Os logs só registram o mo
 4. Credenciais: em "Credenciais de teste" copie o Access Token para `MP_ACCESS_TOKEN_TESTE`; em "Credenciais de produção", para `MP_ACCESS_TOKEN_PRODUCAO`.
 5. O botão "Simular notificação" do painel usa um ID falso: a função responde 200 "ignorado" (o pagamento não existe). Isso confirma que a assinatura e a URL estão certas.
 
+Link vencido ou substituído abre a tela "Ops, ocorreu um erro / ficou disponível até ..." no Mercado Pago (horário de Brasília).
+
 A assinatura vale 10 minutos a partir do carimbo (`ts`) enviado pelo Mercado Pago; fora disso o aviso é rejeitado (proteção contra replay).
 
 ## Como testar
 1. Crie um pedido com itens, abra a aba **Pagamento** e ligue **Pedido de teste**.
 2. **Gerar link de pagamento**. Abra o link com o usuário comprador de teste do Mercado Pago.
-3. Cartão de teste aprovado: nome do titular `APRO`. Recusado: nome `OTHE`. Número de teste do Mercado Pago (Mastercard 5031 4332 1540 6351, código 123, validade 11/30) e CPF de teste conforme a documentação atual do Mercado Pago.
+3. Cartões de teste do Brasil (código 123, validade 11/30): Mastercard crédito `5480 8328 0103 3311`, Visa crédito `4235 6477 2802 5682`, Elo débito `5067 7667 8388 8311`. Quem decide o resultado é o **nome do titular**, com CPF `12345678909`: `APRO` aprova, `OTHE` recusa (erro geral), `FUND` recusa por saldo, `SECU` por código inválido, `CONT` deixa pendente. Se o comprador de teste estiver logado, o checkout só mostra os cartões salvos dele; para digitar um cartão, abra o link em janela anônima sem login.
 4. Confira: o pedido vai para **Pago**, aparece em Pagamentos > Cobranças como TESTE, e existe um evento `pagamento_confirmado` em `eventos_pagamento`.
 5. Casos para repetir: recusado (alerta, pedido fica), alterar um item e gerar de novo (o link antigo é invalidado), link vencido (use `expira_horas` baixo), reenviar o mesmo aviso (nada duplica).
 
