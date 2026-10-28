@@ -171,6 +171,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const { data: items, isLoading } = useOrderItems(order.id)
   const { data: settings } = useSettings()
   const rules = settings?.pricing ?? DEFAULT_PRICING
+  const [manual, setManual] = useState(false)
   const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
   const [discount, setDiscount] = useState(String(order.discount_pct))
   const [tax, setTax] = useState(String(order.tax_pct))
@@ -197,7 +198,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
   const saveItem = useMutation({
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
-      const row = { order_id: order.id, code: it.code || null, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
+      const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       if (!it.id) {
         const { error } = await supabase.from('order_items').insert(row)
         if (error) throw new Error(error.message)
@@ -229,11 +230,11 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
   function addItem() {
     const it = { description: draft.description.trim(), qty: Math.max(1, Math.floor(Number(draft.qty) || 1)), unit_cost: parseMoney(draft.cost), unit_price: parseMoney(draft.price), lead_days: draft.lead.trim() ? Math.max(0, Math.round(Number(draft.lead) || 0)) : null }
-    if (!draft.code) return toast('error', 'Escolha o produto pela busca do catálogo. Todo item precisa de SKU.')
+    if (!manual && !draft.code) return toast('error', 'Escolha o produto pela busca do catálogo ou marque "item fora do catálogo".')
     if (!it.description) return toast('error', 'Informe a descrição do item.')
-    const next = [...(items ?? []), { ...it, id: 'novo', order_id: order.id, code: draft.code || null }]
+    const next = [...(items ?? []), { ...it, id: 'novo', order_id: order.id, code: manual ? null : draft.code || null }]
     guarded({ items: next, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => {
-      await saveItem.mutateAsync({ ...it, code: draft.code })
+      await saveItem.mutateAsync({ ...it, code: manual ? '' : draft.code, fora_catalogo: manual })
       setDraft({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
     })
   }
@@ -301,13 +302,14 @@ function ItemsTab({ order }: { order: OrderCard }) {
           })
         }} />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+          <label className="col-span-2 flex items-center gap-2 text-sm sm:col-span-6"><input type="checkbox" checked={manual} onChange={(e) => setManual(e.target.checked)} /> Item fora do catálogo (manual, sem SKU)</label>
           <div className="col-span-2 flex items-center gap-2 sm:col-span-6"><span className="text-xs font-medium text-muted-foreground">SKU escolhido:</span><SkuBadge sku={draft.code || null} />{draft.origem && <span className="text-xs text-muted-foreground">{draft.origem}</span>}</div>
           <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-4" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
           <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
           <Input aria-label="Prazo do fornecedor em dias úteis" type="number" min="0" inputMode="numeric" placeholder="Prazo (d.u.)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
-          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly />
+          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly={!manual} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
-          <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || !draft.code}><Plus className="h-4 w-4" /> Adicionar</Button>
+          <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || (!manual && !draft.code)}><Plus className="h-4 w-4" /> Adicionar</Button>
         </div>
       </fieldset>
 
@@ -372,7 +374,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
   const podeSalvar = !bloqueado && (!precisaConfirmar || (confirma && motivo.trim().length >= 3))
   return (
     <li className={cn('rounded-md border p-2.5', (below || bloqueado) && 'border-brand-red')}>
-      <div className="mb-2 flex items-center gap-2"><SkuBadge sku={item.code} />{!item.code && <span className="text-xs text-brand-red">Informe o SKU antes de mandar para Produção.</span>}</div>
+      <div className="mb-2 flex items-center gap-2">{item.fora_catalogo ? <span className="text-xs font-bold text-muted-foreground">Item manual (fora do catálogo)</span> : <SkuBadge sku={item.code} />}{!item.code && !item.fora_catalogo && <span className="text-xs text-brand-red">Informe o SKU antes de mandar para Produção.</span>}</div>
       <div className="grid grid-cols-6 gap-2">
         <label className="col-span-4 space-y-1 text-xs font-medium text-muted-foreground">
           Descrição
