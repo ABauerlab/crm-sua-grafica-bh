@@ -44,6 +44,6 @@ Candidatas, inativas até confirmar: Santo Antônio, São Pedro, Sion, Carmo, Cr
 ### Como testar
 ```bash
 npm test && npm run typecheck
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/agente_etapa1.sql   # termina em ROLLBACK
+psql "$DATABASE_URL" -f supabase/tests/agente_etapa1.sql   # desfaz tudo; sucesso aparece como "OK: 54 testes passaram"
 ```
 No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente e o status (clique em Sincronizar).

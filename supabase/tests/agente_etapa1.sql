@@ -1,19 +1,22 @@
--- Testes das funções e travas da Etapa 1 do agente. Rodam dentro de uma transação e terminam em ROLLBACK:
--- nada fica gravado. Uso: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/agente_etapa1.sql
--- (ou colar no SQL Editor do Supabase). Qualquer falha aborta com a lista dos testes que falharam.
-begin;
-
-create temp table _res (n serial, nome text, ok boolean, detalhe text);
-create or replace function pg_temp.ck(p_nome text, p_ok boolean, p_detalhe text default null) returns void
-language sql as $$ insert into _res (nome, ok, detalhe) values (p_nome, coalesce(p_ok, false), p_detalhe); $$;
+-- Testes das funções e travas da Etapa 1 do agente. Um único bloco, que no final se desfaz sozinho (nada fica gravado).
+-- Como rodar: cole tudo no SQL Editor do Supabase e clique em Run, ou: psql "$DATABASE_URL" -f supabase/tests/agente_etapa1.sql
+-- O resultado SEMPRE aparece como uma mensagem de erro (é assim que o bloco desfaz as alterações):
+--   "OK: N testes passaram ..." = tudo certo;  "TESTES FALHARAM ..." = lista do que falhou.
 
 do $$
 declare
+  v_relatorio text;
+  v_falhas text;
+  v_total integer;
   v_small text; v_banner text; v_outro text;
   v_c1 uuid; v_c2 uuid; v_c3 uuid; v_c4 uuid; v_c5 uuid; v_c6 uuid; v_c7 uuid; v_c8 uuid;
   v_o uuid; v_ord uuid; v_cost numeric; v_lead integer;
   j jsonb; j2 jsonb; v_piso numeric; v_duro numeric; v_msg text; v_ok boolean;
 begin
+  create temp table _res (n serial, nome text, ok boolean, detalhe text) on commit drop;
+  create or replace function pg_temp.ck(p_nome text, p_ok boolean, p_detalhe text default null) returns void
+  language sql as 'insert into _res (nome, ok, detalhe) values (p_nome, coalesce(p_ok, false), p_detalhe)';
+
   -- SKUs de teste: cartão de visita barato com prazo de 1 dia útil e banner grande
   select code into v_small from public.products where active and category = 'CARTÕES DE VISITA' and lead_days = 1 and weight <= 1000 order by cost limit 1 offset 1;
   select code into v_banner from public.products where active and category like 'BANNERS%' and (regexp_match(size, '\d+'))[1]::int >= 700 and weight <= 5000 order by cost limit 1;
@@ -219,17 +222,14 @@ begin
   perform pg_temp.ck('segurança: anon não executa as funções do agente', not has_function_privilege('anon', 'public.calcular_preco(text,integer,jsonb)', 'execute'));
   perform pg_temp.ck('modo_atendimento acompanha ai_handled',
     (select modo_atendimento from public.conversations limit 1) is not distinct from (select case when ai_handled then 'ia' else 'humano' end from public.conversations limit 1));
-end $$;
 
-do $$
-declare r text;
-begin
-  select string_agg(format('%s %s%s', case when ok then 'OK    ' else 'FALHA ' end, nome, case when ok then '' else ' => ' || coalesce(detalhe, '') end), E'\n' order by n) into r from _res;
-  raise notice E'\n%', r;
-  if exists (select 1 from _res where not ok) then
-    raise exception E'TESTES FALHARAM:\n%', (select string_agg(nome || ' => ' || coalesce(detalhe, ''), E'\n' order by n) from _res where not ok);
+  -- Relatório. A mensagem de "erro" no final é proposital: ela desfaz tudo o que o teste criou.
+  select count(*), string_agg(format('%s %s%s', case when ok then 'OK    ' else 'FALHA ' end, nome, case when ok then '' else ' => ' || coalesce(detalhe, '') end), E'\n' order by n),
+         string_agg(nome || ' => ' || coalesce(detalhe, ''), E'\n' order by n) filter (where not ok)
+    into v_total, v_relatorio, v_falhas
+  from _res;
+  if v_falhas is not null then
+    raise exception E'TESTES FALHARAM (nada foi gravado):\n%\n\nRelatório completo:\n%', v_falhas, v_relatorio;
   end if;
-  raise notice '% testes passaram', (select count(*) from _res);
+  raise exception E'OK: % testes passaram. Esta mensagem de erro é proposital, desfaz tudo o que o teste criou (nada foi gravado).\n%', v_total, v_relatorio;
 end $$;
-
-rollback;
