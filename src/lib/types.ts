@@ -118,8 +118,13 @@ export interface Task {
   created_at: string
 }
 
+export type StatusVenda = 'vender_forte' | 'vender' | 'so_sob_demanda' | 'nao_competitivo' | 'nao_vender' | 'sem_sku'
+
+/** Linha do catálogo (visão products_priced, só o dono lê). `suggested_price` é a BASE DE CUSTO (referência, sem pesquisa): nunca vale para orçamento. */
 export interface Product {
   id: string
+  /** SKU do fornecedor: interno, nunca aparece ao cliente. Nulo = linha sem código (sem_sku). */
+  sku: string | null
   code: string
   description: string
   category: string | null
@@ -133,9 +138,26 @@ export interface Product {
   cost: number
   suggested_price: number
   active: boolean
-  floor_price: number
+  floor_price: number | null
   max_discount_price: number
   est_net_profit: number
+  grupo_produto: string | null
+  status_venda: StatusVenda
+  vendavel: boolean
+  cabe_na_bike: boolean | null
+  maior_lado_mm: number | null
+  piso: number | null
+  piso_duro: number | null
+  atualizado_em: string
+}
+
+export const STATUS_VENDA_LABELS: Record<StatusVenda, string> = {
+  vender_forte: 'Vender forte',
+  vender: 'Vender',
+  so_sob_demanda: 'Só sob demanda',
+  nao_competitivo: 'Não competitivo',
+  nao_vender: 'Não vender',
+  sem_sku: 'Sem código',
 }
 
 export interface Kit {
@@ -151,6 +173,7 @@ export interface KitItem {
   id: string
   kit_id: string
   product_id: string | null
+  sku: string | null
   description: string
   qty: number
   unit_cost: number

@@ -6,6 +6,7 @@ import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/l
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
+import { parsePdfPages, type PdfItem } from '../src/lib/catalog-pdf.ts'
 import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts'
@@ -117,9 +118,9 @@ const hdr = guessHeaderRow(rows)
 assert.equal(hdr, 1, 'o título (1 célula) é ignorado e o cabeçalho é a linha seguinte')
 assert.deepEqual(rows[hdr], ['Código', 'Descrição do Produto', 'Categoria', 'Valor Custo', 'Preço de Venda'])
 const map = guessMapping(rows[hdr])
-assert.deepEqual(map, { code: 0, description: 1, category: 2, colors: -1, weight: -1, qty: -1, size: -1, lead: -1, cost: 3, price: 4 })
+assert.deepEqual(map, { code: 0, description: 1, category: 2, colors: -1, weight: -1, qty: -1, size: -1, lead: -1, cost: 3 })
 assert.equal(rows[hdr + 1][3], '48.5')
-await assert.rejects(() => readTable(new File(['x'], 'catalogo.pdf')), /PDF/)
+await assert.rejects(() => readTable(new File(['x'], 'catalogo.doc')), /Formato não suportado/)
 
 // Tabela de preços de fornecedor: HTML salvo como .xls em ISO-8859-1, título e cabeçalho repetido a cada categoria, preço "R$ 1.234,56"
 const html = `<html><body><table>
@@ -143,13 +144,56 @@ assert.equal(extractGrammage('ADESIVO 90 gramas'), 90)
 assert.equal(extractGrammage('TAG 250gr'), 250)
 assert.equal(extractGrammage('CADERNETA - CAPA COUCHÊ 250G - MIOLO AP 75G - 90g'), 90, 'vale o sufixo final')
 assert.equal(extractGrammage('GIFT 4x0 gift'), null, 'sem número de gramatura')
-assert.deepEqual(zmap, { code: 0, category: 1, description: 2, colors: 3, weight: 4, qty: 5, size: 6, lead: 7, price: -1, cost: 8 }, 'cada coluna da planilha tem o seu campo; "Preço R$" do fornecedor é o custo')
-const built = buildProducts(sheetHtml, zh, zmap, 0)
+assert.deepEqual(zmap, { code: 0, category: 1, description: 2, colors: 3, weight: 4, qty: 5, size: 6, lead: 7, cost: 8 }, 'cada coluna da planilha tem o seu campo; "Preço R$" do fornecedor é o custo')
+const built = buildProducts(sheetHtml, zh, zmap)
 assert.equal(built.items.length, 3, 'cabeçalho repetido, título e seções não viram produto')
 assert.deepEqual(built.items[0], {
-  code: 'GIFT1', category: 'ACESSÓRIOS', description: 'CHAVEIRO UV - 10g', colors: '4X0', weight: 1250, grammage: 10, qty: 25, size: '57 x 57', lead_days: 5, cost: 1252.99, suggested_price: 0, active: true,
-}, 'nada é comprimido dentro da descrição e os acentos em ISO-8859-1 ficam preservados')
-assert.equal(buildProducts(sheetHtml, zh, zmap, 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
+  n: 4, sku: 'GIFT1', categoria: 'ACESSÓRIOS', descricao: 'CHAVEIRO UV - 10g', cores: '4X0', peso_g: 1250, quantidade: 25, tamanho_mm: '57 x 57', prazo: 5, custo: 1252.99,
+}, 'nada é comprimido dentro da descrição, os acentos em ISO-8859-1 ficam preservados e a linha guarda o número no arquivo')
+
+// Linhas que não podem sumir: sem código entra como sem_sku; sem preço vai adiante para ser rejeitada com motivo
+const rowsRaw = [
+  ['Código', 'Categoria', 'Descrição do Serviço', 'Cores', 'Peso', 'Qtde', 'Tam', 'Prazo*', 'Preço'],
+  ['PDV'],
+  ['CFV02', 'CARTÕES DE VISITA', 'COUCHE BRILHO - 300g', '4X4', '1392', '1000', '91 x 51', '2', '75,99'],
+  ['', 'PDV', 'DISPLAY POLIONDA', '4X0', '1500', '10', '300 x 400', '5', '99,90'],
+  ['CFV99', 'CARTÕES DE VISITA', 'SEM PREÇO', '4X4', '1392', '1000', '91 x 51', '2', ''],
+  ['Código', 'Categoria', 'Descrição do Serviço', 'Cores', 'Peso', 'Qtde', 'Tam', 'Prazo*', 'Preço'],
+]
+const pdvMap = guessMapping(rowsRaw[0])
+const pdv = buildProducts(rowsRaw, 0, pdvMap)
+assert.equal(pdv.items.length, 3, 'a linha sem código e a linha sem preço NÃO são descartadas')
+assert.equal(pdv.items[1].sku, null, 'sem código = sem_sku, nunca inventar')
+assert.equal(pdv.items[2].custo, null, 'sem preço vai com custo vazio para o servidor rejeitar com motivo')
+assert.equal(pdv.skipped, 2, 'só o título da seção e o cabeçalho repetido são ignorados')
+assert.equal(pdv.items[0].n, 3, 'número da linha no arquivo')
+
+// PDF da tabela do fornecedor: colunas pelo cabeçalho, linha sem código, descrição quebrada em duas linhas e cabeçalho repetido por página
+const mk = (y: number, cells: [number, string][]): PdfItem[] => cells.map(([x, str]) => ({ str, x, y, w: str.length * 4 }))
+const pdfHead = (y: number) => mk(y, [[20, 'Código'], [70, 'Categoria'], [150, 'Descrição'], [185, 'do'], [195, 'Serviço'], [330, 'Cores'], [370, 'Peso'], [410, 'Qtde'], [450, 'Tam'], [500, 'Prazo*'], [540, 'Preço']])
+const parsed = parsePdfPages([
+  [...mk(800, [[20, 'Tabela emitida em 25/10/2026']]), ...pdfHead(780),
+   ...mk(760, [[20, 'CFV02'], [70, 'CARTÕES DE VISITA'], [150, 'COUCHE BRILHO - 300g'], [330, '4X4'], [370, '1392'], [410, '1000'], [450, '91 x 51'], [500, '2'], [540, '75,99']]),
+   ...mk(745, [[20, 'CFV02D'], [70, 'CARTÕES DE VISITA'], [150, 'COUCHE BRILHO - 300g'], [330, '4X4'], [370, '2784'], [410, '2000'], [450, '91 x 51'], [500, '2'], [540, '1.143,99']]),
+   ...mk(730, [[70, 'PDV'], [150, 'DISPLAY POLIONDA GRANDE'], [330, '4X0'], [370, '1500'], [410, '10'], [450, '300 x 400'], [500, '5'], [540, '99,90']]),
+   ...mk(722, [[150, 'COM SUPORTE']]),
+   ...mk(700, [[20, 'ADESIVOS']])],
+  [...pdfHead(780),
+   ...mk(760, [[20, 'ADV01'], [70, 'ADESIVOS'], [150, 'ADESIVO VINIL'], [330, '4X0'], [370, '100'], [410, '200'], [450, '50 x 50'], [500, '3'], [540, 'R$ 38,50']])],
+])
+assert.equal(parsed.rows.length, 5, 'cabeçalho + 4 linhas de dados (o cabeçalho repetido na página 2 não duplica)')
+assert.equal(parsed.candidatas, 4, 'conferência: 4 linhas terminam em preço')
+assert.equal(parsed.rows.length - 1, parsed.candidatas, 'total lido = total de linhas com preço')
+assert.deepEqual(parsed.rows[1], ['CFV02', 'CARTÕES DE VISITA', 'COUCHE BRILHO - 300g', '4X4', '1392', '1000', '91 x 51', '2', '75,99'])
+assert.equal(parsed.rows[2][8], '1.143,99')
+assert.equal(parsed.rows[3][0], '', 'linha sem código no PDF fica com código vazio')
+assert.equal(parsed.rows[3][2], 'DISPLAY POLIONDA GRANDE COM SUPORTE', 'descrição quebrada em duas linhas volta a uma só')
+assert.equal(parsed.emitidoEm, '2026-10-25')
+assert.equal(parsed.titulos, 1, 'o título de seção (ADESIVOS) é só título; a linha da data fica acima do cabeçalho')
+const pdfMap = guessMapping(parsed.rows[0])
+assert.deepEqual(pdfMap, { code: 0, category: 1, description: 2, colors: 3, weight: 4, qty: 5, size: 6, lead: 7, cost: 8 }, 'o cabeçalho do PDF é reconhecido pela tela de importação')
+const pdfBuilt = buildProducts(parsed.rows, 0, pdfMap)
+assert.deepEqual(pdfBuilt.items.map((i) => [i.sku, i.custo]), [['CFV02', 75.99], ['CFV02D', 1143.99], [null, 99.9], ['ADV01', 38.5]])
 
 // Templates do agente: 11 templates, nomes únicos e regras da Meta para o corpo (sem variável no começo ou no fim)
 assert.equal(AGENT_TEMPLATES.length, 11)
