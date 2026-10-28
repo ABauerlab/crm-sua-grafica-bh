@@ -3,9 +3,21 @@
 ## Etapas concluídas
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
-- Etapa 2: ver abaixo (**em revisão**; falta o PDF do fornecedor e aplicar as migrations).
+- Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
 
-## Etapa 2: Catálogo com SKU e banco de conhecimento (em revisão, 28/10/2026)
+## Etapa 2: Catálogo com SKU e banco de conhecimento (concluída, 28/10/2026)
+
+### Aplicação em produção e fechamento (28/10/2026)
+- Backup antes: cópia das 20.381 linhas em `private.bkp_products_etapa2` (área privada; apague quando quiser).
+- Migrations 15 a 19 aplicadas pelo SQL Editor (`docs/agente/aplicar-etapa2.sql`). Conferido: `catalogo` com as mesmas 20.381 linhas, todas com piso calculado; `products` virou visão; CFV02 = R$ 75,99; 90 trechos; 12 perguntas no cache; 40 sinônimos; bucket `catalogo-fornecedor` privado; agendamento `conhecimento-reindexar` a cada 5 minutos; SKU obrigatório ligado.
+- Edge Function `conhecimento` publicada (sem JWT; confere dono, service role ou `x-cron-secret`). Vetores `gte-small` funcionando (20 por rodada de 5 minutos, os 90 ficam prontos em cerca de 20 minutos).
+- Segurança em produção: `anon` sem privilégio em `catalogo`, `products_priced`, `catalogo_importacoes` nem nas funções novas; RLS ligada em todas as tabelas novas; `buscar_produto` e `agente_preco` testadas com dados reais sem custo, piso, margem, lucro ou fornecedor na resposta.
+- Advisors de segurança: nenhum alerta novo grave. As funções novas aparecem em "executável por usuário logado" por desenho (cada uma confere a permissão por dentro). Seguem os 2 antigos: `rls_auto_enable` executável por `anon` (função do próprio Supabase) e proteção contra senhas vazadas desligada no Auth.
+- **A tabela do fornecedor passou a ser só Excel** (não mais PDF). A pré-visualização da importação mostrou que a planilha é **idêntica ao catálogo atual**: 20.381 linhas lidas, 20.381 iguais, 0 novas, 0 alteradas, 0 sem código, 0 conflitos, 0 rejeitadas, 0 removidas, CFV02 = R$ 75,99. Não havia nada a aplicar; a importação foi fechada como cancelada.
+- **Linhas sem código: nenhuma.** As cerca de 590 linhas sem código eram do PDF, que foi descartado. Se uma tabela futura trouxer linhas sem código, a aba Sem código cuida delas.
+- Os 90 trechos de conhecimento foram marcados como revisados a pedido do dono (que revisa depois). Os `[CONFIRMAR]` continuam escritos nos fatos de cada trecho como lembrete interno.
+
+(O texto abaixo foi escrito antes da aplicação e fica como histórico.)
 
 Branch da sessão `claude/optimistic-pasteur-9elhra` (pedida: `feat/agente-etapa2-catalogo-conhecimento`).
 

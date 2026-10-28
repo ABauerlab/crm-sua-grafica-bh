@@ -1,5 +1,23 @@
 # Relatório de importação do catálogo (Etapa 2)
 
+## Resultado real (28/10/2026)
+
+A tabela agora é uma planilha **Excel** (`TABELA PREÇOS CUSTO.xls`, cerca de 15 MB). Pré-visualização na tela de importação:
+
+| Item | Valor |
+|---|---|
+| Linhas lidas | 20.381 de 20.381 no arquivo (confere) |
+| Linhas ignoradas (títulos e cabeçalhos) | 281 |
+| CFV02 | R$ 75,99 (confere com a tabela atual) |
+| Novas | 0 |
+| Alteradas | 0 |
+| Iguais | 20.381 |
+| Sem código | **0** |
+| Duplicadas, conflitos, rejeitadas | 0, 0, 0 |
+| Saíram da tabela | 0 |
+
+A planilha é idêntica ao catálogo que já estava no CRM, então **nada foi aplicado** e a importação foi fechada como cancelada. Não existem linhas sem código para cadastrar. O texto abaixo era o plano para o PDF e fica como referência do funcionamento da tela.
+
 ## Situação: a tabela de preços (PDF) NÃO chegou nesta sessão
 
 O prompt pedia para anexar o PDF, mas nenhum arquivo foi anexado à sessão (procurei no ambiente inteiro e não há PDF). Por isso **a importação do PDF não foi feita**, nada do arquivo real foi lido e **não existe relatório real de linhas sem código ainda**. Preferi não inventar números.
