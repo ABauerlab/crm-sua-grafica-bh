@@ -1,0 +1,9 @@
+{
+  "name": "gbh-renderer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Leitor de páginas com JavaScript (Playwright) para a pesquisa de preço de mercado",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "playwright": "1.49.1" }
+}

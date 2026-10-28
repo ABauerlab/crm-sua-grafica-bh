@@ -1,0 +1,36 @@
+# SearXNG para o n8n da Sua Gráfica BH. Só rede interna (o n8n chama http://searxng:8080).
+use_default_settings: true
+general:
+  instance_name: "GBH busca interna"
+  debug: false
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "pt-BR"
+  formats:
+    - html
+    - json            # obrigatório: o workflow lê /search?format=json
+server:
+  secret_key: "TROQUE_NO_COOLIFY_POR_UMA_CHAVE_ALEATORIA"   # defina SEARXNG_SECRET no Coolify; este valor é só um marcador
+  limiter: false      # rede interna: sem limitador (o limite de taxa é do workflow)
+  image_proxy: false
+  public_instance: false
+outgoing:
+  request_timeout: 6.0
+  max_request_timeout: 10.0
+  pool_connections: 20
+  pool_maxsize: 5
+# Poucos mecanismos, para não ser bloqueado. Se algum começar a devolver erro 429/captcha, desligue-o aqui.
+engines:
+  - name: google
+    disabled: false
+  - name: duckduckgo
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: brave
+    disabled: false
+  - name: startpage
+    disabled: true
+  - name: qwant
+    disabled: true
