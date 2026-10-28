@@ -1,10 +1,13 @@
-import { CreditCard, Download } from 'lucide-react'
+import { AlertTriangle, Copy, CreditCard, Download, RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState } from '@/components/ui/empty-state'
 import { Select } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useToast } from '@/components/ui/toast'
+import { ALERTA_LABEL, STATUS_LABEL, useAlertas, useCobrancas, useCriarLink, useMpStatus, useResolveAlerta, type Cobranca } from '@/hooks/payments'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOrders } from '@/hooks/orders'
 import { contactLabel } from '@/lib/format'
@@ -23,7 +26,7 @@ const TONE: Record<PaymentStatus, string> = {
 
 const dt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—')
 
-export default function Payments() {
+function PedidosTab() {
   const { data: orders, isLoading, error, refetch } = useOrders()
   const [status, setStatus] = useState<PaymentStatus | ''>('')
   const [period, setPeriod] = useState<'all' | '7' | '30' | 'month'>('30')
@@ -69,7 +72,7 @@ export default function Payments() {
           </div>
           {rows.length === 0 ? (
             <EmptyState icon={CreditCard} title="Nenhum pagamento neste filtro">
-              Os pagamentos aparecem aqui por pedido. A confirmação automática chega com a integração do Mercado Pago; até lá, confirme manualmente no pedido.
+              Os pagamentos aparecem aqui por pedido. O Mercado Pago confirma sozinho quando o cliente paga; você também pode confirmar manualmente no pedido.
             </EmptyState>
           ) : (
             <table className="w-full min-w-[720px] text-sm">
@@ -90,6 +93,128 @@ export default function Payments() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+const MODO_TONE = { teste: 'bg-brand-yellow text-ink', producao: 'bg-brand-green/10 text-brand-green', manual: 'bg-ink/10 text-ink' } as const
+const MODO_LABEL = { teste: 'TESTE', producao: 'Produção', manual: 'Manual' } as const
+const COBRANCA_TONE: Record<string, string> = {
+  pendente: 'bg-brand-yellow/30 text-ink', em_analise: 'bg-brand-cyan/20 text-ink', aprovado: 'bg-brand-green/10 text-brand-green',
+  recusado: 'bg-brand-red/10 text-brand-red', cancelado: 'bg-ink/10 text-ink', expirado: 'bg-ink/10 text-ink',
+  estornado: 'bg-brand-magenta/10 text-ink', contestado: 'bg-brand-red/10 text-brand-red', invalidado: 'bg-ink/10 text-ink',
+}
+
+function CobrancasTab() {
+  const toast = useToast()
+  const { data, isLoading, error, refetch } = useCobrancas()
+  const { data: orders } = useOrders()
+  const criar = useCriarLink()
+  const totals = useMemo(() => new Map((orders ?? []).map((o) => [o.id, o.fin.total])), [orders])
+  const agora = Date.now()
+
+  const estado = (c: Cobranca) => (c.status === 'pendente' && c.expira_em && new Date(c.expira_em).getTime() < agora ? 'expirado' : c.status)
+  const desatualizado = (c: Cobranca) => c.eh_link && totals.has(c.order_id) && Math.round((totals.get(c.order_id) ?? 0) * 100) !== Math.round(c.valor * 100)
+
+  if (error) return <ErrorState message="Não foi possível carregar as cobranças." onRetry={() => refetch()} />
+  if (isLoading) return <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+  if (!data?.length) return <EmptyState icon={CreditCard} title="Nenhuma cobrança ainda">Gere o link de pagamento na aba Pagamento de um pedido. As cobranças e as tentativas dos clientes aparecem aqui.</EmptyState>
+
+  return (
+    <div className="overflow-auto p-4">
+      <table className="w-full min-w-[820px] text-sm">
+        <thead><tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-2 font-medium">Pedido</th><th className="py-2 font-medium">Cliente</th><th className="py-2 text-right font-medium">Valor</th><th className="py-2 pl-4 font-medium">Status</th><th className="py-2 font-medium">Método</th><th className="py-2 font-medium">Data</th><th className="py-2 font-medium">Modo</th><th className="py-2 text-right font-medium">Ações</th></tr></thead>
+        <tbody>
+          {data.map((c) => {
+            const st = estado(c)
+            const stale = desatualizado(c)
+            const usable = c.eh_link && c.link_ativo && c.link && st === 'pendente' && !stale
+            return (
+              <tr key={c.id} className="border-b align-top hover:bg-secondary/50">
+                <td className="py-2">{c.order ? <Link to={`/kanban?pedido=${c.order_id}`} className="font-bold text-link underline">#{c.order.number}</Link> : '—'}{c.order?.teste && <Badge className="ml-1 bg-brand-yellow text-ink">teste</Badge>}</td>
+                <td className="py-2">{c.order?.contact ? contactLabel(c.order.contact) : '—'}</td>
+                <td className="py-2 text-right font-bold tabular">{formatBRL(c.valor)}</td>
+                <td className="py-2 pl-4">
+                  <Badge className={cn(COBRANCA_TONE[st])}>{STATUS_LABEL[st]}</Badge>
+                  {c.divergencia && <p className="mt-1 text-xs text-brand-red">{ALERTA_LABEL[c.divergencia] ?? c.divergencia}</p>}
+                  {stale && <p className="mt-1 text-xs text-brand-red">O valor do pedido mudou. Gere um novo link.</p>}
+                </td>
+                <td className="py-2 capitalize">{c.metodo ?? '—'}</td>
+                <td className="py-2 tabular text-muted-foreground">{dt(c.aprovado_em ?? c.criado_em)}{c.eh_link && c.expira_em && st === 'pendente' ? <span className="block text-xs">vence {dt(c.expira_em)}</span> : null}</td>
+                <td className="py-2"><Badge className={MODO_TONE[c.modo]}>{MODO_LABEL[c.modo]}</Badge></td>
+                <td className="py-2 text-right">
+                  {c.eh_link && (
+                    <span className="flex justify-end gap-1">
+                      <Button variant="outline" size="sm" disabled={!usable} onClick={async () => { await navigator.clipboard.writeText(c.link!); toast('ok', 'Link copiado.') }}><Copy className="h-4 w-4" /> Copiar link</Button>
+                      {c.order_id && st !== 'aprovado' && (
+                        <Button variant="outline" size="sm" disabled={criar.isPending} onClick={() => criar.mutate({ pedidoId: c.order_id, novo: true }, { onSuccess: () => toast('ok', 'Novo link gerado. O anterior foi invalidado.'), onError: (e) => toast('error', e.message) })}><RefreshCw className="h-4 w-4" /> Gerar novo link</Button>
+                      )}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function AlertasTab() {
+  const { data, isLoading, error, refetch } = useAlertas()
+  const resolve = useResolveAlerta()
+  const [todos, setTodos] = useState(false)
+  const rows = (data ?? []).filter((a) => todos || !a.resolvido_em)
+  if (error) return <ErrorState message="Não foi possível carregar os alertas." onRetry={() => refetch()} />
+  if (isLoading) return <div className="space-y-2 p-4">{[0, 1].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+  return (
+    <div className="space-y-3 p-4">
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={todos} onChange={(e) => setTodos(e.target.checked)} /> Mostrar também os resolvidos</label>
+      {rows.length === 0 ? (
+        <EmptyState icon={CreditCard} title="Nenhum alerta">Valor diferente, estorno, contestação, pagamento recusado e referência desconhecida aparecem aqui. Nenhum desses casos altera o pedido sozinho.</EmptyState>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((a) => (
+            <li key={a.id} className={cn('flex flex-wrap items-start justify-between gap-3 rounded-md border p-3', !a.resolvido_em && 'border-brand-red/40 bg-brand-red/5')}>
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-sm font-bold"><AlertTriangle className="h-4 w-4 text-brand-red" aria-hidden /> {ALERTA_LABEL[a.tipo] ?? a.tipo}{a.order ? <Link to={`/kanban?pedido=${a.order_id}`} className="font-normal text-link underline">pedido #{a.order.number}</Link> : null}</p>
+                <p className="mt-1 text-sm">{a.mensagem}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{dt(a.criado_em)}{a.mp_payment_id ? ` · pagamento ${a.mp_payment_id}` : ''}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => resolve.mutate({ id: a.id, resolvido: !a.resolvido_em })}>{a.resolvido_em ? 'Reabrir' : 'Marcar como resolvido'}</Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+export default function Payments() {
+  const { data: mp } = useMpStatus()
+  const { data: alertas } = useAlertas()
+  const abertos = (alertas ?? []).filter((a) => !a.resolvido_em).length
+  return (
+    <div className="flex h-full flex-col">
+      {mp?.modo === 'teste' && (
+        <div role="status" className="bg-brand-yellow px-4 py-2 text-sm font-black text-ink">
+          MODO TESTE do Mercado Pago: os pagamentos são de mentira e só pedidos marcados como teste mudam de etapa.
+        </div>
+      )}
+      {mp && !mp.pronto && (
+        <div role="alert" className="bg-brand-red/10 px-4 py-2 text-sm text-brand-red">Mercado Pago ainda não configurado no servidor. Faltam: {mp.faltando.join(', ')}. Veja docs/pagamento-mercadopago.md.</div>
+      )}
+      <Tabs defaultValue="pedidos" className="flex min-h-0 flex-1 flex-col">
+        <TabsList>
+          <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+          <TabsTrigger value="cobrancas">Cobranças</TabsTrigger>
+          <TabsTrigger value="alertas">Alertas{abertos > 0 ? ` (${abertos})` : ''}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pedidos"><PedidosTab /></TabsContent>
+        <TabsContent value="cobrancas"><CobrancasTab /></TabsContent>
+        <TabsContent value="alertas"><AlertasTab /></TabsContent>
+      </Tabs>
     </div>
   )
 }

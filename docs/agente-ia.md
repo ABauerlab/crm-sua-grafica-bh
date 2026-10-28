@@ -31,7 +31,7 @@ Tabela `products` (e view `products_priced`, que soma os preços calculados). Um
 | `cost` | Preço R$ | `252.99` (custo, o que a Sua Gráfica paga) |
 | `suggested_price`, `floor_price`, `max_discount_price`, `est_net_profit` | calculados | vêm do banco |
 
-O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de interpretar texto. A gramatura é extraída da descrição na importação para `grammage` (nulo quando a descrição não traz o número). O prazo do fornecedor (`lead_days`) é copiado para cada item do pedido (`order_items.lead_days`) e o pedido guarda o maior deles em `orders.lead_days`. A data prometida ao cliente (regra de dias úteis, feriados e o dia a mais) será definida à parte.
+O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de interpretar texto. A gramatura é extraída da descrição na importação para `grammage` (nulo quando a descrição não traz o número). O prazo do fornecedor (`lead_days`) é copiado para cada item do pedido (`order_items.lead_days`) e o pedido guarda o maior deles em `orders.lead_days`. Prazo de entrega: conta a partir do pagamento confirmado, em dias úteis, sem sábado, domingo e feriados (tabela `holidays`, editável em Configurações > Prazos e feriados). A data é `orders.due_date` = `add_business_days(dia do pagamento, lead_days + extra_days)`, com `extra_days` em `app_settings` (`key = 'deadline'`, padrão 1). O banco calcula sozinho ao confirmar o pagamento e recalcula se o prazo dos itens mudar, salvo se `due_date_manual = true`. O agente deve ler `due_date` e nunca calcular a data. Para simular uma data antes do pagamento (orçamento), chamar `public.add_business_days(current_date, lead_days + extra_days)`.
 
 ## Estado do atendimento
 | Onde | Campo | Significado |

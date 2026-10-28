@@ -211,6 +211,79 @@ function LabelsTab() {
   )
 }
 
+function HolidaysTab() {
+  const toast = useToast()
+  const qc = useQueryClient()
+  const [form, setForm] = useState({ day: '', name: '', scope: 'gráfica' })
+  const [extra, setExtra] = useState<string | null>(null)
+  const { data: holidays } = useQuery({
+    queryKey: ['holidays'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('holidays').select('*').gte('day', new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)).order('day')
+      if (error) throw error
+      return data as { day: string; name: string; scope: string }[]
+    },
+  })
+  const { data: deadline } = useQuery({
+    queryKey: ['setting', 'deadline'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'deadline').maybeSingle()
+      if (error) throw error
+      return Number((data?.value as { extra_days?: number } | null)?.extra_days ?? 1)
+    },
+  })
+  const refresh = () => qc.invalidateQueries({ queryKey: ['holidays'] })
+  const add = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('holidays').upsert({ day: form.day, name: form.name.trim(), scope: form.scope })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => { setForm({ day: '', name: '', scope: 'gráfica' }); refresh() },
+    onError: (e: Error) => toast('error', e.message),
+  })
+  const remove = useMutation({
+    mutationFn: async (day: string) => {
+      const { error } = await supabase.from('holidays').delete().eq('day', day)
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: refresh,
+    onError: (e: Error) => toast('error', e.message),
+  })
+  const saveExtra = useMutation({
+    mutationFn: async (n: number) => {
+      const { error } = await supabase.from('app_settings').upsert({ key: 'deadline', value: { extra_days: n } })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => { toast('ok', 'Margem salva.'); qc.invalidateQueries({ queryKey: ['setting', 'deadline'] }) },
+    onError: (e: Error) => toast('error', e.message),
+  })
+  return (
+    <div className="max-w-xl space-y-5">
+      <p className="text-sm text-muted-foreground">O prazo do pedido conta a partir do pagamento confirmado, em dias úteis (sem sábado, domingo e os dias abaixo). Inclua aqui recessos e feriados da gráfica.</p>
+      <div className="flex items-end gap-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="extra-days">Dias extras de margem</Label>
+          <Input id="extra-days" type="number" min="0" className="w-28" value={extra ?? String(deadline ?? 1)} onChange={(e) => setExtra(e.target.value)} />
+        </div>
+        <Button variant="outline" onClick={() => saveExtra.mutate(Math.max(0, Math.round(Number(extra ?? deadline ?? 1) || 0)))}>Salvar</Button>
+      </div>
+      <form className="grid grid-cols-2 gap-2 sm:grid-cols-[9rem_1fr_auto]" onSubmit={(e) => { e.preventDefault(); if (form.day && form.name.trim()) add.mutate() }}>
+        <Input aria-label="Data" type="date" value={form.day} onChange={(e) => setForm({ ...form, day: e.target.value })} />
+        <Input aria-label="Nome do feriado ou recesso" placeholder="Nome (ex.: recesso de fim de ano)" className="col-span-2 sm:col-span-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Button type="submit" disabled={add.isPending}>Adicionar</Button>
+      </form>
+      <ul className="divide-y rounded-md border">
+        {(holidays ?? []).map((h) => (
+          <li key={h.day} className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm">
+            <span><span className="tabular font-semibold">{new Date(h.day + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</span> · {h.name}</span>
+            <button aria-label={`Remover ${h.name}`} onClick={() => remove.mutate(h.day)} className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-secondary"><Trash2 className="h-4 w-4" /></button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function GoalsTab() {
   const toast = useToast()
   const goals = useSetting('campaign_goals')
@@ -373,6 +446,7 @@ export default function Settings() {
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger>
           <TabsTrigger value="etiquetas">Etiquetas</TabsTrigger>
+          <TabsTrigger value="prazos">Prazos e feriados</TabsTrigger>
           <TabsTrigger value="metas">Metas</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
@@ -383,6 +457,7 @@ export default function Settings() {
         <TabsContent value="kanban"><KanbanTab /></TabsContent>
         <TabsContent value="respostas"><QuickRepliesTab /></TabsContent>
         <TabsContent value="etiquetas"><LabelsTab /></TabsContent>
+        <TabsContent value="prazos"><HolidaysTab /></TabsContent>
         <TabsContent value="metas"><GoalsTab /></TabsContent>
         <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>

@@ -18,6 +18,7 @@ const Catalog = lazy(() => import('@/pages/Catalog'))
 const Campaigns = lazy(() => import('@/pages/Campaigns'))
 const Payments = lazy(() => import('@/pages/Payments'))
 const Tasks = lazy(() => import('@/pages/Tasks'))
+const PaymentThanks = lazy(() => import('@/pages/PaymentThanks'))
 
 function PageFallback() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/privacidade" element={<Privacy />} />
         <Route path="/termos" element={<Terms />} />
         <Route path="/exclusao-de-dados" element={<DataDeletion />} />
+        <Route path="/pagamento/obrigado" element={<PaymentThanks />} />
         <Route element={<RequireStaff />}>
           <Route element={<Layout />}>
             <Route path="/painel" element={<Dashboard />} />

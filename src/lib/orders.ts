@@ -84,6 +84,8 @@ export interface Order {
   supplier_order_no: string | null
   due_date: string | null
   lead_days: number | null
+  due_date_manual: boolean
+  teste: boolean
   delivery_method: 'retirada' | 'uber' | null
   delivery_address: string | null
   delivery_fee: number | null
