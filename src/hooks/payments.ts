@@ -50,6 +50,7 @@ export interface LinkCriado {
   modo: 'teste' | 'producao'
   referencia: string
   reutilizado: boolean
+  aviso?: string
 }
 
 export const STATUS_LABEL: Record<CobrancaStatus, string> = {
