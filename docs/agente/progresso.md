@@ -5,6 +5,26 @@
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
 
+## Etapa 3: preço inteligente e condição especial (em andamento)
+
+Branch: `feat/agente-etapa3-preco`.
+
+### O que foi iniciado
+
+- Migration `20261029000006_etapa3_preco_inteligente.sql` criada, **ainda não aplicada**: cache por especificação, fontes e confiança de mercado, consulta sob demanda, fator competitivo por grupo, registro de ajustes e rotina semanal de aprendizado.
+- `calcular_preco` foi estendido na migration para usar mercado da especificação, fator por grupo, âncora de vendas ganhas dos últimos 90 dias e as travas de piso existentes.
+- Foi criada a visão interna `saude_precos` e as telas **Catálogo > Saúde de preços** e **Configurações > Política de desconto**.
+- Commit inicial enviado ao GitHub: `ef602d4`.
+
+### O que falta — não considerar concluído
+
+- Validar a migration e os testes (esta máquina não possui Postgres/Docker local).
+- Aplicar a migration no Supabase somente depois da validação.
+- Criar pelo **MCP do n8n**, desativados, os workflows `GBH | FERRAMENTA | pesquisar_preco_mercado`, `GBH | WF4 | Aprendizado de preços` e `GBH | FERRAMENTA | condicao_especial`; exportar para `n8n/` e atualizar `docs/n8n-mapa.md`.
+- Instalar e documentar o SearXNG no Coolify. A VPS existe, mas o conector Hostinger não administra os contêineres dela; o acesso ao n8n web exigiu login e o MCP do n8n não ficou disponível nesta sessão.
+- Implementar a geração do novo PDF/link de pagamento, expiração da condição, alertas de caçador de desconto, relatório semanal, simulação obrigatória de 1.000 combinações e teste com 10 especificações reais.
+- Abrir PR. Não mesclar na `main` até concluir e validar tudo.
+
 ## Etapa 2: Catálogo com SKU e banco de conhecimento (concluída, 28/10/2026)
 
 ### Aplicação em produção e fechamento (28/10/2026)

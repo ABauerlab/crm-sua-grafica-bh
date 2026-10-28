@@ -93,3 +93,9 @@ Ver "O que revisar" em `docs/agente/progresso.md`.
 **Telas:** Catálogo (SKU com copiar, base de custo, preço de venda, status, bike, filtro de status, Recalcular pisos, aba Sem código), importação em duas fases, Kits (lista de SKUs, preço de `kit_preco`), Pedido (SKU em destaque, preço de `calcular_preco`, aba Pedido para a fábrica), cartão do kanban (SKUs), Configurações > Conhecimento.
 
 **Preço no CRM (decisão padrão aplicada):** a coluna do catálogo é "Base de custo (ref.)", visível só ao dono. Orçamento (pedido), kit e catálogo leem `calcular_preco`. Nenhum orçamento, PDF ou link usa `preco_base_custo`.
+
+## 7. Etapa 3: estado parcial (não aplicada)
+
+Na branch `feat/agente-etapa3-preco`, a migration `20261029000006_etapa3_preco_inteligente.sql` cria a infraestrutura para pesquisa sob demanda: `consultas_preco_mercado`, fonte normalizada e expiração em `precos_mercado`, `fatores_competitivos`, `ajustes_fator_preco`, atualização de `calcular_preco`, sincronização de `precos_praticados`, `aprender_precos_semana()` e a visão interna `saude_precos`.
+
+O front ganhou as abas **Catálogo > Saúde de preços** e **Configurações > Política de desconto**. Nada disso está em produção nem foi validado contra o Supabase. Os workflows n8n, SearXNG, PDF/link renovado, expiração, alertas, relatórios e testes finais continuam pendentes.
