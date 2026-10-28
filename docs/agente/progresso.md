@@ -2,7 +2,7 @@
 
 ## Etapas concluídas
 
-(nenhuma ainda; a Etapa 1 está em revisão no PR)
+(nenhuma ainda; a Etapa 1 está aplicada em produção e em revisão no PR)
 
 ## Etapa 1: Fundação (em revisão, 28/10/2026)
 
@@ -22,12 +22,17 @@ Branch `feat/agente-etapa1-fundacao`.
 - Zonas inativas (`ativo = false`) ficam cadastradas e não valem; só as 11 do dono e a faixa de CEP 30110-000 a 30199-999 valem.
 - Taxa padrão do pedido passou de 1,5% para 4,98% (cartão de crédito) até o método real ser conhecido.
 
+### Aplicação em produção (28/10/2026)
+- Migrations 11 a 14 aplicadas no Supabase pelo SQL Editor (arquivo `docs/agente/aplicar-etapa1.sql`). Conferido: 15 tabelas, 5 funções, 6 triggers, 25 zonas (12 ativas), 11 regras de follow-up, 32 feriados, `anon` sem acesso a `products`.
+- `supabase/tests/agente_etapa1.sql` rodado em produção: **54 testes passaram** (o bloco desfaz tudo, nada ficou gravado).
+- Advisors de segurança: nenhum alerta novo. Os 2 que aparecem já existiam: `confirmar_pagamento_manual` executável pelo usuário logado (é o botão do dono, intencional) e proteção contra senhas vazadas desligada no Auth (ligar em Authentication > Policies).
+- Observação: o histórico `supabase_migrations` de produção não registra estas 4 migrations (foram aplicadas pelo SQL Editor). Um futuro `supabase db push` as tentaria reaplicar; são idempotentes, então é seguro.
+
 ### Pendências
-- **Aplicar as migrations 11 a 14 no Supabase de produção.** A tentativa pelo conector ficou sem resposta de confirmação e não foi repetida; o estado do banco de produção não foi verificado depois disso. Aplicar com `supabase db push` ou pelo conector e rodar o arquivo de testes (ele termina em ROLLBACK).
-- Rodar os advisors de segurança depois de aplicar.
 - Aprovação dos templates pela Meta.
 - Ligar `exigir_sku_pedidos` e rotular o preço sugerido do catálogo na Etapa 2/3.
 - Taxa real por método no lucro do pedido (Etapa 6).
+- Ligar a proteção contra senhas vazadas no Auth.
 
 ### O que o dono deve revisar
 1. **Feriados**: nacionais e de BH de 2026 e 2027 (tabela `feriados`, tela Prazos e feriados). Incluí 12/12 (aniversário de BH) para conferir; cai em fim de semana nos dois anos.
