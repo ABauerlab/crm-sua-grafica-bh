@@ -118,6 +118,8 @@ export interface LinhaPedido {
 export interface ItemPreferencia {
   id: string
   title: string
+  description: string
+  category_id: string
   quantity: 1
   unit_price: number
   currency_id: 'BRL'
@@ -139,6 +141,8 @@ export function buildItems(lines: LinhaPedido[], totalCents: number): ItemPrefer
     return {
       id: `item-${i + 1}`,
       title: `${l.qty}x ${l.description}`.slice(0, 250),
+      description: l.description.slice(0, 250),
+      category_id: 'services', // ajuda o antifraude do Mercado Pago (taxa de aprovação)
       quantity: 1,
       unit_price: cents / 100,
       currency_id: 'BRL',
