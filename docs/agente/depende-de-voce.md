@@ -1,5 +1,11 @@
 # O que depende de você (Etapa 2)
 
+## Estado em 28/10/2026: Etapa 2 concluída
+
+Feito: migrations aplicadas, função `conhecimento` publicada, vetores em geração, advisors rodados, PR #22 mesclado, planilha de custo conferida (igual ao catálogo atual, sem linhas sem código) e trechos de conhecimento marcados como revisados.
+
+Fica para você, quando puder: reler os trechos em Configurações > Conhecimento e validar os `[CONFIRMAR]` (parcelamento, nota fiscal, troca e reembolso, prazo mais curto, composição dos kits, indicação) e ligar a proteção contra senhas vazadas em Authentication > Policies. O restante do documento abaixo é histórico.
+
 ## Para a Etapa 2 funcionar em produção
 
 1. **Anexar o PDF da tabela de preços do fornecedor.** Ele não chegou nesta sessão, então a importação real não foi feita. Importe pela tela (passo a passo em `docs/agente/relatorio-importacao.md`) ou me mande o arquivo.
