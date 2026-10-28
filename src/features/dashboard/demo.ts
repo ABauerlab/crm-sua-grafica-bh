@@ -106,7 +106,7 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
       updated_at: new Date(created).toISOString(),
       contact: { id: contact.id, name: contact.name, wa_id: contact.wa_id },
       conversation: { id: `c${i}`, ai_handled: r() < 0.4, unread_count: 0, last_inbound_at: null },
-      items: [{ description: p.name, qty }],
+      items: [{ description: p.name, qty, code: null }],
       fin: {
         order_id: `d${i}`,
         gross,

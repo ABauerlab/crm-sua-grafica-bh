@@ -98,7 +98,7 @@ export interface Order {
 export interface OrderCard extends Order {
   contact: { id: string; name: string | null; wa_id: string }
   conversation: { id: string; ai_handled: boolean; unread_count: number; last_inbound_at: string | null } | null
-  items: { description: string; qty: number }[]
+  items: { description: string; qty: number; code: string | null }[]
   fin: OrderFinancials
 }
 
