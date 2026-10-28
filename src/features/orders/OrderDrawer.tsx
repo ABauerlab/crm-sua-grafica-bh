@@ -196,10 +196,23 @@ function ItemsTab({ order }: { order: OrderCard }) {
   }
 
   const saveItem = useMutation({
-    mutationFn: async (it: Partial<OrderItem> & { id?: string }) => {
+    mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
-      const { error } = it.id ? await supabase.from('order_items').update(row).eq('id', it.id) : await supabase.from('order_items').insert(row)
+      if (!it.id) {
+        const { error } = await supabase.from('order_items').insert(row)
+        if (error) throw new Error(error.message)
+        return
+      }
+      // O preço editado à mão passa por definir_preco_item_pedido: bloqueia abaixo do piso duro, pede confirmação do dono entre o piso duro e o piso e registra o motivo.
+      const { unit_price: novoPreco, ...resto } = row
+      const { error } = await supabase.from('order_items').update(resto).eq('id', it.id)
       if (error) throw new Error(error.message)
+      const atual = (items ?? []).find((x) => x.id === it.id)
+      if (atual && Math.abs(novoPreco - atual.unit_price) > 0.0001) {
+        const { data, error: erroPreco } = await supabase.rpc('definir_preco_item_pedido', { p_item: it.id, p_preco: novoPreco, p_confirmar: !!it.confirmar, p_motivo: it.motivo ?? null, p_apenas_simular: false })
+        if (erroPreco) throw new Error(erroPreco.message)
+        if (data && data.ok === false && data.requer_confirmacao) throw new Error('Preço abaixo do piso: confirme e escreva o motivo para salvar.')
+      }
     },
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
@@ -262,6 +275,8 @@ function ItemsTab({ order }: { order: OrderCard }) {
           {(items ?? []).map((it) => (
             <ItemRow key={it.id} item={it} below={belowFloor(it)} floor={unitFloor(it.unit_cost, rules)} onRemove={() => removeItem.mutate(it.id)}
               onSave={(patch) => {
+                // confirmação do dono entre o piso duro e o piso já tem motivo e registro próprios (definir_preco_item_pedido)
+                if (patch.confirmar) return void saveItem.mutate({ ...it, ...patch })
                 const nextItems = (items ?? []).map((x) => (x.id === it.id ? { ...x, ...patch } : x))
                 guarded({ items: nextItems, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => { await saveItem.mutateAsync({ ...it, ...patch }) })
               }}
@@ -331,11 +346,32 @@ function ItemsTab({ order }: { order: OrderCard }) {
   )
 }
 
-function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; below: boolean; floor: number; onSave: (p: Partial<OrderItem>) => void; onRemove: () => void }) {
+type SimulacaoPreco = { ok: boolean; faixa: 'ok' | 'entre_pisos' | 'abaixo_piso_duro'; lucro_liquido: number; piso: number; piso_duro: number; total_linha: number; requer_confirmacao: boolean }
+
+function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; below: boolean; floor: number; onSave: (p: Partial<OrderItem> & { confirmar?: boolean; motivo?: string }) => void; onRemove: () => void }) {
   const [v, setV] = useState({ description: item.description, qty: String(item.qty), cost: String(item.unit_cost), price: String(item.unit_price) })
-  const dirty = v.description !== item.description || Number(v.qty) !== item.qty || parseMoney(v.cost) !== item.unit_cost || parseMoney(v.price) !== item.unit_price
+  const [confirma, setConfirma] = useState(false)
+  const [motivo, setMotivo] = useState('')
+  const preco = parseMoney(v.price)
+  const mudouPreco = Math.abs(preco - item.unit_price) > 0.0001
+  const dirty = v.description !== item.description || Number(v.qty) !== item.qty || parseMoney(v.cost) !== item.unit_cost || mudouPreco
+  // lucro líquido e faixa do preço digitado, calculados pelo banco (piso duro bloqueia; entre o piso duro e o piso pede confirmação do dono)
+  const simulacao = useQuery({
+    queryKey: ['preco-item', item.id, preco],
+    enabled: mudouPreco && preco > 0,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('definir_preco_item_pedido', { p_item: item.id, p_preco: preco, p_confirmar: false, p_motivo: null, p_apenas_simular: true })
+      if (error) throw new Error(error.message)
+      return data as SimulacaoPreco
+    },
+  })
+  const sim = mudouPreco ? simulacao.data : undefined
+  const bloqueado = sim?.faixa === 'abaixo_piso_duro'
+  const precisaConfirmar = sim?.faixa === 'entre_pisos'
+  const podeSalvar = !bloqueado && (!precisaConfirmar || (confirma && motivo.trim().length >= 3))
   return (
-    <li className={cn('rounded-md border p-2.5', below && 'border-brand-red')}>
+    <li className={cn('rounded-md border p-2.5', (below || bloqueado) && 'border-brand-red')}>
       <div className="mb-2 flex items-center gap-2"><SkuBadge sku={item.code} />{!item.code && <span className="text-xs text-brand-red">Informe o SKU antes de mandar para Produção.</span>}</div>
       <div className="grid grid-cols-6 gap-2">
         <label className="col-span-4 space-y-1 text-xs font-medium text-muted-foreground">
@@ -352,9 +388,27 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
         </label>
         <label className="col-span-3 space-y-1 text-xs font-medium text-muted-foreground">
           Preço unitário (R$)
-          <Input inputMode="decimal" className={cn('text-foreground', below && 'border-brand-red')} value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} />
+          <Input inputMode="decimal" className={cn('text-foreground', (below || bloqueado) && 'border-brand-red')} value={v.price} onChange={(e) => { setV({ ...v, price: e.target.value }); setConfirma(false) }} />
         </label>
       </div>
+      {mudouPreco && (
+        <div className="mt-2 space-y-1.5 rounded-md bg-secondary p-2 text-xs" aria-live="polite">
+          {simulacao.isFetching && <p className="text-muted-foreground">Calculando o lucro líquido...</p>}
+          {sim && (
+            <p className={cn('tabular', sim.lucro_liquido < 0 ? 'font-bold text-brand-red' : 'text-muted-foreground')}>
+              Lucro líquido neste preço: <strong>{formatBRL(sim.lucro_liquido)}</strong> · piso {formatBRL(sim.piso)} · piso duro {formatBRL(sim.piso_duro)} (por unidade)
+            </p>
+          )}
+          {bloqueado && <p className="font-bold text-brand-red">Bloqueado: abaixo do piso duro este item daria prejuízo. Ninguém aprova esse preço.</p>}
+          {precisaConfirmar && (
+            <div className="space-y-1.5">
+              <p className="font-bold text-brand-red">Abaixo do piso, acima do piso duro. Só o dono confirma, e fica registrado.</p>
+              <Input aria-label="Motivo da exceção de preço" placeholder="Motivo (obrigatório)" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+              <label className="flex items-center gap-2"><input type="checkbox" checked={confirma} onChange={(e) => setConfirma(e.target.checked)} /> Confirmo este preço abaixo do piso</label>
+            </div>
+          )}
+        </div>
+      )}
       <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className={cn('tabular', below ? 'font-bold text-brand-red' : 'text-muted-foreground')}>
           {below ? `Abaixo do piso de ${formatBRL(floor)}. ` : `Piso ${formatBRL(floor)}. `}
@@ -362,7 +416,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
         </span>
         <span className="flex gap-1">
           {dirty && (
-            <Button size="sm" onClick={() => onSave({ description: v.description.trim(), qty: Math.max(1, Math.floor(Number(v.qty) || 1)), unit_cost: parseMoney(v.cost), unit_price: parseMoney(v.price) })}>
+            <Button size="sm" disabled={!podeSalvar} onClick={() => onSave({ description: v.description.trim(), qty: Math.max(1, Math.floor(Number(v.qty) || 1)), unit_cost: parseMoney(v.cost), unit_price: preco, confirmar: confirma, motivo: motivo.trim() })}>
               <Check className="h-4 w-4" /> Salvar
             </Button>
           )}
