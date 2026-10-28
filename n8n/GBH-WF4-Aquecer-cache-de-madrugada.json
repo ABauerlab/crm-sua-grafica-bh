@@ -1,0 +1,183 @@
+{
+  "name": "GBH | WF4 | Aquecer cache de madrugada",
+  "nodes": [
+    {
+      "id": "3d82da65-77de-816e-54f4-e4078bd0a0a5",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -200
+      ],
+      "parameters": {
+        "content": "## GBH | WF4 | Aquecer cache de madrugada (Etapa 3, OPCIONAL, desligado)\n**Objetivo:** renovar de madrugada o preço de mercado só dos SKUs que JÁ foram orçados nos últimos 60 dias e cujo cache vence em breve (até 10 por noite). Nunca varre o catálogo.\n**Liga e desliga:** parametros_comerciais.aquecer_cache_ligado (padrão FALSO) e aquecer_cache_grupos (vazio = todos os grupos). Com o parâmetro desligado a função devolve lista vazia e nada acontece, mesmo com o workflow ativo.\n**Como funciona:** skus_para_aquecer no banco, depois o workflow GBH | FERRAMENTA | pesquisar_preco_mercado para cada SKU, com 20 s entre um e outro (limite de taxa).\n**Dependências:** credencial 'GBH Supabase (service role)'; workflow pesquisar_preco_mercado.\n**Estado:** DESATIVADO.",
+        "color": 4
+      }
+    },
+    {
+      "id": "2a07cb93-3c1c-d15d-7daf-65abfd59add7",
+      "name": "Todo dia às 03:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 3 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0b9d1f8d-7bf2-8589-2b1f-4c344b4fccff",
+      "name": "Listar SKUs para aquecer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/skus_para_aquecer",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_limite: 10 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "cb61689a-e913-ef7f-ba26-d742b67f22d4",
+      "name": "Pesquisar preço de mercado",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "V1Bx2NRuPgJxj139",
+          "cachedResultName": "GBH | FERRAMENTA | pesquisar_preco_mercado"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.sku }}",
+            "especificacao": "={{ {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "especificacao",
+              "displayName": "especificacao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fe2db1b9-9000-296d-6490-55cf434f3208",
+      "name": "Esperar 20 s (limite de taxa)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 20,
+        "unit": "seconds"
+      }
+    }
+  ],
+  "connections": {
+    "Todo dia às 03:00": {
+      "main": [
+        [
+          {
+            "node": "Listar SKUs para aquecer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar SKUs para aquecer": {
+      "main": [
+        [
+          {
+            "node": "Pesquisar preço de mercado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pesquisar preço de mercado": {
+      "main": [
+        [
+          {
+            "node": "Esperar 20 s (limite de taxa)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 1800,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "exportado_de": "MCP do n8n (código do SDK validado)",
+    "credenciais": "removidas; veja docs/n8n-mapa.md"
+  }
+}

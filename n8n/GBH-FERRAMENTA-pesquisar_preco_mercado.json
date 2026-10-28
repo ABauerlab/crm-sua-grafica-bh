@@ -1,0 +1,1349 @@
+{
+  "name": "GBH | FERRAMENTA | pesquisar_preco_mercado",
+  "nodes": [
+    {
+      "id": "039950f7-96aa-7877-d4ee-9e7cd67e5282",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -200
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | pesquisar_preco_mercado (Etapa 3)\n**Objetivo:** descobrir o preço de mercado de UMA especificação do catálogo, só quando o orçamento precisa. Nunca pesquisa em massa.\n**Entradas:** sku (texto) e especificacao (objeto, opcional; a do catálogo vale mais).\n**Saídas:** { ok, origem (cache | pesquisa | sem_dado | em_andamento | erro), confianca, fontes, mediana, minimo, maximo, duracao_ms }. Uso interno do orçamento: o agente nunca vê estes números.\n**Como funciona:** 1) cache de 14 dias no banco; 2) sem cache: busca (SearXNG por padrão; Tavily e Serper por configuração), lê no máximo 5 páginas de domínios diferentes, respeitando robots, termos e o intervalo por domínio (reservar_acesso_dominio); 3) extração por regras; modelo pequeno com texto truncado só se nenhuma regra achou preço; 4) o banco normaliza, descarta outliers, calcula mediana e confiança. Passou de 45 s ou falhou: devolve sem_dado e a fórmula usa o custo com travas.\n**Dependências:** credencial 'GBH Supabase (service role)'; SearXNG em http://searxng:8080; leitor de JavaScript http://renderer:3000 (Playwright) ou Firecrawl; migration 20261029000006. Configuração na caixa 'Início e configuração'.\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "id": "4fbc3dbc-8c2b-89ef-e42c-f8b58547b44b",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "sku",
+              "type": "string"
+            },
+            {
+              "name": "especificacao",
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4bda4619-4a28-b6ed-c74c-210a720dd33c",
+      "name": "Início e configuração",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "sku",
+              "value": "={{ $json.sku }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "especificacao",
+              "value": "={{ $json.especificacao || {} }}",
+              "type": "object"
+            },
+            {
+              "id": "a3",
+              "name": "t0",
+              "value": "={{ $now.toMillis() }}",
+              "type": "number"
+            },
+            {
+              "id": "a4",
+              "name": "max_paginas",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "a5",
+              "name": "fonte_busca",
+              "value": "searxng",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "searxng_url",
+              "value": "http://searxng:8080",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "leitura_js",
+              "value": "playwright",
+              "type": "string"
+            },
+            {
+              "id": "a8",
+              "name": "renderer_url",
+              "value": "http://renderer:3000",
+              "type": "string"
+            },
+            {
+              "id": "a9",
+              "name": "supabase_url",
+              "value": "https://bhlosshvwmlyzhbghsrc.supabase.co",
+              "type": "string"
+            },
+            {
+              "id": "a10",
+              "name": "user_agent",
+              "value": "GBH-PrecoBot/1.0 (+https://crm.suagraficabh.com.br)",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "abfd359a-3763-2494-13c3-e24da57f4283",
+      "name": "Consultar cache",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Início e configuração\").first().json.supabase_url }}/rest/v1/rpc/consultar_cache_preco_mercado",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_sku: $json.sku, p_especificacao: $json.especificacao } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "fd5becb6-f2d8-d3b1-7ba1-ff9cd542345e",
+      "name": "Precisa pesquisar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.precisa_pesquisar === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "50193a21-6fad-e1a1-326f-89757641782f",
+      "name": "Resposta do cache ou sem dado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const j = $json || {};\nconst origem = j.sem_dado ? 'sem_dado' : (j.em_andamento ? 'em_andamento' : (j.cache ? 'cache' : 'erro'));\nreturn [{ json: { ok: origem !== 'erro', origem: origem, status: origem, confianca: j.confianca || null, fontes: j.fontes || 0, mediana: j.mediana || null, minimo: j.minimo || null, maximo: j.maximo || null, duracao_ms: 0, consulta_id: j.consulta_id || null } }];"
+      }
+    },
+    {
+      "id": "46ed2abf-fe82-f146-25c5-a955317a7b23",
+      "name": "Montar buscas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const cache = $('Consultar cache').first().json;\nconst esp = cache.especificacao || {};\nconst partes = [esp.grupo, esp.descricao, esp.quantidade ? esp.quantidade + ' unidades' : '', esp.gramatura_g ? esp.gramatura_g + 'g' : '', esp.tamanho_mm ? esp.tamanho_mm + ' mm' : ''].filter(Boolean);\nconst base = partes.join(' ');\nconst consultas = [\n  { prioridade: 1, query: 'site:www.alfacards.com.br ' + base },\n  { prioridade: 2, query: base + ' preço gráfica online' },\n  { prioridade: 3, query: base + ' preço gráfica Belo Horizonte' },\n];\nreturn consultas.map(c => ({ json: Object.assign({ consulta_id: cache.consulta_id }, c) }));"
+      }
+    },
+    {
+      "id": "01edd466-706c-4786-d8ad-5afed7a9d577",
+      "name": "Fonte de busca configurada",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "outputKey": "searxng",
+              "renameOutput": true,
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Início e configuração\").first().json.fonte_busca }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "searxng"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "tavily",
+              "renameOutput": true,
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Início e configuração\").first().json.fonte_busca }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "tavily"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "serper",
+              "renameOutput": true,
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Início e configuração\").first().json.fonte_busca }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "serper"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      }
+    },
+    {
+      "id": "92cd5a03-67f0-9dac-a83a-4629caa7c4e2",
+      "name": "Buscar no SearXNG",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $(\"Início e configuração\").first().json.searxng_url }}/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "language",
+              "value": "pt-BR"
+            },
+            {
+              "name": "categories",
+              "value": "general"
+            },
+            {
+              "name": "safesearch",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 9000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "64b025ab-777a-deb0-753c-e1865de5cba6",
+      "name": "Buscar no Tavily",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1440,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $json.query, max_results: 8, search_depth: \"basic\" } }}",
+        "options": {
+          "timeout": 12000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ec9366f5-e744-fdc9-17c9-63d030c17000",
+      "name": "Buscar no Serper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1440,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { q: $json.query, gl: \"br\", hl: \"pt-br\", num: 8 } }}",
+        "options": {
+          "timeout": 12000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3e3e40fb-c108-aa45-a2b8-70214c80173b",
+      "name": "Escolher páginas (um domínio por vez)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const cache = $('Consultar cache').first().json;\nconst cfg = $('Início e configuração').first().json;\nconst limite = (cache.timeout_s || 45) * 1000;\nconst bloqueados = /(facebook|instagram|youtube|tiktok|pinterest|mercadolivre|shopee|olx|amazon|aliexpress|wikipedia|reclameaqui)\\./i;\nconst porDominio = {};\nconst ordem = [];\nfor (const it of $input.all()) {\n  const j = it.json || {};\n  const lista = Array.isArray(j.results) ? j.results : (Array.isArray(j.organic) ? j.organic : []);\n  for (const r of lista) {\n    const url = r.url || r.link;\n    if (!url || !/^https?:\\/\\//i.test(url)) continue;\n    const m = /^https?:\\/\\/([^\\/?#:]+)/i.exec(url);\n    if (!m) continue;\n    const host = m[1].toLowerCase();\n    if (bloqueados.test(host + '.')) continue;\n    if (porDominio[host]) continue;\n    porDominio[host] = true;\n    ordem.push({ host: host, url: url, titulo: r.title || '', prioridade: host === 'www.alfacards.com.br' ? 0 : 1 });\n  }\n}\nordem.sort((a, b) => a.prioridade - b.prioridade);\nconst escolhidas = ordem.slice(0, cfg.max_paginas || 5);\nif (escolhidas.length === 0) return [{ json: { url: null, host: null, sem_resultados: true, limite_ms: limite } }];\nreturn escolhidas.map(p => ({ json: Object.assign({ limite_ms: limite }, p) }));"
+      }
+    },
+    {
+      "id": "c026bc8b-f736-480b-7872-fbc280a9a2c0",
+      "name": "Para cada página",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1920,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "5249b36e-2993-8068-d6c2-67b590aabc4c",
+      "name": "Há URL e sobra tempo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2160,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.url && ($now.toMillis() - $(\"Início e configuração\").first().json.t0) < ($json.limite_ms - 4000) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1848fd88-5b58-4498-47bc-2f8cc29beb70",
+      "name": "Reservar acesso ao domínio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2400,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Início e configuração\").first().json.supabase_url }}/rest/v1/rpc/reservar_acesso_dominio",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_dominio: $('Para cada página').item.json.host } }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "7ba4468a-6aea-682d-09dd-04748f5e3106",
+      "name": "Domínio liberado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.permitido === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "541a8c43-bde5-9801-d1c3-e93e02b3016f",
+      "name": "Página precisa de JavaScript?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2880,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.exige_navegador === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "f82c5abc-e5a2-b6cf-32af-692a64f77175",
+      "name": "Leitor de JavaScript configurado",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        0
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "outputKey": "playwright",
+              "renameOutput": true,
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Início e configuração\").first().json.leitura_js }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "playwright"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "firecrawl",
+              "renameOutput": true,
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Início e configuração\").first().json.leitura_js }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "firecrawl"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      }
+    },
+    {
+      "id": "53e282e0-0fe3-8a4f-67e1-68fa380105f9",
+      "name": "Ler com navegador (Playwright)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Início e configuração\").first().json.renderer_url }}/render",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { url: $(\"Para cada página\").item.json.url, timeout_ms: 20000 } }}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "24797372-785a-cf66-aa70-e9bfca3cca97",
+      "name": "Ler com Firecrawl",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3360,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { url: $(\"Para cada página\").item.json.url, formats: [\"markdown\"], onlyMainContent: true, timeout: 20000 } }}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ab53c764-fcf1-1e61-4409-c669a49be4a5",
+      "name": "Ler página (HTTP direto)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3120,
+        160
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $(\"Para cada página\").item.json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "={{ $(\"Início e configuração\").first().json.user_agent }}"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "pt-BR,pt;q=0.9"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 12000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b746c42c-80af-c851-3bb7-04e7a02337e0",
+      "name": "Extrair preço por regras",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const pag = $('Para cada página').item.json;\nconst cache = $('Consultar cache').first().json;\nconst esp = cache.especificacao || {};\nconst j = $json || {};\nlet bruto = '';\nif (typeof j.texto === 'string') bruto = j.texto;\nelse if (j.data && typeof j.data === 'object' && typeof j.data.markdown === 'string') bruto = j.data.markdown;\nelse if (typeof j.data === 'string') bruto = j.data;\nconst texto = bruto.replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\\s+/g, ' ').trim().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').slice(0, 30000);\nconst base = { host: pag.host, url: pag.url, metodo: 'regex', chars: texto.length };\nif (texto.length < 80) return { json: Object.assign(base, { mesma_especificacao: false, preco: null, bloqueado: 'pagina_vazia_ou_sem_js', precisa_modelo: false, texto_trunc: '' }) };\nconst precos = [];\nconst reP = /R\\$\\s*(\\d{1,3}(?:\\.\\d{3})*,\\d{2})/g;\nlet mm;\nwhile ((mm = reP.exec(texto)) !== null) { precos.push({ pos: mm.index, valor: Number(mm[1].replace(/\\./g, '').replace(',', '.')) }); }\nconst qtd = Number(esp.quantidade) || 0;\nlet posQtd = -1;\nlet fimQtd = -1;\nif (qtd > 1) {\n  const formas = [String(qtd), String(qtd).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.')];\n  for (const f of formas) {\n    const re = new RegExp('(^|[^0-9.,])' + f.replace(/\\./g, '\\\\.') + '(?![0-9,])');\n    const m2 = re.exec(texto);\n    if (m2) { posQtd = m2.index + m2[1].length; fimQtd = m2.index + m2[0].length; break; }\n  }\n}\nconst desc = ((esp.descricao || '') + ' ' + (esp.grupo || '')).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\nconst exigidos = [];\nif (esp.gramatura_g) exigidos.push(new RegExp('(^|[^0-9])' + esp.gramatura_g + '\\\\s?g', 'i'));\nconst papeis = ['couche', 'fosco', 'brilho', 'kraft', 'reciclato', 'vinil', 'lona', 'verniz', 'supreme', 'offset', 'transparente', 'branco'];\nfor (const p of papeis) { if (desc.indexOf(p) >= 0) exigidos.push(new RegExp(p, 'i')); }\nconst medidas = String(esp.tamanho_mm || '').match(/\\d+/g) || [];\nif (medidas.length >= 2) {\n  const cm = function (n) { return String(Number(n) / 10).replace('.', ','); };\n  const a = medidas[0]; const b = medidas[1];\n  exigidos.push(new RegExp('(' + a + '\\\\s?x\\\\s?' + b + '|' + b + '\\\\s?x\\\\s?' + a + '|' + cm(a) + '\\\\s?x\\\\s?' + cm(b) + '|' + cm(b) + '\\\\s?x\\\\s?' + cm(a) + ')', 'i'));\n}\nconst atributosOk = exigidos.every(function (r) { return r.test(texto); });\nlet escolhido = null;\nif (posQtd >= 0) {\n  const proxima = /\\d[\\d.]*\\s*(unidades|unidade|unid\\.?|und\\.?|un\\b)/i.exec(texto.slice(fimQtd + 12));\n  const limite = proxima ? fimQtd + 12 + proxima.index : fimQtd + 250;\n  for (const p of precos) {\n    if (p.pos >= fimQtd && p.pos < limite && p.pos - fimQtd <= 250) { escolhido = p; break; }\n  }\n}\nconst plausivel = escolhido && escolhido.valor >= 5 && escolhido.valor <= 200000;\nconst mesma = !!(posQtd >= 0 && atributosOk && plausivel);\nconst temPreco = precos.length > 0;\nreturn { json: Object.assign(base, {\n  mesma_especificacao: mesma,\n  preco: mesma ? escolhido.valor : null,\n  quantidade: qtd,\n  trecho: mesma ? texto.slice(Math.max(0, escolhido.pos - 120), escolhido.pos + 60) : '',\n  precisa_modelo: !mesma && temPreco,\n  texto_trunc: (!mesma && temPreco) ? texto.slice(0, 3500) : '',\n  bloqueado: temPreco ? null : 'sem_preco_na_pagina',\n}) };"
+      }
+    },
+    {
+      "id": "5a63cce7-6fa7-bc2f-2f60-07dce686b0c1",
+      "name": "Registrar domínio não liberado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2880,
+        160
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "host",
+              "value": "={{ $(\"Para cada página\").item.json.host }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "url",
+              "value": "={{ $(\"Para cada página\").item.json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "bloqueado",
+              "value": "={{ $(\"Reservar acesso ao domínio\").item.json.motivo || \"dominio_nao_liberado\" }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "mesma_especificacao",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4db3fcd8-c4ed-ae09-7f6a-c5fff2e83c18",
+      "name": "Registrar página ignorada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2400,
+        160
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "host",
+              "value": "={{ $json.host }}",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "bloqueado",
+              "value": "={{ $json.url ? \"prazo_esgotado\" : \"sem_resultados_de_busca\" }}",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "mesma_especificacao",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f93ad6be-41b1-91f1-9196-1882ff78cf2b",
+      "name": "Consolidar fontes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const cache = $('Consultar cache').first().json;\nconst cfg = $('Início e configuração').first().json;\nconst itens = $input.all().map(function (i) { return i.json; }).filter(function (i) { return i && i.host; });\nconst fontes = itens.filter(function (i) { return i.mesma_especificacao && i.preco > 0; }).map(function (i) {\n  return { fonte: i.host, url: i.url, preco: i.preco, quantidade: i.quantidade || null, descricao: (cache.especificacao && cache.especificacao.descricao) || '', mesma_especificacao: true, texto: i.trecho || '' };\n});\nconst textos = itens.filter(function (i) { return i.precisa_modelo && i.texto_trunc; }).slice(0, 2).map(function (i) { return { host: i.host, url: i.url, texto: i.texto_trunc }; });\nconst decorrido = Date.now() - cfg.t0;\nconst limite = (cache.timeout_s || 45) * 1000;\nconst bloqueios = itens.filter(function (i) { return i.bloqueado; }).map(function (i) { return i.host + ':' + i.bloqueado; });\nreturn [{ json: {\n  consulta_id: cache.consulta_id,\n  fontes: fontes,\n  textos: textos,\n  usar_modelo: fontes.length === 0 && textos.length > 0,\n  requisicoes: itens.length,\n  decorrido_ms: decorrido,\n  estourou: decorrido >= limite,\n  bloqueios: bloqueios,\n  especificacao: cache.especificacao,\n  texto_para_modelo: 'Regras: extraia somente preços que aparecem literalmente no texto e que sejam da MESMA especificação (quantidade, papel, gramatura, acabamento e tamanho). Na dúvida devolva a lista vazia. Nunca invente valores.\\n\\nEspecificação procurada: ' + JSON.stringify(cache.especificacao) + '\\n\\n' + textos.map(function (t) { return 'URL: ' + t.url + '\\n' + t.texto; }).join('\\n\\n---\\n\\n'),\n} }];"
+      }
+    },
+    {
+      "id": "534462e9-bccc-fe6e-0b8f-2cc0e305eb50",
+      "name": "Nenhuma regra achou preço?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2400,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.usar_modelo === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "764e1696-4233-227c-dccd-4cdb70940548",
+      "name": "Modelo pequeno (Gemini)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        160
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {
+          "temperature": 0,
+          "maxOutputTokens": 600
+        }
+      }
+    },
+    {
+      "id": "60cab1ce-2a3d-dcda-2a1f-fcb7d10219a7",
+      "name": "Extrair preço com modelo (último recurso)",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        2640,
+        160
+      ],
+      "parameters": {
+        "text": "={{ $json.texto_para_modelo }}",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\"fontes\":[{\"url\":\"https://exemplo.com.br/produto\",\"preco_total_brl\":125.9,\"quantidade\":1000,\"mesma_especificacao\":true}]}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "baf38234-e833-4dc4-2b27-3b8e7fbf1e31",
+      "name": "Validar saída do modelo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const base = $('Consolidar fontes').first().json;\nconst saida = ($json.output && Array.isArray($json.output.fontes)) ? $json.output.fontes : [];\nconst fontes = [];\nlet tokens = 0;\nfor (const t of base.textos) { tokens += Math.ceil(t.texto.length / 3.5) + 250; }\nfor (const s of saida) {\n  const alvo = base.textos.find(function (t) { return t.url === s.url; }) || base.textos[0];\n  const preco = Number(s.preco_total_brl);\n  if (!(preco > 0) || s.mesma_especificacao !== true || !alvo) continue;\n  const partes = preco.toFixed(2).split('.');\n  const milhar = partes[0].replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.') + ',' + partes[1];\n  const simples = partes[0] + ',' + partes[1];\n  if (alvo.texto.indexOf(milhar) < 0 && alvo.texto.indexOf(simples) < 0) continue;\n  fontes.push({ fonte: alvo.host, url: alvo.url, preco: preco, quantidade: Number(s.quantidade) || null, descricao: (base.especificacao && base.especificacao.descricao) || '', mesma_especificacao: true, texto: 'modelo: ' + milhar });\n}\nreturn [{ json: Object.assign({}, base, { fontes: fontes, tokens: tokens, metodo: 'modelo' }) }];"
+      }
+    },
+    {
+      "id": "4ff5299b-cfd6-4e74-2f63-8365671bfb60",
+      "name": "Preparar registro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const j = $json;\nconst cfg = $('Início e configuração').first().json;\nconst fontes = Array.isArray(j.fontes) ? j.fontes : [];\nreturn [{ json: {\n  p_consulta: j.consulta_id,\n  p_fontes: fontes,\n  p_duracao_ms: Date.now() - cfg.t0,\n  p_erro: fontes.length > 0 ? null : (j.estourou ? 'tempo_esgotado' : null),\n  p_tokens: j.tokens || 0,\n  p_requisicoes: j.requisicoes || 0,\n  estourou: !!j.estourou,\n} }];"
+      }
+    },
+    {
+      "id": "77b37a01-1049-7464-5217-321081c86a31",
+      "name": "Registrar pesquisa no banco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2880,
+        480
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $(\"Início e configuração\").first().json.supabase_url }}/rest/v1/rpc/registrar_pesquisa_mercado",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_consulta: $json.p_consulta, p_fontes: $json.p_fontes, p_duracao_ms: $json.p_duracao_ms, p_erro: $json.p_erro, p_tokens: $json.p_tokens, p_requisicoes: $json.p_requisicoes } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "6a02ec48-c13d-8bdb-684c-3e7b1f0e78a0",
+      "name": "Resposta da pesquisa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $json || {};\nconst p = $('Preparar registro').first().json;\nconst origem = r.status === 'concluida' ? 'pesquisa' : (r.status === 'sem_dado' ? 'sem_dado' : 'erro');\nreturn [{ json: {\n  ok: origem !== 'erro',\n  origem: origem,\n  status: origem,\n  confianca: r.confianca || null,\n  fontes: r.fontes || 0,\n  mediana: r.mediana || null,\n  minimo: r.minimo || null,\n  maximo: r.maximo || null,\n  duracao_ms: p.p_duracao_ms,\n  consulta_id: p.p_consulta,\n  estourou_tempo: p.estourou,\n  tokens_estimados: p.p_tokens,\n  requisicoes: p.p_requisicoes,\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Início e configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Início e configuração": {
+      "main": [
+        [
+          {
+            "node": "Consultar cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar no SearXNG": {
+      "main": [
+        [
+          {
+            "node": "Escolher páginas (um domínio por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fonte de busca configurada": {
+      "main": [
+        [
+          {
+            "node": "Buscar no SearXNG",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar no Tavily",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar no Serper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar no Tavily": {
+      "main": [
+        [
+          {
+            "node": "Escolher páginas (um domínio por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar no Serper": {
+      "main": [
+        [
+          {
+            "node": "Escolher páginas (um domínio por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar buscas": {
+      "main": [
+        [
+          {
+            "node": "Fonte de busca configurada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa pesquisar?": {
+      "main": [
+        [
+          {
+            "node": "Montar buscas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta do cache ou sem dado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar cache": {
+      "main": [
+        [
+          {
+            "node": "Precisa pesquisar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar saída do modelo": {
+      "main": [
+        [
+          {
+            "node": "Preparar registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair preço com modelo (último recurso)": {
+      "main": [
+        [
+          {
+            "node": "Validar saída do modelo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nenhuma regra achou preço?": {
+      "main": [
+        [
+          {
+            "node": "Extrair preço com modelo (último recurso)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar fontes": {
+      "main": [
+        [
+          {
+            "node": "Nenhuma regra achou preço?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Para cada página": {
+      "main": [
+        [
+          {
+            "node": "Consolidar fontes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Há URL e sobra tempo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair preço por regras": {
+      "main": [
+        [
+          {
+            "node": "Para cada página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler com navegador (Playwright)": {
+      "main": [
+        [
+          {
+            "node": "Extrair preço por regras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leitor de JavaScript configurado": {
+      "main": [
+        [
+          {
+            "node": "Ler com navegador (Playwright)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ler com Firecrawl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler com Firecrawl": {
+      "main": [
+        [
+          {
+            "node": "Extrair preço por regras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Página precisa de JavaScript?": {
+      "main": [
+        [
+          {
+            "node": "Leitor de JavaScript configurado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ler página (HTTP direto)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler página (HTTP direto)": {
+      "main": [
+        [
+          {
+            "node": "Extrair preço por regras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Domínio liberado?": {
+      "main": [
+        [
+          {
+            "node": "Página precisa de JavaScript?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar domínio não liberado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar domínio não liberado": {
+      "main": [
+        [
+          {
+            "node": "Para cada página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar acesso ao domínio": {
+      "main": [
+        [
+          {
+            "node": "Domínio liberado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Há URL e sobra tempo?": {
+      "main": [
+        [
+          {
+            "node": "Reservar acesso ao domínio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar página ignorada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar página ignorada": {
+      "main": [
+        [
+          {
+            "node": "Para cada página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escolher páginas (um domínio por vez)": {
+      "main": [
+        [
+          {
+            "node": "Para cada página",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar registro": {
+      "main": [
+        [
+          {
+            "node": "Registrar pesquisa no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar pesquisa no banco": {
+      "main": [
+        [
+          {
+            "node": "Resposta da pesquisa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo pequeno (Gemini)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extrair preço com modelo (último recurso)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 120,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "exportado_de": "MCP do n8n (código do SDK validado)",
+    "credenciais": "removidas; veja docs/n8n-mapa.md"
+  }
+}

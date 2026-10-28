@@ -104,6 +104,12 @@ begin
   j := public.reservar_acesso_dominio('site-novo.exemplo.com.br');
   perform pg_temp.ck('domínio: domínio novo não é acessado antes de conferir robots e termos', not (j ->> 'permitido')::boolean and j ->> 'motivo' = 'dominio_novo_nao_conferido', j::text);
 
+  -- aquecer cache (desligado por padrão e sem varrer o catálogo)
+  perform pg_temp.ck('aquecer cache: desligado por padrão devolve lista vazia', public.skus_para_aquecer() = '[]'::jsonb);
+  update public.parametros_comerciais set aquecer_cache_ligado = true where id = 1;
+  perform pg_temp.ck('aquecer cache: ligado sem orçamentos recentes continua vazio (nada de varredura em massa)', public.skus_para_aquecer(20) = '[]'::jsonb);
+  update public.parametros_comerciais set aquecer_cache_ligado = false where id = 1;
+
   -- ============================== 5. âncora de vendas anteriores
   delete from public.precos_mercado; delete from public.precos_praticados;
   insert into public.precos_mercado (sku, chave_especificacao, fonte, preco, confianca)

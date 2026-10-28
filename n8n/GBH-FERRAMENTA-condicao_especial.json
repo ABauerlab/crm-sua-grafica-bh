@@ -1,0 +1,514 @@
+{
+  "name": "GBH | FERRAMENTA | condicao_especial",
+  "nodes": [
+    {
+      "id": "1a3b0bcc-53c2-781e-a561-05b85eba3b68",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -200
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | condicao_especial (Etapa 3)\n**Objetivo:** ferramenta `oferecer_condicao_especial(orcamento_id, gatilho)`. O agente comunica, quem decide é a função do banco (calcular_condicao_especial) com piso, gordura e travas de lucro. Substitui a antiga aplicar_desconto.\n**Entradas:** orcamento_id (uuid do orçamento já ENVIADO) e gatilho (G1 objeção de preço, G2 follow-up do dia 2, G3 follow-up do dia 5).\n**Saídas mínimas:** { tipo, texto_curto, valor, valida_ate } mais link_pagamento e orcamento_id (o atualizado). Sem condição: tipo = sem_condicao, sem motivo interno (o agente não sabe de margem, piso nem caçador).\n**O que faz:** 1) oferecer_condicao_especial no banco (decide, registra, cria o orçamento atualizado, ajusta o pedido); 2) link de pagamento NOVO e único via mp-criar-link com validade de 24 h e invalidação do anterior; 3) grava o link na condição. Depois de valida_ate o banco expira a condição, o pedido volta ao preço normal e o link deixa de valer; ela não se repete.\n**Dependências:** credencial 'GBH Supabase (service role)'; Edge Function mp-criar-link; migration 20261029000007. PDF do orçamento atualizado: ligar no gancho marcado quando o WF3 de orçamento em PDF existir (Etapa 4).\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "id": "7028b8f2-04ea-0b07-73ef-5b4aac59904a",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "name": "gatilho",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e421afc5-e420-f069-6402-6c6703359e88",
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.orcamento_id || '').length === 36 && ['G1', 'G2', 'G3'].includes($json.gatilho) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "14b7071d-5af5-324f-a0ce-dc377ef5193e",
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "i1",
+              "name": "tipo",
+              "value": "sem_condicao",
+              "type": "string"
+            },
+            {
+              "id": "i2",
+              "name": "texto_curto",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "i3",
+              "name": "valor",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "i4",
+              "name": "valida_ate",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "i5",
+              "name": "erro_ferramenta",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "002b7f56-fb88-ed90-9b6d-8ed91d11e337",
+      "name": "Decidir e registrar condição",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/oferecer_condicao_especial",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_orcamento: $json.orcamento_id, p_gatilho: $json.gatilho } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b65d8b76-92a9-a2dc-adcb-b51b4a0bed01",
+      "name": "Há condição?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.tipo && $json.tipo !== 'sem_condicao' }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "c02fee79-2401-dace-b041-d84e4303bc3f",
+      "name": "Resposta: sem condição",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "tipo",
+              "value": "sem_condicao",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "texto_curto",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "s3",
+              "name": "valor",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "s4",
+              "name": "valida_ate",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "s5",
+              "name": "orientacao",
+              "value": "Sem condição especial agora. Reforce o valor (arte, agilidade, atendimento) ou sugira uma especificação mais simples. Não prometa desconto.",
+              "type": "string"
+            },
+            {
+              "id": "s6",
+              "name": "erro_ferramenta",
+              "value": "={{ !!$json.error || !!$json.message }}",
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "9318a845-5d2c-7782-c3a8-ff59903da6e3",
+      "name": "Orçamento tem pedido para cobrar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        960,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.order_id }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "6ac8b7b2-7b34-f700-968f-78c0d3753c25",
+      "name": "Criar link de pagamento novo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/mp-criar-link",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { pedido_id: $json.order_id, expira_horas: $json.expira_horas, forcar_novo: true } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "ec9c6fc7-07fb-f207-73aa-3e2ed173e121",
+      "name": "Link criado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.link }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "7d590489-9fa1-a96d-55d6-bec82ddcfdc8",
+      "name": "Guardar link da condição",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1680,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/condicao_registrar_link",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_condicao: $('Decidir e registrar condição').item.json.condicao_id, p_link: $('Criar link de pagamento novo').item.json.link } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "e6fa9c0d-5416-bd9d-45ac-44f429ea1498",
+      "name": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "af7150d7-7dd1-19b8-f47c-df5a43d4277a",
+      "name": "Resposta: condição oferecida",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const d = $('Decidir e registrar condição').first().json;\nlet link = null;\nlet erroLink = !!d.order_id;\ntry {\n  const l = $('Criar link de pagamento novo').first().json;\n  link = l.link || null;\n  erroLink = !l.link;\n} catch (e) {\n  link = null;\n}\nreturn [{ json: {\n  tipo: d.tipo,\n  texto_curto: d.texto_curto,\n  valor: Number(d.valor),\n  valida_ate: d.valida_ate,\n  link_pagamento: link,\n  orcamento_id: d.orcamento_id,\n  erro_link: erroLink,\n  pdf_atualizado: false,\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Guardar link da condição": {
+      "main": [
+        [
+          {
+            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link criado?": {
+      "main": [
+        [
+          {
+            "node": "Guardar link da condição",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar link de pagamento novo": {
+      "main": [
+        [
+          {
+            "node": "Link criado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orçamento tem pedido para cobrar?": {
+      "main": [
+        [
+          {
+            "node": "Criar link de pagamento novo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Há condição?": {
+      "main": [
+        [
+          {
+            "node": "Orçamento tem pedido para cobrar?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: sem condição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir e registrar condição": {
+      "main": [
+        [
+          {
+            "node": "Há condição?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Decidir e registrar condição",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gancho: PDF do orçamento atualizado (Etapa 4)": {
+      "main": [
+        [
+          {
+            "node": "Resposta: condição oferecida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 120,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "exportado_de": "MCP do n8n (código do SDK validado)",
+    "credenciais": "removidas; veja docs/n8n-mapa.md"
+  }
+}

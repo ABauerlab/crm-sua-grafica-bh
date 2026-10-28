@@ -448,6 +448,33 @@ select coalesce(c.grupo_produto, 'Sem grupo') as grupo_produto,
 from public.catalogo c
 group by coalesce(c.grupo_produto, 'Sem grupo'), c.grupo_produto;
 
+
+-- ---------------------------------------------------------------- 9b. aquecer o cache de madrugada (opcional, DESLIGADO por padrão)
+-- Devolve só SKUs que já foram orçados nos últimos 60 dias e cujo mercado venceu ou vai vencer; nunca varre o catálogo.
+create or replace function public.skus_para_aquecer(p_limite integer default 10) returns jsonb
+language plpgsql security definer set search_path = ''
+as $$
+declare pr public.parametros_comerciais%rowtype;
+begin
+  if not private.dono_ou_servidor() then raise exception 'Sem permissão.' using errcode = '42501'; end if;
+  select * into pr from public.parametros_comerciais where id = 1;
+  if not pr.aquecer_cache_ligado then return '[]'::jsonb; end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object('sku', t.sku) order by t.n desc) from (
+      select oi.sku, count(*) as n
+        from public.orcamento_itens oi
+        join public.orcamentos o on o.id = oi.orcamento_id
+        join public.catalogo c on c.sku = oi.sku
+       where o.criado_em > now() - interval '60 days' and not o.teste and c.active and c.vendavel
+         and (cardinality(pr.aquecer_cache_grupos) = 0 or c.grupo_produto = any (pr.aquecer_cache_grupos))
+         and not exists (select 1 from public.precos_mercado m
+                          where (m.sku = oi.sku or m.chave_especificacao = coalesce(nullif(c.especificacao_normalizada, ''), c.sku))
+                            and m.normalizado and not m.outlier and m.invalidado_em is null
+                            and m.coletado_em > now() - make_interval(days => greatest(pr.idade_max_pesquisa_dias - 2, 1)))
+       group by oi.sku order by count(*) desc limit least(greatest(p_limite, 1), 20)) t), '[]'::jsonb);
+end;
+$$;
+
 -- ---------------------------------------------------------------- 10. acesso: só dono e service role; nada para o anon
 do $$
 declare t text;
@@ -465,7 +492,7 @@ declare f text;
 begin
   foreach f in array array[
     'public.registrar_pesquisa_mercado(uuid,jsonb,integer,text,integer,integer)', 'public.consultar_cache_preco_mercado(text,jsonb)',
-    'public.aprender_precos_semana(boolean)', 'public.reservar_acesso_dominio(text)'] loop
+    'public.aprender_precos_semana(boolean)', 'public.reservar_acesso_dominio(text)', 'public.skus_para_aquecer(integer)'] loop
     execute format('revoke execute on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated, service_role', f);
   end loop;
