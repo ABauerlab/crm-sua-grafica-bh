@@ -106,6 +106,7 @@ export interface OrderItem {
   id: string
   order_id: string
   code: string | null
+  fora_catalogo?: boolean
   description: string
   qty: number
   unit_cost: number

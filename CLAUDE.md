@@ -22,6 +22,8 @@ supabase/
 scripts/test-webhook.ts   testes de assinatura/parsing (Node)
 scripts/test-rules.ts     testes de regras de preço, transições do kanban e bloqueio de login (Node)
 scripts/screenshots.cjs   gera docs/telas com o Supabase simulado (Playwright)
+n8n/                      workflows GBH exportados do MCP do n8n, sem credenciais (ver docs/n8n-mapa.md)
+infra/                    SearXNG e leitor Playwright para a pesquisa de preço (ver docs/agente/infra-busca.md)
 ```
 
 ### Banco
@@ -50,6 +52,9 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `mp-conferir` | não (dono, service role ou `x-cron-secret`) | consulta o Mercado Pago pelos pagamentos do pedido e grava pelo mesmo caminho do webhook (botão "Conferir agora" e agendamento de 10 min) |
 | `conhecimento` | não (dono, service role ou `x-cron-secret`) | gera vetores `gte-small` do banco de conhecimento, reindexa e busca trechos para o agente |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
+
+### Preço sob demanda e condição especial (Etapa 3)
+`calcular_preco` é a única autoridade do preço (mercado pesquisado na hora do orçamento, fator por grupo, âncora de vendas, travas `piso` e `piso_duro`). A pesquisa roda no n8n (`GBH | FERRAMENTA | pesquisar_preco_mercado`), grava em `precos_mercado` (cache de 14 dias) e respeita robots, termos e intervalo por domínio (`fontes_pesquisa`). Desconto só existe como condição especial (`oferecer_condicao_especial`, degraus 1 a 3, validade de 24 h, nunca abaixo do piso); `aplicar_desconto` foi removida. Edição manual de preço no pedido: abaixo do `piso_duro` bloqueia, entre o piso duro e o piso exige confirmação do dono (`precos_manuais_log`). Detalhes em `docs/agente-ia.md`, `docs/agente/etapa3-validacao.md` e `docs/n8n-mapa.md`. Testes SQL: `supabase/tests/preco_etapa3.sql`.
 
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco`. Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.

@@ -1,0 +1,274 @@
+{
+  "name": "GBH | WF4 | Aprendizado de preços",
+  "nodes": [
+    {
+      "id": "0ef64f60-c762-b027-f6bc-617962b50621",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -200
+      ],
+      "parameters": {
+        "content": "## GBH | WF4 | Aprendizado de preços (Etapa 3)\n**Objetivo:** rotina SEMANAL (segunda, 03:30, America/Sao_Paulo) que aprende com os orçamentos e fecha as pendências de desconto.\n**Passos (todos no banco, sem modelo de IA):** 1) expira condições e orçamentos vencidos (preço volta ao normal, link deixa de valer); 2) ajusta o fator competitivo por grupo com 8 ou mais orçamentos encerrados em 30 dias: conversão abaixo de 15% com margem acima da meta baixa 0,01 (mínimo 0,90); acima de 45% sobe 0,01 (máximo 0,98); cada ajuste fica em ajustes_fator_preco com data, motivo, antes e depois; 3) alerta de padrões incomuns (ex.: 3 condições consumidas e nenhuma compra); 4) relatório das condições por degrau (conversão, margem após desconto, receita incremental, alerta se o desconto consumir mais de 40% da margem; sugere reduzir degrau sem ganho mensurável); 5) resumo semanal ao dono (alerta de baixa gravidade, mostrado em Catálogo > Saúde de preços).\n**Entradas:** nenhuma (agendado). **Saídas:** linhas no banco (fatores_competitivos, ajustes_fator_preco, alertas).\n**Dependências:** credencial 'GBH Supabase (service role)'; migrations 20261029000006 e 20261029000007. Os parâmetros (8 orçamentos, 15%, 45%, passo, meta de margem) ficam em parametros_comerciais.\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "id": "ddbb8537-f2b5-662c-bcc0-e0860d592dc3",
+      "name": "Toda segunda às 03:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 3 * * 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a05ab0b8-2dfa-604b-d1fe-f7e9de7c18de",
+      "name": "Expirar condições e orçamentos vencidos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/expirar_condicoes_e_orcamentos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "fd72cf2b-097d-1aab-cddf-d77d45602afa",
+      "name": "Ajustar fator competitivo por grupo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/aprender_precos_semana",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_simular: false } }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "dbaf3589-e6c9-dbf2-6422-f3608be7d5fb",
+      "name": "Detectar padrões incomuns de desconto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/detectar_padroes_desconto",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "77d3f8f5-170d-da42-0d0f-385cb427e4bc",
+      "name": "Relatório semanal das condições",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/relatorio_condicoes_semana",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_dias: 7, p_alertar: true } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "7208e6cc-4b03-eff7-3477-5c1f0a3c50fb",
+      "name": "Resumo semanal ao dono",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/resumo_semanal_precos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_alertar: true } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "327aaa2d-1b60-4b7a-0496-6c6454bf215d",
+      "name": "Resumo da execução",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function lerNo(nome) {\n  try { return $(nome).first().json; } catch (e) { return { erro: 'nao_executou' }; }\n}\nconst ajustes = lerNo('Ajustar fator competitivo por grupo');\nconst padroes = lerNo('Detectar padrões incomuns de desconto');\nconst resumo = lerNo('Resumo semanal ao dono');\nreturn [{ json: {\n  executado_em: new Date().toISOString(),\n  condicoes_e_orcamentos_expirados: lerNo('Expirar condições e orçamentos vencidos'),\n  ajustes_de_fator: ajustes.ajustes != null ? ajustes.ajustes : ajustes,\n  alertas_de_padrao: padroes.alertas_criados != null ? padroes.alertas_criados : padroes,\n  texto_do_resumo: resumo.texto || null,\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Toda segunda às 03:30": {
+      "main": [
+        [
+          {
+            "node": "Expirar condições e orçamentos vencidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expirar condições e orçamentos vencidos": {
+      "main": [
+        [
+          {
+            "node": "Ajustar fator competitivo por grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ajustar fator competitivo por grupo": {
+      "main": [
+        [
+          {
+            "node": "Detectar padrões incomuns de desconto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar padrões incomuns de desconto": {
+      "main": [
+        [
+          {
+            "node": "Relatório semanal das condições",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Relatório semanal das condições": {
+      "main": [
+        [
+          {
+            "node": "Resumo semanal ao dono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo semanal ao dono": {
+      "main": [
+        [
+          {
+            "node": "Resumo da execução",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 600,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "exportado_de": "MCP do n8n (código do SDK validado)",
+    "credenciais": "removidas; veja docs/n8n-mapa.md"
+  }
+}

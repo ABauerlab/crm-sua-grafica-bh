@@ -20,6 +20,7 @@ import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 
 import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
+import DiscountPolicyTab from '@/features/agent/DiscountPolicyTab'
 const KnowledgeTab = lazy(() => import('@/features/agent/KnowledgeTab'))
 
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
@@ -447,6 +448,7 @@ export default function Settings() {
         <TabsList>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
           <TabsTrigger value="precos">Preços</TabsTrigger>
+          <TabsTrigger value="descontos">Política de desconto</TabsTrigger>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger>
           <TabsTrigger value="etiquetas">Etiquetas</TabsTrigger>
@@ -459,6 +461,7 @@ export default function Settings() {
         </TabsList>
         <TabsContent value="empresa"><CompanyTab /></TabsContent>
         <TabsContent value="precos"><PricingTab /></TabsContent>
+        <TabsContent value="descontos"><DiscountPolicyTab /></TabsContent>
         <TabsContent value="kanban"><KanbanTab /></TabsContent>
         <TabsContent value="respostas"><QuickRepliesTab /></TabsContent>
         <TabsContent value="etiquetas"><LabelsTab /></TabsContent>

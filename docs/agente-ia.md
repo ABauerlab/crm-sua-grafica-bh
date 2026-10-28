@@ -122,3 +122,28 @@ Regras: a quantidade vendável é a do SKU (cada linha do catálogo é uma opç�
 ### Testes
 
 `supabase/tests/agente_etapa1.sql` é um bloco único que se desfaz sozinho (cole no SQL Editor do Supabase ou rode com `psql "$DATABASE_URL" -f ...`). O resultado sempre aparece como mensagem de erro: "OK: N testes passaram" é sucesso, "TESTES FALHARAM" lista o que falhou. Cobre fim de semana, feriado, antes e depois das 12h, sexta à tarde, bairro central com item pequeno e com banner, fora da região, pedido abaixo do mínimo, pacote de arte, preço abaixo do piso, abaixo do piso duro (falha no banco), desconto acima do teto, gordura zero, desconto abaixo de R$ 5, segunda condição no mesmo orçamento e item sem permissão de desconto. `npm test` valida os 11 templates (regras da Meta para o corpo).
+
+
+## Etapa 3: preço sob demanda, aprendizado e condição especial
+
+Detalhes de infraestrutura em `docs/agente/infra-busca.md`; validação e tabelas em `docs/agente/etapa3-validacao.md`.
+
+### Pesquisa de mercado (ferramenta `pesquisar_preco_mercado`)
+- **Quando roda:** só quando um orçamento precisa e não há mercado válido (cache de `idade_max_pesquisa_dias`, 14). Nunca em massa.
+- **Banco:** `consultar_cache_preco_mercado(sku)` devolve o cache ou abre uma consulta e a especificação normalizada **do catálogo** (grupo, descrição, quantidade, gramatura, tamanho); o agente não dita a especificação. `reservar_acesso_dominio(dominio)` aplica robots, termos e intervalo por domínio. `registrar_pesquisa_mercado(consulta, fontes, ...)` descarta outliers (mais de 3 desvios absolutos da mediana, ou fora de 0,5x a 2x), uma fonte vale uma vez, calcula mediana, mínimo, máximo e confiança (3 ou mais fontes = alta, 2 = média, 1 = baixa). Resultado ruim, falha ou estouro de 45 s: `sem_dado` (não repete por 30 minutos) e a fórmula usa o custo com travas.
+- **Concorrente prioritário (alfacards.com.br), conferido em 28/10/2026:** `robots.txt` libera tudo; não há página de termos de uso (o dono precisa confirmar); o preço só aparece depois do JavaScript e só para as opções padrão. Registrado em `fontes_pesquisa`.
+
+### `calcular_preco` (autoridade do preço)
+Ordem: custo, piso e piso duro, alvo, trava final. Alvo = `mediana x quantidade x fator do grupo` (fator em `fatores_competitivos`, 0,90 a 0,98, padrão 0,93); com 3 ou mais vendas do SKU nos últimos 90 dias entra a média ponderada pela recência como âncora, **limitada pela mediana de mercado** (alvo = média entre os dois); sem mercado mas com a âncora: `historico_vendas`; sem nada: `custo x multiplicador` com confiança baixa. Mercado abaixo do piso: preço = piso, `nao_competitivo = true` e aviso `mercado_abaixo_do_piso`. O preço nunca fica abaixo do piso duro. A resposta traz `regra`, `confianca`, `margem_liquida_pct`, `fontes_mercado`, `mercado_mediana`, `consulta_mercado_id` e `fator_competitivo` para o orçamento gravar. `agente_preco` devolve ao agente só preço e uma orientação ("destaque valor, não reduza") quando não competitivo.
+
+### Condição especial (substitui `aplicar_desconto`, que deixou de existir)
+- `oferecer_condicao_especial(orcamento, gatilho)` (service role): decide com `calcular_condicao_especial`, registra, cria o **orçamento atualizado** (filho do original, status enviado, validade = `valida_ate`), confere com `validar_margem` (tudo ou nada) e ajusta o pedido ligado (percentual arredondado para baixo). O n8n pede o link novo de 24 h (`mp-criar-link`, `forcar_novo`) e grava com `condicao_registrar_link`.
+- Expiração (`pg_cron` a cada 10 minutos e na rotina semanal): condição vencida vira `expirada`, orçamento atualizado `expirado`, pedido volta ao percentual anterior, link deixa de valer, e a condição não se repete para o orçamento (nem para o contato dentro do intervalo).
+- Alertas: `cacador_de_desconto` ao recusar; `padrao_desconto` (3 condições consumidas e nenhuma compra) e `padrao_desconto_recorrente` pelo detector semanal; relatório semanal e resumo ao dono como alerta de baixa gravidade.
+- Política (Configurações > Política de desconto): `simular_politica_desconto` mostra o lucro líquido do pior caso em uma amostra do catálogo, três tipos de entrega e quatro níveis de preço; `salvar_politica_desconto` só grava se o pior caso for maior ou igual a zero; um gatilho de banco repete a checagem em alterações diretas.
+
+### Aprendizado
+Cada orçamento entra em `precos_praticados` (especificação, quantidade, preço, margem, regra, condição usada e resultado ganho, perdido ou expirado; o orçamento atualizado conta para o original). Semanalmente `aprender_precos_semana` ajusta o fator por grupo com 8 ou mais orçamentos encerrados em 30 dias: conversão abaixo de 15% com margem acima da meta (`meta_margem_liquida_pct`, 20) baixa 0,01; acima de 45% sobe 0,01; limites 0,90 e 0,98; cada ajuste fica em `ajustes_fator_preco`.
+
+### Edição manual de preço
+`definir_preco_item_pedido(item, preco, confirmar, motivo, apenas_simular)`: abaixo do piso duro bloqueia para todos; entre o piso duro e o piso exige confirmação do dono e grava em `precos_manuais_log`; acima é livre. Um gatilho recusa reduzir o preço abaixo do piso por qualquer outro caminho do CRM.

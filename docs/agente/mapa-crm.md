@@ -1,4 +1,4 @@
-# Mapa do CRM (Etapas 1 e 2)
+# Mapa do CRM (Etapas 1 a 3)
 
 Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1, e o que muda. Atualizar a cada etapa.
 
@@ -93,3 +93,32 @@ Ver "O que revisar" em `docs/agente/progresso.md`.
 **Telas:** Catálogo (SKU com copiar, base de custo, preço de venda, status, bike, filtro de status, Recalcular pisos, aba Sem código), importação em duas fases, Kits (lista de SKUs, preço de `kit_preco`), Pedido (SKU em destaque, preço de `calcular_preco`, aba Pedido para a fábrica), cartão do kanban (SKUs), Configurações > Conhecimento.
 
 **Preço no CRM (decisão padrão aplicada):** a coluna do catálogo é "Base de custo (ref.)", visível só ao dono. Orçamento (pedido), kit e catálogo leem `calcular_preco`. Nenhum orçamento, PDF ou link usa `preco_base_custo`.
+
+## 7. Etapa 3: estado parcial (não aplicada)
+
+Na branch `feat/agente-etapa3-preco`, a migration `20261029000006_etapa3_preco_inteligente.sql` cria a infraestrutura para pesquisa sob demanda: `consultas_preco_mercado`, fonte normalizada e expiração em `precos_mercado`, `fatores_competitivos`, `ajustes_fator_preco`, atualização de `calcular_preco`, sincronização de `precos_praticados`, `aprender_precos_semana()` e a visão interna `saude_precos`.
+
+O front ganhou as abas **Catálogo > Saúde de preços** e **Configurações > Política de desconto**. Nada disso está em produção nem foi validado contra o Supabase. Os workflows n8n, SearXNG, PDF/link renovado, expiração, alertas, relatórios e testes finais continuam pendentes.
+
+## 7. Etapa 3: autoridade do preço (Passo 0, 28/10/2026)
+
+Cada ponto do CRM que exibe ou grava preço, e o que fazer com ele. Regra: **o único preço que chega ao cliente (orçamento, PDF, link de pagamento, mensagem) é o de `calcular_preco`**; o que não vem dela é interno e rotulado.
+
+| Ponto do CRM | O que mostra ou grava | Decisão |
+|---|---|---|
+| Catálogo > coluna "Base de custo (ref.)" (`preco_base_custo`) | custo x multiplicador, sem pesquisa | **Rotulada** "base de custo, sem pesquisa". Só o dono vê; nunca usada em orçamento, PDF ou link |
+| Catálogo > coluna "Preço de venda" e "Piso" | `catalogo_precos` > `calcular_preco` | **Lê `calcular_preco`** (Etapa 2). Só o dono vê o piso |
+| Catálogo > Saúde de preços (nova) | cobertura de mercado, margem, conversão, fator por grupo, fontes de cada preço, não competitivos, condições, resumo semanal | Interna (RLS só dono). Nenhum custo ou piso sai dela para o cliente |
+| Kits (`kits.price`) | preço do kit | **Lê `kit_preco`** (calcular_preco por SKU, nunca abaixo do piso do conjunto). Valor digitado não existe mais |
+| Pedido > Itens > adicionar item pela busca | preço sugerido | **Lê `calcular_preco`** (regra e confiança aparecem na origem do item) |
+| Pedido > Itens > editar preço à mão | `order_items.unit_price` | **Novo:** mostra o lucro líquido e a faixa; abaixo do piso duro **bloqueia** (nem o dono aprova); entre o piso duro e o piso **só com confirmação do dono e motivo**, gravados em `precos_manuais_log` e no pedido (`price_override_reason`); gatilho de banco impede reduzir abaixo do piso por qualquer outro caminho do CRM |
+| Pedido > desconto, imposto e taxa (percentuais) | `orders.discount_pct` etc. | Trava existente da Etapa 1 (desconto que leva a prejuízo é recusado). Desconto comercial ao cliente só nasce de `oferecer_condicao_especial` |
+| Cartão do kanban, painel, contatos, inbox | valor total do pedido (`order_financials`) | Só exibição do que já foi vendido; não gera preço |
+| Orçamento (`orcamentos`, `orcamento_itens`) | preço por item, regra, confiança, margem | Grava o que `calcular_preco` devolveu, mais (colunas novas) fonte do mercado, `nao_competitivo`, piso, piso duro e lucro. Triggers recusam piso duro |
+| Configurações > Preços (`app_settings.pricing`) | alertas de piso e desconto máximo da tela do pedido | Continua só como **alerta visual** do CRM (a regra de verdade está em `parametros_comerciais` e nas funções) |
+| Configurações > Política de desconto | `politica_desconto` | **Novo:** edita degraus, percentuais, teto em reais, fração da gordura, validade, intervalo e grupos sem desconto; mostra a simulação do pior caso e recusa configuração com prejuízo |
+| `aplicar_desconto` (função e ferramenta antiga) | - | **Removida** (não havia dados para migrar). Substituída por `oferecer_condicao_especial` |
+
+**Tabelas e funções novas (migrations 20 e 21):** `fatores_competitivos`, `ajustes_fator_preco`, `consultas_preco_mercado`, `fontes_pesquisa`, `precos_manuais_log`; colunas novas em `parametros_comerciais`, `precos_mercado`, `precos_praticados`, `condicoes_especiais`, `orcamento_itens`; view `saude_precos`; funções `consultar_cache_preco_mercado`, `registrar_pesquisa_mercado`, `reservar_acesso_dominio`, `aprender_precos_semana`, `oferecer_condicao_especial`, `condicao_registrar_link`, `expirar_condicoes_e_orcamentos`, `detectar_padroes_desconto`, `relatorio_condicoes_semana`, `resumo_semanal_precos`, `simular_politica_desconto`, `salvar_politica_desconto`, `definir_grupos_sem_desconto`, `definir_preco_item_pedido`, `skus_para_aquecer`; `calcular_preco`, `agente_preco`, `calcular_condicao_especial` e `validar_margem` substituídas (mesmos nomes e retornos compatíveis). Agendamento `condicoes-expirar` (10 em 10 minutos).
+
+**n8n:** 4 workflows `GBH |` desativados (ver `docs/n8n-mapa.md`).

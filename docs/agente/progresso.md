@@ -4,6 +4,41 @@
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
+- Etapa 3: **pronta para revisão**, ainda não aplicada (ver abaixo).
+
+## Etapa 3: preço inteligente e condição especial (pronta para revisão, NÃO aplicada em produção)
+
+Branch de trabalho da sessão: `claude/etapa3-preco-desconto-julfis` (parte de `feat/agente-etapa3-preco`, que tinha o início do trabalho). Nada foi aplicado no Supabase, nada foi ativado no n8n, nada foi instalado no servidor.
+
+### O que foi feito
+- **Passo 0:** todo ponto que exibe ou grava preço foi listado e classificado em `docs/agente/mapa-crm.md` (seção 7). Tudo o que vai para cliente, orçamento, PDF ou link lê `calcular_preco`; o resto ficou rotulado "base de custo, sem pesquisa".
+- **Banco** (migrations `20261029000006` e `20261029000007`, juntas em `docs/agente/aplicar-etapa3.sql`): cache e consultas de mercado, `fontes_pesquisa` (robots, termos e intervalo por domínio), `registrar_pesquisa_mercado` (outliers por desvio absoluto, mediana, confiança), `calcular_preco` com mercado, fator por grupo, âncora de vendas (3 ou mais em 90 dias, limitada pelo mercado), `nao_competitivo` e trava final no piso duro; `agente_preco` com orientação para o agente; `precos_praticados` alimentado por trigger; `aprender_precos_semana`; `oferecer_condicao_especial` (orçamento atualizado, pedido ligado, tudo ou nada), expiração com `pg_cron`, detector de caçador e de padrão incomum, relatório e resumo semanais, política com `simular_politica_desconto` e `salvar_politica_desconto`, edição manual de preço com piso duro e confirmação (`definir_preco_item_pedido`, `precos_manuais_log`), `skus_para_aquecer`. `aplicar_desconto` não existia no repositório nem no banco; o `drop` está na migration por segurança.
+- **n8n (MCP):** 4 workflows criados na pasta Sua Gráfica BH, desativados e exportados em `n8n/` (ver `docs/n8n-mapa.md`). Lógica testada no n8n com dados simulados nos nós de rede.
+- **Infra:** `infra/searxng` e `infra/renderer` prontos, com passo a passo em `docs/agente/infra-busca.md`.
+- **CRM:** Catálogo > Saúde de preços completa (cobertura, margem, conversão, fator por grupo, fontes de cada preço, itens não competitivos, condições, resumo semanal, ajustes); Configurações > Política de desconto com simulação do pior caso e grupos sem desconto; pedido com lucro líquido, bloqueio e confirmação do dono ao editar preço.
+- **Testes:** `supabase/tests/preco_etapa3.sql` (**67 passam**, inclui a simulação de **1.000 combinações sem nenhuma violação**), Etapas 1 e 2 contra o schema novo (54 e 82 passam), `npm test`, typecheck e build verdes. Relatório em `docs/agente/etapa3-validacao.md`.
+
+### Decisões
+- Fonte prioritária (alfacards.com.br): `robots.txt` libera, **não há página de termos** (ficou `termos_ok` vazio até o dono confirmar) e o preço só aparece com JavaScript e só para as opções padrão. Cobertura esperada baixa; as outras fontes e o cache completam.
+- Mercado com 1 fonte é usado com confiança baixa e aviso; com 0 fontes vale a fórmula de custo.
+- Aprendizado conta só orçamentos **encerrados** (ganho, perdido, expirado) dos últimos 30 dias, sem os de teste; o orçamento atualizado por condição conta como o original.
+- A condição que levaria o orçamento atualizado a ser recusado pela trava de lucro vira "sem condição"; o agente nunca vê o motivo.
+- Meta de margem do aprendizado: 20% (`meta_margem_liquida_pct`, para você revisar).
+- O workflow de condição devolve o orçamento atualizado e o link novo; o **PDF** fica para o gancho da Etapa 4.
+
+### Pendências
+- Dono: aplicar `docs/agente/aplicar-etapa3.sql`, rodar `supabase/tests/preco_etapa3.sql` e os advisors, instalar a busca no Coolify, criar as credenciais no n8n, confirmar os termos de uso do concorrente (`docs/agente/depende-de-voce.md`).
+- Etapa 4: PDF do orçamento atualizado e gravar nos itens do orçamento a fonte do mercado (`consulta_mercado_id`, `mercado_mediana`, `fontes_mercado`, `nao_competitivo`, `piso`, `piso_duro`, `lucro_liquido`, colunas já criadas).
+- Etapa 5: mensagem curta de espera durante a pesquisa e G1 no WF2. Etapa 7: G2 e G3 nos follow-ups.
+- `GBH | WF9 | Erros` ainda não existe (etapa 7/8); os workflows já usam retentativas e `continueRegularOutput`.
+
+### Como testar
+```bash
+npm test && npm run typecheck && npm run build
+supabase/tests/rodar-local.sh supabase/tests/preco_etapa3.sql supabase/tests/agente_etapa1.sql supabase/tests/catalogo_etapa2.sql
+psql -h /tmp -p 54329 -U postgres -d gbh -f supabase/tests/tabela-etapa3.sql    # tabelas da validação
+```
+No CRM (depois de aplicar): Catálogo > Saúde de preços; Configurações > Política de desconto (mude um percentual e veja a simulação); Pedido > Itens (mude o preço de um item abaixo do piso).
 
 ## Etapa 2: Catálogo com SKU e banco de conhecimento (concluída, 28/10/2026)
 
