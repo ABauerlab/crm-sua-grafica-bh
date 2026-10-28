@@ -30,6 +30,11 @@ botão "Marcar como pago" ──► confirmar_pagamento_manual ──► private
 ### Modo teste e produção
 `MP_MODO=teste` ou `producao` escolhe qual par de segredos a função usa. Em **teste** tudo é gravado como teste e **só pedidos marcados como "Pedido de teste"** (interruptor na aba Pagamento) mudam de etapa; pagamento de teste em pedido real vira alerta. Em **produção** a função recusa criar link para pedido de teste. Um selo amarelo "MODO TESTE" aparece no topo de Pagamentos enquanto estiver em teste.
 
+### Pix (qualquer banco, QR Code ou copia e cola)
+O link do Checkout Pro já oferece **Pix** em produção: o cliente escolhe Pix, vê o QR Code e o código copia e cola e paga de **qualquer banco**. O sistema reconhece sozinho, igual ao cartão: o Pix nasce `pendente` (aguardando transferência), o Mercado Pago avisa quando o dinheiro cai, o webhook consulta o pagamento (mesmo `mp_payment_id`), o status vira `aprovado` e o card vai para Pago. Se o Pix vencer sem pagar, vira `expirado` (sem alterar o pedido) e o cliente pode reabrir o mesmo link, que gera outro QR Code enquanto o link estiver válido.
+
+Para o Pix aparecer no checkout em produção, a conta do Mercado Pago precisa ter uma **chave Pix cadastrada**. No ambiente de teste (usuários de teste) o Checkout Pro **não simula Pix**: a documentação do Mercado Pago só permite testar Pix por requisição de API, então o teste real de Pix é um pagamento de valor baixo em produção.
+
 ## URLs
 | Função | URL | JWT |
 |---|---|---|

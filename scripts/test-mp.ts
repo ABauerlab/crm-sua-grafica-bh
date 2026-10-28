@@ -70,6 +70,8 @@ for (const total of [gross, Math.round(gross * 0.9), Math.round(gross * 0.933), 
 assert.deepEqual(buildItems([], 1000), [])
 assert.deepEqual(buildItems(lines, 0), [])
 assert.match(buildItems(lines, gross)[0].title, /^3x Cartão de visita/)
+assert.equal(buildItems(lines, gross)[0].description, 'Cartão de visita 500 un')
+assert.equal(buildItems(lines, gross)[0].category_id, 'services')
 
 // Validade do link: padrão 48 h, aceita menos, recusa fora da faixa
 assert.equal(parseExpiraHoras(undefined), 48)
