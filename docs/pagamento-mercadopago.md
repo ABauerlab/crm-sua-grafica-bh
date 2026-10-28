@@ -27,6 +27,9 @@ botão "Marcar como pago" ──► confirmar_pagamento_manual ──► private
 - **Resposta do webhook**: o processamento é uma consulta e uma gravação (milissegundos), então a função responde 200 depois de gravar. Se algo falhar ela devolve 5xx para o Mercado Pago tentar de novo; avisos ignoráveis (tipo desconhecido, simulação do painel) respondem 200.
 - **Divergências** (não alteram o pedido, vão para Pagamentos > Alertas): valor diferente, moeda diferente, referência desconhecida, pagamento recusado, estorno, contestação, reclamação, segundo pagamento aprovado no mesmo pedido, pagamento de teste em pedido real, aviso de modo diferente do configurado.
 
+### Conferir agora (aviso perdido)
+O botão **Conferir agora** (Pagamentos > Cobranças, e "Conferir pagamento agora" na aba Pagamento do pedido) chama a função `mp-conferir`: busca no Mercado Pago os pagamentos com a referência do pedido (`SG-0001`) e grava pelo **mesmo caminho do webhook** (`mp_registrar_pagamento`). O banco também roda isso sozinho **a cada 10 minutos** para os pedidos com cobrança em aberto dos últimos 3 dias (job `mp-conferir-pendentes`, mesmo segredo `cron_secret` da sincronização da Meta). Por ser idempotente, rodar duas vezes não duplica nada.
+
 ### Modo teste e produção
 `MP_MODO=teste` ou `producao` escolhe qual par de segredos a função usa. Em **teste** tudo é gravado como teste e **só pedidos marcados como "Pedido de teste"** (interruptor na aba Pagamento) mudam de etapa; pagamento de teste em pedido real vira alerta. Em **produção** a função recusa criar link para pedido de teste. Um selo amarelo "MODO TESTE" aparece no topo de Pagamentos enquanto estiver em teste.
 

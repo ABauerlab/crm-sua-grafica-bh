@@ -7,7 +7,7 @@ import { EmptyState, ErrorState } from '@/components/ui/empty-state'
 import { Select } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/toast'
-import { ALERTA_LABEL, STATUS_LABEL, useAlertas, useCobrancas, useCriarLink, useMpStatus, useResolveAlerta, type Cobranca } from '@/hooks/payments'
+import { ALERTA_LABEL, resumoConferencia, STATUS_LABEL, useAlertas, useCobrancas, useConferir, useCriarLink, useMpStatus, useResolveAlerta, type Cobranca } from '@/hooks/payments'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOrders } from '@/hooks/orders'
 import { contactLabel } from '@/lib/format'
@@ -110,6 +110,7 @@ function CobrancasTab() {
   const { data, isLoading, error, refetch } = useCobrancas()
   const { data: orders } = useOrders()
   const criar = useCriarLink()
+  const conferir = useConferir()
   const totals = useMemo(() => new Map((orders ?? []).map((o) => [o.id, o.fin.total])), [orders])
   const agora = Date.now()
 
@@ -122,6 +123,12 @@ function CobrancasTab() {
 
   return (
     <div className="overflow-auto p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">O Mercado Pago avisa sozinho. O sistema também confere os pagamentos em aberto a cada 10 minutos.</p>
+        <Button variant="outline" size="sm" disabled={conferir.isPending} onClick={() => conferir.mutate(undefined, { onSuccess: (r) => toast('ok', resumoConferencia(r)), onError: (e) => toast('error', e.message) })}>
+          <RefreshCw className="h-4 w-4" /> {conferir.isPending ? 'Conferindo…' : 'Conferir agora'}
+        </Button>
+      </div>
       <table className="w-full min-w-[820px] text-sm">
         <thead><tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground"><th className="py-2 font-medium">Pedido</th><th className="py-2 font-medium">Cliente</th><th className="py-2 text-right font-medium">Valor</th><th className="py-2 pl-4 font-medium">Status</th><th className="py-2 font-medium">Método</th><th className="py-2 font-medium">Data</th><th className="py-2 font-medium">Modo</th><th className="py-2 text-right font-medium">Ações</th></tr></thead>
         <tbody>

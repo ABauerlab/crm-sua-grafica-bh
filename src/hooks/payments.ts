@@ -155,3 +155,33 @@ export function useConfirmarManual() {
     },
   })
 }
+
+export interface ResumoConferencia {
+  ok: boolean
+  pedidos: number
+  pagamentos: number
+  confirmados: number
+  alertas: number
+  atualizados: number
+}
+
+/** "Conferir agora": consulta o Mercado Pago e grava pelo mesmo caminho do webhook. Sem pedido, confere todos os em aberto. */
+export function useConferir() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (pedidoId?: string) => invokeFunction<ResumoConferencia>('mp-conferir', pedidoId ? { pedido_id: pedidoId } : {}),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['pagamentos'] })
+      qc.invalidateQueries({ queryKey: ['pagamentos-alertas'] })
+      qc.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}
+
+export function resumoConferencia(r: ResumoConferencia): string {
+  if (r.pagamentos === 0) return 'Nenhum pagamento novo no Mercado Pago.'
+  const partes = [`${r.pagamentos} pagamento(s) conferido(s)`]
+  if (r.confirmados) partes.push(`${r.confirmados} confirmado(s)`)
+  if (r.alertas) partes.push(`${r.alertas} alerta(s)`)
+  return partes.join(', ') + '.'
+}

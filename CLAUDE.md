@@ -47,6 +47,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `whatsapp-media` | sim + `profiles` | entrega imagem, áudio ou documento recebido (o token fica no servidor) |
 | `mp-criar-link` | não (confere dono ou service role) | cria ou devolve o link do Checkout Pro do pedido (valor vem do banco) |
 | `mp-webhook` | não (assinatura `x-signature`) | valida o aviso, consulta o pagamento no Mercado Pago e confirma o pedido pelo banco |
+| `mp-conferir` | não (dono, service role ou `x-cron-secret`) | consulta o Mercado Pago pelos pagamentos do pedido e grava pelo mesmo caminho do webhook (botão "Conferir agora" e agendamento de 10 min) |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ## Convenções
@@ -83,6 +84,7 @@ supabase functions deploy whatsapp-media
 supabase functions deploy meta-ads-sync
 supabase functions deploy mp-webhook --no-verify-jwt
 supabase functions deploy mp-criar-link --no-verify-jwt
+supabase functions deploy mp-conferir --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.
