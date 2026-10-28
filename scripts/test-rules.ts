@@ -8,6 +8,7 @@ import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
 import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
+import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
 
@@ -149,6 +150,14 @@ assert.deepEqual(built.items[0], {
   code: 'GIFT1', category: 'ACESSÓRIOS', description: 'CHAVEIRO UV - 10g', colors: '4X0', weight: 1250, grammage: 10, qty: 25, size: '57 x 57', lead_days: 5, cost: 1252.99, suggested_price: 0, active: true,
 }, 'nada é comprimido dentro da descrição e os acentos em ISO-8859-1 ficam preservados')
 assert.equal(buildProducts(sheetHtml, zh, zmap, 2.5).items[1].suggested_price, 267.48, 'preço sugerido = custo x multiplicador')
+
+// Templates do agente: 11 templates, nomes únicos e regras da Meta para o corpo (sem variável no começo ou no fim)
+assert.equal(AGENT_TEMPLATES.length, 11)
+assert.equal(new Set(AGENT_TEMPLATES.map((t) => t.name)).size, 11, 'nomes únicos')
+for (const t of AGENT_TEMPLATES) assert.deepEqual(templateProblems(t), [], `template ${t.name}`)
+assert.deepEqual(templateProblems({ ...AGENT_TEMPLATES[0], body: '{{1}} começou com variável' }).slice(0, 1), ['começa com variável'])
+assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((t) => t.name).sort(),
+  ['condicao_especial_orcamento', 'orcamento_vence_hoje', 'recompra_lembrete', 'ultima_chance_orcamento'])
 
 // Regra do negócio: o nome do fornecedor nunca aparece no código, nas telas, nos textos, nas mensagens nem na documentação.
 // (O termo é montado em partes para este arquivo não se acusar.)

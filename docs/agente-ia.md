@@ -75,3 +75,50 @@ O agente filtra por esses campos (ex.: `category`, `qty`, `size`) em vez de inte
 3. Preços só de `products_priced` e `kits`.
 4. Gravar `agent_logs`.
 5. Na dúvida, reclamação ou pedido de desconto acima do limite: transferir para uma pessoa.
+
+## Etapa 1 do agente: fundação (tabelas e funções)
+
+Tudo abaixo vale só para o dono (RLS) e para a service role. O `anon` não tem acesso. Nenhuma função devolve custo.
+
+### Tabelas novas
+
+| Tabela | Para que serve |
+|---|---|
+| `parametros_comerciais` | Uma linha (`id = 1`). Multiplicadores por faixa, fator competitivo (0,93, entre 0,90 e 0,98), lucro líquido mínimo (R$ 60), imposto (6%), taxas por método (`taxas_pagamento`), arte (R$ 39,90 e R$ 49,90), validade do orçamento, horário de atendimento, corte das 12h, dia de logística, pedido mínimo de frete grátis, custos de entrega, trava de bike (3.000 g e 600 mm), saídas de bike, tetos de tokens, `exigir_sku_pedidos`. `campos_revisar` lista o que é suposição |
+| `politica_desconto` | A escada da seção 7B: degrau 1 vantagem sem custo, degrau 2 até 4%, degrau 3 até 8% (teto absoluto de 10% por constraint), `fracao_gordura_max` 0,6, `desconto_max_reais` R$ 80, valor mínimo R$ 5, 30 dias entre condições por contato, validade de 24 h, `max_condicoes_por_orcamento` 1 |
+| `zonas_frete_gratis` | Bairros e faixas de CEP com frete grátis. `ativo = false` fica cadastrado mas não vale |
+| `agente_config` | IA ligada (nasce falso), horário, `whatsapp_dono`, mensagem de transferência, debounce, histórico |
+| `anuncios_produtos` | Anúncio (`ad_id`) ligado a SKU ou kit |
+| `orcamentos`, `orcamento_itens` | Orçamento com itens por SKU, totais, validade, regra e confiança do preço, margem e lucro, aprovação do dono |
+| `condicoes_especiais` | Condições oferecidas (degrau, gatilho, tipo, valor, validade, resultado) |
+| `precos_mercado`, `precos_praticados` | Pesquisa de mercado e aprendizado (preenchidas na Etapa 3) |
+| `conhecimento` | Base de conhecimento com `vector(768)` e índice HNSW (preenchida na Etapa 2) |
+| `followup_regras`, `followup_fila` | Regras F1 a F4, lembretes de pagamento, pós-venda e recompra; fila com chave de idempotência |
+| `alertas` | Alertas ao dono por WhatsApp e push |
+| `testes_conversa` | Casos de teste de conversa para a auditoria |
+
+Campos novos: `conversations.modo_atendimento`, `contacts.status_lead/bairro/cep/optout/origem_anuncio`, `orders.subestatus_pedido`, `products.permite_desconto`, colunas de custo em `agent_logs`. Mapa de nomes em `docs/agente/mapa-crm.md`.
+
+### Funções (chamadas pelo n8n com a service role)
+
+| Função | Entrada | Saída |
+|---|---|---|
+| `calcular_preco(sku, quantidade, contexto)` | `contexto`: `metodo`, `entrega` (`bike`/`uber`), `receita_outros`, `custo_outros` | `preco_unitario`, `preco_total`, `regra` (`mercado`, `custo_x_multiplicador`, `piso`), `confianca`, `margem_liquida_pct`, `lucro_liquido`, `piso`, `piso_duro`, `nao_competitivo`. **`piso`, `piso_duro`, `lucro_liquido` e `margem_liquida_pct` são internos: a ferramenta do agente não repassa** |
+| `calcular_prazo(sku, agora, arte_aprovada)` | momento em que pagamento e arte ficariam prontos | `data_pronto`, `data_pronto_texto` ("quinta, dia 6"), `inicio_contagem`, `frase`, horário de retirada |
+| `verificar_frete(cep_ou_bairro, itens, valor_pedido, pacote_arte)` | `itens`: `[{sku, quantidade}]` | `frete_gratis`, `motivo`, `regiao_central`, `cabe_na_bike`, `valor_frete_cliente`, `custo_entrega_nosso`, `opcoes` |
+| `validar_margem(orcamento)` | id | `status` `ok` ou `bloqueado`, `motivo`, `motivos`, `alternativa` |
+| `calcular_condicao_especial(orcamento, gatilho, registrar)` | `G1`, `G2` ou `G3` | `{tipo, texto_curto, valor, valida_ate, degrau}` ou `{tipo: 'sem_condicao', motivo}` |
+
+Regras: a quantidade vendável é a do SKU (cada linha do catálogo é uma opção fechada); `calcular_preco(sku, n)` multiplica por `n` pacotes. Preço termina em ,90 e nunca fica abaixo do piso. O piso é o maior entre custo x 1,5 e a receita que garante R$ 60 de lucro líquido depois de imposto, taxa do método (cartão de crédito quando desconhecido), custo de WhatsApp e IA e entrega nossa. `piso_duro` é a receita com lucro zero. Mercado só vale com 2 ou mais coletas de até 14 dias (3 ou mais = confiança alta). O dia da logística soma só em `calcular_prazo`.
+
+### Travas no banco
+
+- `orcamento_itens`: SKU obrigatório e existente; preço abaixo do piso duro do item é recusado.
+- `orcamentos`: ao enviar ou mudar o total, recusa se o total der prejuízo; total sempre igual a itens + arte + frete - desconto.
+- `order_items`: preço abaixo do piso duro é recusado; SKU obrigatório quando `exigir_sku_pedidos` estiver ligado.
+- `orders`: desconto ou taxas editados à mão que levem a prejuízo são recusados.
+- Pagamento confirmado nunca é bloqueado.
+
+### Testes
+
+`supabase/tests/agente_etapa1.sql` é um bloco único que se desfaz sozinho (cole no SQL Editor do Supabase ou rode com `psql "$DATABASE_URL" -f ...`). O resultado sempre aparece como mensagem de erro: "OK: N testes passaram" é sucesso, "TESTES FALHARAM" lista o que falhou. Cobre fim de semana, feriado, antes e depois das 12h, sexta à tarde, bairro central com item pequeno e com banner, fora da região, pedido abaixo do mínimo, pacote de arte, preço abaixo do piso, abaixo do piso duro (falha no banco), desconto acima do teto, gordura zero, desconto abaixo de R$ 5, segunda condição no mesmo orçamento e item sem permissão de desconto. `npm test` valida os 11 templates (regras da Meta para o corpo).

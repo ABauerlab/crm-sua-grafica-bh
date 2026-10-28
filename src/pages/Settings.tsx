@@ -19,6 +19,8 @@ import { ORDER_STAGES, type OrderStage } from '@/lib/orders'
 import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 
+import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
+
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
 
 function NumberField({ id, label, hint, value, onChange, step = '0.1' }: { id: string; label: string; hint: string; value: number; onChange: (v: number) => void; step?: string }) {
@@ -387,6 +389,7 @@ function WhatsAppTab() {
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Última mensagem recebida (webhook)</dt><dd className="font-semibold tabular">{fmt(last.data?.inbound)}</dd></div>
         <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Última mensagem enviada</dt><dd className="font-semibold tabular">{fmt(last.data?.outbound)}</dd></div>
       </dl>
+      <AgentTemplatesStatus />
       <p className="text-muted-foreground">Os templates abaixo vêm da Meta. Clique em <strong>Sincronizar</strong> para atualizar a lista e o status de aprovação.</p>
       <div className="overflow-hidden rounded-md border">
       <Suspense fallback={<Skeleton className="h-48 w-full" />}>
