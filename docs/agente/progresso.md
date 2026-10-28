@@ -2,7 +2,40 @@
 
 ## Etapas concluídas
 
-(nenhuma ainda; a Etapa 1 está aplicada em produção e em revisão no PR)
+- Etapa 1: Fundação (PR mesclado, aplicada em produção).
+- Etapa 2: ver abaixo (**em revisão**; falta o PDF do fornecedor e aplicar as migrations).
+
+## Etapa 2: Catálogo com SKU e banco de conhecimento (em revisão, 28/10/2026)
+
+Branch da sessão `claude/optimistic-pasteur-9elhra` (pedida: `feat/agente-etapa2-catalogo-conhecimento`).
+
+### O que foi feito
+- Passo 0: o CRM já tinha upload do catálogo. Mapeei (tela, parser, tabela, colunas, preço) em `docs/agente/mapa-crm.md` e `docs/catalogo-e-sku.md`, listei as 11 lacunas e corrigi **na mesma tela**, mantendo as 20.381 linhas.
+- Migrations 15 a 19 (aditivas, idempotentes): `products` virou `catalogo` com os campos finais, `catalogo_historico`, importação em duas fases (`catalogo_importacoes`, `catalogo_import_linhas`), bucket privado `catalogo-fornecedor`, SKU obrigatório (chaves estrangeiras `NOT VALID`, Produção bloqueada sem SKU, `itens_fora_catalogo`), `sinonimos`, `buscar_produto`, `agente_preco`, `kit_preco`, `pedido_para_fabrica`, banco de conhecimento v2 (`conhecimento`, `conhecimento_lacunas`, `conhecimento_consultas`, `faq_cache`), 90 trechos.
+- Edge Function `conhecimento` (vetores `gte-small`, reindexação automática, busca para o n8n).
+- Front: leitor de PDF, importação com pré-visualização e relatório, aba Sem código, SKU em destaque com copiar (catálogo, pedido, kanban, kit), aba "Pedido para a fábrica", Configurações > Conhecimento.
+- Testes: `supabase/tests/catalogo_etapa2.sql` (**82 passam**), `agente_etapa1.sql` contra o schema novo (**54 passam**), recuperação (**37/40 = 92,5%**, só texto), `npm test` e `npm run typecheck` verdes.
+- Documentos: `docs/catalogo-e-sku.md`, `docs/conhecimento.md`, `docs/agente/relatorio-importacao.md`, `docs/agente/relatorio-recuperacao.md`, `docs/agente/depende-de-voce.md`.
+
+### Decisões
+Ver `docs/agente/depende-de-voce.md` (renomear em vez de criar tabela nova; Pago nunca bloqueado; desativar em vez de apagar; limiares).
+
+### O que NÃO foi feito (honestidade)
+- **O PDF não foi anexado**, então a importação real e o relatório de linhas sem código **não existem ainda**.
+- **Nada foi aplicado em produção.** Só consultei o banco de produção em modo leitura.
+- A busca **vetorial** não foi medida (sem pgvector local); só a textual.
+- Leiaute do PDF testado só com PDF fictício.
+- Não rodei os advisors de segurança (dependem de aplicar).
+
+### Pendências
+Ver "O que depende de você". Resumo: PDF, aplicar migrations, deploy da função `conhecimento`, reindexar, advisors, códigos das linhas sem SKU, [CONFIRMAR] dos trechos.
+
+### Como testar
+```bash
+npm test && npm run typecheck && npm run build
+supabase/tests/rodar-local.sh supabase/tests/catalogo_etapa2.sql supabase/tests/conhecimento_recuperacao.sql supabase/tests/agente_etapa1.sql   # Postgres local descartável
+```
+No CRM (depois de aplicar): Catálogo e Kits > Importar tabela > Pré-visualizar; Pedido pago > aba Pedido para a fábrica; Configurações > Conhecimento.
 
 ## Etapa 1: Fundação (em revisão, 28/10/2026)
 

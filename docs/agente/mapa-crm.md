@@ -1,4 +1,4 @@
-# Mapa do CRM (Etapa 1)
+# Mapa do CRM (Etapas 1 e 2)
 
 Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1, e o que muda. Atualizar a cada etapa.
 
@@ -70,3 +70,26 @@ Novo: `parametros_comerciais`, `politica_desconto`, `zonas_frete_gratis`, `agent
 ## 5. Pendências que dependem do dono
 
 Ver "O que revisar" em `docs/agente/progresso.md`.
+
+## 6. Etapa 2: catálogo, SKU e conhecimento (28/10/2026)
+
+**Funcionalidade que já existia (Passo 0):** Catálogo e Kits > Catálogo do fornecedor > "Importar planilha". Parser em `src/lib/spreadsheet.ts` (Excel, CSV e HTML `.xls`; PDF recusado). Tabela `products` (20.381 linhas, 140 categorias; `code` único = SKU, `weight` em gramas, `size` texto em mm, `lead_days` bruto, `suggested_price` = custo x multiplicador único, hoje 0). `upsert` por `code` em lotes de 500, último vence, linha sem código descartada.
+
+**O que mudou** (detalhes e as 11 lacunas em `docs/catalogo-e-sku.md`):
+
+| Antes | Agora |
+|---|---|
+| `products` | `catalogo` (mesmos ids). `products` e `products_priced` seguem como visões de compatibilidade |
+| `code`, `description`, `category`, `cost`, `colors`, `weight`, `qty`, `size`, `lead_days`, `grammage`, `suggested_price` | `sku`, `descricao`, `categoria`, `custo`, `cores`, `peso_g`, `quantidade`, `tamanho_mm`, `prazo_dias_uteis`, `gramatura_g`, `preco_base_custo` (referência, sem pesquisa) |
+| (nada) | `grupo_produto`, `especificacao_normalizada`, `status_venda`, `vendavel`, `cabe_na_bike`, `maior_lado_mm`, `piso`, `piso_duro`, `chave_natural`, `origem_importacao_id`, `atualizado_em` |
+| `order_items.code` livre | `order_items.code` é o SKU: chave estrangeira para `catalogo.sku` (`NOT VALID`) e obrigatório para registros novos |
+| `kit_items` por `product_id` | também `sku` (visão `kit_itens`) |
+| `conhecimento` (vazia, vetor 768) | formato do vendedor (`resposta_pronta`, `fatos`, `proximo_passo`...), vetor 384 (`gte-small`), 90 trechos, `conhecimento_lacunas`, `conhecimento_consultas`, `faq_cache` |
+
+**Novo:** tabelas `catalogo_historico`, `catalogo_importacoes`, `catalogo_import_linhas`, `sinonimos`, `qualificacao_perguntas`, `itens_fora_catalogo`; bucket privado `catalogo-fornecedor`; funções `catalogo_importacao_iniciar/lote/previa/aplicar`, `catalogo_atualizar_competitividade`, `catalogo_recalcular`, `catalogo_definir_sku`, `catalogo_precos`, `buscar_produto`, `agente_preco`, `registrar_item_sem_sku`, `kit_preco`, `pedido_para_fabrica`, `sinonimos_carregar_categorias`, `buscar_conhecimento`, `conhecimento_resolver`, `conhecimento_taxa`; Edge Function `conhecimento`; agendamento `conhecimento-reindexar` (5 em 5 minutos).
+
+**Funções da Etapa 1 alteradas:** `calcular_preco` (recusa item não vendável; ignora coleta de mercado invalidada), `verificar_frete` ("0 x 0" é dimensão desconhecida), `private.orcamento_itens_validar` (item precisa ser vendável), `private.orders_before_update` (Produção exige SKU em todos os itens; Pago sem SKU alerta).
+
+**Telas:** Catálogo (SKU com copiar, base de custo, preço de venda, status, bike, filtro de status, Recalcular pisos, aba Sem código), importação em duas fases, Kits (lista de SKUs, preço de `kit_preco`), Pedido (SKU em destaque, preço de `calcular_preco`, aba Pedido para a fábrica), cartão do kanban (SKUs), Configurações > Conhecimento.
+
+**Preço no CRM (decisão padrão aplicada):** a coluna do catálogo é "Base de custo (ref.)", visível só ao dono. Orçamento (pedido), kit e catálogo leem `calcular_preco`. Nenhum orçamento, PDF ou link usa `preco_base_custo`.
