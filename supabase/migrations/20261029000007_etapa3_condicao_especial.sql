@@ -595,7 +595,7 @@ $$;
 
 -- defesa em profundidade: mesmo uma alteração direta na tabela é recusada se o pior caso der prejuízo
 create or replace function private.politica_desconto_validar() returns trigger
-language plpgsql set search_path = ''
+language plpgsql security definer set search_path = ''
 as $$
 declare v jsonb;
 begin
