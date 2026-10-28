@@ -30,3 +30,7 @@ verify_jwt = false
 # verify_jwt = false porque aceita o dono logado ou outro servidor com a service role key; a função confere os dois
 [functions.mp-criar-link]
 verify_jwt = false
+
+# Aceita o dono logado, a service role ou o agendamento (x-cron-secret); a função confere por conta própria
+[functions.mp-conferir]
+verify_jwt = false

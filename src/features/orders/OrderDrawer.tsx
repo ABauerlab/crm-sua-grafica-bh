@@ -24,7 +24,7 @@ import {
   useSettings,
   useUpdateOrder,
 } from '@/hooks/orders'
-import { useConfirmarManual, useCriarLink, useMpStatus } from '@/hooks/payments'
+import { resumoConferencia, useConferir, useConfirmarManual, useCriarLink, useMpStatus } from '@/hooks/payments'
 import { invokeFunction } from '@/lib/api'
 import { contactLabel, formatPhone } from '@/lib/format'
 import { formatBRL, formatPct, parseMoney } from '@/lib/money'
@@ -369,6 +369,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
   const [horas, setHoras] = useState('48')
   const criar = useCriarLink()
   const confirmar = useConfirmarManual()
+  const conferir = useConferir()
   const { data: mp } = useMpStatus()
   const gerar = (novo: boolean) =>
     criar.mutate(
@@ -441,6 +442,9 @@ function PaymentTab({ order }: { order: OrderCard }) {
           </Button>
           {order.payment_link && <Button variant="outline" onClick={() => gerar(true)} disabled={criar.isPending || order.payment_status === 'aprovado' || !mp?.pronto}>Gerar novo link</Button>}
         </div>
+        <Button variant="outline" size="sm" disabled={conferir.isPending || !mp?.pronto || order.payment_status === 'aprovado'} onClick={() => conferir.mutate(order.id, { onSuccess: (r) => toast('ok', resumoConferencia(r)), onError: (e) => toast('error', e.message) })}>
+          {conferir.isPending ? 'Conferindo…' : 'Conferir pagamento agora'}
+        </Button>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={order.teste} onCheckedChange={(v) => update.mutate({ id: order.id, patch: { teste: v } })} aria-label="Pedido de teste" />
           Pedido de teste (só ele muda de etapa em modo teste)
