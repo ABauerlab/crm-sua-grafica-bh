@@ -71,7 +71,7 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 1. **Aplicar** `docs/agente/aplicar-etapa4.sql` (a migration `20261029000009`) no SQL Editor, rodar `supabase/tests/orcamento_etapa4.sql` e os advisors de segurança. Antes, confirme que a migration `20261029000008_orcamentos.sql` da sessão interrompida **não** foi aplicada (a consulta está no `progresso.md` do PR de retomada); se foi, me avise antes de seguir.
 2. **Instalar o Gotenberg** no Coolify (`infra/gotenberg/docker-compose.yml`) e criar os segredos da função: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`. Publicar `supabase functions deploy orcamento-pdf --no-verify-jwt`.
 3. **n8n:** nos 4 workflows novos e no `condicao_especial`, abrir cada nó HTTP e escolher a credencial `GBH Supabase (service role)` (o MCP não atribui). Continuam desativados até a Etapa 8.
-4. **Brand kit:** comparar um PDF de `docs/exemplos-orcamento/` com `SUA_GRAFICA_BH_BRANDKIT` (cores, fonte, logo). A sessão não alcançou a pasta; o modelo usa os tokens do CRM.
-5. **Número do orçamento:** orçamento e pedido usam `SG-0001`, em sequências diferentes (o Mercado Pago usa o do pedido como referência). Se preferir evitar confusão, troco o prefixo do orçamento (por exemplo `OR-0001`) numa linha.
-6. **Instagram e site:** preencher `instagram` e `site` em `app_settings.company` se quiser que apareçam no rodapé do PDF.
+4. **Brand kit:** conferido no Google Drive (`cores_variaveis.css` e `tipografia_oficial`): paleta e Inter batem; títulos em Inter Display Black, rótulos em Inter Medium caixa alta. Falta só você olhar um PDF de exemplo.
+5. **Número do orçamento:** fica `SG-0001` (decisão do dono).
+6. **Instagram e site:** gravar em `app_settings.company` (`instagram` = `@suagraficabh`, `site` = `suagraficabh.com.br`) com o SQL do prompt de aplicação; o rodapé do PDF passa a mostrar.
 7. **Confirmar:** validade do orçamento em 48 h (`parametros_comerciais.validade_orcamento_horas`) e valores da arte (R$ 39,90 e R$ 49,90).

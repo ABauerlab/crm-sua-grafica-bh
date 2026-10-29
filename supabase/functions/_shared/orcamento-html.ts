@@ -63,17 +63,17 @@ body { margin: 0; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; fon
 header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .marca { display: flex; align-items: center; gap: 10px; }
 .logo { width: 46px; height: auto; }
-.marca b { display: block; font-size: 19pt; font-weight: 800; letter-spacing: -0.02em; color: #1F2A86; line-height: 1.05; }
+.marca b { display: block; font-family: 'Inter Display', 'Inter', sans-serif; font-size: 19pt; font-weight: 900; letter-spacing: -0.01em; color: #1F2A86; line-height: 1.05; }
 .marca span { font-size: 9.5pt; color: #5c5c5c; }
 .doc { text-align: right; }
-.doc h1 { margin: 0; font-size: 22pt; font-weight: 800; letter-spacing: -0.02em; }
+.doc h1 { margin: 0; font-family: 'Inter Display', 'Inter', sans-serif; font-size: 22pt; font-weight: 900; letter-spacing: -0.01em; line-height: 1; }
 .doc span { font-size: 9.5pt; color: #5c5c5c; }
 .meta { display: grid; grid-template-columns: 1.3fr 1fr 1.2fr; gap: 8px; margin: 14px 0 12px; }
-.box { border: 1px solid #dedede; border-radius: 6px; padding: 7px 10px; }
-.box small { display: block; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .06em; color: #5c5c5c; }
-.box strong { font-size: 12.5pt; }
+.box { border: 1px solid #dedede; border-radius: 6px; padding: 7px 10px; background: #F7F7F4; }
+.box small { display: block; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .12em; font-weight: 500; color: #5c5c5c; }
+.box strong { font-size: 12.5pt; font-weight: 600; }
 table { width: 100%; border-collapse: collapse; }
-th { text-align: left; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .06em; color: #fff; background: #1F2A86; padding: 6px 8px; }
+th { text-align: left; font-size: 8.5pt; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: #fff; background: #1F2A86; padding: 6px 8px; }
 th.n, td.n { text-align: right; white-space: nowrap; }
 td { padding: 8px; border-bottom: 1px solid #e6e6e6; vertical-align: top; }
 tr { page-break-inside: avoid; }
@@ -84,14 +84,14 @@ td small { display: block; color: #5c5c5c; font-size: 9.5pt; margin-top: 1px; }
 .totais .l { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 11.5pt; }
 .totais .l.g { color: #0E8A3E; font-weight: 600; }
 .totais .t { display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; padding: 8px 10px; background: #171717; color: #fff; border-radius: 6px; }
-.totais .t span { font-size: 10.5pt; } .totais .t b { font-size: 19pt; letter-spacing: -0.01em; }
+.totais .t span { font-size: 10.5pt; } .totais .t b { font-family: 'Inter Display', 'Inter', sans-serif; font-size: 19pt; font-weight: 900; letter-spacing: -0.01em; }
 .aviso { border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 10.5pt; }
 .especial { background: #FFF6BF; border-left: 4px solid #FFD500; }
 .especial b { font-size: 12pt; }
 .prazo { background: #E5F6FB; border-left: 4px solid #00A6D6; }
 .arte { border: 1px dashed #b5b5b5; }
 .arte ul { margin: 4px 0 0; padding-left: 16px; }
-.sec { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .06em; color: #5c5c5c; margin: 0 0 3px; font-weight: 700; }
+.sec { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .12em; color: #5c5c5c; margin: 0 0 3px; font-weight: 500; }
 .nota { font-size: 10.5pt; color: #333; margin: 0 0 5px; }
 .upsell { margin-top: 12px; font-size: 10.5pt; color: #5c5c5c; }
 footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #dedede; font-size: 9.5pt; color: #5c5c5c; display: flex; justify-content: space-between; gap: 14px; }
@@ -147,7 +147,7 @@ export function orcamentoHtml(d: OrcamentoDoc): string {
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orçamento ${esc(d.numero)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&display=swap">
 <style>${CSS}</style></head><body>
 <div class="topbar"><i></i><i></i><i></i></div>
 <header>
