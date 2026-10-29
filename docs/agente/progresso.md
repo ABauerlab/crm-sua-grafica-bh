@@ -21,6 +21,9 @@ Branch `feat/agente-etapa4-orcamento`. Nada foi aplicado no Supabase, nenhuma fu
 - **Exemplos:** 6 PDFs em `docs/exemplos-orcamento/` (catálogo fictício). Conferidos em tamanho de papel (A4) e de celular (390 px) e por texto: nenhum tem SKU, custo, margem, piso, fornecedor nem endereço de retirada; todos com 1 página e menos de 200 KB.
 - **Testes:** `supabase/tests/orcamento_etapa4.sql` (**49 passam**), Etapas 1, 2 e 3 contra o schema novo (54, 82 e 67 passam), `npm test` (inclui `scripts/test-orcamento.ts`), typecheck e build verdes.
 
+### Correção pós-aplicação (29/10/2026)
+O banco de produção já tinha colunas da migration antiga da sessão interrompida (`orcamentos.avisos` e `orcamento_itens.especificacao` como `jsonb`), então `montar_orcamento` falhou com 42804. A migration `20261029000010_etapa4_compat_banco.sql` define o formato final (`avisos` jsonb, `especificacao` text), remove duas views sobras dessa tentativa e recria `montar_orcamento`. Testado em banco limpo e em banco com a migration antiga aplicada antes (49 + 67 + 54 + 82 passam). O erro foi reproduzido sem a correção.
+
 ### Decisões
 - O PDF é renderizado dentro da Edge Function (não no n8n) para o botão Reenviar do CRM funcionar sem o n8n e para o modelo ficar versionado e testado no repositório. O WF3 orquestra.
 - O pedido (que o Mercado Pago cobra) nasce do orçamento na hora do link; arte entra como item "Criação de arte" (fora do catálogo, custo zero) e desconto vira `discount_pct` arredondado para baixo. Se um pedido já existente tiver valor diferente do orçamento, o link é recusado.
