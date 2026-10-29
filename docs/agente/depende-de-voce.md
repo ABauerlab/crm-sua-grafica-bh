@@ -64,3 +64,16 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 * **Foto por produto** (Etapa 4B): `catalogo.grupo_produto` já permite ligar uma foto por grupo, não por SKU (19 mil SKUs).
 * **Cache de busca por SKU** para os 200 itens mais vendidos, quando houver vendas.
 * **Sinônimos regionais** (ex.: "santinho", "cartão pessoal"): a tabela `sinonimos` aceita novos termos sem deploy.
+
+
+## Etapa 4: orçamento em PDF
+
+1. **Aplicar** `docs/agente/aplicar-etapa4.sql` (e, se o banco já tinha colunas da tentativa anterior, também `docs/agente/aplicar-etapa4-correcao.sql`: corrige `avisos` e `especificacao` e remove as views sobras) (a migration `20261029000009`) no SQL Editor, rodar `supabase/tests/orcamento_etapa4.sql` e os advisors de segurança. Antes, confirme que a migration `20261029000008_orcamentos.sql` da sessão interrompida **não** foi aplicada (a consulta está no `progresso.md` do PR de retomada); se foi, me avise antes de seguir.
+2. **Instalar o Gotenberg** no Coolify (`infra/gotenberg/docker-compose.yml`) e criar os segredos da função: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`. Publicar `supabase functions deploy orcamento-pdf --no-verify-jwt`.
+3. **n8n:** nos 4 workflows novos e no `condicao_especial`, abrir cada nó HTTP e escolher a credencial `GBH Supabase (service role)` (o MCP não atribui). Continuam desativados até a Etapa 8.
+4. **Brand kit:** conferido no Google Drive (`cores_variaveis.css` e `tipografia_oficial`): paleta e Inter batem; títulos em Inter Display Black, rótulos em Inter Medium caixa alta. Falta só você olhar um PDF de exemplo.
+5. **Número do orçamento:** fica `SG-0001` (decisão do dono).
+6. **Instagram e site:** gravar em `app_settings.company` (`instagram` = `@suagraficabh`, `site` = `suagraficabh.com.br`) com o SQL do prompt de aplicação; o rodapé do PDF passa a mostrar.
+7. **Confirmar:** validade do orçamento em 48 h (`parametros_comerciais.validade_orcamento_horas`) e valores da arte (R$ 39,90 e R$ 49,90).
+
+8. **Publicar `orcamento-pdf` sem CLI:** painel do Supabase > Edge Functions > Deploy a new function > Via Editor, nome `orcamento-pdf`, colar `docs/agente/funcoes/orcamento-pdf.bundle.ts` (gerado por `npm run bundle:orcamento-pdf`) e desligar "Verify JWT". Os segredos `GOTENBERG_URL`, `GOTENBERG_USER` e `GOTENBERG_PASSWORD` precisam existir.

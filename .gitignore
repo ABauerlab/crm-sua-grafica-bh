@@ -33,6 +33,8 @@ supabase/.env*
 # Tabela de preços do fornecedor: PRIVADA. O PDF e qualquer arquivo derivado (CSV, JSON, planilha, dump) NUNCA entram no repositório.
 # O original fica no bucket privado "catalogo-fornecedor" do Supabase e a importação lê dali.
 *.pdf
+# exceção: PDFs de exemplo do orçamento, gerados com catálogo FICTÍCIO (scripts/gerar-exemplos-orcamento.ts)
+!docs/exemplos-orcamento/*.pdf
 catalogo-fornecedor/
 tabela-fornecedor*
 tabela-de-precos*

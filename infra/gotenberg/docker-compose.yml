@@ -1,0 +1,22 @@
+# Gotenberg (Chromium) para gerar o PDF do orçamento. Instale no Coolify, na mesma rede do n8n, como "Docker Compose".
+# Rede interna apenas: não publique a porta. A Edge Function orcamento-pdf (Supabase) precisa alcançar a URL, então publique
+# por um domínio HTTPS protegido por usuário e senha (GOTENBERG_USER e GOTENBERG_PASSWORD) ou por túnel; nunca aberto.
+services:
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - gotenberg
+      - --api-basic-auth-username=${GOTENBERG_USER}
+      - --api-basic-auth-password=${GOTENBERG_PASSWORD}
+      - --chromium-allow-list=^(file:///tmp/.*|data:.*)$$       # só o HTML enviado; a fonte Inter vem do Google Fonts (libere se preferir embutir a fonte)
+      - --api-timeout=45s
+      - --chromium-max-queue-size=20
+    environment:
+      - GOTENBERG_USER
+      - GOTENBERG_PASSWORD
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

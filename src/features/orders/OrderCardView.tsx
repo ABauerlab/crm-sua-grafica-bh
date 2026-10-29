@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatBRL, formatPct } from '@/lib/money'
+import { ORCAMENTO_STATUS } from '@/lib/orcamentos'
 import { contactLabel } from '@/lib/format'
 import { formatDuration, hoursInStage, ORDER_STAGES, type KanbanSettings, type OrderCard, type OrderStage } from '@/lib/orders'
 import { cn } from '@/lib/utils'
@@ -109,6 +110,11 @@ export function OrderCardView({
           </p>
         </div>
         <div className="flex items-center gap-1">
+          {order.orcamento_status && (
+            <span className={cn('rounded-sm px-1.5 py-0.5 text-[11px] font-bold', ORCAMENTO_STATUS[order.orcamento_status].chip)} title="Status do orçamento">
+              Orç. {ORCAMENTO_STATUS[order.orcamento_status].label.toLowerCase()}
+            </span>
+          )}
           {unread > 0 && (
             <span className="flex items-center gap-1 rounded-sm bg-brand-magenta px-1.5 py-0.5 text-[11px] font-bold text-white tabular" title={`${unread} mensagem(ns) não lida(s)`}>
               <MessageSquare className="h-3 w-3" aria-hidden /> {unread}

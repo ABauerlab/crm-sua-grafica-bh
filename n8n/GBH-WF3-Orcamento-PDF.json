@@ -1,0 +1,412 @@
+{
+  "name": "GBH | WF3 | Orçamento PDF",
+  "nodes": [
+    {
+      "id": "4540095c-a723-5d84-8145-d4433b22f244",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## GBH | WF3 | Orçamento PDF (Etapa 4)\n**Objetivo:** pipeline do orçamento: montar (preço, prazo, frete, arte, upsell), gerar o PDF com a identidade da Sua Gráfica BH, enviar como documento no WhatsApp e, se pedido, gerar o link de pagamento.\n**Entradas:** contact_id, itens [{sku, quantidade}], opcoes {conversation_id, bairro ou cep, arte, metodo}, texto (frase do agente), com_link (boolean).\n**Saída:** o JSON mínimo de montar_orcamento mais pdf {ok, enviado} e link_pagamento {link, valida_ate, texto_curto}. Sem SKU, custo, piso nem margem.\n**O modelo do PDF** é HTML versionado no repositório (supabase/functions/_shared/orcamento-html.ts) renderizado pelo Gotenberg dentro da Edge Function orcamento-pdf; assim o botão Reenviar do CRM funciona sem o n8n.\n**Dependências:** sub-workflows montar_orcamento, gerar_pdf_orcamento e gerar_link_pagamento. Chamado pelo WF2 (Etapa 5). Desativado até a Etapa 8.",
+        "color": 4,
+        "width": 720,
+        "height": 300
+      }
+    },
+    {
+      "id": "e96ef697-dfb8-5c9e-9578-50c7503fb237",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "contact_id",
+              "type": "string"
+            },
+            {
+              "name": "itens",
+              "type": "array"
+            },
+            {
+              "name": "opcoes",
+              "type": "object"
+            },
+            {
+              "name": "texto",
+              "type": "string"
+            },
+            {
+              "name": "com_link",
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "847048b8-a6f2-5b8d-be69-5da6e41b55fc",
+      "name": "Montar orçamento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "fYgrHTafKgpEDlFi"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "contact_id": "={{ $json.contact_id }}",
+            "itens": "={{ $json.itens }}",
+            "opcoes": "={{ $json.opcoes || {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "itens",
+              "displayName": "itens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            },
+            {
+              "id": "opcoes",
+              "displayName": "opcoes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "59e40b1d-888b-5815-81b2-978eae7f9d41",
+      "name": "Orçamento montado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status === \"ok\" && !!$json.orcamento_id }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "82b1031d-1014-500c-9ba5-68a43fa0e643",
+      "name": "Resposta: bloqueado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json || {};\nconst status = r.status || 'bloqueado';\nreturn [{ json: { status, motivo: r.motivo || 'erro_interno', alternativa: r.alternativa || 'Diga ao cliente que vai confirmar e chame o dono.' } }];"
+      }
+    },
+    {
+      "id": "1f2005a6-a3a7-5579-abbc-4b10adf84324",
+      "name": "Gerar e enviar PDF",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        200
+      ],
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qdIwxubm5jAXCSc2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}",
+            "texto": "={{ $('Entrada').first().json.texto || '' }}",
+            "acao": "enviar"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "texto",
+              "displayName": "texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "acao",
+              "displayName": "acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "93d03b5a-76d3-5b50-a9cc-15b7da837bbb",
+      "name": "Pediram o link de pagamento?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true && $('Entrada').first().json.com_link === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "bcdc8bdf-6d8c-509a-b715-646d8f9cc4f0",
+      "name": "Gerar link de pagamento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        120
+      ],
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KsXAvkkMOLZtVMDF"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e3940e54-2f3c-5485-8755-998623ec5823",
+      "name": "Resposta final ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const m = $('Montar orçamento').first().json;\nconst pdf = $('Gerar e enviar PDF').first().json || {};\nlet link = null;\ntry { link = $('Gerar link de pagamento').first().json; } catch (e) { link = null; }\nconst saida = Object.assign({}, m, { pdf: { ok: !!pdf.ok, enviado: !!pdf.enviado, ja_enviado: !!pdf.ja_enviado, motivo: pdf.ok ? undefined : (pdf.motivo || 'erro') } });\nif (pdf.orcamento_id) { saida.orcamento_id = pdf.orcamento_id; saida.numero = pdf.numero || saida.numero; saida.renovado = !!pdf.renovado; }\nif (link) { saida.link_pagamento = link.ok ? { link: link.link, valida_ate: link.valida_ate, texto_curto: link.texto_curto } : { ok: false, motivo: link.motivo, alternativa: link.alternativa }; }\nreturn [{ json: saida }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Montar orçamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar orçamento": {
+      "main": [
+        [
+          {
+            "node": "Orçamento montado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orçamento montado?": {
+      "main": [
+        [
+          {
+            "node": "Gerar e enviar PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: bloqueado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar e enviar PDF": {
+      "main": [
+        [
+          {
+            "node": "Pediram o link de pagamento?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pediram o link de pagamento?": {
+      "main": [
+        [
+          {
+            "node": "Gerar link de pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta final ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar link de pagamento": {
+      "main": [
+        [
+          {
+            "node": "Resposta final ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 300,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

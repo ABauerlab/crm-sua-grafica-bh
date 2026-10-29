@@ -1,0 +1,394 @@
+{
+  "name": "GBH | FERRAMENTA | gerar_link_pagamento",
+  "nodes": [
+    {
+      "id": "4540095c-a723-5d84-8145-d4433b22f244",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | gerar_link_pagamento (Etapa 4)\n**Objetivo:** gerar o link de pagamento do orçamento no Mercado Pago JÁ integrado (mp-criar-link). Não recria nada do pagamento.\n**Entrada:** orcamento_id.\n**Saída mínima:** { ok, link, valida_ate, texto_curto, numero } ou { ok: false, motivo, alternativa }. O agente avisa que o Pix pode ser pago de qualquer banco.\n**Defesa final contra prejuízo:** a função preparar_link_pagamento roda validar_margem (taxa do método, piso duro, SKU) e recusa orçamento vencido, encerrado ou sem SKU. O valor vem do orçamento (pedido ligado), nunca do cliente. Validade do link = validade do orçamento ou da condição especial. Boleto desligado no mp-criar-link.\n**Dependências:** credencial GBH Supabase (service role); Edge Function mp-criar-link; migration 20261029000009. Desativado até a Etapa 8.",
+        "color": 4,
+        "width": 720,
+        "height": 300
+      }
+    },
+    {
+      "id": "e96ef697-dfb8-5c9e-9578-50c7503fb237",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a68d06cc-0b1a-5819-ac57-ae92e99e266b",
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.orcamento_id || \"\").length === 36 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ca84fdec-9d33-53f6-9666-09cb677dfb72",
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        608,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "f1",
+              "name": "motivo",
+              "value": "orcamento_id_invalido",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8e1b370c-c5e2-553e-8dda-71820c8fc29c",
+      "name": "Validar margem e preparar o pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        496,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/preparar_link_pagamento",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_orcamento: $json.orcamento_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e7ea894c-ec6e-505a-b01e-24e863def885",
+      "name": "Pode cobrar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true && !!$json.order_id }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "5009d217-1058-5aa0-96a9-21eccaaeada5",
+      "name": "Criar link no Mercado Pago",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        944,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/mp-criar-link",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { pedido_id: $json.order_id, expira_horas: $json.expira_horas } }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "a5015ba0-9f16-5a21-a95f-7f82faee239b",
+      "name": "Link criado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.link }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "4b2e29b2-0a66-5e45-8d86-fcc5154e4df7",
+      "name": "Guardar link no orçamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/orcamento_registrar_link",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_orcamento: $('Entrada').first().json.orcamento_id, p_link: $('Criar link no Mercado Pago').first().json.link, p_expira: $('Criar link no Mercado Pago').first().json.expira_em || null } }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "99cf9d0e-7d0d-54a4-9d18-a390295cd463",
+      "name": "Resposta: link pronto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const p = $('Validar margem e preparar o pedido').first().json;\nconst l = $('Criar link no Mercado Pago').first().json;\nreturn [{ json: { ok: true, link: l.link, valida_ate: l.expira_em || null, texto_curto: p.texto_curto, numero: p.numero } }];"
+      }
+    },
+    {
+      "id": "602f37d1-6eb3-51d1-8f57-b6aaf22b18a3",
+      "name": "Resposta: sem link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        480
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const j = $input.first().json || {};\nconst motivo = j.motivo || 'erro_ao_criar_link';\nconst textos = {\n  orcamento_vencido: 'O orçamento venceu. Gere um novo orçamento antes de cobrar.',\n  orcamento_encerrado: 'Este orçamento já foi encerrado. Chame o dono.',\n  pedido_ja_pago: 'Este pedido já está pago. Não envie outro link.'\n};\nreturn [{ json: { ok: false, motivo, alternativa: textos[motivo] || 'Não envie o link. Diga que vai confirmar e chame o dono.' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Validar margem e preparar o pedido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar margem e preparar o pedido": {
+      "main": [
+        [
+          {
+            "node": "Pode cobrar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pode cobrar?": {
+      "main": [
+        [
+          {
+            "node": "Criar link no Mercado Pago",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: sem link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar link no Mercado Pago": {
+      "main": [
+        [
+          {
+            "node": "Link criado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link criado?": {
+      "main": [
+        [
+          {
+            "node": "Guardar link no orçamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: sem link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar link no orçamento": {
+      "main": [
+        [
+          {
+            "node": "Resposta: link pronto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 120,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

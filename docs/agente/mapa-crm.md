@@ -1,4 +1,4 @@
-# Mapa do CRM (Etapas 1 a 3)
+# Mapa do CRM (Etapas 1 a 4)
 
 Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1, e o que muda. Atualizar a cada etapa.
 
@@ -122,3 +122,22 @@ Cada ponto do CRM que exibe ou grava preço, e o que fazer com ele. Regra: **o �
 **Tabelas e funções novas (migrations 20 e 21):** `fatores_competitivos`, `ajustes_fator_preco`, `consultas_preco_mercado`, `fontes_pesquisa`, `precos_manuais_log`; colunas novas em `parametros_comerciais`, `precos_mercado`, `precos_praticados`, `condicoes_especiais`, `orcamento_itens`; view `saude_precos`; funções `consultar_cache_preco_mercado`, `registrar_pesquisa_mercado`, `reservar_acesso_dominio`, `aprender_precos_semana`, `oferecer_condicao_especial`, `condicao_registrar_link`, `expirar_condicoes_e_orcamentos`, `detectar_padroes_desconto`, `relatorio_condicoes_semana`, `resumo_semanal_precos`, `simular_politica_desconto`, `salvar_politica_desconto`, `definir_grupos_sem_desconto`, `definir_preco_item_pedido`, `skus_para_aquecer`; `calcular_preco`, `agente_preco`, `calcular_condicao_especial` e `validar_margem` substituídas (mesmos nomes e retornos compatíveis). Agendamento `condicoes-expirar` (10 em 10 minutos).
 
 **n8n:** 4 workflows `GBH |` desativados (ver `docs/n8n-mapa.md`).
+
+## 8. Etapa 4: orçamento em PDF (29/10/2026)
+
+**Passo 0:** `orcamentos` e `orcamento_itens` já existiam (Etapa 1, com as travas de lucro); não havia PDF de orçamento. Estendi as tabelas, sem recriar nem renomear nada.
+
+| Ponto | Antes | Agora |
+|---|---|---|
+| Montagem do orçamento | linhas soltas gravadas por funções da Etapa 3 (condição especial) | `montar_orcamento(contato, SKUs, opções)`: `calcular_preco`, `calcular_prazo`, `verificar_frete`, `validar_margem`, arte, upsell por regra; JSON mínimo ao agente |
+| PDF | não havia | Edge Function `orcamento-pdf` (Gotenberg), bucket privado `orcamentos`, `orcamento_documento` (só dados públicos) |
+| Link de pagamento | `mp-criar-link` por pedido | mesma função; antes, `preparar_link_pagamento` (`validar_margem`, vencido, SKU, valor do pedido = valor do orçamento) |
+| Taxa do método | prevista (`metodo_previsto`, cartão se desconhecido) | prevista no preço; **real** gravada no pedido ao pagar (`taxa_pagamento_real_pct`, `lucro_liquido_real`) |
+| Pedido do orçamento | criado à mão pelo dono | criado por `orcamento_para_pedido` na hora do link (arte vira item "Criação de arte", desconto vira `discount_pct`) |
+| Tela | sem orçamentos | Pedido > aba Orçamentos; status do orçamento no cartão do kanban |
+
+**Colunas novas:** `orcamentos` (`frete_modo`, `upsell_tipo`, `upsell_texto`, `data_prevista`, `custo_total`, `avisos`, `pdf_hash`, `pdf_gerado_em`, `pdf_enviado_em`, `link_pagamento_expira_em`), `orcamento_itens.especificacao`, `parametros_comerciais.validade_orcamento_horas`, `orders.taxa_pagamento_real_pct` e `orders.lucro_liquido_real`.
+
+**Funções novas:** `montar_orcamento`, `orcamento_documento`, `orcamento_renovar`, `preparar_link_pagamento`, `orcamento_registrar_link`, `private.orcamento_para_pedido`, `private.upsell_regra`, `private.especificacao_publica`, `private.orcamento_numero`. Substituídas (mesmos nomes e retornos): `validar_antes_de_cobrar`, `private.confirmar_pagamento`.
+
+**n8n:** `GBH | FERRAMENTA | montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `GBH | WF3 | Orçamento PDF` (desativados). Ver `docs/n8n-mapa.md`.

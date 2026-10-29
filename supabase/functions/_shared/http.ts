@@ -49,6 +49,18 @@ export function requireEnv(...names: string[]): Record<string, string> | null {
   return out
 }
 
+/** Confere uma chave de serviço perguntando ao próprio Supabase: só a service role passa no endpoint de administração do Auth. */
+async function ehServiceRole(token: string): Promise<boolean> {
+  const url = Deno.env.get('SUPABASE_URL')
+  if (!url || token.length < 20) return false
+  try {
+    const res = await fetch(`${url}/auth/v1/admin/users?page=1&per_page=1`, { headers: { apikey: token, Authorization: `Bearer ${token}` } })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /** Chamador autorizado a cobrar: o dono logado (JWT) ou outro servidor da própria Sua Gráfica usando a service role key. */
 export async function requireOwnerOrServer(req: Request, db: SupabaseClient): Promise<'dono' | 'servidor' | null> {
   const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
@@ -56,7 +68,8 @@ export async function requireOwnerOrServer(req: Request, db: SupabaseClient): Pr
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   if (serviceKey && token.length === serviceKey.length && token === serviceKey) return 'servidor'
   const { data: userData, error } = await db.auth.getUser(token)
-  if (error || !userData.user) return null
+  // Não é um usuário: pode ser a service role de outro formato (a injetada na função nem sempre é igual à do painel)
+  if (error || !userData.user) return (await ehServiceRole(token)) ? 'servidor' : null
   const { data: profile } = await db.from('profiles').select('id').eq('id', userData.user.id).maybeSingle()
   if (!profile) return null
   const { data: owner } = await db.from('app_settings').select('value').eq('key', 'owner').maybeSingle()

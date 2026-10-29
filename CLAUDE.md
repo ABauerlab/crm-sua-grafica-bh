@@ -2,6 +2,31 @@
 
 CRM de atendimento via WhatsApp (API oficial WhatsApp Cloud / Meta) para a Sua Gráfica BH. Interface 100% em português do Brasil.
 
+## Regras do agente de IA (ler antes de qualquer tarefa)
+Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`. Mais detalhes em `AGENTS.md`.
+
+Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`.
+
+### Regras fixas
+- O preço que vale é o de `calcular_preco`, com pesquisa de mercado mais trava de lucro.
+- Nunca vender abaixo do piso nem com prejuízo.
+- O modelo de IA nunca calcula preço, prazo, frete nem desconto.
+- Segredos nunca ficam no repositório, no front nem em logs.
+- A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
+- O SKU do fornecedor é interno.
+- O endereço de retirada só é informado depois do pagamento.
+- Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
+
+### Fluxo de trabalho
+- Uma branch e um PR por etapa. Nunca faça commit direto na `main`, porque cada merge publica o CRM em produção.
+- Migrations devem ser aditivas e idempotentes.
+- Rode os testes antes do PR.
+- Ao terminar, atualize `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`.
+- Depois pare sem avançar para a próxima etapa.
+
+### Passagem de bastão
+Se a sessão acabar no meio de uma etapa, registre em `docs/agente/progresso.md`, na seção `Em andamento`, o que foi feito, o que falta, a branch e os arquivos tocados, e faça commit na branch.
+
 ## Arquitetura
 
 - **Front** (`src/`): Vite + React + TypeScript + Tailwind v3 + componentes estilo shadcn/ui (`src/components/ui`) + React Router + TanStack Query.
@@ -51,10 +76,14 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `mp-webhook` | não (assinatura `x-signature`) | valida o aviso, consulta o pagamento no Mercado Pago e confirma o pedido pelo banco |
 | `mp-conferir` | não (dono, service role ou `x-cron-secret`) | consulta o Mercado Pago pelos pagamentos do pedido e grava pelo mesmo caminho do webhook (botão "Conferir agora" e agendamento de 10 min) |
 | `conhecimento` | não (dono, service role ou `x-cron-secret`) | gera vetores `gte-small` do banco de conhecimento, reindexa e busca trechos para o agente |
+| `orcamento-pdf` | não (dono, service role) | gera o PDF do orçamento no Gotenberg, guarda no bucket privado `orcamentos`, envia como documento no WhatsApp (idempotente; vencido gera novo; trava de lucro antes de enviar) |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
 `calcular_preco` é a única autoridade do preço (mercado pesquisado na hora do orçamento, fator por grupo, âncora de vendas, travas `piso` e `piso_duro`). A pesquisa roda no n8n (`GBH | FERRAMENTA | pesquisar_preco_mercado`), grava em `precos_mercado` (cache de 14 dias) e respeita robots, termos e intervalo por domínio (`fontes_pesquisa`). Desconto só existe como condição especial (`oferecer_condicao_especial`, degraus 1 a 3, validade de 24 h, nunca abaixo do piso); `aplicar_desconto` foi removida. Edição manual de preço no pedido: abaixo do `piso_duro` bloqueia, entre o piso duro e o piso exige confirmação do dono (`precos_manuais_log`). Detalhes em `docs/agente-ia.md`, `docs/agente/etapa3-validacao.md` e `docs/n8n-mapa.md`. Testes SQL: `supabase/tests/preco_etapa3.sql`.
+
+### Orçamento em PDF (Etapa 4)
+`montar_orcamento` (banco) monta o orçamento só a partir de SKUs e quantidades, com `calcular_preco`, `calcular_prazo`, `verificar_frete` e `validar_margem`; `orcamento-pdf` gera o PDF (modelo em `supabase/functions/_shared/orcamento-html.ts`, sem custo, margem, piso, fornecedor, SKU nem endereço de retirada) e `preparar_link_pagamento` valida a margem antes do link do Mercado Pago. Detalhes em `docs/orcamento-pdf.md`. Exemplos em `docs/exemplos-orcamento/` (catálogo fictício; a exceção do `.gitignore` vale só para essa pasta). Testes SQL: `supabase/tests/orcamento_etapa4.sql`.
 
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco`. Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
@@ -69,6 +98,7 @@ A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram n
 
 ## Segredos necessários (somente nomes)
 Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`; para campanhas: `META_ADS_TOKEN` (token com permissão `ads_read`) e `META_AD_ACCOUNT_ID` (1783199576217713, conta CA SUA GRÁFICA BH).
+Orçamento em PDF: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`.
 Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
@@ -95,6 +125,7 @@ supabase functions deploy conhecimento --no-verify-jwt
 supabase functions deploy mp-webhook --no-verify-jwt
 supabase functions deploy mp-criar-link --no-verify-jwt
 supabase functions deploy mp-conferir --no-verify-jwt
+supabase functions deploy orcamento-pdf --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

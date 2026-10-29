@@ -44,6 +44,7 @@ import {
   type PaymentStatus,
 } from '@/lib/orders'
 import { ProductPicker } from '@/features/catalog/KitsTab'
+import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -854,6 +855,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
           <TabsList>
             <TabsTrigger value="resumo">Resumo</TabsTrigger>
             <TabsTrigger value="itens">Itens</TabsTrigger>
+            <TabsTrigger value="orcamentos">Orçamentos</TabsTrigger>
             <TabsTrigger value="pagamento">Pagamento</TabsTrigger>
             <TabsTrigger value="arte">Arte e prova</TabsTrigger>
             <TabsTrigger value="entrega">Entrega</TabsTrigger>
@@ -862,6 +864,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
           </TabsList>
           <TabsContent value="resumo"><SummaryTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="itens"><ItemsTab key={order.id} order={order} /></TabsContent>
+          <TabsContent value="orcamentos"><OrcamentosTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="pagamento"><PaymentTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="arte"><ArtTab key={order.id} order={order} /></TabsContent>
           <TabsContent value="entrega"><DeliveryTab key={order.id} order={order} /></TabsContent>

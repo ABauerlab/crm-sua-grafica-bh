@@ -12,10 +12,11 @@ import {
   type OrderItem,
   type OrderStage,
 } from '@/lib/orders'
+import type { OrcamentoStatus } from '@/lib/orcamentos'
 import { DEFAULT_PRICING, type PricingRules } from '@/lib/pricing'
 
 const ORDER_SELECT =
-  '*, contact:contacts(id,name,wa_id), conversation:conversations(id,ai_handled,unread_count,last_inbound_at), items:order_items(description,qty,code)'
+  '*, contact:contacts(id,name,wa_id), conversation:conversations(id,ai_handled,unread_count,last_inbound_at), items:order_items(description,qty,code), orcamentos(status,criado_em)'
 
 export function useOrders() {
   return useQuery({
@@ -28,8 +29,10 @@ export function useOrders() {
       if (orders.error) throw orders.error
       if (fins.error) throw fins.error
       const byId = new Map((fins.data as OrderFinancials[]).map((f) => [f.order_id, f]))
-      return (orders.data as unknown as Omit<OrderCard, 'fin'>[]).map((o) => ({
+      return (orders.data as unknown as (Omit<OrderCard, 'fin' | 'orcamento_status'> & { orcamentos?: { status: OrcamentoStatus; criado_em: string }[] })[]).map(({ orcamentos, ...o }) => ({
         ...o,
+        // status do orçamento mais recente do pedido, para o cartão do kanban
+        orcamento_status: [...(orcamentos ?? [])].sort((a, b) => b.criado_em.localeCompare(a.criado_em))[0]?.status ?? null,
         fin: byId.get(o.id) ?? { order_id: o.id, gross: 0, total: 0, cost: 0, tax: 0, fee: 0, net_profit: 0, margin_pct: 0 },
       }))
     },
