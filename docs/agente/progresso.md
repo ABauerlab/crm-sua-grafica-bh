@@ -1,10 +1,21 @@
 # Progresso do agente de IA
 
+## Em andamento
+
+### Etapa 4: orçamento em PDF (INCOMPLETA, NÃO mesclar como está)
+Branch `feat/agente-etapa4-orcamento` (3 commits, sem PR). Detalhes do que falta em `docs/agente/etapa4-em-andamento.md` nessa branch. Problemas achados na retomada (29/10/2026):
+- A migration `20261029000008_orcamentos.sql` repete o número da `20261029000008_item_manual_fora_catalogo.sql` que já está na main. Renomear para `20261029000009`.
+- `montar-orcamento` aceita piso, custo e total vindos do chamador em vez de chamar `calcular_preco` e `validar_margem` no banco. Deve usar as funções do banco.
+- `gerar-link-pagamento` fala com um provedor genérico (`PAGAMENTO_PROVIDER_URL`). Deve reaproveitar `mp-criar-link` (Mercado Pago já integrado).
+- As 3 funções novas não têm autenticação nem entrada em `supabase/config.toml`, e usam CORS aberto.
+- 4 workflows `GBH |` criados no n8n (desativados, sem tag `gbh`), ainda sem export em `n8n/` nem linha em `docs/n8n-mapa.md`.
+- Não confirmado: se a migration e as funções foram aplicadas em produção (o MCP do Supabase desta sessão não tinha permissão de leitura).
+
 ## Etapas concluídas
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
-- Etapa 3: **pronta para revisão**, ainda não aplicada (ver abaixo).
+- Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
 
 ## Etapa 3: preço inteligente e condição especial (pronta para revisão, NÃO aplicada em produção)
 
