@@ -100,6 +100,8 @@ export interface OrderCard extends Order {
   conversation: { id: string; ai_handled: boolean; unread_count: number; last_inbound_at: string | null } | null
   items: { description: string; qty: number; code: string | null }[]
   fin: OrderFinancials
+  /** Status do orçamento mais recente do pedido (null quando não há orçamento) */
+  orcamento_status?: import('./orcamentos').OrcamentoStatus | null
 }
 
 export interface OrderItem {
