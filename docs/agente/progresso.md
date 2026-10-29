@@ -5,7 +5,7 @@
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
 - Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
-- Etapa 4: **concluída** (aplicada em produção em 29/10/2026: banco, `orcamento-pdf` publicada, Gotenberg no ar; PDF de teste gerado e aprovado; o envio no WhatsApp ainda não foi testado com cliente real).
+- Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
 ## Etapa 4: orçamento em PDF (concluída, aplicada em produção em 29/10/2026)
 
@@ -43,8 +43,12 @@ Para o cliente, a entrega grátis na região central é só "entrega grátis na 
 - Os workflows do n8n foram validados pelo MCP, mas **não executados** (o gatilho "Execute Workflow" não roda pelo MCP). A lógica de preço, prazo, frete e travas foi testada no banco.
 - Instagram (`@suagraficabh`) e site (`suagraficabh.com.br`) entram em `app_settings.company` por SQL (ver `depende-de-voce.md`); o PDF mostra só o que existir.
 
+### Teste em produção (29/10/2026)
+- Orçamento de teste criado por `montar_orcamento`, PDF gerado no Gotenberg (`gotenberg.bauerlab.com.br`), guardado no bucket privado, enviado como documento no WhatsApp a um número de teste (janela de 24 h aberta), recebido certinho. Segunda chamada de `enviar`: `ja_enviado: true`, sem mensagem repetida. `preparar_link_pagamento`: `ok` (pedido criado, valor igual ao do orçamento, link válido por 47,9 h). Chip "Orç. enviado" apareceu no cartão do kanban. Dados de teste apagados.
+- **Para a auditoria final (Etapa 8):** testar o botão **Reenviar** na aba Orçamentos do pedido; testar `gerar_link_pagamento` ponta a ponta no n8n com o Mercado Pago em modo teste; republicar `mp-conferir` e `conhecimento` com o ajuste de autenticação da service role (hoje só `orcamento-pdf` e `mp-criar-link` têm); atribuir a credencial do n8n aos workflows da Etapa 3; sempre testar chamadas de função com o papel `service_role`.
+
 ### Pendências (dono)
-Ver `docs/agente/depende-de-voce.md`, seção Etapa 4. Resumo: aplicar a migration (`docs/agente/aplicar-etapa4.sql`), rodar o teste SQL e os advisors, instalar o Gotenberg, criar os segredos `GOTENBERG_*`, publicar `orcamento-pdf`, atribuir a credencial do Supabase nos nós HTTP dos 4 workflows, conferir o PDF contra o brand kit e confirmar o prefixo do número do orçamento.
+Ver `docs/agente/depende-de-voce.md`, seção Etapa 4 (todas feitas em 29/10/2026, menos o que está em "Para a auditoria final" acima). Resumo: aplicar a migration (`docs/agente/aplicar-etapa4.sql`), rodar o teste SQL e os advisors, instalar o Gotenberg, criar os segredos `GOTENBERG_*`, publicar `orcamento-pdf`, atribuir a credencial do Supabase nos nós HTTP dos 4 workflows, conferir o PDF contra o brand kit e confirmar o prefixo do número do orçamento.
 
 ### Como testar
 ```bash
