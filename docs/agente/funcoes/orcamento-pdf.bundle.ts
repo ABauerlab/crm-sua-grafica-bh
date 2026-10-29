@@ -373,7 +373,11 @@ Deno.serve(async (req) => {
 
   // Antes de qualquer envio ao cliente: trava de lucro. Rascunho vira enviado (o banco recusa prejuízo).
   if (acao !== 'gerar') {
-    const { data: val } = await db.rpc('validar_margem', { p_orcamento: id })
+    const { data: val, error: valErr } = await db.rpc('orcamento_validar_margem', { p_orcamento: id })
+    if (valErr) {
+      console.error('Falha ao validar a margem:', valErr.message)
+      return json({ error: 'Não foi possível validar a margem do orçamento. Tente de novo ou chame o dono.' }, 500)
+    }
     if (!val || val.status !== 'ok') return json({ error: 'Orçamento recusado pela trava de lucro. Chame o dono.', motivo: val?.motivo ?? null }, 422)
   }
 
@@ -421,8 +425,12 @@ Deno.serve(async (req) => {
   if (ate <= Date.now()) return json({ ...resposta, error: 'A janela de atendimento está fechada. O PDF foi gerado; envie um template aprovado.', code: 'window_closed' }, 409)
 
   if (row.status === 'rascunho') {
-    const { error } = await db.from('orcamentos').update({ status: 'enviado' }).eq('id', id)
-    if (error) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
+    const { data: marcado, error } = await db.rpc('orcamento_marcar_enviado', { p_orcamento: id })
+    if (error) {
+      console.error('Falha ao marcar o orçamento como enviado:', error.message)
+      return json({ ...resposta, error: 'Não foi possível marcar o orçamento como enviado. Tente de novo ou chame o dono.' }, 500)
+    }
+    if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
   const legenda = texto ?? `Segue o orçamento ${doc.numero}.`

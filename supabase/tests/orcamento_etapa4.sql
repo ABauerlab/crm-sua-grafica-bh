@@ -149,6 +149,27 @@ begin
   perform private.confirmar_pagamento((p ->> 'order_id')::uuid, 'mercadopago', 'cartao', 'mp-2', now(), null);
   perform pg_temp.ck('lucro real: pagamento no cartão grava 4,98%', (select taxa_pagamento_real_pct = 4.98 from public.orders where id = (p ->> 'order_id')::uuid));
 
+  -- ============================== 8b. a service role valida a margem pelo invólucro (validar_margem direto falha em private)
+  begin
+    set local role service_role;
+    j2 := public.orcamento_validar_margem(v_o3);
+    v_msg := null;
+  exception when others then
+    v_msg := sqlerrm;
+  end;
+  reset role;
+  perform pg_temp.ck('margem: service role valida pelo invólucro orcamento_validar_margem', v_msg is null and j2 ->> 'status' = 'ok', coalesce(v_msg, j2::text));
+  begin
+    set local role service_role;
+    j2 := public.orcamento_marcar_enviado(v_o3);
+    v_msg := null;
+  exception when others then
+    v_msg := sqlerrm;
+  end;
+  reset role;
+  perform pg_temp.ck('envio: service role marca o orçamento como enviado pelo invólucro', v_msg is null and j2 ->> 'ok' = 'true' and (select status from public.orcamentos where id = v_o3) = 'enviado', coalesce(v_msg, j2::text));
+  perform pg_temp.ck('margem: quem não é dono nem servidor não usa o invólucro', has_function_privilege('anon', 'public.orcamento_validar_margem(uuid)', 'execute') = false);
+
   -- ============================== 9. permissões
   perform pg_temp.ck('permissão: anon não executa as funções novas',
     not has_function_privilege('anon', 'public.montar_orcamento(uuid,jsonb,jsonb)', 'execute')
