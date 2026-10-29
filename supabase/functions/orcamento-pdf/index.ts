@@ -1,5 +1,5 @@
 import { corsHeaders, json, requireEnv, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
-import { orcamentoHtml, type OrcamentoDoc } from '../_shared/orcamento-html.ts'
+import { nomeArquivoOrcamento, orcamentoHtml, type OrcamentoDoc } from '../_shared/orcamento-html.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GRAPH = 'https://graph.facebook.com/v21.0'
@@ -118,7 +118,9 @@ Deno.serve(async (req) => {
   } else {
     reutilizado = true
   }
-  const { data: signed } = await db.storage.from('orcamentos').createSignedUrl(path!, LINK_SEGUNDOS)
+  const nomeArquivo = nomeArquivoOrcamento(doc.numero, doc.data)
+  // download: o navegador salva com o nome organizado (número e data), não com o nome interno do Storage
+  const { data: signed } = await db.storage.from('orcamentos').createSignedUrl(path!, LINK_SEGUNDOS, { download: nomeArquivo })
   if (!signed?.signedUrl) return json({ error: 'Não foi possível criar o link do PDF.' }, 500)
   const resposta = { ok: true, orcamento_id: id, numero: doc.numero, versao: doc.versao, pdf_url: signed.signedUrl, reutilizado, renovado, enviado: false, ja_enviado: false }
   if (acao === 'gerar') return json(resposta)
@@ -148,7 +150,7 @@ Deno.serve(async (req) => {
     res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'document', document: { link: signed.signedUrl, filename: `Orcamento-${doc.numero}.pdf`, caption: legenda } }),
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'document', document: { link: signed.signedUrl, filename: nomeArquivo, caption: legenda } }),
     })
   } catch {
     return json({ ...resposta, error: 'Não foi possível falar com a API do WhatsApp. Tente novamente.' }, 502)

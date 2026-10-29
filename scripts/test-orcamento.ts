@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { esc, orcamentoHtml, type OrcamentoDoc } from '../supabase/functions/_shared/orcamento-html.ts'
+import { esc, nomeArquivoOrcamento, orcamentoHtml, type OrcamentoDoc } from '../supabase/functions/_shared/orcamento-html.ts'
 
 const base: OrcamentoDoc = {
   numero: 'SG-0007', versao: 1, data: '2026-10-29', validade_ate: '2026-10-31T18:00:00+00:00',
@@ -52,6 +52,12 @@ const cond = html({ condicao_especial: { valida_ate: '2026-10-30T18:30:00+00:00'
 assert.ok(cond.includes('Condição especial válida até 30/10 às 15:30'), 'linha da condição especial')
 assert.ok(cond.includes('Valor final: <b>R$ 300,90</b>') && cond.includes('versão 2'), 'valor final e versão')
 assert.ok(!proibidos.test(cond) && !/gordura|degrau|percentual/i.test(cond), 'a condição não mostra como foi calculada')
+
+// nome do arquivo e passos para fechar
+assert.equal(nomeArquivoOrcamento('SG-0032', '2026-10-29'), 'Orcamento-SG-0032-29-10-2026.pdf')
+assert.equal(nomeArquivoOrcamento('SG-0032<x>', '2026-01-05'), 'Orcamento-SG-0032x-05-01-2026.pdf', 'nome sem caracteres perigosos')
+assert.ok(h.includes('Como fechar seu pedido') && h.includes('<title>Orcamento-SG-0007-29-10-2026</title>'))
+assert.ok(html({ arte: { modo: 'paga', valor: 39.9, opcoes: null } }).includes('Ou aprove a que criamos para você.'))
 
 // uma página para orçamento comum: 10 itens quebram sem cortar linha (page-break-inside: avoid)
 assert.ok(html().includes('page-break-inside: avoid'))

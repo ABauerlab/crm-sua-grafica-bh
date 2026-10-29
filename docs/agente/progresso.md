@@ -5,11 +5,11 @@
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
 - Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
-- Etapa 4: **pronta para revisão**, ainda não aplicada (ver abaixo).
+- Etapa 4: **concluída** (aplicada em produção em 29/10/2026: banco, `orcamento-pdf` publicada, Gotenberg no ar; PDF de teste gerado e aprovado; o envio no WhatsApp ainda não foi testado com cliente real).
 
-## Etapa 4: orçamento em PDF (pronta para revisão, NÃO aplicada em produção)
+## Etapa 4: orçamento em PDF (concluída, aplicada em produção em 29/10/2026)
 
-Branch `feat/agente-etapa4-orcamento`. Nada foi aplicado no Supabase, nenhuma função foi publicada, nenhum workflow foi ativado. Detalhes em `docs/orcamento-pdf.md`.
+Branch `feat/agente-etapa4-orcamento`. Aplicado: migrations `…09` e `…10`, função `orcamento-pdf` (pelo painel, com o arquivo `docs/agente/funcoes/orcamento-pdf.bundle.ts`) e Gotenberg em `gotenberg.bauerlab.com.br`. Nenhum workflow do n8n foi ativado. Ajustes pedidos pelo dono no teste: página mais bem preenchida (passos "Como fechar seu pedido") e nome do arquivo `Orcamento-SG-0032-29-10-2026.pdf`. Detalhes em `docs/orcamento-pdf.md`.
 
 ### O que foi feito
 - **Passo 0:** o CRM já tinha `orcamentos` e `orcamento_itens` (Etapa 1) e nenhum gerador de PDF de orçamento (só leitura de PDF do catálogo). Estendi as tabelas e unifiquei tudo no padrão novo. O trabalho da sessão interrompida nessa branch (migration com número repetido, funções sem autenticação que aceitavam piso e custo do chamador, provedor de pagamento genérico) foi **substituído**: removi os arquivos e arquivei no n8n os 4 workflows antigos.
