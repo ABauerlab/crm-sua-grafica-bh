@@ -4,9 +4,48 @@
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
 - Etapa 2: **concluída** (PR #22 mesclado, aplicada em produção em 28/10/2026).
-- Etapa 3: **pronta para revisão**, ainda não aplicada (ver abaixo).
+- Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
+- Etapa 4: **pronta para revisão**, ainda não aplicada (ver abaixo).
 
-## Etapa 3: preço inteligente e condição especial (pronta para revisão, NÃO aplicada em produção)
+## Etapa 4: orçamento em PDF (pronta para revisão, NÃO aplicada em produção)
+
+Branch `feat/agente-etapa4-orcamento`. Nada foi aplicado no Supabase, nenhuma função foi publicada, nenhum workflow foi ativado. Detalhes em `docs/orcamento-pdf.md`.
+
+### O que foi feito
+- **Passo 0:** o CRM já tinha `orcamentos` e `orcamento_itens` (Etapa 1) e nenhum gerador de PDF de orçamento (só leitura de PDF do catálogo). Estendi as tabelas e unifiquei tudo no padrão novo. O trabalho da sessão interrompida nessa branch (migration com número repetido, funções sem autenticação que aceitavam piso e custo do chamador, provedor de pagamento genérico) foi **substituído**: removi os arquivos e arquivei no n8n os 4 workflows antigos.
+- **Banco** (migration `20261029000009_etapa4_orcamento_pdf.sql`, aditiva e idempotente): `montar_orcamento` (preço, prazo, frete, arte, upsell por regra, `validar_margem`), `orcamento_documento` (só dados públicos + hash), `orcamento_renovar`, `preparar_link_pagamento`, `orcamento_registrar_link`, `validar_antes_de_cobrar` olhando a margem do orçamento, bucket privado `orcamentos`, colunas novas e tempo real em `orcamentos`.
+- **Taxa do método e lucro real:** `validar_margem` já descontava a taxa do método previsto (Pix 0,99%, cartão 4,98%); agora, quando o pagamento chega, `confirmar_pagamento` grava a taxa real e o lucro líquido real no pedido (`taxa_pagamento_real_pct`, `lucro_liquido_real`) e passa o orçamento para `pago`.
+- **PDF:** modelo HTML em `supabase/functions/_shared/orcamento-html.ts` (logo, paleta e Inter do CRM); Edge Function `orcamento-pdf` (Gotenberg, Storage, envio no WhatsApp, idempotente, vencido gera novo, trava de lucro antes de enviar). Infra em `infra/gotenberg/`.
+- **n8n (MCP, desativados, tag gbh, exportados em `n8n/`):** `montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `GBH | WF3 | Orçamento PDF`; o gancho de PDF de `condicao_especial` virou chamada real.
+- **CRM:** Pedido > aba Orçamentos (número, status, valor, validade, margem, regra e confiança só do dono, abrir PDF, Enviar/Reenviar) e status do orçamento no cartão do kanban.
+- **Exemplos:** 6 PDFs em `docs/exemplos-orcamento/` (catálogo fictício). Conferidos em tamanho de papel (A4) e de celular (390 px) e por texto: nenhum tem SKU, custo, margem, piso, fornecedor nem endereço de retirada; todos com 1 página e menos de 200 KB.
+- **Testes:** `supabase/tests/orcamento_etapa4.sql` (**49 passam**), Etapas 1, 2 e 3 contra o schema novo (54, 82 e 67 passam), `npm test` (inclui `scripts/test-orcamento.ts`), typecheck e build verdes.
+
+### Decisões
+- O PDF é renderizado dentro da Edge Function (não no n8n) para o botão Reenviar do CRM funcionar sem o n8n e para o modelo ficar versionado e testado no repositório. O WF3 orquestra.
+- O pedido (que o Mercado Pago cobra) nasce do orçamento na hora do link; arte entra como item "Criação de arte" (fora do catálogo, custo zero) e desconto vira `discount_pct` arredondado para baixo. Se um pedido já existente tiver valor diferente do orçamento, o link é recusado.
+- Frete por Uber é por conta do cliente: não entra no total nem vira custo nosso. Entrega de bicicleta (grátis) entra como custo nosso no lucro.
+- Texto livre nunca vira item: só SKU e quantidade. SKU e custo nunca saem para o agente.
+- Os erros de preço (mercado abaixo do piso, `nao_competitivo`) ficam só nos campos protegidos do banco; o agente recebe só avisos públicos.
+
+### O que NÃO foi feito (honestidade)
+- **A identidade visual da pasta no seu computador (`G:\Meu Drive\...\SUA_GRAFICA_BH_BRANDKIT`) não estava acessível** a esta sessão (é uma pasta do Windows e o CRM roda em nuvem). Usei a paleta, o logo (mesmo do favicon) e a fonte Inter que o CRM já tem, que foram tirados do brand kit na Parte 1. **Compare um PDF de exemplo com o brand kit** (cores, fonte, logo) e me diga o que ajustar; é só o CSS do modelo.
+- Gotenberg **não foi instalado** e a Edge Function não foi testada contra ele nem contra a Meta (sem acesso). Os PDFs de exemplo foram gerados com o Chromium local, o mesmo motor do Gotenberg.
+- Os workflows do n8n foram validados pelo MCP, mas **não executados** (o gatilho "Execute Workflow" não roda pelo MCP). A lógica de preço, prazo, frete e travas foi testada no banco.
+- Instagram e site da empresa não existem em `app_settings.company`; o PDF mostra só o que existir (hoje WhatsApp e e-mail).
+
+### Pendências (dono)
+Ver `docs/agente/depende-de-voce.md`, seção Etapa 4. Resumo: aplicar a migration (`docs/agente/aplicar-etapa4.sql`), rodar o teste SQL e os advisors, instalar o Gotenberg, criar os segredos `GOTENBERG_*`, publicar `orcamento-pdf`, atribuir a credencial do Supabase nos nós HTTP dos 4 workflows, conferir o PDF contra o brand kit e confirmar o prefixo do número do orçamento.
+
+### Como testar
+```bash
+npm test && npm run typecheck && npm run build
+supabase/tests/rodar-local.sh supabase/tests/orcamento_etapa4.sql supabase/tests/preco_etapa3.sql supabase/tests/agente_etapa1.sql supabase/tests/catalogo_etapa2.sql
+npm run exemplos:orcamento -- docs/exemplos-orcamento     # refaz os 6 PDFs (Postgres local no ar)
+```
+No CRM (depois de aplicar): abra um pedido > aba Orçamentos > Enviar; o cartão do kanban mostra o status do orçamento.
+
+## Etapa 3: preço inteligente e condição especial (concluída, aplicada em produção em 28/10/2026)
 
 Branch de trabalho da sessão: `claude/etapa3-preco-desconto-julfis` (parte de `feat/agente-etapa3-preco`, que tinha o início do trabalho). Nada foi aplicado no Supabase, nada foi ativado no n8n, nada foi instalado no servidor.
 
