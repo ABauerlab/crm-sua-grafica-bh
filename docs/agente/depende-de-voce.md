@@ -70,10 +70,16 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 
 1. **Aplicar** `docs/agente/aplicar-etapa4.sql` (e, se o banco já tinha colunas da tentativa anterior, também `docs/agente/aplicar-etapa4-correcao.sql`: corrige `avisos` e `especificacao` e remove as views sobras) (a migration `20261029000009`) no SQL Editor, rodar `supabase/tests/orcamento_etapa4.sql` e os advisors de segurança. Antes, confirme que a migration `20261029000008_orcamentos.sql` da sessão interrompida **não** foi aplicada (a consulta está no `progresso.md` do PR de retomada); se foi, me avise antes de seguir.
 2. **Instalar o Gotenberg** no Coolify (`infra/gotenberg/docker-compose.yml`) e criar os segredos da função: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`. Publicar `supabase functions deploy orcamento-pdf --no-verify-jwt`.
-3. **n8n:** nos 4 workflows novos e no `condicao_especial`, abrir cada nó HTTP e escolher a credencial `GBH Supabase (service role)` (o MCP não atribui). Continuam desativados até a Etapa 8.
+3. **n8n:** a credencial `Supabase account` (service role, legacy) foi criada pelo dono e **já está atribuída** aos nós HTTP de `montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento` e `condicao_especial` (29/10/2026). Os workflows da Etapa 3 (`pesquisar_preco_mercado`, WF4) ainda precisam dela. Continuam todos desativados até a Etapa 8.
 4. **Brand kit:** conferido no Google Drive (`cores_variaveis.css` e `tipografia_oficial`): paleta e Inter batem; títulos em Inter Display Black, rótulos em Inter Medium caixa alta. Falta só você olhar um PDF de exemplo.
 5. **Número do orçamento:** fica `SG-0001` (decisão do dono).
 6. **Instagram e site:** gravar em `app_settings.company` (`instagram` = `@suagraficabh`, `site` = `suagraficabh.com.br`) com o SQL do prompt de aplicação; o rodapé do PDF passa a mostrar.
 7. **Confirmar:** validade do orçamento em 48 h (`parametros_comerciais.validade_orcamento_horas`) e valores da arte (R$ 39,90 e R$ 49,90).
 
-8. **Publicar `orcamento-pdf` sem CLI:** painel do Supabase > Edge Functions > Deploy a new function > Via Editor, nome `orcamento-pdf`, colar `docs/agente/funcoes/orcamento-pdf.bundle.ts` (gerado por `npm run bundle:orcamento-pdf`) e desligar "Verify JWT". Os segredos `GOTENBERG_URL`, `GOTENBERG_USER` e `GOTENBERG_PASSWORD` precisam existir.
+8. **Publicar `orcamento-pdf` sem CLI:** painel do Supabase > Edge Functions > Deploy a new function > Via Editor, nome `orcamento-pdf`, colar `docs/agente/funcoes/orcamento-pdf.bundle.ts` (gerado por `node scripts/bundle-funcao.ts orcamento-pdf`) e desligar "Verify JWT". Os segredos `GOTENBERG_URL`, `GOTENBERG_USER` e `GOTENBERG_PASSWORD` precisam existir.
+
+9. **Republicar `mp-criar-link`** com o ajuste de autenticação da service role (a chave injetada na função pode diferir da do painel): Edge Functions > mp-criar-link > Code > colar `docs/agente/funcoes/mp-criar-link.bundle.ts` > Deploy updates, mantendo "Verify JWT" desligado. Sem isso, o n8n recebe "Não autorizado" ao criar o link. Gerar de novo: `node scripts/bundle-funcao.ts mp-criar-link`.
+
+10. **Correção 2 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao2.sql` (migration `…11`: `orcamento_validar_margem` e `orcamento_marcar_enviado`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Motivo: a service role não alcança o schema `private`; o envio do PDF falhava com "Orçamento recusado pela trava de lucro" sem motivo.
+
+11. **Correção 3 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao3.sql` (migration `…12`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Regra do dono: o cliente nunca vê que a entrega grátis é de bicicleta (PDF, orçamento, ferramenta de frete e 4 trechos do conhecimento).

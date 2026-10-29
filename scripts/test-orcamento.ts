@@ -36,6 +36,9 @@ assert.ok(html({ empresa: { ...base.empresa, instagram: '@suagraficabh', site: '
 const proibidos = /(\bsku\b|\bcusto\b|\bmargem\b|\bpiso\b|\blucro\b|fornecedor|rio de janeiro|sala 2|22º|30160)/i
 for (const doc of [h, html({ frete: { modo: 'bike_gratis', valor: 0 } }), html({ frete: { modo: 'uber_cliente', valor: 0 } })]) assert.ok(!proibidos.test(doc), 'o HTML não pode conter dado interno nem endereço')
 
+// o cliente nunca vê que a entrega é de bicicleta
+assert.ok(!/bicicleta|bike/i.test(html({ frete: { modo: 'bike_gratis', valor: 0 } })), 'o PDF não diz que a entrega é de bicicleta')
+
 // frete
 assert.ok(html({ frete: { modo: 'bike_gratis', valor: 0 } }).includes('Entrega (região central)'), 'frete grátis na região central')
 const uber = html({ frete: { modo: 'uber_cliente', valor: 0 } })
