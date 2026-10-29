@@ -3,13 +3,13 @@
 Branch: `feat/agente-etapa4-orcamento`
 
 ## Feito nesta sessão
-- Criada a migration aditiva `20261029000008_orcamentos.sql` para `orcamentos`, `orcamento_itens`, sequência SG-0001, views públicas e campos internos.
+- Reaproveitada a estrutura existente de `orcamentos` e `orcamento_itens`; a migration adiciona somente colunas, índices, views e o bucket privado de PDFs.
 - Criado o template público `infra/renderer/orcamento-template.js`, com escape HTML e sem custo, margem, piso, fornecedor ou SKU.
-- Criadas as Edge Functions `montar-orcamento`, `gerar-pdf-orcamento` e `gerar-link-pagamento`.
+- Criadas e publicadas as Edge Functions `montar-orcamento`, `gerar-pdf-orcamento` e `gerar-link-pagamento`.
 - Criados no MCP do n8n, na pasta `Sua Gráfica BH`, os workflows `GBH | FERRAMENTA | montar_orcamento`, `GBH | FERRAMENTA | gerar_pdf_orcamento`, `GBH | FERRAMENTA | gerar_link_pagamento` e `GBH | WF3 | Orçamento PDF`, todos desativados.
 
 ## Ainda falta
-- Aplicar a migration no Supabase e verificar RLS/policies no projeto real.
+- Aplicar a migration corrigida no Supabase e verificar as views, bucket e policies.
 - Configurar os segredos `SUPABASE_SERVICE_ROLE_KEY`, `RENDERER_URL`, `RENDERER_TOKEN`, `PAGAMENTO_PROVIDER_URL` e `PAGAMENTO_PROVIDER_TOKEN` somente nos ambientes apropriados.
 - Configurar as credenciais HTTP dos quatro workflows no n8n. Elas não foram autoatribuídas.
 - Conferir e reaproveitar a tela existente do CRM para a aba Orçamentos.
