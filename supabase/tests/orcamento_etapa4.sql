@@ -32,7 +32,7 @@ begin
     j ->> 'status' = 'ok' and o.status = 'rascunho' and j ->> 'numero' ~ '^SG-\d{4,}$'
     and abs(extract(epoch from (o.validade_ate - now())) / 3600 - v_pr.validade_orcamento_horas) < 0.1, j::text);
   perform pg_temp.ck('montar: frete grátis de bicicleta na região central e arte com frete = R$ 49,90',
-    j -> 'frete' ->> 'modo' = 'bike_gratis' and (j -> 'arte' ->> 'valor')::numeric = 49.90 and o.arte_modo = 'com_frete' and o.entrega = 'bike', j::text);
+    j -> 'frete' ->> 'modo' = 'entrega_gratis' and o.frete_modo = 'bike_gratis' and (j -> 'arte' ->> 'valor')::numeric = 49.90 and o.arte_modo = 'com_frete' and o.entrega = 'bike', j::text);
   perform pg_temp.ck('montar: total = itens + arte', (j ->> 'total')::numeric = (j ->> 'subtotal')::numeric + 49.90 and o.total = (j ->> 'total')::numeric, j::text);
   perform pg_temp.ck('montar: JSON do agente sem SKU, custo, piso, margem, lucro, mercado nem fornecedor',
     j::text !~* '(sku|custo|piso|margem|lucro|mediana|fornecedor|CFV02)', j::text);
@@ -169,6 +169,13 @@ begin
   reset role;
   perform pg_temp.ck('envio: service role marca o orçamento como enviado pelo invólucro', v_msg is null and j2 ->> 'ok' = 'true' and (select status from public.orcamentos where id = v_o3) = 'enviado', coalesce(v_msg, j2::text));
   perform pg_temp.ck('margem: quem não é dono nem servidor não usa o invólucro', has_function_privilege('anon', 'public.orcamento_validar_margem(uuid)', 'execute') = false);
+
+  -- ============================== 8c. o cliente não vê "bicicleta"
+  perform pg_temp.ck('cliente: o JSON do orçamento não diz bicicleta', j::text !~* 'bicicleta|bike', j ->> 'frete');
+  perform pg_temp.ck('cliente: a ferramenta de frete não diz bicicleta', public.verificar_frete('Centro', '[{"sku":"CFV02","quantidade":1}]', 500, false)::text !~* 'bicicleta', public.verificar_frete('Centro', '[{"sku":"CFV02","quantidade":1}]', 500, false)::text);
+  perform pg_temp.ck('cliente: o banco de conhecimento não diz bicicleta nos textos de resposta',
+    not exists (select 1 from public.conhecimento where ativo and (titulo ~* 'bicicleta|bike' or resposta_pronta ~* 'bicicleta|bike' or fatos ~* 'bicicleta|bike' or coalesce(proximo_passo, '') ~* 'bicicleta|bike')),
+    (select string_agg(slug, ',') from public.conhecimento where ativo and (titulo ~* 'bicicleta|bike' or resposta_pronta ~* 'bicicleta|bike' or fatos ~* 'bicicleta|bike')));
 
   -- ============================== 9. permissões
   perform pg_temp.ck('permissão: anon não executa as funções novas',

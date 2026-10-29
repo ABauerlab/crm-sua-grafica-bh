@@ -27,6 +27,9 @@ O banco de produção já tinha colunas da migration antiga da sessão interromp
 ### Correção 2 (29/10/2026, achada no teste de envio)
 Nas Edge Functions a service role não alcança o schema `private`: `validar_margem` direto e a troca de status para `enviado` (trigger de lucro) falhavam com `permission denied for schema private`, e a função respondia "recusado pela trava de lucro" sem motivo. A migration `20261029000011` cria `orcamento_validar_margem` e `orcamento_marcar_enviado` (definer, só dono ou servidor) e a função passou a usá-los. Os testes locais rodam como administrador e não pegavam isso; agora há testes com `set role service_role` (51 passam). Lição: testar com o papel `service_role` sempre que uma Edge Function ou o n8n chamar uma função do banco.
 
+### Regra do dono: entrega sem "bicicleta" (29/10/2026)
+Para o cliente, a entrega grátis na região central é só "entrega grátis na região central, em horário comercial". A migration `20261029000012` troca os textos do orçamento e da ferramenta de frete, o código interno `bike_gratis` (o agente recebe `entrega_gratis`) e 4 trechos do conhecimento; o PDF e o seed foram ajustados e há testes que impedem a palavra. **Para a Etapa 5:** o prompt e os filtros do agente não podem citar bicicleta nem bike (`verificar_frete` ainda devolve campos internos como `cabe_na_bike` e `entrega_sugerida: bike`; o wrapper da ferramenta deve filtrar).
+
 ### Decisões
 - O PDF é renderizado dentro da Edge Function (não no n8n) para o botão Reenviar do CRM funcionar sem o n8n e para o modelo ficar versionado e testado no repositório. O WF3 orquestra.
 - O pedido (que o Mercado Pago cobra) nasce do orçamento na hora do link; arte entra como item "Criação de arte" (fora do catálogo, custo zero) e desconto vira `discount_pct` arredondado para baixo. Se um pedido já existente tiver valor diferente do orçamento, o link é recusado.

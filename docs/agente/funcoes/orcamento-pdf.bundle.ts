@@ -269,7 +269,7 @@ function orcamentoHtml(d: OrcamentoDoc): string {
   </div>
   <div>
     <p class="sec">Retirada e entrega</p>
-    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis de bicicleta na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}</p>
+    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}</p>
   </div>
 </section>
 <section class="passos"><p class="sec">Como fechar seu pedido</p><ol>

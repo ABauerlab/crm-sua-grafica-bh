@@ -81,3 +81,5 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 9. **Republicar `mp-criar-link`** com o ajuste de autenticação da service role (a chave injetada na função pode diferir da do painel): Edge Functions > mp-criar-link > Code > colar `docs/agente/funcoes/mp-criar-link.bundle.ts` > Deploy updates, mantendo "Verify JWT" desligado. Sem isso, o n8n recebe "Não autorizado" ao criar o link. Gerar de novo: `node scripts/bundle-funcao.ts mp-criar-link`.
 
 10. **Correção 2 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao2.sql` (migration `…11`: `orcamento_validar_margem` e `orcamento_marcar_enviado`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Motivo: a service role não alcança o schema `private`; o envio do PDF falhava com "Orçamento recusado pela trava de lucro" sem motivo.
+
+11. **Correção 3 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao3.sql` (migration `…12`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Regra do dono: o cliente nunca vê que a entrega grátis é de bicicleta (PDF, orçamento, ferramenta de frete e 4 trechos do conhecimento).
