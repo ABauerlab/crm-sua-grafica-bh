@@ -89,7 +89,7 @@ assert.deepEqual(pref.payment_methods.excluded_payment_types, [{ id: 'ticket' },
 assert.ok(!JSON.stringify(pref).includes('unit_cost'), 'sem custo')
 
 // Nenhum segredo do Mercado Pago no repositório (tokens APP_USR/TEST e chaves de 64 hex ao lado de "secret")
-const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter((f) => f && !/\.(png|jpg|svg|ico|woff2?)$/.test(f))
+const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter((f) => f && !/\.(png|jpg|svg|ico|woff2?|pdf)$/.test(f))
 for (const f of files) {
   let text = ''
   try {

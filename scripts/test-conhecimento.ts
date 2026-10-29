@@ -60,7 +60,7 @@ assert.match(ctx, /SKU do fornecedor é INTERNO|SKU do fornecedor é interno/i)
 // A tabela do fornecedor é PRIVADA: nenhum PDF nem arquivo derivado pode estar no repositório, e o .gitignore precisa bloquear
 import { execFileSync } from 'node:child_process'
 const rastreados = execFileSync('git', ['ls-files'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
-const suspeitos = rastreados.filter((f) => /\.pdf$/i.test(f) || /(^|\/)(catalogo|tabela|importacao|linhas-sem-codigo|conflitos|rejeitadas)[-_].*\.(csv|json|xlsx?)$/i.test(f) || /dump-catalogo|\.catalogo\.sql$/i.test(f))
+const suspeitos = rastreados.filter((f) => (/\.pdf$/i.test(f) && !f.startsWith('docs/exemplos-orcamento/')) || /(^|\/)(catalogo|tabela|importacao|linhas-sem-codigo|conflitos|rejeitadas)[-_].*\.(csv|json|xlsx?)$/i.test(f) || /dump-catalogo|\.catalogo\.sql$/i.test(f))
 assert.deepEqual(suspeitos, [], `arquivo da tabela do fornecedor no repositório: ${suspeitos.join(', ')}`)
 const ignorado = readFileSync(`${root}.gitignore`, 'utf8')
 for (const padrao of ['*.pdf', 'catalogo-fornecedor/', 'catalogo-*.csv', 'tabela-fornecedor*', 'dump-catalogo*']) assert.ok(ignorado.includes(padrao), `.gitignore sem ${padrao}`)

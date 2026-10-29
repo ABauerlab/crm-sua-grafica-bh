@@ -38,3 +38,7 @@ verify_jwt = false
 # Banco de conhecimento: aceita o dono logado, a service role (n8n) ou o agendamento (x-cron-secret); a função confere por conta própria
 [functions.conhecimento]
 verify_jwt = false
+
+# Orçamento em PDF: aceita o dono logado (botão Reenviar do CRM) ou a service role (n8n); a função confere os dois
+[functions.orcamento-pdf]
+verify_jwt = false

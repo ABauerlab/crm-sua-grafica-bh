@@ -11,9 +11,11 @@
     "typecheck": "tsc -b",
     "test:webhook": "node scripts/test-webhook.ts",
     "test:rules": "node scripts/test-rules.ts",
-    "test": "npm run test:webhook && npm run test:rules && npm run test:mp && npm run test:conhecimento",
+    "test": "npm run test:webhook && npm run test:rules && npm run test:mp && npm run test:conhecimento && npm run test:orcamento",
     "test:mp": "node scripts/test-mp.ts",
     "test:conhecimento": "node scripts/test-conhecimento.ts",
+    "test:orcamento": "node scripts/test-orcamento.ts",
+    "exemplos:orcamento": "node scripts/gerar-exemplos-orcamento.ts",
     "gerar:conhecimento": "node scripts/gerar-seed-conhecimento.ts"
   },
   "dependencies": {
