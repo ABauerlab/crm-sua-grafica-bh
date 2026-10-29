@@ -1,0 +1,303 @@
+{
+  "name": "GBH | FERRAMENTA | montar_orcamento",
+  "nodes": [
+    {
+      "id": "4540095c-a723-5d84-8145-d4433b22f244",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | montar_orcamento (Etapa 4)\n**Objetivo:** montar o orçamento de forma determinística. Preço, prazo, frete, arte e upsell vêm das funções do banco; o modelo de IA não calcula nada.\n**Entradas:** contact_id (uuid), itens [{sku, quantidade}] (1 a 10, SKU, nunca texto livre), opcoes {conversation_id, bairro ou cep, arte: nenhuma|cliente|paga|com_frete, metodo, teste}.\n**Saída mínima:** status ok com numero (SG-0001), orcamento_id, itens, subtotal, arte, opcoes_arte, frete, total, data_prevista, prazo, validade_ate, upsell, avisos. Sem SKU, custo, piso, margem nem fornecedor. Bloqueado: status bloqueado, motivo e alternativa.\n**Passos:** 1) pesquisar_preco_mercado por SKU (cache de 14 dias; falha segue com a fórmula de custo); 2) rpc montar_orcamento (calcular_preco, calcular_prazo, verificar_frete, validar_margem); validade de 48 h por parametros_comerciais.\n**Dependências:** credencial GBH Supabase (service role); GBH | FERRAMENTA | pesquisar_preco_mercado; migration 20261029000009. Desativado até a Etapa 8.",
+        "color": 4,
+        "width": 720,
+        "height": 300
+      }
+    },
+    {
+      "id": "e96ef697-dfb8-5c9e-9578-50c7503fb237",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "contact_id",
+              "type": "string"
+            },
+            {
+              "name": "itens",
+              "type": "array"
+            },
+            {
+              "name": "opcoes",
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a68d06cc-0b1a-5819-ac57-ae92e99e266b",
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.contact_id || \"\").length === 36 && Array.isArray($json.itens) && $json.itens.length >= 1 && $json.itens.length <= 10 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ca84fdec-9d33-53f6-9666-09cb677dfb72",
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        608,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "status",
+              "value": "bloqueado",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "motivo",
+              "value": "itens_invalidos",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "alternativa",
+              "value": "Informe o contato e de 1 a 10 itens, cada um com SKU e quantidade. Texto livre não vira item.",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f82b0f22-e255-505f-b267-462498c5d557",
+      "name": "Separar SKUs distintos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const itens = $input.first().json.itens || [];\nconst vistos = {};\nconst saida = [];\nfor (const it of itens) {\n  const sku = String((it && it.sku) || '').trim();\n  if (!sku || vistos[sku]) continue;\n  vistos[sku] = true;\n  saida.push({ json: { sku, especificacao: {} } });\n}\nreturn saida;"
+      }
+    },
+    {
+      "id": "cf9841fa-ddb6-5917-980c-f9a7c33cce00",
+      "name": "Pesquisar preço de mercado (se o cache venceu)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "V1Bx2NRuPgJxj139"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sku": "={{ $json.sku }}",
+            "especificacao": "={{ $json.especificacao }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sku",
+              "displayName": "sku",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "especificacao",
+              "displayName": "especificacao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c5cfc46a-f982-5b79-b4f1-a6bc3bfa65b4",
+      "name": "Montar orçamento no banco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        944,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/montar_orcamento",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_contact: $('Entrada').first().json.contact_id, p_itens: $('Entrada').first().json.itens, p_opcoes: $('Entrada').first().json.opcoes || {} } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "id": "dc8015f0-517c-57fd-ace8-1d34a4dd4fd4",
+      "name": "Resposta mínima ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json || {};\nif (r.status === 'ok' || r.status === 'bloqueado') return [{ json: r }];\nreturn [{ json: { status: 'bloqueado', motivo: 'erro_interno', alternativa: 'Diga ao cliente que vai confirmar e chame o dono (gravidade alta).' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Separar SKUs distintos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar SKUs distintos": {
+      "main": [
+        [
+          {
+            "node": "Pesquisar preço de mercado (se o cache venceu)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pesquisar preço de mercado (se o cache venceu)": {
+      "main": [
+        [
+          {
+            "node": "Montar orçamento no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar orçamento no banco": {
+      "main": [
+        [
+          {
+            "node": "Resposta mínima ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 180,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

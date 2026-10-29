@@ -339,17 +339,6 @@
       "waitBetweenTries": 2000
     },
     {
-      "id": "e6fa9c0d-5416-bd9d-45ac-44f429ea1498",
-      "name": "Gancho: PDF do orçamento atualizado (Etapa 4)",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        1200,
-        160
-      ],
-      "parameters": {}
-    },
-    {
       "id": "af7150d7-7dd1-19b8-f47c-df5a43d4277a",
       "name": "Resposta: condição oferecida",
       "type": "n8n-nodes-base.code",
@@ -363,6 +352,70 @@
         "language": "javaScript",
         "jsCode": "const d = $('Decidir e registrar condição').first().json;\nlet link = null;\nlet erroLink = !!d.order_id;\ntry {\n  const l = $('Criar link de pagamento novo').first().json;\n  link = l.link || null;\n  erroLink = !l.link;\n} catch (e) {\n  link = null;\n}\nreturn [{ json: {\n  tipo: d.tipo,\n  texto_curto: d.texto_curto,\n  valor: Number(d.valor),\n  valida_ate: d.valida_ate,\n  link_pagamento: link,\n  orcamento_id: d.orcamento_id,\n  erro_link: erroLink,\n  pdf_atualizado: false,\n} }];"
       }
+    },
+    {
+      "id": "b011f56b-18d9-570e-8c03-715030327b43",
+      "name": "Gerar PDF do orçamento atualizado",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1900,
+        300
+      ],
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qdIwxubm5jAXCSc2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "orcamento_id": "={{ $('Decidir e registrar condição').first().json.orcamento_id }}",
+            "texto": "",
+            "acao": "gerar"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "texto",
+              "displayName": "texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "acao",
+              "displayName": "acao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "Etapa 4: gera o PDF do orçamento atualizado (nova versão). O envio ao cliente é feito pelo agente com gerar_pdf_orcamento, que reaproveita este PDF."
     }
   ],
   "connections": {
@@ -370,7 +423,7 @@
       "main": [
         [
           {
-            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "node": "Gerar PDF do orçamento atualizado",
             "type": "main",
             "index": 0
           }
@@ -388,7 +441,7 @@
         ],
         [
           {
-            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "node": "Gerar PDF do orçamento atualizado",
             "type": "main",
             "index": 0
           }
@@ -417,7 +470,7 @@
         ],
         [
           {
-            "node": "Gancho: PDF do orçamento atualizado (Etapa 4)",
+            "node": "Gerar PDF do orçamento atualizado",
             "type": "main",
             "index": 0
           }
@@ -482,7 +535,7 @@
         ]
       ]
     },
-    "Gancho: PDF do orçamento atualizado (Etapa 4)": {
+    "Gerar PDF do orçamento atualizado": {
       "main": [
         [
           {

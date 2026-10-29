@@ -1,0 +1,215 @@
+{
+  "name": "GBH | FERRAMENTA | gerar_pdf_orcamento",
+  "nodes": [
+    {
+      "id": "4540095c-a723-5d84-8145-d4433b22f244",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | gerar_pdf_orcamento (Etapa 4)\n**Objetivo:** gerar o PDF do orçamento (Gotenberg), guardar no Storage privado, marcar como enviado e mandar como documento no WhatsApp com a frase do agente.\n**Entradas:** orcamento_id, texto (frase natural do agente, legenda do PDF), acao (enviar por padrão; gerar só cria o PDF; reenviar força novo envio).\n**Saída mínima:** { ok, orcamento_id, numero, enviado, ja_enviado, renovado, reutilizado }. Sem link do arquivo, SKU, custo nem margem. Use o orcamento_id devolvido nos próximos passos: se o orçamento tinha vencido, ele é outro (novo, recalculado).\n**Regras (na Edge Function orcamento-pdf):** idempotente pelo hash do documento público; vencido gera orçamento novo; trava de lucro (validar_margem) antes de qualquer envio; janela de 24 h do WhatsApp.\n**Dependências:** credencial GBH Supabase (service role); segredos GOTENBERG_URL (e opcionais GOTENBERG_USER e GOTENBERG_PASSWORD) na Edge Function. Desativado até a Etapa 8.",
+        "color": 4,
+        "width": 720,
+        "height": 300
+      }
+    },
+    {
+      "id": "e96ef697-dfb8-5c9e-9578-50c7503fb237",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "name": "texto",
+              "type": "string"
+            },
+            {
+              "name": "acao",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a68d06cc-0b1a-5819-ac57-ae92e99e266b",
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.orcamento_id || \"\").length === 36 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ca84fdec-9d33-53f6-9666-09cb677dfb72",
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        608,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "f1",
+              "name": "motivo",
+              "value": "orcamento_id_invalido",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f028009e-15f1-5019-a4c7-c8713b602a21",
+      "name": "Gerar PDF e enviar no WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        496,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/orcamento-pdf",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { orcamento_id: $json.orcamento_id, acao: $json.acao || 'enviar', texto: $json.texto || '' } }}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "dc8015f0-517c-57fd-ace8-1d34a4dd4fd4",
+      "name": "Resposta mínima ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json || {};\nif (r.ok) {\n  return [{ json: { ok: true, orcamento_id: r.orcamento_id, numero: r.numero, enviado: !!r.enviado, ja_enviado: !!r.ja_enviado, renovado: !!r.renovado, reutilizado: !!r.reutilizado } }];\n}\nlet motivo = 'erro';\nif (r.code === 'window_closed') motivo = 'janela_fechada';\nelse if (r.motivo) motivo = String(r.motivo);\nconst alternativa = motivo === 'janela_fechada' ? 'A janela de 24 h fechou. Use um template aprovado para retomar a conversa.' : 'Diga ao cliente que vai confirmar e chame o dono.';\nreturn [{ json: { ok: false, motivo, alternativa } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Gerar PDF e enviar no WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar PDF e enviar no WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Resposta mínima ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 150,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
