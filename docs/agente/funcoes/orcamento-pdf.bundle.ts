@@ -1,7 +1,6 @@
-// GERADO por "npm run bundle:orcamento-pdf" (scripts/bundle-orcamento-pdf.ts). NÃO edite aqui: edite supabase/functions/ e gere de novo.
-// Painel do Supabase > Edge Functions > Deploy a new function > Via Editor. Nome: orcamento-pdf. Desligue "Verify JWT" (a função confere o dono ou a service role).
+// GERADO por "node scripts/bundle-funcao.ts orcamento-pdf". NÃO edite aqui: edite supabase/functions/ e gere de novo.
+// Painel do Supabase > Edge Functions > Deploy a new function (ou Code > Deploy updates) > Via Editor. Nome: orcamento-pdf. "Verify JWT" desligado (a função confere o dono ou a service role).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
@@ -282,7 +281,6 @@ ${d.upsell ? `<p class="upsell">${esc(d.upsell.texto)}</p>` : ''}
 <footer><div><b>${esc(emp.nome)}</b> · CNPJ ${esc(emp.cnpj)}<br>${contato}</div><div style="text-align:right">Este orçamento vale até ${esc(validade)}.<br>Depois dessa data, os valores e o prazo são recalculados.</div></footer>
 </div></body></html>`
 }
-
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GRAPH = 'https://graph.facebook.com/v21.0'
