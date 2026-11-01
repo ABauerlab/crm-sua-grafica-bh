@@ -87,6 +87,10 @@ begin
   perform pg_temp.chk(not (public.agente_saida_segura(v_ex, 'Fica R$ 7,77 certinho') ->> 'ok')::boolean, 'saída: valor fora do orçamento e das ferramentas continua bloqueado');
   delete from public.orcamentos where contact_id = v_ct;
 
+  perform pg_temp.chk(not (public.agente_saida_segura(v_ex, 'Calling tools: chamar_dono') ->> 'ok')::boolean, 'saída: bloqueia texto cru de chamada de ferramenta (Calling tools)');
+  perform pg_temp.chk(not (public.agente_saida_segura(v_ex, 'oi control_token:default_api:buscar_produto{id:call_181916}') ->> 'ok')::boolean, 'saída: bloqueia control_token e default_api');
+  perform pg_temp.chk((public.agente_saida_segura(v_ex, 'Oi, tudo bem? Quantos cartões você precisa?') ->> 'ok')::boolean, 'saída: frase normal continua passando depois da regra nova');
+
   -- detector de loop e log com custo
   perform pg_temp.chk((public.agente_tool_inicio(v_ex, 'buscar_produto') ->> 'permitido')::boolean, 'loop: 1a chamada passa');
   perform public.agente_tool_inicio(v_ex, 'buscar_produto'); perform public.agente_tool_inicio(v_ex, 'buscar_produto');
