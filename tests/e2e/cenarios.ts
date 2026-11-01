@@ -169,7 +169,7 @@ export const CENARIOS: Cenario[] = [
   { id: 'excecao-ofensa', categoria: 'excecao', titulo: 'Ofensa', persona: 'grosseiro',
     turnos: [{ cliente: [t('Vocês são uns ladrões, idiota', 'robô burro, não serve pra nada', 'vai se f*** seu inútil')] }] },
   { id: 'excecao-spam', categoria: 'excecao', titulo: 'Spam', persona: 'malicioso',
-    turnos: [{ cliente: [t('Ganhe R$ 5000 por dia trabalhando em casa! Clique http://exemplo.invalid/ganhe', 'COMPRE SEGUIDORES BARATOS no insta, chama no zap', 'promoção imperdível de criptomoeda, entre no grupo')] }] },
+    turnos: [{ cliente: [t('Ganhe R$ 5000 por dia trabalhando em casa! Clique http://exemplo.invalid/ganhe', 'COMPRE SEGUIDORES BARATOS no insta, chama no whats', 'promoção imperdível de criptomoeda, entre no grupo')] }] },
   { id: 'excecao-numero-errado', categoria: 'excecao', titulo: 'Número errado', persona: 'neutro',
     turnos: [{ cliente: [t('Desculpa, achei que era a pizzaria', 'ops, número errado', 'quem fala? queria falar com a Marta')] }] },
   { id: 'excecao-menor', categoria: 'excecao', titulo: 'Menor de idade', persona: 'menor',
