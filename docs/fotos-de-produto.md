@@ -22,6 +22,11 @@ O menu lateral do site tem **152 categorias e cerca de 4.900 subcategorias**. Os
 * **O agente nunca diz ao cliente que não há foto.** Se mesmo assim não houver imagem, a orientação é "vou separar as fotos e já envio", o atendimento segue e a equipe recebe alerta para mandar à mão.
 * **Reserva pelo catálogo em PDF do dono** (`scripts/fotos-catalogo-pdf.ts`): extrai as imagens de cada página (124 páginas; no teste, 1.051 imagens de 300 px ou mais em 120 páginas), sugere o grupo pelo título da página e envia como **pendentes para aprovação**. O PDF fica fora do repositório.
 
+### Decisões do dono em 01/11/2026
+* **Sob demanda, sem estoque de fotos:** nada é baixado antes. O que fica guardado é só o **mapa de texto** código (SKU) -> endereço da imagem (para achar a foto do item certo) e, depois que um cliente pede, a foto pedida (cache de 30 dias). O aquecimento de madrugada segue desligado.
+* **Item específico:** quando o agente informa um SKU, a ferramenta busca só a imagem daquele item e envia só ela. Sem SKU, busca só a quantidade pedida entre os itens que combinam com o termo; se o item não estiver no mapa, usa foto do mesmo grupo com legenda ilustrativa.
+* **Sem verificação de marca:** o dono garantiu que as imagens da origem são whitelabel (exemplos como "SUALOGO"). `app_settings.fotos.verificar_marca = false`: toda imagem processada é aprovada na hora. A chave `GEMINI_API_KEY` não é necessária. Se um dia aparecer uma foto com marca, o dono bloqueia na aba Fotos; para religar a checagem, basta `verificar_marca = true` e criar a chave.
+
 ## 2. Mapeamento e cache
 
 * Tabelas: `produto_fotos` (uma linha por imagem: grupo, `url_origem` só legível pelo dono, `arquivo_storage` com nome de hash, largura, altura, bytes, hash, `status` pendente/aprovada/bloqueada/sem_foto, `revisar`, `aproximada`), `produto_fotos_grupos` (controle de cache: `expira_em`, situação, contagem de pedidos) e `produto_fotos_envios` (limites e auditoria).
@@ -78,7 +83,7 @@ Conhecimento: trecho `foto-produto` (categoria `guia`) ensina a oferecer as foto
 
 1. Aplicar `docs/agente/aplicar-etapa4b.sql` no SQL Editor (já inclui as 3 migrations, é idempotente) e rodar os advisors de segurança.
 2. Publicar `produto-fotos` (CLI: `supabase functions deploy produto-fotos --no-verify-jwt`, ou painel com `docs/agente/funcoes/produto-fotos.bundle.ts`).
-3. Criar o segredo `GEMINI_API_KEY` nas Edge Functions (verificação de marca).
+3. (Opcional, só se religar a checagem de marca) criar o segredo `GEMINI_API_KEY`.
 4. Catálogo > Fotos: preencher "Origem das fotos (interna)" e salvar.
 5. Clicar em "Mapear origem (varredura completa)" e manter a aba aberta (cerca de 25 a 40 minutos). Ao fim, ler a Cobertura.
 6. Pré-aquecer os grupos mais vendidos: abrir cada um e clicar "Buscar de novo"; revisar e aprovar as imagens.

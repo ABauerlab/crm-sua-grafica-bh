@@ -89,7 +89,7 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 
 1. **Aplicar** `docs/agente/aplicar-etapa4b.sql` e rodar `supabase/tests/fotos_etapa4b.sql` e os advisors de segurança.
 2. **Publicar** `produto-fotos` (CLI com `--no-verify-jwt` ou painel com `docs/agente/funcoes/produto-fotos.bundle.ts`).
-3. **Segredo** `GEMINI_API_KEY` nas Edge Functions (verificação de marca). Sem ele as imagens ficam pendentes para você aprovar.
+3. ~~Segredo `GEMINI_API_KEY`~~ dispensado: o dono desligou a checagem de marca (`verificar_marca = false`).
 4. **Catálogo > Fotos:** preencher o campo "Origem das fotos (interna)" e salvar; depois abrir cada grupo mais vendido e conferir as imagens.
 5. **Confirmar** que pode usar as imagens da origem: não há página de termos de uso no site, só política de privacidade.
 6. **Mapear a origem** (botão em Catálogo > Fotos), conferir a Cobertura e completar SKUs/grupos sem imagem pelo catálogo em PDF (`scripts/fotos-catalogo-pdf.ts`) ou pelo campo Trocar.

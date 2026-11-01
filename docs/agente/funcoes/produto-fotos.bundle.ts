@@ -468,25 +468,35 @@ Deno.serve(async (req) => {
   const grupo = res.grupo as string
   const sku: string | null = res.exato_por_sku ? termo.toUpperCase() : null
 
+  // Sob demanda: só busca e guarda o que o cliente pediu. Nada é pré-carregado.
   let via: 'cache' | 'busca' = 'cache'
-  const { data: estado } = await db.rpc('foto_estado_grupo', { p_grupo: grupo })
-  if (!estado?.fresco || (estado.aprovadas ?? 0) === 0) {
-    if (!origemBase) return await semFoto(grupo)
-    via = 'busca'
-    await preencherGrupo(db, grupo, sku, res.exato_por_sku ? null : termo, origemBase, verificar)
-  }
-  // pediu um SKU: tenta guardar a foto do próprio item (uma única imagem) quando ainda não existe
-  if (sku && origemBase) {
-    const { data: ja } = await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: 3, p_sku: sku })
-    const temExata = ((ja ?? []) as { aproximada: boolean }[]).some((f) => !f.aproximada)
-    if (!temExata) {
-      const { data: cands } = await db.rpc('foto_candidatas', { p_grupo: grupo, p_sku: sku, p_termo: null, p_limite: 1 })
-      const c = (cands ?? [])[0] as { imagem: string; exato: boolean } | undefined
-      if (c?.exato && /^https:\/\//.test(c.imagem)) { via = 'busca'; await guardarImagem(db, grupo, c.imagem, sku, false, 0, verificar) }
+  await db.rpc('foto_estado_grupo', { p_grupo: grupo })   // só conta o pedido (ranking dos grupos mais pedidos)
+  const quer = decisao.quantidade
+  const tem = async () => ((await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: quer, p_sku: sku })).data ?? []) as { arquivo: string; bytes: number; aproximada: boolean }[]
+  let lista = await tem()
+  if (sku) {
+    // pediu um item específico: a foto dele (uma só); se o item não está no mapa, cai em fotos do grupo
+    if (!lista.some((f) => !f.aproximada) && origemBase) {
+      const { data: c1 } = await db.rpc('foto_candidatas', { p_grupo: grupo, p_sku: sku, p_termo: null, p_limite: 1 })
+      const c = (c1 ?? [])[0] as { imagem: string; exato: boolean } | undefined
+      if (c?.exato && /^https:\/\//.test(c.imagem)) { via = 'busca'; await guardarImagem(db, grupo, c.imagem, sku, false, 0, verificar); lista = await tem() }
     }
   }
-  const { data: fotos } = await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: decisao.quantidade, p_sku: sku })
-  const lista = (fotos ?? []) as { arquivo: string; bytes: number; aproximada: boolean }[]
+  if (lista.length < quer && origemBase && !lista.some((f) => !f.aproximada && sku)) {
+    // sem foto suficiente guardada: busca só a quantidade pedida (itens que combinam com o termo; senão variedade do grupo)
+    const cands = await candidatas(db, grupo, sku, sku ? null : termo, origemBase)
+    let faltam = quer - lista.length
+    let ordem = 10
+    for (const c of cands) {
+      if (faltam <= 0) break
+      via = 'busca'
+      const r = await guardarImagem(db, grupo, c.imagem, c.exato ? sku : null, !c.exato, ordem++, verificar)
+      if (r.guardada) faltam--
+    }
+    lista = await tem()
+  }
+  // item específico com foto própria: manda só a dele (as outras do grupo seriam apenas ilustrativas)
+  if (sku && lista.some((f) => !f.aproximada)) lista = lista.filter((f) => !f.aproximada).slice(0, quer)
   if (!lista.length) return await semFoto(grupo)
 
   const env = requireEnv('WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID')
