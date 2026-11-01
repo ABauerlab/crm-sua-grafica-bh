@@ -23,6 +23,7 @@ import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
 import DiscountPolicyTab from '@/features/agent/DiscountPolicyTab'
 const NotificationsTab = lazy(() => import('@/features/notifications/NotificationsTab'))
 const KnowledgeTab = lazy(() => import('@/features/agent/KnowledgeTab'))
+const FollowupsTab = lazy(() => import('@/features/agent/FollowupsTab'))
 
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
 
@@ -458,6 +459,7 @@ export default function Settings() {
           <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
+          <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>
@@ -472,6 +474,7 @@ export default function Settings() {
         <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
         <TabsContent value="notificacoes"><Suspense fallback={<Skeleton className="h-40 w-full" />}><NotificationsTab /></Suspense></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>
+        <TabsContent value="followups"><Suspense fallback={<Skeleton className="h-40 w-full" />}><FollowupsTab /></Suspense></TabsContent>
         <TabsContent value="conhecimento"><Suspense fallback={<Skeleton className="h-40 w-full" />}><KnowledgeTab /></Suspense></TabsContent>
         <TabsContent value="dados"><DataTab /></TabsContent>
       </Tabs>

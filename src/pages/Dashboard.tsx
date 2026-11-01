@@ -1,5 +1,5 @@
 import { BarChart3, FlaskConical } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { buildDemo } from '@/features/dashboard/demo'
 import { useAdTotals } from '@/hooks/campaigns'
 import { useSetting } from '@/hooks/settings'
@@ -110,7 +111,9 @@ function ChartCard({ title, subtitle, table, children }: { title: string; subtit
 const axis = { fontSize: 12, fill: '#525252' }
 const tooltipStyle = { border: '1px solid #e0e0e0', borderRadius: 6, boxShadow: 'none', fontSize: 12, color: BRAND.ink }
 
-export default function Dashboard() {
+const AgentPanel = lazy(() => import('@/features/agent/AgentPanel'))
+
+function VisaoGeral() {
   const { data: realOrders, isLoading } = useOrders()
   const { data: realContacts } = useContacts()
   const { data: settings } = useSettings()
@@ -382,5 +385,18 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Tabs defaultValue="geral" className="flex h-full min-h-0 flex-col">
+      <TabsList>
+        <TabsTrigger value="geral">Visão geral</TabsTrigger>
+        <TabsTrigger value="agente">Agente</TabsTrigger>
+      </TabsList>
+      <TabsContent value="geral" className="min-h-0 flex-1 overflow-auto"><VisaoGeral /></TabsContent>
+      <TabsContent value="agente" className="min-h-0 flex-1 overflow-auto"><Suspense fallback={<Skeleton className="m-4 h-40" />}><AgentPanel /></Suspense></TabsContent>
+    </Tabs>
   )
 }

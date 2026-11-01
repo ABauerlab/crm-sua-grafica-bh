@@ -91,6 +91,9 @@ export interface Order {
   delivery_fee: number | null
   delivery_tracking: string | null
   delivered_at: string | null
+  subestatus_pedido: 'em_producao' | 'pronto_retirada' | 'saiu_entrega' | null
+  subestatus_em: string | null
+  enviado_fabrica_em: string | null
   created_at: string
   updated_at: string
 }
@@ -179,4 +182,10 @@ export function formatDuration(hours: number): string {
   if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`
   if (hours < 48) return `${Math.floor(hours)} h`
   return `${Math.floor(hours / 24)} d`
+}
+
+export const SUBESTATUS_LABEL: Record<'em_producao' | 'pronto_retirada' | 'saiu_entrega', string> = {
+  em_producao: 'Em produção',
+  pronto_retirada: 'Pronto para retirada',
+  saiu_entrega: 'Saiu para entrega',
 }

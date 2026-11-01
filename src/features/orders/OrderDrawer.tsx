@@ -3,6 +3,7 @@ import { AlertTriangle, Check, Copy, ExternalLink, FileUp, MessageSquare, Plus, 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
+import { StatusPedido } from './StatusPedido'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -709,6 +710,7 @@ function DeliveryTab({ order }: { order: OrderCard }) {
         )
       }}
     >
+      <div className="sm:col-span-2"><StatusPedido order={order} /></div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nº do pedido no fornecedor"><Input value={f.supplier} onChange={(e) => setF({ ...f, supplier: e.target.value })} /></Field>
         <Field label="Prazo previsto">

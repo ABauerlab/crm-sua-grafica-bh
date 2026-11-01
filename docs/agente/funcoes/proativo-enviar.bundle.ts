@@ -258,7 +258,11 @@ Deno.serve(async (req) => {
   if (usado === 'livre') {
     r = await enviarTexto(env, ct.wa_id, texto)
     // a janela pode ter fechado no meio do caminho (131047): tenta o template se houver
-    if (!r.ok && r.codigo === 131047 && template) usado = 'template'
+    if (!r.ok && r.codigo === 131047 && template) {
+      const d2 = decidirEnvio({ via: 'template', janelaAberta: false, temTemplate: true, categoria, optout: !!ct.optout, consentimento: ct.marketing_consent, exigirOptin })
+      if (d2.acao === 'recusar') return json({ ok: false, recusado: true, motivo: d2.motivo, permanente: d2.permanente })
+      usado = 'template'
+    }
   }
   if (usado === 'template' && template) {
     const st = await statusTemplate(env, db, template)

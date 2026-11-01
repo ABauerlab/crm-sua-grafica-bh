@@ -8,6 +8,7 @@ import Login from '@/pages/Login'
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Kanban = lazy(() => import('@/pages/Kanban'))
+const Orders = lazy(() => import('@/pages/Orders'))
 const Inbox = lazy(() => import('@/pages/Inbox'))
 const Contacts = lazy(() => import('@/pages/Contacts'))
 const Templates = lazy(() => import('@/pages/Templates'))
@@ -57,6 +58,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/painel" element={<Dashboard />} />
             <Route path="/kanban" element={<Kanban />} />
+            <Route path="/pedidos" element={<Orders />} />
             <Route path="/inbox/:conversationId?" element={<Inbox />} />
             <Route path="/contatos" element={<Contacts />} />
             <Route path="/catalogo" element={<Catalog />} />
