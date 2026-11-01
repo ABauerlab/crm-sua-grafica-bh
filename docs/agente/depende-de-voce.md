@@ -124,3 +124,10 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 4. **Proteção contra senhas vazadas** (Supabase): Authentication > Sign In / Providers > Email > ative "Prevent use of leaked passwords" (exige plano Pro). Não há como aplicar pelo MCP.
 5. **Backup `private.bkp_products_etapa2`**: pode apagar quando quiser (idêntico ao catálogo). Comando pronto, só com a sua autorização: `drop table private.bkp_products_etapa2;`
 6. Etapa 8: publicar o WF9 e ligar nos demais (`docs/n8n-mapa.md`).
+
+## Etapa 7B, Bloco B (o que só você pode fazer)
+1. Confirmar que **+55 31 99802-1169** é o contato certo da BauerLab (`app_settings.bauerlab.telefone_confirmado_pelo_dono`).
+2. Definir a **política de troca e reembolso** (trecho `troca-politica` tem `[CONFIRMAR]`) e se haverá **parcelamento acima de 2x** (hoje não).
+3. Revisar os 10 trechos novos do conhecimento (Configurações > Conhecimento, marcados "revisar").
+4. **Cupom de recompra:** rode `select public.cupom_recompra_simular();` (no SQL Editor) e, se a margem estiver boa, ligue com o comando que a própria simulação devolve. Hoje desligado.
+5. **Benefício de indicações** (se houver): ainda sem recompensa.
