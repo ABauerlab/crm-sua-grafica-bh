@@ -415,3 +415,14 @@ npm test && npm run typecheck
 psql "$DATABASE_URL" -f supabase/tests/agente_etapa1.sql   # desfaz tudo; sucesso aparece como "OK: 54 testes passaram"
 ```
 No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente e o status (clique em Sincronizar).
+
+## Etapa 8 (auditoria) - 02/11/2026: relatório entregue, ativação aguardando autorização
+- Relatório completo em `docs/auditoria-agente.md` (nota 7,5/10). Correções: custo real no item de pedido, gatilhos de pedido como definer, advisors, modo piloto da IA (`agente_config.piloto_*`). Reversões em `docs/rollback-etapa8.sql`.
+- SearXNG ligado no Coolify e `searxng_url` do workflow de pesquisa atualizado. Workflows `GBH |` continuam DESATIVADOS: `publish_workflow` foi negado pelo ambiente; WF9 ainda sem ligação como `errorWorkflow`.
+- Falta: ligar `encaminhar_setor`, `bauerlab` e escolha de opção no despachante e no WF2; testes de conversa com o modelo real (só possíveis com WF1 e WF2 ativos); Pix de R$ 1; segredos `N8N_WF1_URL` e `N8N_WF1_TOKEN`.
+- Branch `claude/zealous-curie-n84wpk`; arquivos: `supabase/migrations/20261105000001..3`, `docs/auditoria-agente.md`, `docs/rollback-etapa8.sql`.
+
+## Etapa 8 (auditoria) - FECHADA, aguardando Etapa 8B
+- Relatório final: `docs/auditoria-agente.md` (seção 0 resume o estado). Branch `claude/zealous-curie-n84wpk`.
+- Feito: correções de preço (custo real no item), gatilhos de pedido, `unaccent` (WF6), `service_role` no schema `private`, `conhecimento` v11, notificações só no push (WhatsApp só para problema de pagamento e cliente esperando humano), modo piloto, card no Kanban ao enviar orçamento, `buscar_produto` com opções reais e ficha traduzida, `produto-opcoes` (opções com foto), `orcamento-pdf` v16 (resumo e APROVADO), link só depois do PDF formal, sem teto de tokens, fluxo consultivo no WF2, 25 workflows ativos com WF9.
+- Falta (Etapa 8B): teste ponta a ponta com o número de teste; ligar `encaminhar_setor`, `bauerlab` e escolha de opção; resumo automático separando pedido anterior e atual; SearXNG em rede interna; conferir credenciais nó a nó; decisões do dono (3 funções antigas do Supabase, `bkp_products_etapa2`, cupom de recompra, lembretes do pedido SG-0019 seguros em `followup_fila` com status cancelado).

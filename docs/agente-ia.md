@@ -246,3 +246,12 @@ Error Trigger: `agente_erro_registrar` grava em `agent_logs`, cria alerta de gra
 - **Setor de arte:** ferramentas novas do agente (service role): `arte_receber(conversation, tipo, qualidade, detalhe)` quando o cliente manda arquivo ou briefing depois de pagar (card vai para Arte, tarefa, alerta alto com resumo, conversa em setor arte) e `arte_baixa_ok(conversation)` quando o cliente topa seguir com baixa qualidade. O dono usa a tela Fila da arte e `arte_aprovar` (exige a confirmação do cliente; registra data, hora e aceite; prazo conta dali; produção automática; automação volta).
 - **Conhecimento:** 83 trechos v2 (`docs/agente/conhecimento_v2.json`); variáveis `{{persona_vendas}} {{persona_pos_pagamento}} {{cupom_percentual}} {{cupom_teto}} {{cupom_validade_dias}} {{troca_prazo}}` além das 5 antigas. Preço e prazo nunca vêm do conhecimento.
 - **Política:** `public.politica_texto('resumo_pdf' | 'descricao_link' | 'aceite_arte')`. Reembolso e estorno só pelo dono.
+
+
+## Checklist de ativação e piloto (Etapa 8)
+1. Parâmetros revisados (`parametros_comerciais`, taxa do 2x), 17 templates aprovados, Mercado Pago em produção validado, PWA instalado, teto diário em R$ (`app_settings.observabilidade.teto_custo_dia_brl`), backup do banco.
+2. Segredos `N8N_WF1_URL` e `N8N_WF1_TOKEN` criados; WF9 publicado e ligado a todos os `GBH |`.
+3. Piloto: `agente_config.piloto_ativo = true`, `piloto_wa_ids` com o número de teste, `piloto_percentual = 0`. Fase 2: `piloto_percentual = 10` por 7 dias. Liberar: `piloto_ativo = false`.
+4. Ampliar se: margem líquida real >= 20%, nenhum preço abaixo do piso, custo por conversa dentro do planejado, nenhum vazamento, nenhuma reclamação por erro da IA, WF9 sem pendência. Voltar se qualquer item falhar.
+5. Reversão: `ia_ligada = false` (ou botão "Pausar IA"), `piloto_ativo = true`, ou despublicar o WF1. `personas.pos_pagamento_automatico = false` faz a IA parar depois do pagamento.
+6. Rotina do dono: todo dia alertas, Kanban (atrasados e arte), pagamentos pendentes e custo do dia; toda semana resumo de preços, Saúde de preços, lacunas do conhecimento, conversão por anúncio e backup.
