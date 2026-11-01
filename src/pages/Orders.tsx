@@ -14,7 +14,7 @@ import { useOrders } from '@/hooks/orders'
 import { downloadCsv } from '@/lib/csv'
 import { contactLabel } from '@/lib/format'
 import { formatBRL } from '@/lib/money'
-import { stageInfo, SUBESTATUS_LABEL, type OrderCard } from '@/lib/orders'
+import { pedidoAtrasado, stageInfo, SUBESTATUS_LABEL, type OrderCard } from '@/lib/orders'
 import { cn } from '@/lib/utils'
 
 type Aba = 'arte' | 'producao' | 'prontos' | 'entregas' | 'atrasados' | 'hoje' | 'todos'
@@ -41,7 +41,7 @@ function pertence(o: OrderCard, aba: Aba, hoje: string): boolean {
     case 'producao': return o.stage === 'producao'
     case 'prontos': return o.stage === 'producao' && o.subestatus_pedido === 'pronto_retirada'
     case 'entregas': return o.stage === 'producao' && (o.subestatus_pedido === 'saiu_entrega' || (o.delivery_method === 'uber' && o.due_date === hoje))
-    case 'atrasados': return emAndamento(o) && !!o.due_date && o.due_date < hoje
+    case 'atrasados': return pedidoAtrasado(o, hoje) // só em produção e fora do prazo útil
     case 'hoje': return isPaid(o) && dia(o.paid_at) === hoje
     default: return true
   }
@@ -186,7 +186,7 @@ export default function Orders() {
       .filter((o) => !entrega || (entrega === 'uber' ? o.delivery_method === 'uber' : o.delivery_method !== 'uber'))
       .filter((o) => !limite || new Date(o.created_at).getTime() >= limite)
       .filter((o) => !q || contactLabel(o.contact).toLowerCase().includes(q) || pedidoNum(o).toLowerCase().includes(q) || String(o.number) === q.replace(/\D/g, '') || o.items.some((i) => (i.code ?? '').toLowerCase().includes(q) || i.description.toLowerCase().includes(q)))
-      .sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') || a.number - b.number)
+      .sort((a, b) => Number(b.urgente) - Number(a.urgente) || (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999') || a.number - b.number)
   }, [base, aba, busca, etapa, subf, pago, entrega, periodo, hoje])
 
   const marcados = linhas.filter((o) => sel.has(o.id))
@@ -313,7 +313,7 @@ export default function Orders() {
                     <td className="px-2 py-2">{contactLabel(o.contact)}</td>
                     <td className="max-w-[220px] px-2 py-2"><span className="line-clamp-2">{resumoItens(o)}</span></td>
                     <td className="px-2 py-2 text-right font-bold tabular">{formatBRL(o.fin.total)}</td>
-                    <td className="px-2 py-2">{isPaid(o) ? <span className="text-brand-green">{o.payment_method ?? 'pago'}</span> : <span className="text-muted-foreground">pendente</span>}</td>
+                    <td className="px-2 py-2">{o.urgente && <span className="mr-1 rounded-sm bg-brand-red px-1 text-[10px] font-black text-white" title={o.urgente_motivo ?? 'Cliente com urgência'}>URGENTE</span>}{isPaid(o) ? <span className="text-brand-green">{o.payment_method ?? 'pago'}</span> : <span className="text-muted-foreground">pendente</span>}</td>
                     {dono && <td className={cn('px-2 py-2 text-right tabular', o.fin.net_profit < 0 && 'font-bold text-brand-red')}>{formatBRL(o.fin.net_profit)}</td>}
                     <td className="px-2 py-2"><span className={cn('rounded-sm px-1.5 py-0.5 text-[11px] font-bold', stageInfo(o.stage).chip)}>{stageInfo(o.stage).short}</span></td>
                     <td className="px-2 py-2"><div className="flex flex-col gap-1">{o.subestatus_pedido && <span className="text-xs font-semibold">{SUBESTATUS_LABEL[o.subestatus_pedido]}</span>}<AvisoChip avisos={avisos?.get(o.id)} /></div></td>

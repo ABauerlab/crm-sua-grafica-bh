@@ -1,5 +1,29 @@
 # Progresso do agente de IA
 
+## Etapa 7B: melhorias consolidadas (em andamento)
+
+Decisões e inventário em `docs/agente/decisoes-e-melhorias.md`. Uma branch de trabalho (`claude/compassionate-ramanujan-s26vog`) com um PR por bloco.
+
+### Bloco A: proteger a operação (concluído, 01/11/2026)
+**Aplicado em produção pelo MCP do Supabase** (migrations `20261103000001` em 3 partes e `20261103000002`; cópias em `docs/agente/aplicar-etapa7b-a.sql` e `aplicar-etapa7b-a2.sql`). Advisors sem achado novo grave.
+
+| # | Item | Resultado |
+|---|---|---|
+| A1 | Taxas por método | `taxas_pagamento` ganhou crédito 2x sem juros (10,50% **estimativa conservadora**, confirmar no Mercado Pago), débito, dinheiro e transferência. O piso usa a pior taxa (`metodo_piso = cartao_credito_2x`). Taxa real (`fee_details`, líquido, parcelas) gravada no pedido por `pagamento_taxa_real` (código em `mppay.ts`, **função ainda por publicar**) |
+| A2 | Taxa por dentro | Já era "por dentro" (`receita_para_lucro`). Orçamento ignora método previsto (trava na pior taxa). Tabela interna de taxa e lucro por método em Pedido > Orçamentos (só o dono) |
+| A3 | Link alinhado | `installments: 2` e boleto/lotérica excluídos em `_shared/mp.ts` (**publicar mp-criar-link**). Documentado em `docs/pagamento-mercadopago.md`. Pix direto: avaliado, adiado |
+| A4 | Pedido manual | Método obrigatório (criar pedido, confirmar pagamento). `confirmar_pagamento_manual` recusa sem método. Taxa só do método escolhido; dinheiro e transferência 0%. Pedidos 18 e 19 de produção (pendentes, sem método) ficam com a taxa de pior caso: **nenhuma correção necessária** (não havia pedido manual pago com taxa indevida) |
+| A5 | Exclusão | `pedido_excluir` (lógica com motivo e auditoria; teste some por completo; pago nunca apaga), `pedido_cancelar_ou_arquivar` (reembolso pendente + alerta alto). Tela: Pedido > Resumo > Zona de risco. Pago após exclusão restaura o pedido e alerta |
+| A6 | Atraso e urgência | `pedido_esta_atrasado`/`pedidos_atrasados` (só em produção, regra única também em `pedidoAtrasado` no front). Selo URGENTE em cartão e lista, ordena a fila, `registrar_urgencia` não muda prazo |
+| A7 | Trava de lucro | `supabase/tests/trava_lucro_caminhos.sql` (preço, orçamento, condição especial, link, pedido manual, importação) + simulação em massa da Etapa 3 (`npm run test:sql`); `test-rules.ts` confere que cada caminho está coberto |
+| A8 | Sigilo do fornecedor | Detector com variações de grafia, mais extensões, e varredura dos textos gravados no banco |
+| A9 | Credenciais do n8n | `docs/credenciais-n8n.md`. A credencial real é `Supabase account`; "GBH Supabase (service role)" nunca existiu |
+| A10 | WF9 | Tipos de erro, ação por tipo (repetir, registrar, interromper e alertar), divergência de pagamento a cada hora, simulação testada. **Ligar o WF9 aos outros workflows exige publicá-lo (ativar), então fica para a Etapa 8** |
+| A11 | Segurança | Senhas vazadas continua desligada (ação do dono). Backup `private.bkp_products_etapa2`: 20.381 linhas idênticas ao catálogo, sem dependências, 3,6 MB. Comando de remoção em `depende-de-voce.md` |
+| A12 | Prazo | Uma só implementação (`private.prazo_data`), usada por pedido, orçamento e `calcular_prazo`; teste de igualdade |
+
+Testes: `npm test` e `supabase/tests/*.sql` (melhorias 71, trava 12, preço 67, orçamento 56, regressão das Etapas 1 a 7 verde).
+
 ## Etapas concluídas
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).

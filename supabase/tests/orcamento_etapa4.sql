@@ -90,7 +90,7 @@ begin
   v_ord := (p ->> 'order_id')::uuid;
   perform pg_temp.ck('link: orçamento válido cria o pedido com o valor do orçamento', (p ->> 'ok')::boolean and abs((select total from public.order_financials where order_id = v_ord) - (select total from public.orcamentos where id = v_o)) < 0.01, p::text);
   perform pg_temp.ck('link: o pedido leva a arte como item e os itens do orçamento', (select count(*) from public.order_items where order_id = v_ord) = 2 and exists (select 1 from public.order_items where order_id = v_ord and description = 'Criação de arte' and unit_price = 49.90), null);
-  perform pg_temp.ck('link: validade do link = validade do orçamento (horas restantes)', (p ->> 'expira_horas')::numeric between 47 and 48.1, p::text);
+  perform pg_temp.ck('link: validade do link = validade do orçamento (horas restantes)', (p ->> 'expira_horas')::numeric between 167 and 168.1, p::text);
   perform pg_temp.ck('link: chamar de novo reaproveita o mesmo pedido (idempotente)', (public.preparar_link_pagamento(v_o) ->> 'order_id')::uuid = v_ord);
   perform pg_temp.ck('link: validar_antes_de_cobrar aceita pedido saudável', public.validar_antes_de_cobrar(v_ord) is null, public.validar_antes_de_cobrar(v_ord));
 
@@ -129,11 +129,11 @@ begin
   update public.orcamentos set desconto_valor = 0 where id = v_o2;
 
   -- ============================== 8. taxa do método e lucro real
-  update public.orcamentos set metodo_previsto = null where id = v_o2;
-  v_lucro_card := (public.validar_margem(v_o2) ->> 'lucro_liquido')::numeric;
   update public.orcamentos set metodo_previsto = 'pix' where id = v_o2;
-  v_lucro_pix := (public.validar_margem(v_o2) ->> 'lucro_liquido')::numeric;
-  perform pg_temp.ck('margem: validar_margem desconta a taxa do método (Pix rende mais que o cartão)', v_lucro_pix > v_lucro_card, format('pix=%s cartão=%s', v_lucro_pix, v_lucro_card));
+  perform pg_temp.ck('margem: a trava ignora o método previsto e usa a pior taxa', (select metodo_previsto from public.orcamentos where id = v_o2) is null, '');
+  v_lucro_card := (public.validar_margem(v_o2) ->> 'lucro_liquido')::numeric;
+  v_lucro_pix := (select (e ->> 'lucro_liquido')::numeric from jsonb_array_elements(public.orcamento_lucro_por_metodo(v_o2) -> 'metodos') e where e ->> 'metodo' = 'pix');
+  perform pg_temp.ck('margem: Pix rende mais que o pior caso (cartão em 2x)', v_lucro_pix > v_lucro_card, format('pix=%s pior=%s', v_lucro_pix, v_lucro_card));
   perform pg_temp.ck('margem: taxas do método (Pix 0,99% e cartão 4,98%)', (private.taxa_pagamento('pix') ->> 'pct')::numeric = 0.99 and (private.taxa_pagamento('cartao') ->> 'pct')::numeric = 4.98);
 
   perform private.confirmar_pagamento(v_ord, 'mercadopago', 'pix', 'mp-1', now(), null);

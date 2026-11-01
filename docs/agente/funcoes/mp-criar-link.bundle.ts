@@ -79,6 +79,15 @@ async function requireOwnerOrServer(req: Request, db: SupabaseClient): Promise<'
   return 'dono'
 }
 
+/** Só a service role (outro servidor da própria Sua Gráfica, como o n8n). Nenhum usuário logado passa. */
+async function requireServiceRole(req: Request): Promise<boolean> {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+  if (!token) return false
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (serviceKey && token.length === serviceKey.length && token === serviceKey) return true
+  return ehServiceRole(token)
+}
+
 // Validação do X-Hub-Signature-256 da Meta (HMAC SHA256 do corpo bruto com o App Secret).
 // Sem dependências de Deno: roda também no Node para os testes.
 
@@ -264,6 +273,9 @@ function parseExpiraHoras(v: unknown): number {
   return n
 }
 
+/** Máximo de parcelas permitido no link (parametros_comerciais.parcelas_sem_juros_max). */
+const MAX_PARCELAS = 2
+
 function buildPreference(opts: {
   items: ItemPreferencia[]
   reference: string
@@ -287,8 +299,9 @@ function buildPreference(opts: {
     expiration_date_from: opts.now.toISOString(),
     expiration_date_to: to.toISOString(),
     statement_descriptor: 'SUAGRAFICABH',
-    // Pix e cartão. Boleto e lotérica ficam de fora.
-    payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }] },
+    // Pix e cartão. Boleto e lotérica ficam de fora. No máximo 2 parcelas (as sem juros que a conta absorve);
+    // acima disso só por decisão do dono. O "sem juros" em si é configurado na conta (Seu negócio > Parcelamento sem juros).
+    payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }], installments: MAX_PARCELAS },
   }
 }
 

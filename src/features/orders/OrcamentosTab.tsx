@@ -1,4 +1,6 @@
+import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, FileText, Send } from 'lucide-react'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -6,12 +8,45 @@ import { useToast } from '@/components/ui/toast'
 import { abrirPdfOrcamento, useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
 import { formatBRL, formatPct } from '@/lib/money'
 import { ARTE_LABEL, CONFIANCA_PRECO, ORCAMENTO_STATUS, orcamentoNumero, REGRA_PRECO } from '@/lib/orcamentos'
-import type { OrderCard } from '@/lib/orders'
+import { metodoLabel, type OrderCard } from '@/lib/orders'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 const dataHora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '')
 
 /** Aba Orçamentos do pedido. Margem, regra e confiança do preço aparecem só aqui, para o dono; nunca no PDF nem para o agente. */
+function LucroPorMetodo({ id }: { id: string }) {
+  const [aberto, setAberto] = useState(false)
+  const { data } = useQuery({
+    queryKey: ['orcamento-lucro-metodo', id],
+    enabled: aberto,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('orcamento_lucro_por_metodo', { p_orcamento: id })
+      if (error) throw new Error(error.message)
+      return data as { receita: number; pior_caso: string; metodos: { metodo: string; taxa_pct: number; taxa_valor: number; lucro_liquido: number }[] }
+    },
+  })
+  return (
+    <details className="mt-2 text-xs" onToggle={(e) => setAberto((e.target as HTMLDetailsElement).open)}>
+      <summary className="cursor-pointer font-bold text-muted-foreground">Taxa e lucro por método (só o dono vê)</summary>
+      {data && (
+        <table className="mt-1 w-full max-w-md tabular">
+          <thead><tr className="text-left text-muted-foreground"><th>Método</th><th>Taxa</th><th>Lucro líquido</th></tr></thead>
+          <tbody>
+            {data.metodos.map((m) => (
+              <tr key={m.metodo} className={m.metodo === data.pior_caso ? 'font-bold' : ''}>
+                <td>{metodoLabel(m.metodo === 'cartao_credito_2x' ? 'cartao_credito' : m.metodo)}{m.metodo === 'cartao_credito_2x' ? ' em 2x (pior caso)' : ''}</td>
+                <td>{formatPct(m.taxa_pct)} · {formatBRL(m.taxa_valor)}</td>
+                <td>{formatBRL(m.lucro_liquido)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </details>
+  )
+}
+
 export function OrcamentosTab({ order }: { order: OrderCard }) {
   const toast = useToast()
   const { data, isLoading } = useOrcamentosDoPedido(order.id, order.contact.id)
@@ -58,6 +93,7 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
               <div><dt className="text-xs text-muted-foreground" title="Só o dono vê">Regra do preço</dt><dd>{o.regra_preco ? (REGRA_PRECO[o.regra_preco] ?? o.regra_preco) : 'sem regra'}</dd></div>
               <div><dt className="text-xs text-muted-foreground" title="Só o dono vê">Confiança</dt><dd>{o.confianca_preco ? CONFIANCA_PRECO[o.confianca_preco] : 'sem dado'}</dd></div>
             </dl>
+            <LucroPorMetodo id={o.id} />
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" disabled={!o.pdf_path} onClick={() => abrirPdfOrcamento(o.pdf_path!).catch((e: Error) => toast('error', e.message))}>

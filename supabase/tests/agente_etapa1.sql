@@ -113,7 +113,7 @@ begin
   perform pg_temp.ck('trava: SKU inexistente é recusado', v_ok, v_msg);
 
   -- preço acima do piso_duro do item, mas que dá prejuízo no pedido (WhatsApp + IA): rascunho passa, envio é recusado
-  insert into public.orcamento_itens (orcamento_id, sku, descricao, quantidade, preco_unitario) values (v_o, v_small, 'Cartões', 1, ceil(v_cost / 0.8902 * 100) / 100 + 0.01);
+  insert into public.orcamento_itens (orcamento_id, sku, descricao, quantidade, preco_unitario) values (v_o, v_small, 'Cartões', 1, ceil(v_cost / 0.835 * 100) / 100 + 0.01);
   j := public.validar_margem(v_o);
   perform pg_temp.ck('margem: preço abaixo do piso é bloqueado com motivo e alternativa', j ->> 'status' = 'bloqueado' and j ->> 'alternativa' is not null, j::text);
   v_ok := false;

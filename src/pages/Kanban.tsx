@@ -11,7 +11,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { Filter, Plus, Save, Trash2 } from 'lucide-react'
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/empty-state'
@@ -21,13 +21,15 @@ import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
+import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/MetodoPagamentoField'
 import { OrderCardView, type CardActions } from '@/features/orders/OrderCardView'
 import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
-import { useAddOrderEvent, useCreateOrder, useMoveOrder, useOrders, useSettings, useUpdateOrder } from '@/hooks/orders'
+import { useAddOrderEvent, useCreateOrder, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
+import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
 import { contactLabel } from '@/lib/format'
 import { formatBRL, formatPct } from '@/lib/money'
-import { DEFAULT_KANBAN, isStalled, ORDER_STAGES, type OrderCard, type OrderStage } from '@/lib/orders'
+import { DEFAULT_KANBAN, isStalled, metodoValido, ORDER_STAGES, type OrderCard, type OrderStage } from '@/lib/orders'
 import { cn } from '@/lib/utils'
 
 const OrderDrawer = lazy(() => import('@/features/orders/OrderDrawer'))
@@ -94,9 +96,10 @@ export default function Kanban() {
   const { data: appSettings } = useSettings()
   const settings = appSettings?.kanban ?? DEFAULT_KANBAN
   const move = useMoveOrder()
-  const update = useUpdateOrder()
   const addEvent = useAddOrderEvent()
   const create = useCreateOrder()
+  const confirmarManual = useConfirmarManual()
+  const [payMetodo, setPayMetodo] = useState<MetodoEscolhido>({ metodo: '', parcelas: 1 })
   const { data: contacts } = useContacts()
   const saved = useSavedViews()
 
@@ -105,8 +108,11 @@ export default function Kanban() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [mobileStage, setMobileStage] = useState<OrderStage>('novo')
   const [payConfirm, setPayConfirm] = useState<{ order: OrderCard; then?: OrderStage } | null>(null)
+  useEffect(() => {
+    if (payConfirm) setPayMetodo({ metodo: metodoValido(payConfirm.order.payment_method) ? payConfirm.order.payment_method! : '', parcelas: payConfirm.order.parcelas ?? 1 })
+  }, [payConfirm])
   const [note, setNote] = useState<{ order: OrderCard; text: string } | null>(null)
-  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string } | null>(null)
+  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number } | null>(null)
   const [viewName, setViewName] = useState('')
   const openId = params.get('pedido')
 
@@ -114,6 +120,8 @@ export default function Kanban() {
   const byStage = useMemo(() => {
     const map = new Map<OrderStage, OrderCard[]>(ORDER_STAGES.map((s) => [s.value, []]))
     for (const o of filtered) map.get(o.stage)?.push(o)
+    // urgentes na frente (só ordena a fila, não muda prazo)
+    for (const lista of map.values()) lista.sort((a, b) => Number(b.urgente) - Number(a.urgente))
     return map
   }, [filtered])
 
@@ -167,8 +175,13 @@ export default function Kanban() {
 
   async function confirmPaid() {
     if (!payConfirm) return
+    if (!payMetodo.metodo) return toast('error', 'Escolha o método de pagamento.')
     const { order, then } = payConfirm
-    await update.mutateAsync({ id: order.id, patch: { payment_status: 'aprovado', payment_manual: true, payment_method: order.payment_method ?? 'manual' } })
+    try {
+      await confirmarManual.mutateAsync({ orderId: order.id, metodo: payMetodo.metodo, parcelas: payMetodo.parcelas })
+    } catch (e) {
+      return toast('error', (e as Error).message)
+    }
     setPayConfirm(null)
     toast('ok', 'Pagamento confirmado manualmente.')
     if (then) move.mutate({ order: { ...order, payment_status: 'aprovado', payment_manual: true }, to: then }, { onError: (e) => toast('error', e.message) })
@@ -187,7 +200,7 @@ export default function Kanban() {
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
               <Filter className="h-4 w-4" /> Filtros{hasFilters ? ' (ativos)' : ''}
             </Button>
-            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '' })}>
+            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1 })}>
               <Plus className="h-4 w-4" /> Novo pedido
             </Button>
           </div>
@@ -302,7 +315,7 @@ export default function Kanban() {
           {(orders?.length ?? 0) === 0 && (
             <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 text-sm">
               <p><strong>Nenhum pedido ainda.</strong> Cada pedido nasce de uma conversa e anda por estas etapas até a entrega.</p>
-              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '' })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
+              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1 })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
             </div>
           )}
           {/* Desktop e tablet: quadro com arrastar e soltar */}
@@ -338,11 +351,12 @@ export default function Kanban() {
         open={!!payConfirm}
         onOpenChange={(o) => !o && setPayConfirm(null)}
         title="Confirmar pagamento manualmente?"
-        description="Use só se você já recebeu o valor (Pix ou cartão) e o Mercado Pago ainda não confirmou. Fica registrado no histórico."
+        description="Use só se você já recebeu o valor e o Mercado Pago ainda não confirmou. Escolha como o cliente pagou: a taxa é calculada só desse método. Fica registrado no histórico."
       >
+        <div className="mb-4"><MetodoPagamentoField value={payMetodo} onChange={setPayMetodo} /></div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setPayConfirm(null)}>Cancelar</Button>
-          <Button onClick={confirmPaid} disabled={update.isPending}>Sim, já recebi</Button>
+          <Button onClick={confirmPaid} disabled={confirmarManual.isPending || !payMetodo.metodo}>Sim, já recebi</Button>
         </div>
       </Modal>
 
@@ -376,11 +390,12 @@ export default function Kanban() {
             ))}
           </Select>
           <Input aria-label="Título do pedido" placeholder="Ex.: 500 cartões de visita" value={newOrder?.title ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, title: e.target.value })} />
+          <MetodoPagamentoField label="Como o cliente vai pagar" value={{ metodo: newOrder?.metodo ?? '', parcelas: newOrder?.parcelas ?? 1 }} onChange={(m) => setNewOrder((n) => n && { ...n, ...m })} />
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setNewOrder(null)}>Cancelar</Button>
           <Button
-            disabled={!newOrder?.contactId || create.isPending}
+            disabled={!newOrder?.contactId || !newOrder.metodo || create.isPending}
             onClick={() =>
               newOrder &&
               create.mutate(newOrder, {

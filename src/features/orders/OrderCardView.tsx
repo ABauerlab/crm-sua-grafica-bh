@@ -68,7 +68,7 @@ export function OrderCardView({
           aria-label={`Pedido ${order.number}, ${contactLabel(order.contact)}. Enter para abrir, Espaço para mover.`}
           className="min-w-0 flex-1 cursor-grab touch-none text-left active:cursor-grabbing"
         >
-          <p className="truncate font-bold leading-tight">{contactLabel(order.contact)}</p>
+          <p className="truncate font-bold leading-tight">{order.urgente && <span className="mr-1 rounded-sm bg-brand-red px-1 text-[10px] font-black text-white" title={order.urgente_motivo ?? 'Cliente com urgência'}>URGENTE</span>}{contactLabel(order.contact)}</p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{summary(order)}</p>
         </button>
         <Menu>

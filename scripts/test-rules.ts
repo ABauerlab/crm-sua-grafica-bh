@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled } from '../src/lib/orders.ts'
+import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled, metodoLabel, metodoValido, pedidoAtrasado } from '../src/lib/orders.ts'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
@@ -205,10 +205,12 @@ assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((
 
 // Regra do negócio: o nome do fornecedor nunca aparece no código, nas telas, nos textos, nas mensagens nem na documentação.
 // (O termo é montado em partes para este arquivo não se acusar.)
-const forbidden = new RegExp(['z', 'a', 'p'].join('') + '(?!pier)', 'i')
+// Variações de grafia: separadores (ponto, traço, sublinhado, asterisco) e o "a" trocado por 4 ou @. Espaços ficam de fora de propósito (falso positivo em "faz a prova").
+const sep = '[._\\-*]{0,2}'
+const forbidden = new RegExp(['z', sep, '[a4@]', sep, 'p'].join('') + '(?!pier)', 'i')
 const root = new URL('..', import.meta.url).pathname
 const skip = new Set(['node_modules', '.git', 'dist', 'package-lock.json'])
-const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt)$/
+const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt|csv|yml|yaml|xml|sh|webmanifest)$/
 const leaks: string[] = []
 const walk = (dir: string) => {
   for (const name of readdirSync(dir)) {
@@ -223,5 +225,29 @@ const walk = (dir: string) => {
 }
 walk(root)
 assert.deepEqual(leaks, [], `nome do fornecedor encontrado em: ${leaks.join(', ')}`)
+// O detector pega as variações de grafia e não acusa texto comum 
+for (const v of ['z', 'Z'].flatMap((z) => [`${z}ap`, `${z}.a.p`, `${z}-4-p`, `${z}_a_p`])) assert.ok(forbidden.test(`fornecedor ${v} aqui`), `deveria acusar ${v}`)
+for (const ok of ['faz a prova', 'pizza pronta', 'zona de risco', 'caza paga']) assert.ok(!forbidden.test(ok), `não deveria acusar ${ok}`)
+// Documentos exigidos existem e a lista de exceções é só a de pastas geradas
+for (const f of ['docs/agente/decisoes-e-melhorias.md']) assert.ok(statSync(join(root, f)).isFile(), `falta ${f}`)
+
+// Atraso (Etapa 7B): só em produção, não entregue e fora do prazo útil. Antes da produção nunca é atrasado.
+const hoje = '2026-11-05'
+assert.equal(pedidoAtrasado({ stage: 'producao', due_date: '2026-11-04', delivered_at: null }, hoje), true)
+assert.equal(pedidoAtrasado({ stage: 'producao', due_date: '2026-11-05', delivered_at: null }, hoje), false, 'no dia do prazo ainda não é atraso')
+for (const stage of ['novo', 'cotando', 'aguardando_pagamento', 'pago', 'arte', 'prova'] as const) assert.equal(pedidoAtrasado({ stage, due_date: '2026-10-01', delivered_at: null }, hoje), false, `${stage} nunca é atrasado`)
+assert.equal(pedidoAtrasado({ stage: 'producao', due_date: '2026-10-01', delivered_at: '2026-11-01T10:00:00Z' }, hoje), false, 'entregue não é atrasado')
+assert.equal(pedidoAtrasado({ stage: 'producao', due_date: null, delivered_at: null }, hoje), false)
+
+// Pedido manual: método explícito. "manual" legado e vazio não valem.
+assert.equal(metodoValido('pix'), true)
+assert.equal(metodoValido('manual'), false)
+assert.equal(metodoValido(''), false)
+assert.equal(metodoValido(null), false)
+assert.equal(metodoLabel('dinheiro'), 'Dinheiro')
+
+// A trava de lucro de todos os caminhos tem teste SQL próprio (npm run test:sql) e ele cobre cada caminho exigido
+const trava = readFileSync(new URL('../supabase/tests/trava_lucro_caminhos.sql', import.meta.url), 'utf8')
+for (const caminho of ['preço unitário', 'orçamento:', 'condição especial', 'link:', 'pedido manual', 'importação do catálogo']) assert.ok(trava.includes(caminho), `trava_lucro_caminhos.sql precisa cobrir: ${caminho}`)
 
 console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas, importação de planilha e sigilo do fornecedor')

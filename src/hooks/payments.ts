@@ -145,8 +145,8 @@ export function useCriarLink() {
 export function useConfirmarManual() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (orderId: string) => {
-      const { error } = await supabase.rpc('confirmar_pagamento_manual', { p_order: orderId })
+    mutationFn: async (v: { orderId: string; metodo: string; parcelas?: number | null }) => {
+      const { error } = await supabase.rpc('confirmar_pagamento_manual', { p_order: v.orderId, p_metodo: v.metodo, p_parcelas: v.metodo === 'cartao_credito' ? (v.parcelas ?? 1) : null })
       if (error) throw new Error(error.message)
     },
     onSettled: () => {

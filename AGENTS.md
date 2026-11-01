@@ -21,3 +21,13 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 
 ## Passagem de bastão
 Se a sessão acabar no meio de uma etapa, registre em `docs/agente/progresso.md`, na seção `Em andamento`, o que foi feito, o que falta, a branch e os arquivos tocados, e faça commit na branch.
+
+## Decisões do dono (Etapa 7B, resumo; completo em `docs/agente/decisoes-e-melhorias.md`)
+- Pix sempre primeiro (qualquer banco). 2x sem juros só se o cliente perguntar ou hesitar; acima de 2x só por decisão do dono, com juros avisados antes.
+- Taxa embutida no preço: o piso usa a pior taxa possível (cartão em 2x) enquanto o método é desconhecido; depois do pagamento vale a taxa REAL do Mercado Pago.
+- Pedido manual exige método de pagamento escolhido; dinheiro e transferência sem taxa.
+- Prazo oficial nunca muda e conta da aprovação da arte. Atrasado = em produção e fora do prazo útil. Urgência só ordena a fila.
+- Pedido pago nunca é apagado (cancelar ou arquivar); exclusão lógica com motivo e auditoria.
+- Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
+- BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
+- Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.

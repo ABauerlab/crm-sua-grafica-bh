@@ -152,3 +152,13 @@ supabase db push        # migrations
 
 ## Limites conhecidos (Fase 1)
 Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., com `media_id` salvo. Templates com variáveis só no corpo (`{{n}}`); cabeçalho/botões dinâmicos não são suportados.
+
+## Decisões do dono (Etapa 7B, resumo; completo em `docs/agente/decisoes-e-melhorias.md`)
+- Pix sempre primeiro (qualquer banco). 2x sem juros só se o cliente perguntar ou hesitar; acima de 2x só por decisão do dono, com juros avisados antes.
+- Taxa embutida no preço: o piso usa a pior taxa possível (cartão em 2x) enquanto o método é desconhecido; depois do pagamento vale a taxa REAL do Mercado Pago.
+- Pedido manual exige método de pagamento escolhido; dinheiro e transferência sem taxa.
+- Prazo oficial nunca muda e conta da aprovação da arte. Atrasado = em produção e fora do prazo útil. Urgência só ordena a fila.
+- Pedido pago nunca é apagado (cancelar ou arquivar); exclusão lógica com motivo e auditoria.
+- Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
+- BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
+- Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.

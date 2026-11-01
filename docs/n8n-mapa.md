@@ -122,3 +122,6 @@ Credencial: `Supabase account` (service role) em todos os nós HTTP. Chama as fu
 Credencial: `Supabase account` (já atribuída a todos os nós HTTP). WF6, WF7 e WF8 só reservam no banco e chamam `enviar_proativo` por item; `enviar_proativo` chama `GBH | FERRAMENTA | condicao_especial` quando o passo é F3 ou F4, monta a mensagem no banco (`followup_montar` ou `pedido_aviso_montar`), envia por `proativo-enviar` e registra o resultado. Nenhum modelo de IA.
 **Ligação do WF9:** o n8n só aceita fluxo de erro publicado; na Etapa 8, publicar o WF9 e rodar `update_workflow` com `setWorkflowSettings { errorWorkflow: "vmaMVnZydmHpkW57" }` em cada workflow `GBH |` (exceto o próprio WF9).
 **Ativação (Etapa 8):** ligar WF9, WF8, WF7 e WF6 nessa ordem, depois de a IA ser ligada e dos templates 4 a 11 estarem aprovados. Enquanto a IA estiver pausada (`agente_config.ia_ligada` ou o botão do topo), WF6 e WF7 reservam nada e só adiam.
+
+## Etapa 7B, Bloco A
+`GBH | WF9 | Erros e observabilidade` ganhou o nó "Conferir divergência entre pagamento e pedido" (a cada hora, `pagamentos_divergencias_checar`). `agente_erro_registrar` agora classifica o erro e decide a ação. O WF9 segue **desativado e sem ligação** aos outros (n8n exige WF9 publicado). Credenciais: `docs/credenciais-n8n.md`.

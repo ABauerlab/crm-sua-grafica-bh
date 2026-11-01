@@ -89,12 +89,12 @@ begin
   update public.precos_mercado set coletado_em = now() - interval '15 days';
   j := public.consultar_cache_preco_mercado(v_sku2);
   perform pg_temp.ck('cache: após 14 dias pesquisa de novo', (j ->> 'precisa_pesquisar')::boolean, j::text);
-  perform pg_temp.ck('preço: pesquisa vencida (15 dias) não vale para o preço', public.calcular_preco(v_sku2) ->> 'regra' = 'custo_x_multiplicador');
+  perform pg_temp.ck('preço: pesquisa vencida (15 dias) não vale para o preço', public.calcular_preco(v_sku2) ->> 'regra' in ('custo_x_multiplicador', 'piso'));
   j := public.registrar_pesquisa_mercado((j ->> 'consulta_id')::uuid, '[]'::jsonb, 45000, 'tempo_esgotado');
   perform pg_temp.ck('pesquisa: falha ou estouro de tempo devolve sem dado', j ->> 'status' = 'sem_dado' or j ->> 'status' = 'erro', j::text);
   j := public.consultar_cache_preco_mercado(v_sku2);
   perform pg_temp.ck('cache: sem dado recente não repete a pesquisa de imediato (limite de taxa)', (j ->> 'sem_dado')::boolean and not (j ->> 'precisa_pesquisar')::boolean, j::text);
-  perform pg_temp.ck('pesquisa: sem dado cai na fórmula de custo com travas', public.calcular_preco(v_sku2) ->> 'regra' = 'custo_x_multiplicador' and (public.calcular_preco(v_sku2) ->> 'preco_total')::numeric >= (public.calcular_preco(v_sku2) ->> 'piso')::numeric);
+  perform pg_temp.ck('pesquisa: sem dado cai na fórmula de custo com travas', public.calcular_preco(v_sku2) ->> 'regra' in ('custo_x_multiplicador', 'piso') and (public.calcular_preco(v_sku2) ->> 'preco_total')::numeric >= (public.calcular_preco(v_sku2) ->> 'piso')::numeric);
 
   -- limite de taxa e robots por domínio
   j := public.reservar_acesso_dominio('www.alfacards.com.br');
