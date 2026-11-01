@@ -93,6 +93,17 @@ export interface Order {
   delivered_at: string | null
   subestatus_pedido: 'em_producao' | 'pronto_retirada' | 'saiu_entrega' | null
   subestatus_em: string | null
+  parcelas: number | null
+  taxa_fonte: 'estimada' | 'metodo' | 'mercado_pago'
+  taxa_pagamento_real_valor: number | null
+  liquido_recebido: number | null
+  urgente: boolean
+  urgente_motivo: string | null
+  urgente_em: string | null
+  excluido_em: string | null
+  arquivado_em: string | null
+  cancelado_em: string | null
+  reembolso_pendente: boolean
   enviado_fabrica_em: string | null
   created_at: string
   updated_at: string
@@ -188,4 +199,25 @@ export const SUBESTATUS_LABEL: Record<'em_producao' | 'pronto_retirada' | 'saiu_
   em_producao: 'Em produção',
   pronto_retirada: 'Pronto para retirada',
   saiu_entrega: 'Saiu para entrega',
+}
+
+/** Métodos que o dono escolhe no pedido manual. Dinheiro e transferência não têm taxa; crédito aceita parcelas. */
+export const METODOS_PAGAMENTO = [
+  { value: 'pix', label: 'Pix' },
+  { value: 'cartao_credito', label: 'Cartão de crédito' },
+  { value: 'cartao_debito', label: 'Cartão de débito' },
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'transferencia', label: 'Transferência' },
+  { value: 'outro', label: 'Outro' },
+] as const
+export type MetodoPagamento = (typeof METODOS_PAGAMENTO)[number]['value']
+export const metodoValido = (m: string | null | undefined): m is MetodoPagamento => METODOS_PAGAMENTO.some((x) => x.value === m)
+export const metodoLabel = (m: string | null | undefined) => METODOS_PAGAMENTO.find((x) => x.value === m)?.label ?? (m === 'cartao' ? 'Cartão' : m || 'Não definido')
+
+/**
+ * Regra única de atraso (a mesma de public.pedido_esta_atrasado): só é atrasado o pedido que JÁ está em produção,
+ * não foi entregue e passou do prazo útil. Antes da produção nunca é atrasado. `hoje` no formato AAAA-MM-DD.
+ */
+export function pedidoAtrasado(o: Pick<Order, 'stage' | 'due_date' | 'delivered_at'>, hoje: string): boolean {
+  return o.stage === 'producao' && !o.delivered_at && !!o.due_date && o.due_date < hoje
 }

@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { taxaRealDe, metodoDe } from '../supabase/functions/_shared/mppay.ts'
 import { hmacSha256Hex } from '../supabase/functions/_shared/signature.ts'
 import {
   buildItems, buildManifest, buildPreference, formatReference, mapStatus, parseExpiraHoras, parseModo, parseReference, parseSignatureHeader, toCents, verifyMpSignature,
@@ -86,6 +87,16 @@ assert.equal(pref.auto_return, 'approved')
 assert.equal(pref.expires, true)
 assert.equal(pref.back_urls.success, 'https://crm.exemplo.com.br/pagamento/obrigado?r=ok')
 assert.deepEqual(pref.payment_methods.excluded_payment_types, [{ id: 'ticket' }, { id: 'atm' }])
+assert.equal(pref.payment_methods.installments, 2, 'link limitado a 2 parcelas')
+
+// Taxa real do Mercado Pago (fee_details) e método do pagamento
+assert.deepEqual(taxaRealDe({ fee_details: [{ type: 'mercadopago_fee', amount: 9.9 }, { type: 'financing_fee', amount: 11.5 }], transaction_details: { net_received_amount: 178.6 }, installments: 2 }), { taxa: 21.4, liquido: 178.6, parcelas: 2 })
+assert.equal(taxaRealDe({ fee_details: [] }), null)
+assert.equal(taxaRealDe({}), null)
+assert.equal(taxaRealDe({ fee_details: [{ amount: 'x' }] }), null)
+assert.equal(metodoDe({ payment_method_id: 'pix' }), 'pix')
+assert.equal(metodoDe({ payment_method_id: 'visa', payment_type_id: 'credit_card' }), 'cartao_credito')
+assert.equal(metodoDe({ payment_method_id: 'debvisa', payment_type_id: 'debit_card' }), 'cartao_debito')
 assert.ok(!JSON.stringify(pref).includes('unit_cost'), 'sem custo')
 
 // Nenhum segredo do Mercado Pago no repositório (tokens APP_USR/TEST e chaves de 64 hex ao lado de "secret")

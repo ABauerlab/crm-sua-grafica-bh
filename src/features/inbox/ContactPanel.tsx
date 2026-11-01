@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { ContactProfile } from '@/features/contacts/ContactProfile'
 import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/sheet'
+import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/MetodoPagamentoField'
 import { useToast } from '@/components/ui/toast'
 import { useCreateOrder } from '@/hooks/orders'
 import { formatPhone } from '@/lib/format'
@@ -16,6 +19,8 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
   const toast = useToast()
   const { profile } = useAuth()
   const create = useCreateOrder()
+  const [novoPedido, setNovoPedido] = useState(false)
+  const [metodoNovo, setMetodoNovo] = useState<MetodoEscolhido>({ metodo: '', parcelas: 1 })
   const { contact } = conversation
 
   const deleteContact = useMutation({
@@ -41,15 +46,27 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
       <Button
         className="w-full"
         disabled={create.isPending}
-        onClick={() =>
-          create.mutate(
-            { contactId: contact.id, title: '' },
-            { onSuccess: (id) => navigate(`/kanban?pedido=${id}`), onError: (e) => toast('error', e.message) },
-          )
-        }
+        onClick={() => setNovoPedido(true)}
       >
         <Plus className="h-4 w-4" /> Criar pedido
       </Button>
+      <Modal open={novoPedido} onOpenChange={setNovoPedido} title="Novo pedido" description="Escolha como o cliente vai pagar. A taxa é calculada só desse método.">
+        <MetodoPagamentoField label="Como o cliente vai pagar" value={metodoNovo} onChange={setMetodoNovo} />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setNovoPedido(false)}>Cancelar</Button>
+          <Button
+            disabled={!metodoNovo.metodo || create.isPending}
+            onClick={() =>
+              create.mutate(
+                { contactId: contact.id, title: '', metodo: metodoNovo.metodo, parcelas: metodoNovo.parcelas },
+                { onSuccess: (id) => navigate(`/kanban?pedido=${id}`), onError: (e) => toast('error', e.message) },
+              )
+            }
+          >
+            Criar pedido
+          </Button>
+        </div>
+      </Modal>
 
       <ContactProfile contact={contact} lastContactAt={conversation.last_message_at} />
 

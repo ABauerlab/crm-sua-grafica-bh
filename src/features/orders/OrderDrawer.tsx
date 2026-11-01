@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
 import { StatusPedido } from './StatusPedido'
+import { ExcluirPedido } from './ExcluirPedido'
+import { MetodoPagamentoField, type MetodoEscolhido } from './MetodoPagamentoField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +38,7 @@ import {
   formatDuration,
   hoursInStage,
   ORDER_STAGES,
+  metodoValido,
   PAYMENT_LABELS,
   stageInfo,
   type ArtStatus,
@@ -160,6 +163,13 @@ function SummaryTab({ order }: { order: OrderCard }) {
       <Field label="Notas">
         <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => notes !== (order.notes ?? '') && update.mutate({ id: order.id, patch: { notes: notes.trim() || null } })} placeholder="Observações internas do pedido" />
       </Field>
+
+      <label className="flex items-center gap-2 text-sm">
+        <Switch checked={order.urgente} onCheckedChange={(v) => update.mutate({ id: order.id, patch: { urgente: v, urgente_em: v ? new Date().toISOString() : null } })} aria-label="Urgente" />
+        Cliente com urgência (só põe o pedido na frente da fila; o prazo oficial não muda)
+      </label>
+
+      <ExcluirPedido order={order} onDone={() => window.history.back()} />
     </div>
   )
 }
@@ -438,6 +448,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
   const [link, setLink] = useState(order.payment_link ?? '')
   const [method, setMethod] = useState(order.payment_method ?? '')
   const [confirm, setConfirm] = useState(false)
+  const [manualMetodo, setManualMetodo] = useState<MetodoEscolhido>({ metodo: metodoValido(order.payment_method) ? order.payment_method : '', parcelas: order.parcelas ?? 1 })
   const [horas, setHoras] = useState('48')
   const criar = useCriarLink()
   const confirmar = useConfirmarManual()
@@ -491,13 +502,11 @@ function PaymentTab({ order }: { order: OrderCard }) {
             {(Object.keys(PAYMENT_LABELS) as PaymentStatus[]).map((s) => <option key={s} value={s}>{PAYMENT_LABELS[s]}</option>)}
           </Select>
         </Field>
-        <Field label="Método">
-          <Select value={method} onChange={(e) => { setMethod(e.target.value); update.mutate({ id: order.id, patch: { payment_method: e.target.value || null } }) }}>
-            <option value="">Não definido</option>
-            <option value="pix">Pix</option>
-            <option value="cartao">Cartão</option>
-            <option value="manual">Manual / dinheiro</option>
-          </Select>
+        <Field label="Método" hint="Escolha explícita: a taxa é calculada só do método escolhido. Pagamentos do Mercado Pago gravam a taxa real.">
+          <MetodoPagamentoField label="Método de pagamento" value={{ metodo: metodoValido(method) ? method : '', parcelas: order.parcelas ?? 1 }}
+            onChange={(m) => { setMethod(m.metodo); update.mutate({ id: order.id, patch: { payment_method: m.metodo || null, parcelas: m.metodo === 'cartao_credito' ? m.parcelas : null } }) }} />
+          {!metodoValido(method) && order.payment_status !== 'aprovado' && <p className="mt-1 text-xs text-muted-foreground">Sem método escolhido: o lucro usa a pior taxa possível ({formatPct(order.payment_fee_pct)}).</p>}
+          {order.taxa_fonte === 'mercado_pago' && <p className="mt-1 text-xs font-bold text-brand-green">Taxa real do Mercado Pago: {formatBRL(order.taxa_pagamento_real_valor ?? 0)} ({formatPct(order.payment_fee_pct)}). Líquido recebido: {formatBRL(order.liquido_recebido ?? 0)}.</p>}
         </Field>
         <Field label="ID do pagamento"><Input value={order.payment_external_id ?? ''} readOnly placeholder="Preenchido pelo Mercado Pago" /></Field>
         <Field label="Confirmado em"><Input value={dt(order.payment_confirmed_at)} readOnly /></Field>
@@ -533,10 +542,11 @@ function PaymentTab({ order }: { order: OrderCard }) {
         <Send className="h-4 w-4" /> {send.isPending ? 'Enviando…' : 'Reenviar link ao cliente'}
       </Button>
 
-      <Modal open={confirm} onOpenChange={setConfirm} title="Confirmar pagamento manualmente?" description="Use só se você já recebeu o valor. Fica registrado no histórico.">
+      <Modal open={confirm} onOpenChange={setConfirm} title="Confirmar pagamento manualmente?" description="Use só se você já recebeu o valor. Escolha como o cliente pagou. Fica registrado no histórico.">
+        <div className="mb-4"><MetodoPagamentoField value={manualMetodo} onChange={setManualMetodo} /></div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setConfirm(false)}>Cancelar</Button>
-          <Button onClick={() => { confirmar.mutate(order.id, { onError: (e) => toast('error', e.message) }); setConfirm(false) }}>Sim, já recebi</Button>
+          <Button disabled={!manualMetodo.metodo || confirmar.isPending} onClick={() => { confirmar.mutate({ orderId: order.id, metodo: manualMetodo.metodo, parcelas: manualMetodo.parcelas }, { onError: (e) => toast('error', e.message) }); setConfirm(false) }}>Sim, já recebi</Button>
         </div>
       </Modal>
     </div>

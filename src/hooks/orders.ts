@@ -23,7 +23,7 @@ export function useOrders() {
     queryKey: ['orders'],
     queryFn: async (): Promise<OrderCard[]> => {
       const [orders, fins] = await Promise.all([
-        supabase.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }).limit(2000),
+        supabase.from('orders').select(ORDER_SELECT).is('excluido_em', null).is('arquivado_em', null).order('created_at', { ascending: false }).limit(2000),
         supabase.from('order_financials').select('*').limit(2000),
       ])
       if (orders.error) throw orders.error
@@ -160,7 +160,8 @@ export function useAddOrderEvent() {
 export function useCreateOrder() {
   const invalidate = useInvalidateOrders()
   return useMutation({
-    mutationFn: async (input: { contactId: string; title: string }) => {
+    mutationFn: async (input: { contactId: string; title: string; metodo: string; parcelas?: number | null }) => {
+      if (!input.metodo) throw new Error('Escolha o método de pagamento.')
       const { data: contact, error: cErr } = await supabase
         .from('contacts')
         .select('id, first_referral, conversations(id)')
@@ -176,6 +177,8 @@ export function useCreateOrder() {
           contact_id: input.contactId,
           conversation_id: convId ?? null,
           title: input.title.trim() || 'Novo pedido',
+          payment_method: input.metodo,
+          parcelas: input.metodo === 'cartao_credito' ? Math.max(1, input.parcelas ?? 1) : null,
           origin_ad_id: ref?.source_id ?? null,
           origin_label: ref?.headline ?? null,
           origin_url: ref?.source_url ?? null,
