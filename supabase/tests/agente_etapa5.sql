@@ -23,7 +23,7 @@ begin
   -- WF1: guarda de roteamento
   v_r := public.agente_entrada(v_m1);
   perform pg_temp.chk((v_r ->> 'processar')::boolean, 'entrada: mensagem normal segue');
-  perform pg_temp.chk(v_r ->> 'modelo_padrao' = 'gemini-2.5-flash', 'entrada: devolve o modelo padrão');
+  perform pg_temp.chk(v_r ->> 'modelo_padrao' = 'gemini-3-flash-preview', 'entrada: devolve o modelo padrão');
   perform pg_temp.chk((select ai_handled and modo_atendimento = 'ia' from public.conversations where id = v_cv), 'entrada: conversa nova (nasce humana) é assumida pela IA no primeiro contato');
   perform pg_temp.chk((public.agente_entrada(v_m1) ->> 'motivo') = 'duplicada', 'entrada: mesma mensagem duas vezes é duplicada');
   perform pg_temp.chk((public.agente_entrada(gen_random_uuid()) ->> 'motivo') = 'mensagem_inexistente', 'entrada: mensagem inexistente');
@@ -79,6 +79,13 @@ begin
   perform pg_temp.chk(not (public.agente_saida_segura(v_ex, 'Passa na sala 2217') ->> 'ok')::boolean, 'saída: bloqueia sala do escritório');
   perform pg_temp.chk(not (public.agente_saida_segura(v_ex, '   ') ->> 'ok')::boolean, 'saída: texto vazio é bloqueado');
   perform pg_temp.chk(public.agente_saida_segura(v_ex, E'Oi\n\n\n\n- um\n- dois') ->> 'texto' = E'Oi\num\ndois', 'saída: tira marcadores e linhas em branco demais');
+
+  -- valores do orçamento aberto da conversa (vindos do contexto, sem ferramenta) são aceitos
+  v_o := public.montar_orcamento(v_ct, '[{"sku":"CFV02","quantidade":1}]', jsonb_build_object('conversation_id', v_cv, 'teste', true, 'bairro', 'Centro', 'arte', 'nenhuma'));
+  perform pg_temp.chk((public.agente_saida_segura(v_ex, 'O total do seu orçamento é R$ ' || replace(to_char((v_o ->> 'total')::numeric, 'FM999G990D00'), '.', ',') ) ->> 'ok')::boolean
+    or (v_o ->> 'total')::numeric >= 1000, 'saída: total do orçamento aberto da conversa é aceito sem ferramenta');
+  perform pg_temp.chk(not (public.agente_saida_segura(v_ex, 'Fica R$ 7,77 certinho') ->> 'ok')::boolean, 'saída: valor fora do orçamento e das ferramentas continua bloqueado');
+  delete from public.orcamentos where contact_id = v_ct;
 
   -- detector de loop e log com custo
   perform pg_temp.chk((public.agente_tool_inicio(v_ex, 'buscar_produto') ->> 'permitido')::boolean, 'loop: 1a chamada passa');
