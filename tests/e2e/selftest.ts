@@ -113,4 +113,9 @@ const e = montarEntradas(CENARIOS.find((c) => c.id === 'funil-feliz-cartao')!, C
 assert.equal(e.continuar_conversation, 'conv-1'); assert.deepEqual(e.preparar, ['pedido_pago']); assert.equal(e.mensagens[0].texto, 'Paguei! Já caiu?')
 assert.equal(montarEntradas(CENARIOS[0], CENARIOS[0].turnos[0], 0, 1).anuncio?.source_id, 'AD-E2E-CARTAO')
 
+// o juiz sabe do estado preparado (pedido pago, orçamento aberto), senão acusa valor "inventado" que veio do banco
+const pj = montarPromptJuiz(res, CENARIOS.find((c) => c.id === 'pagamento-cartao-2x')!)
+assert.ok(pj.usuario.includes('R$ 173,90') && pj.usuario.includes('Estado do sistema antes da conversa'))
+assert.ok(montarPromptJuiz(res, CENARIOS.find((c) => c.id === 'excecao-reclamacao')!).usuario.includes('PAGO'))
+
 console.log(`OK: teste ponta a ponta (offline) com ${CENARIOS.length} cenários, ${CENARIOS.length * 3} conversas por rodada completa`)

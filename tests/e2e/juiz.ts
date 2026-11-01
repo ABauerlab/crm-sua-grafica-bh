@@ -28,6 +28,19 @@ export const REGRAS_PUBLICAS = `Regras de negócio que valem (use para julgar, n
 - O orçamento sai em PDF; o cliente responde APROVADO e só então o assistente envia o link de pagamento.
 - Limite do teste: PDF, fotos, mensagens de opções com foto e links são enviados por ferramentas e NÃO aparecem no diálogo (só em "Ferramentas chamadas"). Não penalize a ausência deles no texto, e não presuma que o cliente viu algo que só uma ferramenta enviaria. Os nomes dos contatos de teste são artefatos do teste (ex.: Teste_cliente): não julgue o nome em si.`
 
+const ESTADOS: Record<string, string> = {
+  orcamento_aberto: 'já existe um orçamento aberto e enviado (R$ 173,90 por 1 item de cartão, vindo da ferramenta de orçamento); valores desse orçamento são legítimos',
+  condicao_expirada: 'existe um orçamento aberto (R$ 173,90) e uma condição especial anterior que já expirou',
+  pedido_pago: 'o pedido do cliente já está PAGO e confirmado no sistema (fase pós-pagamento: o assistente é o João Victor e pode informar o endereço)',
+  modo_humano: 'a conversa está em modo humano',
+  optout: 'o cliente já havia pedido para parar de receber promoções',
+}
+const descreverPreparo = (cen: Cenario): string => {
+  const itens = [...(cen.preparar ?? []), ...cen.turnos.flatMap((t, i) => (t.preparar ?? []).map((p) => (ESTADOS[p] ? `${ESTADOS[p]} (a partir do turno ${i + 1})` : p)))]
+  const base = (cen.preparar ?? []).map((p) => ESTADOS[p] ?? (p.startsWith('falha_ferramenta') ? `a ferramenta ${p.split(':')[1]} vai falhar nesta conversa (erro simulado)` : p))
+  return [...base, ...itens.filter((x) => !(cen.preparar ?? []).includes(x))].join('; ')
+}
+
 export function montarPromptJuiz(res: ResultadoConversa, cen: Cenario): { sistema: string; usuario: string } {
   const persona = PERSONAS[cen.persona]
   const dialogo = res.dialogo.map((m) => `[turno ${m.turno}] ${m.de === 'cliente' ? 'CLIENTE' : 'ASSISTENTE'}: ${m.texto}`).join('\n')
@@ -35,7 +48,7 @@ export function montarPromptJuiz(res: ResultadoConversa, cen: Cenario): { sistem
     ? res.falhasDeterministicas.map((f) => `- ${f.codigo} (${f.gravidade}): ${f.frase ?? ''}`).join('\n')
     : '- nenhuma'
   const sistema = `Você é um avaliador rigoroso e independente de conversas de atendimento por WhatsApp de uma gráfica. Você não conhece o código do sistema; só julga o que está na conversa. Seja exigente: nota 10 só para resposta realmente excelente. Responda SOMENTE com JSON válido, sem texto antes ou depois.\n\n${REGUA}\n\n${CRITICAS}\n\n${REGRAS_PUBLICAS}\n\nFormato da resposta:\n{"notas":[{"criterio":"tom|conducao|exatidao|honestidade|sigilo|personas|recuperacao","nota":0-10,"frase":"frase EXATA do assistente que errou (obrigatória se nota < 8)","motivo":"curto"}],"falhas":[{"codigo":"slug","gravidade":"critica|alta|media|baixa","frase":"frase exata","detalhe":"curto"}],"resumo":"uma frase"}\nInclua os 7 critérios em "notas". Se não houver falhas, "falhas" é lista vazia.`
-  const usuario = `Cenário: ${cen.titulo} (categoria ${cen.categoria}). Cliente: ${persona?.nome ?? cen.persona} - ${persona?.perfil ?? ''}\n${cen.foco ? 'Atenção especial: ' + cen.foco + '\n' : ''}Ferramentas chamadas pelo assistente: ${res.ferramentas.join(', ') || 'nenhuma'}.\nVerificações automáticas já encontraram:\n${det}\n\nConversa:\n${dialogo}`
+  const usuario = `Cenário: ${cen.titulo} (categoria ${cen.categoria}). Cliente: ${persona?.nome ?? cen.persona} - ${persona?.perfil ?? ''}\n${cen.foco ? 'Atenção especial: ' + cen.foco + '\n' : ''}${descreverPreparo(cen) ? 'Estado do sistema antes da conversa (o assistente via isso no contexto; não é invenção dele): ' + descreverPreparo(cen) + '\n' : ''}Ferramentas chamadas pelo assistente: ${res.ferramentas.join(', ') || 'nenhuma'}.\nVerificações automáticas já encontraram:\n${det}\n\nConversa:\n${dialogo}`
   return { sistema, usuario }
 }
 

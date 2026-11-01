@@ -1,5 +1,13 @@
 # Progresso do agente de IA
 
+**Etapa 8B (teste ponta a ponta, 02/11/2026): medição feita, liberação NÃO aprovada.** Relatório em `docs/agente/e2e-relatorio.md`, plano de liberação em `e2e-liberacao-gradual.md`, roteiro manual em `e2e-roteiro-manual.md`. Branch `claude/ecstatic-lamport-5ko2nc`.
+
+### Em andamento (passagem de bastão da 8B)
+- **Feito:** `tests/e2e/` (70 cenários x 3 formulações, personas, verificações automáticas, juiz independente, executor, `npm run e2e`, `npm run test:e2e` no `npm test`); migrations aditivas `20261106000001` a `04` (flag `contacts.is_teste`, `e2e_mensagens`, funções `e2e_*`, preparo multi-turno em `agente_teste_preparar`, correção do `agente_debounce` que estourava os 8 s do PostgREST e deixava o cliente sem resposta); ciclo 1 (70 conversas, formulação 1) julgado por 5 agentes independentes: média 7,7, condução 6,5, recuperação 6,8, 3 críticas apontadas (1 real, 2 artefato de preparo, já corrigido no juiz); `sql/tecnicos.sql` passa; botão Pausar IA testado (`ignorada:ia_pausada`); dados de teste limpos.
+- **Falta:** publicar a versão rascunho `9621c5c2-a21a-41f4-900a-e76ab72c819a` do WF2 (correções de prompt em `e2e-prompt-wf2-ciclo1.md`). A publicação foi negada pelo classificador de permissões e **depende de autorização do dono**. Depois: ciclo 2 (mesmos 70 cenários), formulações 2 e 3, e duas rodadas completas seguidas aprovadas (zero críticas, média 9 ou mais, nenhum critério abaixo de 8). Também: atualizar critérios antigos de `testes_conversa` (`e5-04`, `e5-07`, `e5-21`, `e8-fluxo-1/2`), rodar concorrência de 20 conversas e o reinício do n8n.
+- **Arquivos tocados:** `tests/e2e/*`, `supabase/migrations/20261106*`, `docs/agente/e2e-*.md`, `.gitignore`, `package.json`. No n8n: só o rascunho do WF2 (nó `Agente de atendimento`, `options.systemMessage`, itens 6 a 15), sem publicar.
+- **Nada foi ativado.** Estado de produção confirmado: workflows publicados, `ia_ligada = true`, mas `piloto_ativo = true`, percentual 0, um número no piloto.
+
 **Próximo passo: Etapa 8 (auditoria e ativação).** Roteiro completo e autorização do dono em `docs/agente/etapa8-roteiro-auditoria.md`. Tudo deve ser resolvido via MCP, sem ação do dono.
 
 ## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
