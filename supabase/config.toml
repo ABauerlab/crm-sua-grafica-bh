@@ -58,3 +58,7 @@ verify_jwt = false
 # Confirmação ao cliente depois do pagamento (WF5): só a service role
 [functions.cliente-pago-avisar]
 verify_jwt = false
+
+# Envio proativo (follow-ups, pós-venda e avisos de status): só a service role (WF6, WF7, WF8)
+[functions.proativo-enviar]
+verify_jwt = false
