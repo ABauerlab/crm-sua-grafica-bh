@@ -193,3 +193,48 @@ Cada rodada é uma linha em `agente_execucoes` (status, modelo, tokens, custo, f
 
 ### Edge Functions desta etapa
 `agente-enviar` (nova, só service role: confere IA, modo humano, pagamento e janela, envia texto e grava a mensagem), `whatsapp-webhook` (avisa o WF1 com o id da mensagem; sem `N8N_WF1_URL` e `N8N_WF1_TOKEN` não faz nada) e `whatsapp-media` (agora também aceita a service role, para o WF1 baixar o áudio).
+
+## Etapa 7: follow-ups, pós-venda, status do pedido e observabilidade
+
+Regra de ouro mantida: o modelo de IA não participa de nada desta etapa. Quem recebe, quando, por qual canal, com qual texto e com qual condição especial é decidido por funções do banco; o n8n só orquestra e a Edge Function `proativo-enviar` só envia. Migration `20261102000001` (cópia em `docs/agente/aplicar-etapa7.sql`), testes `supabase/tests/followup_etapa7.sql` (96 casos, relógio acelerado) e `npm run test:proativo`.
+
+### Cobrança de templates e janela do anúncio (Passo 0, conferido em 01/11/2026 na documentação oficial da Meta)
+Fonte: [Pricing on the WhatsApp Business Platform](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing.md).
+- **Janela de atendimento (24 h)**: abre quando o cliente escreve e renova a cada mensagem dele. Só dentro dela vale texto livre; fora dela, só template aprovado.
+- **Entrada por anúncio (Free Entry Point)**: se o cliente chegou por um anúncio de clique para o WhatsApp (Android ou iOS) e a empresa responde dentro das 24 h, essa resposta não é cobrada e abre a janela do anúncio. Enquanto ela estiver aberta, a Meta não cobra mensagens de marketing, utilidade, autenticação nem serviço, **inclusive templates**. A página atual fala em até 7 dias de duração (o CRM guarda 72 h em `conversations.ad_window_until`, que é o lado conservador). A janela do anúncio **não** libera texto livre depois das 24 h: só barateia template.
+- **Mudança de 1º/10/2026**: voltaram a ser cobradas por mensagem as de serviço (texto livre dentro das 24 h) acima das primeiras 1.000 por mês por número, e as de utilidade enviadas dentro da janela de 24 h. Continuam grátis: mensagens do cliente, a janela do anúncio e as 1.000 primeiras de serviço do mês.
+- **Efeito no desenho**: F1 e F2 saem como texto livre (dentro das 24 h, na maior parte do tempo grátis pela franquia de 1.000). F3 e F4 (dia 2 e dia 5) saem por template de marketing, pagos, exceto se a janela do anúncio ainda estiver aberta. O painel estima o custo de templates do mês (`app_settings.observabilidade`: R$ 0,35 por marketing e R$ 0,04 por utilidade, estimativas para você revisar com a fatura). Templates enviados dentro de `ad_window_until` entram como R$ 0.
+- **Correção para a Etapa 8**: `agente-enviar` (Etapa 5) usa `ad_window_until` para liberar texto livre, o que a Meta não aceita depois das 24 h. `proativo-enviar` já usa só as 24 h; ajustar o `agente-enviar` na auditoria.
+
+### WF6 `GBH | WF6 | Follow-ups` (a cada 15 minutos)
+Fila `followup_fila` (regras em `followup_regras`, editáveis em Configurações > Follow-ups). Passos: `expirar_condicoes_e_orcamentos` > `followup_agendar` (cria F1 a F4 de orçamentos enviados e PAG de links ativos, idempotente por `chave`) > `followup_reservar('cadencia')` > por item, o sub-workflow `GBH | FERRAMENTA | enviar_proativo`.
+- F1 (2 h) e F2 (20 h): texto livre sem condição; F2 cita validade e data de pronto (template `orcamento_vence_hoje` se a janela fechou).
+- F3 (dia 2, G2) e F4 (dia 5, G3): o sub-workflow chama `GBH | FERRAMENTA | condicao_especial` (`oferecer_condicao_especial`, que cria o orçamento atualizado e o link novo de 24 h). Com condição: texto livre (se a janela está aberta) ou `condicao_especial_orcamento`. Sem condição: `orcamento_vence_hoje` (F3) ou `ultima_chance_orcamento` (F4). Depois do F4 enviado, o contato vira `frio` e a cadência para.
+- Pagamento pendente: PAG_1H, PAG_6H e PAG_24H (`pagamento_pendente` fora da janela). Se houver condição vigente, o último lembrete (texto livre) avisa a hora em que ela expira.
+- Guardas em SQL (`followup_reservar`): cancela se `optout`, pago (orçamento, pedido ou qualquer pedido pago do contato depois do orçamento), orçamento encerrado ou vencido, link inativo, recompra já feita; pula em modo humano; adia (continua pendente) com IA pausada, fora de 8h às 20h e acima de 1 mensagem proativa por dia por contato. Caçador de desconto e "usou condição nos últimos 30 dias" são decididos por `calcular_condicao_especial`: sem condição, só o lembrete simples.
+- Resposta do cliente cancela os pendentes (gatilho da Etapa 5). Para "vou pensar", o agente reabre a linha com `agendar_followup` (`agente_agendar_followup` agora reabre uma linha cancelada por resposta).
+- Expiração: ao passar `valida_ate`, a condição vira `expirada`, o link é desativado, o orçamento atualizado vence e o pedido volta ao preço normal; a condição não se repete (`ja_houve_condicao_neste_orcamento`).
+- Registro: `followup_resultado` grava o envio em `followup_fila` e o passo e o canal em `condicoes_especiais` e `precos_praticados` (base do aprendizado e do relatório semanal da Etapa 3).
+- Contatos com a tag `teste` nunca vão à Meta: o resultado é registrado como `simulado`.
+
+### WF7 `GBH | WF7 | Pós-venda e recompra` (a cada 10 minutos)
+Ao entrar em "Entregue" (por qualquer caminho, inclusive arrastar no kanban) o gatilho `orders_entregue_agenda` cria `POS_ENTREGA` (dia seguinte, com um upsell relevante por produto) e `RECOMPRA_CARTAO` (60 dias), `RECOMPRA_ADESIVO` (45) ou `RECOMPRA_PANFLETO` (30), só do produto comprado, uma vez por ciclo, pulando quem já recomprou ou pediu para parar. Prazos editáveis. Configurações > Follow-ups > Recompra lista os ciclos e o botão "Disparar agora" reagenda a linha (o envio sai pelo WF7).
+
+### WF8 `GBH | WF8 | Status do pedido` (a cada minuto)
+O card em Produção ganha `subestatus_pedido` (`em_producao`, `pronto_retirada`, `saiu_entrega`) com botões no cartão e no detalhe (aba Entrega). `pedido_definir_subestatus` valida (Produção, pedido pago, retirada x entrega) e cria um registro único em `pedido_avisos` (por pedido e tipo: nunca duas vezes o mesmo aviso). O WF8 reserva, monta e envia: `pedido_pronto_retirada` (ou texto livre) com endereço, horário e próximo horário de atendimento se estiver fora do expediente; `pedido_saiu_entrega` com rastreio ou "o entregador já está a caminho". O resultado aparece no cartão ("Aviso de pronto: enviado ✓"), no detalhe e no histórico do pedido; falha gera alerta alto ao dono. `pedido_marcar_entregue` move para Entregue e agenda satisfação e recompra.
+
+### WF9 `GBH | WF9 | Erros e observabilidade`
+Error Trigger: `agente_erro_registrar` grava em `agent_logs`, cria alerta de gravidade alta (um por workflow a cada 30 minutos) e libera envios reservados e travados (reprocesso seguro), e `alertas-enviar` entrega na hora. Agenda de hora em hora: `observabilidade_checar` alerta se o custo estimado da IA no dia passar do teto (`app_settings.observabilidade.teto_custo_dia_brl`, padrão R$ 15, editável em Configurações > Follow-ups). Agenda de 30 minutos: `followup_liberar_travados`.
+**Ligação aos outros workflows:** o n8n só aceita como fluxo de erro um workflow publicado. Como nada pode ser ativado antes da Etapa 8, a ligação (`settings.errorWorkflow`) fica para a ativação: publicar o WF9 e ligá-lo aos 27 workflows `GBH |`.
+
+### CRM
+- **Pedidos** (`/pedidos`): tabela com as abas Aguardando arte, Em produção, Prontos para retirada, Entregas do dia, Atrasados (em vermelho), Pagos hoje e Todos; filtros, busca por cliente, número e SKU, ordenação pela data prevista, resumo no topo, lista para o fornecedor (SKUs somados, copiar e marcar como enviado à fábrica), ações em lote e CSV. Lê os mesmos dados do kanban e atualiza em tempo real. Lucro só aparece para o dono.
+- **Painel > Agente**: conversas atendidas, orçamentos, conversão por etapa, pagos do agente, custo médio e tokens por conversa, custo do dia contra o teto, custo estimado de templates no mês, tempo de resposta, chamadas ao dono, erros recentes, condições especiais (concedidas, convertidas, desconto médio sobre o lucro) e margem líquida real. O botão Pausar IA (global) também está no topo.
+- **Configurações > Follow-ups**: prazos e janelas de cada passo, limite diário, exigência de consentimento de promoções, teto de custo, recompra e fila com o motivo de cada envio.
+
+### Decisões de negócio desta etapa
+1. **Validade do orçamento sobe de 48 h para 168 h (7 dias)**: a cadência precisa do orçamento vivo no dia 2 e no dia 5, e a ferramenta de condição recusa orçamento vencido. Só mudou porque estava no padrão; revisável.
+2. **Templates de marketing só para quem aceitou promoções (`opted_in`)**: protege a qualidade do número, que é o único canal de vendas. Custo: F3 e F4 fora das 24 h raramente saem para quem veio de anúncio e nunca aceitou. Mitigação sugerida: pedir o aceite na primeira conversa. Chave: `app_settings.followup.exigir_optin_marketing`.
+3. **Uma condição por orçamento (regra 7B)**: se o F3 oferecer algo, o F4 vira "última chance" sem benefício. Se o F3 não tiver condição, o F4 ainda pode oferecer o degrau 3.
+4. **1 mensagem proativa por dia e 8h às 20h**, aplicadas em SQL. "Pausar IA" também segura os follow-ups.
+5. **Avisos de status são transacionais**: seguem para quem pediu PARAR (só promoções são bloqueadas), com template de utilidade.

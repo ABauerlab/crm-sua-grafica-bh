@@ -1,0 +1,311 @@
+{
+  "name": "GBH | WF9 | Erros e observabilidade",
+  "nodes": [
+    {
+      "id": "5ea20bcc-e682-436d-9a54-b5d97a292fd2",
+      "name": "Erro em um workflow GBH",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "5bad540a-897b-4193-a8f7-01cbddc2fd17",
+      "name": "Registrar erro e alertar o dono",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_erro_registrar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_workflow: $json.workflow.name, p_workflow_id: $json.workflow.id, p_no: $json.execution.lastNodeExecuted ?? $json.execution.error?.node?.name ?? \"\", p_mensagem: $json.execution.error?.message ?? \"sem mensagem\", p_execucao: String($json.execution.id ?? \"\") } }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "c9a60770-667c-4132-8ce7-b0c09feff963",
+      "name": "Entregar o alerta agora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/alertas-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"processar\" } }}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b20ac224-6f43-4343-9b15-91f9a36e676e",
+      "name": "A cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        240
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "5 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "905813d9-4a07-45a2-8fae-be49b8105f8b",
+      "name": "Conferir o custo do dia contra o teto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/observabilidade_checar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "72a9393c-afd5-43f3-99c4-87ed93db67a1",
+      "name": "Custo acima do teto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        240
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "ec3699fc-a090-4e46-8379-8f73ada7880b",
+              "leftValue": "={{ $json.acima === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "e6e96f8b-a668-4c3a-8249-ab009e5ffa95",
+      "name": "Entregar o alerta de custo agora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        240
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/alertas-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"processar\" } }}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4a888ab5-5809-452b-a39b-a011d41d95b6",
+      "name": "A cada 30 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        480
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/30 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7f6b78d6-9074-47f6-a802-55ea0cea4b8f",
+      "name": "Liberar envios travados (reprocesso seguro)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        480
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/followup_liberar_travados",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "48b4746b-b583-4199-9d4b-5a64eeae64fb",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## GBH | WF9 | Erros e observabilidade (Etapa 7)\nFluxo global de erros dos workflows GBH, teto de custo diário da IA e reprocesso seguro de envios travados.",
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "Erro em um workflow GBH": {
+      "main": [
+        [
+          {
+            "node": "Registrar erro e alertar o dono",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar erro e alertar o dono": {
+      "main": [
+        [
+          {
+            "node": "Entregar o alerta agora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A cada hora": {
+      "main": [
+        [
+          {
+            "node": "Conferir o custo do dia contra o teto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conferir o custo do dia contra o teto": {
+      "main": [
+        [
+          {
+            "node": "Custo acima do teto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Custo acima do teto?": {
+      "main": [
+        [
+          {
+            "node": "Entregar o alerta de custo agora",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "A cada 30 minutos": {
+      "main": [
+        [
+          {
+            "node": "Liberar envios travados (reprocesso seguro)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 240,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}

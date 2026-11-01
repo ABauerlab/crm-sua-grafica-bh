@@ -101,7 +101,7 @@ Pasta Sua Gráfica BH, tag `gbh`, nota (sticky) em todos. As ferramentas das Eta
 
 **Testes pelo MCP:** `test_workflow` com os nós de rede fixados (despachante, WF1 e WF2). Os cenários com o modelo real estão em `docs/agente/etapa5-testes.md`.
 
-**Pendente de etapas futuras:** `GBH | WF9 | Erros`, WF5 a WF8.
+**Pendente de etapas futuras:** ligar o WF9 aos outros workflows (Etapa 8).
 
 ## Etapa 6: pagamento e alertas
 | Workflow | ID no n8n | Arquivo | Gatilho | Estado |
@@ -109,3 +109,16 @@ Pasta Sua Gráfica BH, tag `gbh`, nota (sticky) em todos. As ferramentas das Eta
 | `GBH \| WF5 \| Pagamento e alertas` | `rLER5HoORdxVy0S0` | `n8n/GBH-WF5-Pagamento-e-alertas.json` | Agenda a cada minuto (fila `eventos_pagamento`), webhook opcional `gbh-wf5-pagamento` e segunda agenda a cada minuto que entrega alertas (varredura a cada 10 min) | Desativado, 9 nós |
 
 Credencial: `Supabase account` (service role) em todos os nós HTTP. Chama as funções do banco `pagamento_pos_pendentes` e `pagamento_pos_processar` e as Edge Functions `cliente-pago-avisar` e `alertas-enviar`. Fluxo e solução de problemas em `docs/pwa-e-notificacoes.md`. Não existe `GBH | WF9 | Erros` na instância ainda; ligue-o aos workflows na Etapa 8.
+
+## Etapa 7: follow-ups, pós-venda, status do pedido e erros
+| Workflow | ID no n8n | Arquivo | Gatilho | Estado |
+|---|---|---|---|---|
+| `GBH \| WF6 \| Follow-ups` | `ueCyozWur9Y5gs9c` | `n8n/GBH-WF6-Follow-ups.json` | Agenda a cada 15 minutos | Desativado, 7 nós |
+| `GBH \| WF7 \| Pós-venda e recompra` | `OBHE31bWohDs2fQ4` | `n8n/GBH-WF7-Pos-venda-e-recompra.json` | Agenda a cada 10 minutos | Desativado, 6 nós |
+| `GBH \| WF8 \| Status do pedido` | `h6Lviy09RV1coW6v` | `n8n/GBH-WF8-Status-do-pedido.json` | Agenda a cada minuto (fila `pedido_avisos`) | Desativado, 5 nós |
+| `GBH \| WF9 \| Erros e observabilidade` | `vmaMVnZydmHpkW57` | `n8n/GBH-WF9-Erros-e-observabilidade.json` | Error Trigger; agenda de hora em hora (custo do dia); agenda de 30 minutos (destravar envios) | Desativado, 10 nós |
+| `GBH \| FERRAMENTA \| enviar_proativo` | `gZsE7enJOnpex8xv` | `n8n/GBH-FERRAMENTA-enviar_proativo.json` | Execute Workflow (`tipo`, `id`, `orcamento_id`, `gatilho`, `precisa_condicao`) | Desativado, 9 nós |
+
+Credencial: `Supabase account` (já atribuída a todos os nós HTTP). WF6, WF7 e WF8 só reservam no banco e chamam `enviar_proativo` por item; `enviar_proativo` chama `GBH | FERRAMENTA | condicao_especial` quando o passo é F3 ou F4, monta a mensagem no banco (`followup_montar` ou `pedido_aviso_montar`), envia por `proativo-enviar` e registra o resultado. Nenhum modelo de IA.
+**Ligação do WF9:** o n8n só aceita fluxo de erro publicado; na Etapa 8, publicar o WF9 e rodar `update_workflow` com `setWorkflowSettings { errorWorkflow: "vmaMVnZydmHpkW57" }` em cada workflow `GBH |` (exceto o próprio WF9).
+**Ativação (Etapa 8):** ligar WF9, WF8, WF7 e WF6 nessa ordem, depois de a IA ser ligada e dos templates 4 a 11 estarem aprovados. Enquanto a IA estiver pausada (`agente_config.ia_ligada` ou o botão do topo), WF6 e WF7 reservam nada e só adiam.

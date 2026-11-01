@@ -108,3 +108,10 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 6. ~~Rodar os 21 cenários~~ (feito: 21 de 21, ver `docs/agente/etapa5-testes.md`).
 7. Decisão sua: contato em `optout` (PARAR das promoções) hoje **não é atendido pelo agente**, como pedido na etapa. Isso inclui pedidos reais de orçamento de quem só queria parar de receber promoção. Se preferir atender essas pessoas e bloquear só a promoção, é uma linha em `agente_bloqueio`.
 
+
+## Etapa 7 (follow-ups, status do pedido, painel de pedidos)
+1. **Republicar o `whatsapp-webhook`** com as novas palavras de descadastro ("não quero mais", "pare"): Edge Functions > whatsapp-webhook > Code, colar `docs/agente/funcoes/whatsapp-webhook.bundle.ts` e publicar (Verify JWT desligado).
+2. **Templates**: confirmar em Configurações > WhatsApp e templates que os 11 foram aprovados (os de marketing também precisam do botão "Parar promoções"). Sem aprovação, `proativo-enviar` recusa o template e tenta de novo.
+3. **Revisar os custos estimados** do painel (`app_settings.observabilidade`: R$ 0,35 marketing e R$ 0,04 utilidade) com a fatura da Meta e o teto diário da IA (R$ 15).
+4. **Decisões já tomadas por mim** (reverter se quiser): validade do orçamento 168 h; promoções só para `opted_in`; uma condição por orçamento. Detalhes em `docs/agente-ia.md`.
+5. **Etapa 8**: publicar o WF9 e ligá-lo aos outros; corrigir `agente-enviar` para usar só as 24 h; testar o disparo real de F1, o aviso de pronto e a recompra com o seu número.
