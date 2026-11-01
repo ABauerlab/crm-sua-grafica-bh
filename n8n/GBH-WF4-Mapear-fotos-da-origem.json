@@ -1,0 +1,206 @@
+{
+  "name": "GBH | WF4 | Mapear fotos da origem",
+  "nodes": [
+    {
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## GBH | WF4 | Mapear fotos da origem (Etapa 4B)\n**Objetivo:** varrer o menu da origem (todas as categorias) e gravar o mapa SKU -> imagem no banco (produto_fotos_mapa). Roda sob demanda (manual) ou 1 vez por mês.\n**Como funciona:** lê as categorias do menu e, para cada uma, chama a função produto-fotos (acao varrer) página por página até acabar. 1 requisição por segundo à origem, uma categoria por vez.\n**Saída:** nenhuma; o resultado aparece em Catálogo > Fotos > Cobertura.\n**Dependências:** credencial Supabase (service role); app_settings.fotos.origem_base preenchido.\n**Estado:** DESATIVADO (execução manual).",
+        "color": 4
+      }
+    },
+    {
+      "name": "Todo dia 1 às 02:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 2,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ler categorias do menu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/produto-fotos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"topos\" } }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "name": "Uma categoria por item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const topos = $input.first().json.topos || [];\nreturn topos.map((t) => ({ json: { topo: String(t) } }));"
+      }
+    },
+    {
+      "name": "Uma categoria por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        200
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "name": "Varrer categoria (todas as páginas)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/produto-fotos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"varrer\", topo: $json.topo, pagina: 0 } }}",
+        "options": {
+          "timeout": 150000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "pagina",
+                    "value": "={{ $response.body.proxima }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ $response.body.proxima === null || $response.body.proxima === undefined }}",
+              "limitPagesFetched": true,
+              "maxRequests": 200,
+              "requestInterval": 0
+            }
+          }
+        },
+        "onError": "continueRegularOutput"
+      }
+    }
+  ],
+  "connections": {
+    "Todo dia 1 às 02:00": {
+      "main": [
+        [
+          {
+            "node": "Ler categorias do menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler categorias do menu": {
+      "main": [
+        [
+          {
+            "node": "Uma categoria por item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uma categoria por item": {
+      "main": [
+        [
+          {
+            "node": "Uma categoria por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uma categoria por vez": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Varrer categoria (todas as páginas)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Varrer categoria (todas as páginas)": {
+      "main": [
+        [
+          {
+            "node": "Uma categoria por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Sao_Paulo",
+    "executionTimeout": 3600
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "builderVariant": "mcp"
+  }
+}

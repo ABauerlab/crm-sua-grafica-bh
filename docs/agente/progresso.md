@@ -26,6 +26,7 @@ Branch de trabalho da sessão `claude/fervent-hawking-h6vgqf` (a pedida era `fea
 - Fotos pequenas (miniaturas) agora são aceitas, ampliadas e marcadas como baixa qualidade; o agente nunca diz ao cliente que não há foto.
 - Migration `20261030000003` (mapa código -> imagem, candidatas, cobertura), ação `varrer` na função, botão "Mapear origem" na tela, `scripts/fotos-mapear-origem.ts` e `scripts/fotos-catalogo-pdf.ts` (reserva pelo PDF, 1.051 imagens extraídas no teste).
 - 38 testes SQL de fotos passam.
+- **Aplicado em produção em 01/11/2026 (autorizado pelo dono):** migrations da 4B (aplicadas pelo dono), função `produto-fotos` publicada pelo conector (versão 2; o pacote npm do `imagescript` não roda no Supabase, a função usa a versão Deno `deno.land/x/imagescript@1.3.0`), `app_settings.fotos.origem_base` preenchido, workflow `GBH | WF4 | Mapear fotos da origem` (`iLpTZUm9VLqNLXX1`) executado manualmente no n8n para gravar o mapa. Workflows seguem desativados.
 
 ### Decisões
 - Domínio da origem fora do repositório: o `npm test` proíbe o nome do fornecedor em qualquer arquivo e o domínio contém esse nome. Fica em `app_settings.fotos.origem_base` (preenchido pelo dono) e o teste real recebe por variável de ambiente.

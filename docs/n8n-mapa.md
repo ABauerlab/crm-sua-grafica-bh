@@ -21,6 +21,8 @@ JSONs exportados (sem credenciais) em `n8n/`. Para importar em outra instância:
 | `GBH \| FERRAMENTA \| enviar_foto_produto` | `ybnd6LjGjUO8dgTI` | `n8n/GBH-FERRAMENTA-enviar_foto_produto.json` | Execute Workflow (`termo_ou_sku`, `quantidade_fotos`, `conversation_id`) | Desativado, 6 nós |
 | `GBH \| WF4 \| Aquecer fotos de madrugada` (opcional) | `MYEmz3rCIfhMhxxF` | `n8n/GBH-WF4-Aquecer-fotos-de-madrugada.json` | Agenda: todo dia 03:20; só age se `app_settings.fotos.aquecer_ligado = true` | Desativado, 7 nós |
 
+| `GBH \| WF4 \| Mapear fotos da origem` | `iLpTZUm9VLqNLXX1` | `n8n/GBH-WF4-Mapear-fotos-da-origem.json` | Manual ou mensal (dia 1, 02:00); varre o menu da origem e grava `produto_fotos_mapa` | Desativado, credencial já atribuída |
+
 Links: `https://n8n.bauerlab.com.br/workflow/<ID>`. Os quatro workflows de orçamento da sessão interrompida (IDs `p00SlnRlDJMZnyN4`, `2PTqcwVF6FHRfqFy`, `ty3YiJSrHBY9Rg79`, `mOlYxUZ0FHpJyv8W`: webhooks públicos que chamavam funções sem autenticação) foram **arquivados** no n8n (reversível) e substituídos pelos acima.
 
 ### Etapa 4: orçamento em PDF

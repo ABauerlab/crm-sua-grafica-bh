@@ -1,4 +1,4 @@
-import { Image } from 'npm:imagescript@1.3.0'
+import { Image } from 'https://deno.land/x/imagescript@1.3.0/mod.ts'
 import { corsHeaders, json, requireEnv, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
 import {
   aplicarLimites, legendaSugerida, lerCartoes, LIMITES, nomeArquivoNeutro, processarImagem, sha256Hex, slugCategoria, vazaOrigem,
