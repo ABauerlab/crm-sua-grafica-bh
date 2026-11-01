@@ -25,8 +25,8 @@
 2. n8n: WF1/WF2 usarem a persona e as ferramentas novas; WF5 já avisa pelo `alerta_criar`.
 3. Parcelas no Mercado Pago: não consegui conferir a conta pelo conector (ele só dá documentação e credenciais). Confirme em Seu negócio > Parcelamento sem juros que **2x sem juros** está ligado; o link passa a mostrar até 12x.
 4. Cupom de recompra: continua pela lógica própria da 7B com as mesmas travas (piso, gordura, `validar_margem`), não por `calcular_condicao_especial` literalmente.
-5. Mensagem automática ao cliente quando a arte é aprovada: ainda não existe (o João Victor responde quando o cliente escrever).
-6. Telefone da BauerLab (+55 31 99802-1169) é o mesmo do seu WhatsApp de alertas (`agente_config.whatsapp_dono`). Confirme se é o do João Victor e se o dono deve ser alertado quando o agente indicar (hoje: alerta de baixa gravidade).
+5. Aviso ao cliente na aprovação da arte: feito pela tela Fila da arte (texto livre via `whatsapp-send`, só dentro da janela de 24 h; se fechada, a tela avisa o dono).
+6. Decididos pelo dono: 2x sem juros já ligado no Mercado Pago; telefone da BauerLab (+55 31 99802-1169) confirmado e a indicação NÃO alerta mais o dono.
 
 
 ## Pendências para a auditoria (Etapa 8), herdadas da 7B

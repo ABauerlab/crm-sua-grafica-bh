@@ -100,7 +100,7 @@ begin
   -- B10: BauerLab
   r := public.agente_bauerlab(v_cv, 'precisa de um site');
   perform pg_temp.chk(not (r ->> 'ja_apresentado')::boolean and r ->> 'telefone' = '+5531998021169' and r ->> 'contato' = 'João Victor', 'B10: apresenta a BauerLab e passa o contato de João Victor');
-  perform pg_temp.chk(exists (select 1 from public.alertas where tipo = 'oportunidade_bauerlab' and gravidade = 'baixa') and exists (select 1 from public.oportunidades_bauerlab where contact_id = v_ct), 'B10: registra a oportunidade e alerta em baixa gravidade');
+  perform pg_temp.chk(not exists (select 1 from public.alertas where tipo = 'oportunidade_bauerlab') and exists (select 1 from public.oportunidades_bauerlab where contact_id = v_ct), 'B10: registra a oportunidade no CRM e (decisão do dono, 7C) não alerta');
   r := public.agente_bauerlab(v_cv, 'de novo');
   perform pg_temp.chk((r ->> 'ja_apresentado')::boolean, 'B10: uma vez só, sem insistir');
 

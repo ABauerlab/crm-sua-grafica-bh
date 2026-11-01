@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Modal } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
+import { invokeFunction } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -46,8 +47,12 @@ function Aprovar({ l, onClose }: { l: Linha; onClose: () => void }) {
     mutationFn: async () => {
       const { data, error } = await supabase.rpc('arte_aprovar', { p_order: l.order_id, p_cliente_confirmou: confirmou, p_arte_refeita: refeita })
       if (error) throw new Error(error.message)
-      const r = data as { ok: boolean; orientacao?: string; aviso?: string }
+      const r = data as { ok: boolean; orientacao?: string; aviso?: string; conversation_id?: string; mensagem_cliente?: string }
       if (!r.ok) throw new Error(r.orientacao ?? 'Não foi possível aprovar.')
+      // avisa o cliente (texto livre na janela de 24 h; se a janela fechou o envio falha e o dono é avisado na tela)
+      if (r.conversation_id && r.mensagem_cliente) {
+        try { await invokeFunction('whatsapp-send', { conversation_id: r.conversation_id, text: r.mensagem_cliente }) } catch { r.aviso = `${r.aviso ?? 'Arte aprovada.'} Não consegui avisar o cliente (janela de 24 h fechada?). Mande uma mensagem pela conversa.` }
+      }
       return r
     },
     onSuccess: (r) => {

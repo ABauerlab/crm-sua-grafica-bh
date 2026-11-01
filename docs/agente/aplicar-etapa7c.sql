@@ -792,7 +792,7 @@ grant execute on function public.arte_baixa_ok(uuid, text) to service_role;
 create or replace function public.arte_aprovar(p_order uuid, p_cliente_confirmou boolean default false, p_arte_refeita boolean default false, p_observacao text default null) returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
-declare o public.orders%rowtype; v_aviso text; v_quando timestamptz := now(); v_cfg jsonb := private.persona_cfg();
+declare o public.orders%rowtype; v_aviso text; v_quando timestamptz := now(); v_cfg jsonb := private.persona_cfg(); v_prev date;
 begin
   if not private.is_staff() and coalesce(auth.role(), '') <> 'service_role' then raise exception 'Sem permissão.' using errcode = '42501'; end if;
   select * into o from public.orders where id = p_order and excluido_em is null;
@@ -822,7 +822,10 @@ begin
      where id = o.conversation_id;
   end if;
   insert into public.order_events (order_id, kind, message) values (o.id, 'art', 'Arte aprovada pelo cliente em ' || to_char(v_quando at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI') || ' (texto, cores e imagens confirmados)');
-  return jsonb_build_object('ok', true, 'aprovada_em', v_quando, 'em_producao', v_aviso is null, 'aviso', v_aviso);
+  select due_date into v_prev from public.orders where id = o.id;
+  return jsonb_build_object('ok', true, 'aprovada_em', v_quando, 'em_producao', v_aviso is null, 'aviso', v_aviso, 'conversation_id', o.conversation_id,
+    'mensagem_cliente', case when v_prev is null then 'Arte aprovada, obrigado! O prazo começa a contar a partir de agora e eu te aviso por aqui quando o pedido estiver pronto.'
+      else 'Arte aprovada, obrigado! O prazo começa a contar a partir de agora e o pedido fica pronto dia ' || to_char(v_prev, 'DD/MM') || '. Eu te aviso por aqui quando estiver pronto.' end);
 end;
 $$;
 revoke execute on function public.arte_aprovar(uuid, boolean, boolean, text) from public, anon;
@@ -927,3 +930,16 @@ end;
 $$;
 revoke execute on function public.agente_saida_segura(uuid, text) from public, anon, authenticated;
 grant execute on function public.agente_saida_segura(uuid, text) to service_role;
+
+-- ---------------------------------------------------------------- 6. BauerLab: telefone confirmado pelo dono e indicação sem alerta
+update public.app_settings set value = jsonb_set(value, '{telefone_confirmado_pelo_dono}', 'true') where key = 'bauerlab';
+do $$
+declare d text;
+begin
+  d := pg_get_functiondef('public.agente_bauerlab(uuid,text)'::regprocedure);
+  if d like '%perform public.alerta_criar(''oportunidade_bauerlab''%' then
+    d := regexp_replace(d, 'perform public\.alerta_criar\(''oportunidade_bauerlab''[^;]*;', 'null;', 'g');
+    execute d;
+  end if;
+exception when undefined_function then null;
+end $$;
