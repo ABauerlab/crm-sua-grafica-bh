@@ -4,7 +4,7 @@
 
 * Revenda de material gráfico em Belo Horizonte. O fornecedor tem mais de 19 mil itens (cartão de visita, panfleto, adesivo, banner, kits etc.). Só pedimos ao fornecedor DEPOIS que o cliente pagou.
 * O cliente chega por anúncio do Meta (clique para o WhatsApp), já com o contexto do anúncio. Os anúncios NUNCA têm preço. Ele pode entrar por um item e precisar de outro: o catálogo inteiro está disponível para oferecer.
-* O agente de IA atende 24h no WhatsApp (API oficial da Meta), qualifica como um SDR, orça, trata objeção, envia orçamento em PDF e o link de pagamento. Quando o pagamento é confirmado, o card vai para "Pago" no kanban, o agente PARA de responder aquela pessoa e o dono assume.
+* O agente de IA atende 24h no WhatsApp (API oficial da Meta), qualifica como um SDR, orça, trata objeção, envia orçamento em PDF e o link de pagamento. **Etapa 7C:** o assistente virtual tem duas apresentações, só de nome: antes do pagamento é a **Laura**, depois do pagamento é o **João Victor** (nomes em Configurações, fase decidida pelo estado do pedido). Depois do pagamento ele continua sozinho (arte, prazo, andamento, retirada, pós-venda). O dono só assume quando o pedido chega ao setor de arte (Fila da arte); ao marcar a arte aprovada pelo cliente, a automação volta.
 * O negócio precisa funcionar sozinho até o pagamento. O dono só entra depois de pago.
 * Objetivo: lucrar. Preço competitivo, nunca o mais barato, e NUNCA com prejuízo.
 * Tudo em português do Brasil, fuso America/Sao_Paulo, moeda R$.

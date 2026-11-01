@@ -150,7 +150,8 @@ export function useSalvarRegra() {
 
 export interface FollowupCfg { max_por_dia: number; exigir_optin_marketing: boolean; tentativas_max: number }
 export interface ObservabilidadeCfg { teto_custo_dia_brl: number; custo_template_marketing_brl: number; custo_template_utilidade_brl: number }
-export function useConfig<T>(key: 'followup' | 'observabilidade', padrao: T) {
+export type ConfigKey = 'followup' | 'observabilidade' | 'personas' | 'politica' | 'parcelamento' | 'arte' | 'cupom_recompra'
+export function useConfig<T>(key: ConfigKey, padrao: T) {
   return useQuery({
     queryKey: ['setting', key],
     queryFn: async (): Promise<T> => {
@@ -163,7 +164,7 @@ export function useConfig<T>(key: 'followup' | 'observabilidade', padrao: T) {
 export function useSalvarConfig() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (v: { key: 'followup' | 'observabilidade'; value: Record<string, unknown> }) => {
+    mutationFn: async (v: { key: ConfigKey; value: Record<string, unknown> }) => {
       const { data: atual } = await supabase.from('app_settings').select('value').eq('key', v.key).maybeSingle()
       const { error } = await supabase.from('app_settings').upsert({ key: v.key, value: { ...((atual?.value as object) ?? {}), ...v.value } })
       if (error) throw error

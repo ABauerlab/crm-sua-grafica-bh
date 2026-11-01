@@ -238,3 +238,11 @@ Error Trigger: `agente_erro_registrar` grava em `agent_logs`, cria alerta de gra
 3. **Uma condição por orçamento (regra 7B)**: se o F3 oferecer algo, o F4 vira "última chance" sem benefício. Se o F3 não tiver condição, o F4 ainda pode oferecer o degrau 3.
 4. **1 mensagem proativa por dia e 8h às 20h**, aplicadas em SQL. "Pausar IA" também segura os follow-ups.
 5. **Avisos de status são transacionais**: seguem para quem pediu PARAR (só promoções são bloqueadas), com template de utilidade.
+
+
+## Etapa 7C: conhecimento v2, personas e setor de arte
+- **Personas:** Laura (vendas) e João Victor (pós-pagamento) são só nomes de um assistente virtual. Nomes em `app_settings.personas`; fase decidida por `private.agente_fase` (pedido pago em andamento). `agente_contexto` e `agente_entrada` devolvem `persona.nome` e `fase`: o prompt do WF1/WF2 deve usar esses campos no lugar de `nome_atendente`.
+- **Depois do pagamento** o agente continua (`personas.pos_pagamento_automatico = true`) e só para em `aguardando_dono` (setor de arte ou dono). Desligar a chave volta ao comportamento antigo (`pedido_pago`).
+- **Setor de arte:** ferramentas novas do agente (service role): `arte_receber(conversation, tipo, qualidade, detalhe)` quando o cliente manda arquivo ou briefing depois de pagar (card vai para Arte, tarefa, alerta alto com resumo, conversa em setor arte) e `arte_baixa_ok(conversation)` quando o cliente topa seguir com baixa qualidade. O dono usa a tela Fila da arte e `arte_aprovar` (exige a confirmação do cliente; registra data, hora e aceite; prazo conta dali; produção automática; automação volta).
+- **Conhecimento:** 83 trechos v2 (`docs/agente/conhecimento_v2.json`); variáveis `{{persona_vendas}} {{persona_pos_pagamento}} {{cupom_percentual}} {{cupom_teto}} {{cupom_validade_dias}} {{troca_prazo}}` além das 5 antigas. Preço e prazo nunca vêm do conhecimento.
+- **Política:** `public.politica_texto('resumo_pdf' | 'descricao_link' | 'aceite_arte')`. Reembolso e estorno só pelo dono.

@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   if (error) return json({ error: 'Não foi possível reservar o envio.' }, 500)
   if (!r?.enviar) return json({ ok: true, enviado: false, msg_status: r?.msg_status ?? null })
 
-  const dados = { nome: r.nome as string, pedido: r.pedido as string, previsao: r.previsao as string, arte_status: r.arte_status, entrega: r.entrega }
+  const dados = { nome: r.nome as string, pedido: r.pedido as string, previsao: r.previsao as string, arte_status: r.arte_status, entrega: r.entrega, persona: (r.persona as string | undefined) ?? null, artigo: (r.artigo as string | undefined) ?? null }
   let corpo = ''
   let tipo: 'text' | 'template' = 'text'
   let envio = { ok: false, wa_message_id: undefined as string | undefined, erro: undefined as string | undefined }

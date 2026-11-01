@@ -65,4 +65,17 @@ assert.deepEqual(suspeitos, [], `arquivo da tabela do fornecedor no repositório
 const ignorado = readFileSync(`${root}.gitignore`, 'utf8')
 for (const padrao of ['*.pdf', 'catalogo-fornecedor/', 'catalogo-*.csv', 'tabela-fornecedor*', 'dump-catalogo*']) assert.ok(ignorado.includes(padrao), `.gitignore sem ${padrao}`)
 
+// Etapa 7C: os 83 trechos do dono (docs/agente/conhecimento_v2.json). O gerador reprova qualquer trecho fora do lint (tamanho, tom, termos internos, endereço, bicicleta).
+const v2 = JSON.parse(readFileSync(`${root}docs/agente/conhecimento_v2.json`, 'utf8')) as { id: string; categoria: string; revisar: boolean; resposta_pronta: string; fatos: string; tags: string[] }[]
+assert.equal(v2.length, 83, '83 trechos no arquivo do dono')
+assert.equal(new Set(v2.map((t) => t.id)).size, 83, 'ids únicos')
+assert.equal(new Set(v2.map((t) => t.categoria)).size, 21, '21 categorias')
+execFileSync('node', ['scripts/gerar-conhecimento-v2.ts'], { cwd: root, encoding: 'utf8' })
+const migV2 = readFileSync(`${root}supabase/migrations/20261104000002_etapa7c_conhecimento_importacao.sql`, 'utf8')
+assert.equal((migV2.match(/^\s+\(\$q\$/gm) ?? []).length, 83, 'a migration de importação tem as 83 linhas')
+assert.doesNotMatch(migV2, /[—–]/, 'sem travessão na importação')
+assert.match(migV2, /not k\.revisar and k\.revisado_em > k\.criado_em/, 'a importação protege o que o dono editou')
+assert.doesNotMatch(migV2, /\bBia\b/, 'nome antigo do atendente não volta')
+for (const t of v2.filter((x) => x.categoria === 'politica' || ['pv_cupom', 'troca', 'cancelamento'].includes(x.id))) assert.doesNotMatch(t.resposta_pronta, /reembols|estorn/i, `${t.id}: a resposta ao cliente não promete reembolso`)
+
 console.log(`OK: ${trechos.length} trechos, 20 categorias, tamanho, tom e vazamento conferidos`)

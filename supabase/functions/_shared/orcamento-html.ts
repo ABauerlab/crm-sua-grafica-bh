@@ -20,6 +20,8 @@ export interface OrcamentoDoc {
   hoje: string
   corte_hora: number
   upsell?: { tipo: string; texto: string } | null
+  /** Resumo curto da política de troca e cancelamento (app_settings.politica.resumo_pdf), no rodapé */
+  politica?: string | null
   empresa: { nome: string; cnpj: string; telefone?: string | null; email?: string | null; instagram?: string | null; site?: string | null }
 }
 
@@ -102,6 +104,7 @@ td small { display: block; color: #5c5c5c; font-size: 9.5pt; margin-top: 1px; }
 .sec { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .12em; color: #5c5c5c; margin: 0 0 3px; font-weight: 500; }
 .nota { font-size: 11.5pt; color: #333; margin: 0 0 5px; }
 .upsell { margin-top: 18px; font-size: 11.5pt; color: #5c5c5c; }
+p.politica { margin: 8px 0 0; font-size: 8.5pt; color: #5c5c5c; line-height: 1.35; }
 footer { margin-top: auto; padding-top: 10px; border-top: 1px solid #dedede; font-size: 10pt; color: #5c5c5c; display: flex; justify-content: space-between; gap: 14px; }
 footer b { color: #171717; }
 .passos { margin-top: 18px; }
@@ -197,6 +200,7 @@ export function orcamentoHtml(d: OrcamentoDoc): string {
   <li><b>Receba ou retire</b>Avisamos assim que estiver pronto.</li>
 </ol></section>
 ${d.upsell ? `<p class="upsell">${esc(d.upsell.texto)}</p>` : ''}
+${d.politica ? `<p class="nota politica"><b>Condições:</b> ${esc(d.politica)}</p>` : ''}
 <footer><div><b>${esc(emp.nome)}</b> · CNPJ ${esc(emp.cnpj)}<br>${contato}</div><div style="text-align:right">Este orçamento vale até ${esc(validade)}.<br>Depois dessa data, os valores e o prazo são recalculados.</div></footer>
 </div></body></html>`
 }

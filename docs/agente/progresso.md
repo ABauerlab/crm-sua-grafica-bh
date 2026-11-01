@@ -1,5 +1,34 @@
 # Progresso do agente de IA
 
+## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
+
+**Em andamento / como ficou (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.
+
+**Aplicado em produção pelo MCP do Supabase:** parte 1 (`etapa7c_estrutura`: colunas de uso, sugestões, variáveis novas, política, parcelamento, parâmetros de arte e do cupom, busca com contagem de uso).
+**AINDA NÃO aplicado em produção (falta só colar):** parte 2 (importação dos 83 trechos) e parte 3 (personas e fila da arte). As duas estão em `supabase/migrations/20261104000002_*` e `20261104000003_*` e, juntas com a parte 1, em `docs/agente/aplicar-etapa7c.sql` (idempotente; a parte 1 pode rodar de novo sem efeito). Depois: esperar até 5 minutos pela indexação (`select count(*) filter (where embedding is null) from conhecimento where ativo`) e rodar os advisors.
+**Edge Functions por publicar (código no repositório):** `orcamento-pdf` (rodapé com a política), `mp-criar-link` (descrição do link e até 12 parcelas, com 2x sem juros) e `cliente-pago-avisar` (mensagem do João Victor). Bundles em `docs/agente/funcoes/` precisam ser regenerados com `npm run bundle:funcao` antes de colar no painel.
+**n8n:** não alterado nesta sessão (o conector caiu no meio). Falta ajustar o prompt do WF1 e do WF2 para usar `persona.nome` e `fase` do contexto e expor as ferramentas `arte_receber`, `arte_baixa_ok`; ver "O que falta".
+
+### O que foi feito
+- 83 trechos importados com equivalência, proteção do que o dono editou, sugestões e reversão.
+- Variáveis novas resolvidas na hora: `persona_vendas`, `persona_pos_pagamento`, `cupom_percentual`, `cupom_teto`, `cupom_validade_dias`, `troca_prazo`.
+- Configurações > Personas e política (nomes, automático pós-pagamento, política, parcelamento, setor de arte, cupom).
+- Personas: `agente_persona`, fase decidida pelo pedido; o agente não para mais depois do pagamento (chave `personas.pos_pagamento_automatico`); para só em setor de arte ou dono.
+- Setor de arte: `arte_receber`, `arte_baixa_ok`, `arte_aprovar`, `arte_fila`, `arte_varredura` (a cada 15 min), tela Fila da arte, alerta ao dono com resumo.
+- Aba Conhecimento: usos, última vez, filtros (categoria, revisar, uso), ordenar, perguntas sem resposta com "criar trecho", sugestões da importação.
+- Política no rodapé do PDF e na descrição do link; link mostra até 12 parcelas (2x sem juros, o resto com juros do cliente).
+- Cupom de recompra: teto R$ 25, não acumula com condição especial, uso único; se não couber vira arte básica grátis (continua DESLIGADO até a simulação).
+- Trava de saída: endereço liberado depois do pagamento; barra "vou te reembolsar" e variações.
+
+### O que falta (honestidade)
+1. Aplicar as partes 2 e 3 e publicar as 3 funções (acima).
+2. n8n: WF1/WF2 usarem a persona e as ferramentas novas; WF5 já avisa pelo `alerta_criar`.
+3. Parcelas no Mercado Pago: não consegui conferir a conta pelo conector (ele só dá documentação e credenciais). Confirme em Seu negócio > Parcelamento sem juros que **2x sem juros** está ligado; o link passa a mostrar até 12x.
+4. Cupom de recompra: continua pela lógica própria da 7B com as mesmas travas (piso, gordura, `validar_margem`), não por `calcular_condicao_especial` literalmente.
+5. Mensagem automática ao cliente quando a arte é aprovada: ainda não existe (o João Victor responde quando o cliente escrever).
+6. Telefone da BauerLab (+55 31 99802-1169) é o mesmo do seu WhatsApp de alertas (`agente_config.whatsapp_dono`). Confirme se é o do João Victor e se o dono deve ser alertado quando o agente indicar (hoje: alerta de baixa gravidade).
+
+
 ## Pendências para a auditoria (Etapa 8), herdadas da 7B
 
 Registradas em 01/11/2026. As funções do Mercado Pago (`mp-webhook`, `mp-conferir`, `mp-criar-link`) já foram publicadas pelo dono. A proteção contra senhas vazadas não se aplica ao plano gratuito do Supabase (risco baixo: cadastro público desativado).
