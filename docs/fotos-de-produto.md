@@ -1,0 +1,78 @@
+# Fotos de produto para o agente (Etapa 4B)
+
+Quando o cliente pede foto, o agente envia no WhatsApp até 3 imagens reais do produto, leves e sem indício de origem. A fonte é um site público de terceiros e é **INTERNA**: o endereço dela fica em `app_settings.fotos.origem_base` (preenchido pelo dono em Catálogo > Fotos), nunca no repositório, em documento, em log do agente, em legenda ou em nome de arquivo. Por esta regra este documento diz apenas "a origem".
+
+## 1. Passo 0: o que já existia e o que a origem oferece
+
+* **No CRM:** não havia imagem de produto em lugar nenhum (nem campo, nem Storage, nem tela). `catalogo.grupo_produto` (cerca de 60 grupos para 20.381 linhas) é a chave natural. Foi criado do zero, ao lado das telas de Catálogo.
+* **Estrutura da origem (conferida em 01/11/2026):**
+  * página de categoria `/produto/categoria/<slug>`: 36 cartões de produto, cada um com link `/servico/detalhe/<categoria>/<produto>/<...>/<CÓDIGO>` e a imagem do produto (`data-src`, arquivo `.../servicos/<GUID>.jpg`);
+  * o **último trecho do link é o código do item, igual ao nosso SKU** (ex.: itens de brinde, chaveiros, placas). Hoje o fluxo usa isso só para escolher cartões que combinam com o termo; o SKU nunca sai do servidor;
+  * o slug da categoria é o nome do grupo sem acento, minúsculo e com hífens (`slugCategoria` em `_shared/fotos.ts`);
+  * as imagens da página de categoria já vêm em até 1000 px (JPEG, cerca de 50 a 130 KB); a página de detalhe traz a mesma imagem.
+* **Robots e termos:** `robots.txt` com `User-agent: *` e `Allow: /` (nada proibido). **Não há página de termos de uso** (só política de privacidade, que trata de dados pessoais e não de uso de conteúdo). O dono informou que as fotos são sem marca. Pendência registrada em `docs/agente/depende-de-voce.md`: o dono confirma que pode usar as imagens.
+* **Taxa e cortesia:** no máximo 1 requisição por segundo (1,1 s entre acessos), tempo limite de 15 s, `User-Agent` identificável com e-mail de contato, sem paralelismo, uma única consulta por grupo a cada 30 dias.
+
+### Achado que contraria a premissa
+Em teste real com 15 grupos, **10 têm fotos aproveitáveis e 5 não**: sacolas e sacos, revista, convites, agendas/cadernos e credenciais só têm miniaturas de 180 px na origem (menores que o mínimo de 300 px). Para esses grupos o fluxo devolve `sem_foto` (o agente diz que vai confirmar com a equipe e o dono recebe alerta de gravidade baixa). Esses grupos aparecem na tela com o filtro "Sem foto" e podem ser resolvidos trocando a imagem à mão (campo "Trocar").
+
+## 2. Mapeamento e cache
+
+* Tabelas: `produto_fotos` (uma linha por imagem: grupo, `url_origem` só legível pelo dono, `arquivo_storage` com nome de hash, largura, altura, bytes, hash, `status` pendente/aprovada/bloqueada/sem_foto, `revisar`, `aproximada`), `produto_fotos_grupos` (controle de cache: `expira_em`, situação, contagem de pedidos) e `produto_fotos_envios` (limites e auditoria).
+* **Por grupo, não por SKU.** Todos os SKUs do grupo compartilham as fotos. `foto_resolver_grupo` resolve SKU exato, depois sinônimos (`sinonimos`), depois palavras da descrição.
+* **Cache de 30 dias por grupo** (`app_settings.fotos.cache_dias`). Dentro do prazo a origem não é tocada. Erro de rede reabre a busca em 1 hora (não trava o grupo por 30 dias); "sem foto" fica 30 dias.
+* **Sob demanda:** o primeiro pedido de um grupo busca, processa e guarda. Opcional e **desligado por padrão**: `GBH | WF4 | Aquecer fotos de madrugada` (03:20, até 5 grupos por noite, com pausa entre eles) só age se `fotos.aquecer_ligado = true` (caixa na tela).
+* **Storage:** bucket privado `produto-fotos`, arquivo `xx/<hash32>.jpg`, sem nome da origem, do produto ou do SKU. O WhatsApp recebe um link assinado de 5 minutos.
+
+## 3. Processamento (limite de peso)
+
+Feito na **Edge Function `produto-fotos`** com `imagescript` (decodificação, redução e codificação JPEG em TypeScript puro). Escolhi a função, e não o nó de imagem do n8n, porque o mesmo código atende o agente, o botão "Buscar de novo" do CRM e o aquecimento noturno, e porque a lógica fica versionada e testada no repositório (`scripts/test-fotos.ts`).
+
+* Reduz para no máximo 1000 px no maior lado, grava JPEG qualidade 80 (desce 72, 64, 56 e 48 até caber), **meta de 150 KB, teto rígido de 300 KB** (acima disso a imagem é descartada). Menor que 300 px: descartada.
+* O JPEG é recriado do zero: EXIF, perfil e comentários não passam (testado).
+* **Verificação whitelabel** na primeira vez de cada imagem: modelo de visão pequeno (Gemini Flash-Lite, segredo `GEMINI_API_KEY`) responde se há logotipo, marca, nome de empresa, site ou telefone. Com marca: `bloqueada` + `revisar`. Sem o segredo ou com falha da verificação: a imagem fica `pendente` + `revisar` e **nunca é enviada** até o dono aprovar (falha fechada).
+* **Tela Catálogo > Fotos (dono):** lista dos grupos com situação, pedidos e contagens; filtros "Para revisar" e "Sem foto"; por grupo: ver as imagens, Aprovar, Bloquear, Buscar de novo, Trocar por uma imagem (endereço https) e o campo da origem.
+
+## 4. Ferramenta `enviar_foto_produto(termo_ou_sku, quantidade_fotos)`
+
+Workflow `GBH | FERRAMENTA | enviar_foto_produto` (n8n, desativado) chama a Edge Function `produto-fotos` (ação `enviar`; autenticação do dono ou service role).
+
+1. Valida a conversa e a janela de atendimento de 24 h (ou 72 h de anúncio).
+2. Limites: **3 imagens por pedido, 1 pedido por minuto por conversa, 10 imagens por contato por dia** (fuso de São Paulo). Recusa devolve `muito_rapido` ou `limite_diario` com orientação ao agente.
+3. Resolve o grupo, usa o cache ou busca/processa, e envia **só imagens aprovadas** como mensagem de imagem com legenda curta (`legendaSugerida`). Foto do grupo, e não do item exato, vai com legenda **ilustrativa** ("Foto ilustrativa de ... O seu pode variar no acabamento, a gente confirma na hora do orçamento.").
+4. Sem foto ou erro da origem: `{enviadas: 0, sem_foto: true, orientacao}`; grava alerta `foto_indisponivel` (gravidade baixa) para o dono. Nunca inventa nem usa foto de outro produto sem avisar.
+5. Registro em `produto_fotos_envios` e em `agent_logs` (grupo, quantidade, bytes, via cache ou busca; sem origem e sem conteúdo de mensagem).
+6. **Resposta ao agente mínima:** `{enviadas, legenda_sugerida}` (ou o formato de sem foto/limite acima). Nunca contém URL, origem, SKU nem nome de arquivo.
+
+Conhecimento: trecho `foto-produto` (categoria `guia`) ensina a oferecer as fotos e já propor quantidade, arte e orçamento (próximo passo de venda).
+
+## 5. Segurança e sigilo
+
+* `url_origem` só é legível pelo dono (RLS `private.is_staff()`); a função `foto_aprovadas`, usada para enviar, não devolve origem.
+* As funções do banco que a Edge Function chama ficam em `public` (a service role não alcança o schema `private`); todas conferem `dono_ou_servidor`. Testado com `set role`.
+* O `npm test` falha se o nome da origem aparecer em qualquer arquivo do repositório (regra do fornecedor); o domínio é passado ao teste real por variável de ambiente.
+
+## 6. Testes
+
+| Teste | O que cobre |
+|---|---|
+| `scripts/test-fotos.ts` (`npm run test:fotos`, entra no `npm test`) | parser da listagem, escolha de candidatas, redução a 1000 px, meta de 150 KB, teto de 300 KB, descarte de imagem pequena e ilegível, ausência de metadados, nome de arquivo neutro, limites, legenda ilustrativa e lint de vazamento |
+| `supabase/tests/fotos_etapa4b.sql` (25 passam) | resolução de grupo, cache de 30 dias, erro com nova tentativa em 1 hora, hash sem duplicar, só aprovadas saem, bloqueio, limites, logs sem origem, bucket privado, RLS, permissões |
+| `scripts/fotos-live.ts` (rede, manual) | 15 grupos reais: ver resultado abaixo |
+| `npm run test:conhecimento` | o trecho `foto-produto` passa no lint de tom e vazamento (91 trechos) |
+
+### Resultado do teste real (01/11/2026, 15 grupos de categorias diferentes)
+
+* **10 grupos com 3 fotos cada; maior imagem 130 KB** (meta 150, teto 300); a maioria entre 35 e 110 KB.
+* **Tempo da primeira busca por grupo: cerca de 4,5 s** (1 página + 3 imagens com 1 requisição por segundo); com 10 candidatas e todas pequenas, cerca de 12 s e resultado `sem_foto`.
+* **Segunda rodada: 0 chamadas à origem** (cache), resposta em 0 ms no teste local.
+* 5 grupos sem foto aproveitável (só miniaturas): sacolas e sacos, revista, convites, agendas e cadernos, credenciais.
+* **Não testado:** envio real no WhatsApp, verificação de marca com o modelo de visão e a Edge Function publicada (sem acesso da sessão ao Deno, à Meta e aos segredos).
+
+## 7. Como ligar
+
+1. Aplicar `docs/agente/aplicar-etapa4b.sql` (migrations `20261030000001` e `20261030000002`).
+2. Publicar `produto-fotos` (CLI: `supabase functions deploy produto-fotos --no-verify-jwt`, ou painel com `docs/agente/funcoes/produto-fotos.bundle.ts`).
+3. Segredo `GEMINI_API_KEY` na função (verificação de marca). Sem ele nada é aprovado sozinho.
+4. Catálogo > Fotos: preencher a origem (campo interno) e salvar.
+5. Atribuir a credencial do Supabase aos nós HTTP dos 2 workflows novos. Eles seguem **desativados** até a Etapa 8.

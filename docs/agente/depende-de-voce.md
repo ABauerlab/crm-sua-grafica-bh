@@ -83,3 +83,15 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 10. **Correção 2 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao2.sql` (migration `…11`: `orcamento_validar_margem` e `orcamento_marcar_enviado`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Motivo: a service role não alcança o schema `private`; o envio do PDF falhava com "Orçamento recusado pela trava de lucro" sem motivo.
 
 11. **Correção 3 (29/10/2026):** rodar `docs/agente/aplicar-etapa4-correcao3.sql` (migration `…12`) e colar de novo `docs/agente/funcoes/orcamento-pdf.bundle.ts`. Regra do dono: o cliente nunca vê que a entrega grátis é de bicicleta (PDF, orçamento, ferramenta de frete e 4 trechos do conhecimento).
+
+
+## Etapa 4B: fotos de produto
+
+1. **Aplicar** `docs/agente/aplicar-etapa4b.sql` e rodar `supabase/tests/fotos_etapa4b.sql` e os advisors de segurança.
+2. **Publicar** `produto-fotos` (CLI com `--no-verify-jwt` ou painel com `docs/agente/funcoes/produto-fotos.bundle.ts`).
+3. **Segredo** `GEMINI_API_KEY` nas Edge Functions (verificação de marca). Sem ele as imagens ficam pendentes para você aprovar.
+4. **Catálogo > Fotos:** preencher o campo "Origem das fotos (interna)" e salvar; depois abrir cada grupo mais vendido e conferir as imagens.
+5. **Confirmar** que pode usar as imagens da origem: não há página de termos de uso no site, só política de privacidade.
+6. **Cinco grupos sem foto aproveitável** (sacolas e sacos, revista, convites, agendas e cadernos, credenciais): decidir se envia a foto certa à mão (Trocar) ou segue sem foto com aviso à equipe.
+7. **n8n:** atribuir a credencial do Supabase aos nós HTTP de `enviar_foto_produto` e `Aquecer fotos de madrugada`. Seguem desativados até a Etapa 8.
+8. **Auditoria final (Etapa 8):** testar o envio real de imagem no WhatsApp (janela aberta) e a verificação de marca com o modelo de visão.

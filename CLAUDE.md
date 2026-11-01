@@ -77,6 +77,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `mp-conferir` | não (dono, service role ou `x-cron-secret`) | consulta o Mercado Pago pelos pagamentos do pedido e grava pelo mesmo caminho do webhook (botão "Conferir agora" e agendamento de 10 min) |
 | `conhecimento` | não (dono, service role ou `x-cron-secret`) | gera vetores `gte-small` do banco de conhecimento, reindexa e busca trechos para o agente |
 | `orcamento-pdf` | não (dono, service role) | gera o PDF do orçamento no Gotenberg, guarda no bucket privado `orcamentos`, envia como documento no WhatsApp (idempotente; vencido gera novo; trava de lucro antes de enviar) |
+| `produto-fotos` | não (dono, service role) | busca, processa (JPEG até 150 KB, teto 300 KB), confere marca e envia fotos de produto no WhatsApp; cache de 30 dias por grupo; resposta ao agente sem origem |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -84,6 +85,9 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 
 ### Orçamento em PDF (Etapa 4)
 `montar_orcamento` (banco) monta o orçamento só a partir de SKUs e quantidades, com `calcular_preco`, `calcular_prazo`, `verificar_frete` e `validar_margem`; `orcamento-pdf` gera o PDF (modelo em `supabase/functions/_shared/orcamento-html.ts`, sem custo, margem, piso, fornecedor, SKU nem endereço de retirada) e `preparar_link_pagamento` valida a margem antes do link do Mercado Pago. Detalhes em `docs/orcamento-pdf.md`. Exemplos em `docs/exemplos-orcamento/` (catálogo fictício; a exceção do `.gitignore` vale só para essa pasta). Testes SQL: `supabase/tests/orcamento_etapa4.sql`.
+
+### Fotos de produto (Etapa 4B)
+`produto_fotos` (por grupo, não por SKU), `produto_fotos_grupos` (cache de 30 dias) e `produto_fotos_envios` (limites: 3 por pedido, 1 pedido por minuto por conversa, 10 imagens por contato por dia); bucket privado `produto-fotos` com nomes de hash; tela Catálogo > Fotos. A origem das imagens é INTERNA e fica só em `app_settings.fotos.origem_base` (nunca no repositório, nos docs, nos logs, nas legendas nem na resposta ao agente). Detalhes em `docs/fotos-de-produto.md`. Testes: `npm run test:fotos` e `supabase/tests/fotos_etapa4b.sql`.
 
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco`. Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
@@ -99,6 +103,7 @@ A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram n
 ## Segredos necessários (somente nomes)
 Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`; para campanhas: `META_ADS_TOKEN` (token com permissão `ads_read`) e `META_AD_ACCOUNT_ID` (1783199576217713, conta CA SUA GRÁFICA BH).
 Orçamento em PDF: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`.
+Fotos de produto: `GEMINI_API_KEY` (verificação de marca nas imagens; sem ela nada é aprovado sozinho).
 Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
@@ -126,6 +131,7 @@ supabase functions deploy mp-webhook --no-verify-jwt
 supabase functions deploy mp-criar-link --no-verify-jwt
 supabase functions deploy mp-conferir --no-verify-jwt
 supabase functions deploy orcamento-pdf --no-verify-jwt
+supabase functions deploy produto-fotos --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

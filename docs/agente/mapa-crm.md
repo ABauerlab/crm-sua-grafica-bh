@@ -18,7 +18,7 @@ Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1
 | Prazo | `holidays` (30 feriados 2026/2027), `is_business_day`, `add_business_days` |
 | Configuração | `app_settings` (`pricing`, `kanban`, `owner`, `agent`, `company`, `labels`, `campaign_goals`, `repurchase`, `deadline`), `agent_logs` |
 
-**Edge Functions**: `whatsapp-webhook`, `whatsapp-send`, `whatsapp-sync-templates`, `whatsapp-media`, `admin-create-agent`, `meta-ads-sync`, `mp-webhook`, `mp-criar-link`, `mp-conferir`. O webhook da Meta é único e continua sendo o `whatsapp-webhook`.
+**Edge Functions**: `whatsapp-webhook`, `whatsapp-send`, `whatsapp-sync-templates`, `whatsapp-media`, `admin-create-agent`, `meta-ads-sync`, `mp-webhook`, `mp-criar-link`, `mp-conferir`, `orcamento-pdf`, `conhecimento`, `produto-fotos` (Etapa 4B). O webhook da Meta é único e continua sendo o `whatsapp-webhook`.
 
 **n8n** (n8n.bauerlab.com.br): 13 workflows de outros projetos do dono (Iracema, Teggly, Fluxo Dos Mercados, SUALOJALAB). Nenhum `GBH |`, nenhuma pasta, nenhuma tag. Credenciais existentes: Google Drive, Postgres, Gemini, Groq, 2 Header Auth. Não falta nada para a Etapa 1; faltam credenciais do Supabase (service role) e do WhatsApp para a Etapa 5. Nenhum workflow de outro projeto foi lido ou alterado.
 
@@ -141,3 +141,7 @@ Cada ponto do CRM que exibe ou grava preço, e o que fazer com ele. Regra: **o �
 **Funções novas:** `montar_orcamento`, `orcamento_documento`, `orcamento_renovar`, `preparar_link_pagamento`, `orcamento_registrar_link`, `private.orcamento_para_pedido`, `private.upsell_regra`, `private.especificacao_publica`, `private.orcamento_numero`. Substituídas (mesmos nomes e retornos): `validar_antes_de_cobrar`, `private.confirmar_pagamento`.
 
 **n8n:** `GBH | FERRAMENTA | montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `GBH | WF3 | Orçamento PDF` (desativados). Ver `docs/n8n-mapa.md`.
+
+## 9. Etapa 4B: fotos de produto
+
+Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fotos`, `produto_fotos_grupos`, `produto_fotos_envios`; bucket privado `produto-fotos`; funções `foto_resolver_grupo`, `foto_estado_grupo`, `foto_limites`, `foto_registrar`, `foto_decidir`, `foto_fechar_busca`, `foto_registrar_envio`, `foto_aprovadas`, `fotos_painel`, `fotos_grupos_para_aquecer` (todas em `public`, com checagem interna de dono ou servidor); `app_settings.fotos` (origem, cache, aquecimento, verificação de marca, limites); Edge Function `produto-fotos`; tela Catálogo > Fotos; trecho de conhecimento `foto-produto`; 2 workflows no n8n. Ver `docs/fotos-de-produto.md`.

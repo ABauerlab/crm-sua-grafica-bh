@@ -18,6 +18,9 @@ JSONs exportados (sem credenciais) em `n8n/`. Para importar em outra instância:
 | `GBH \| FERRAMENTA \| gerar_link_pagamento` | `KsXAvkkMOLZtVMDF` | `n8n/GBH-FERRAMENTA-gerar_link_pagamento.json` | Execute Workflow (`orcamento_id`) | Desativado, 11 nós |
 | `GBH \| WF3 \| Orçamento PDF` | `nNh7E3H7Ckl5oV37` | `n8n/GBH-WF3-Orcamento-PDF.json` | Execute Workflow (`contact_id`, `itens`, `opcoes`, `texto`, `com_link`) | Desativado, 9 nós |
 
+| `GBH \| FERRAMENTA \| enviar_foto_produto` | `ybnd6LjGjUO8dgTI` | `n8n/GBH-FERRAMENTA-enviar_foto_produto.json` | Execute Workflow (`termo_ou_sku`, `quantidade_fotos`, `conversation_id`) | Desativado, 6 nós |
+| `GBH \| WF4 \| Aquecer fotos de madrugada` (opcional) | `MYEmz3rCIfhMhxxF` | `n8n/GBH-WF4-Aquecer-fotos-de-madrugada.json` | Agenda: todo dia 03:20; só age se `app_settings.fotos.aquecer_ligado = true` | Desativado, 7 nós |
+
 Links: `https://n8n.bauerlab.com.br/workflow/<ID>`. Os quatro workflows de orçamento da sessão interrompida (IDs `p00SlnRlDJMZnyN4`, `2PTqcwVF6FHRfqFy`, `ty3YiJSrHBY9Rg79`, `mOlYxUZ0FHpJyv8W`: webhooks públicos que chamavam funções sem autenticação) foram **arquivados** no n8n (reversível) e substituídos pelos acima.
 
 ### Etapa 4: orçamento em PDF
@@ -27,6 +30,9 @@ Detalhes em `docs/orcamento-pdf.md`.
 * **gerar_link_pagamento:** `preparar_link_pagamento` (roda `validar_margem`) > `mp-criar-link` (Mercado Pago já integrado) > `orcamento_registrar_link`. Devolve `{ok, link, valida_ate, texto_curto}` ou `{ok:false, motivo, alternativa}`.
 * **WF3:** montar > gerar e enviar PDF > (opcional) link de pagamento.
 * **condicao_especial:** o gancho de PDF da Etapa 3 virou a chamada real a `gerar_pdf_orcamento` (acao `gerar`) para o orçamento atualizado; o envio ao cliente é do agente.
+
+### Etapa 4B: fotos de produto
+Detalhes em `docs/fotos-de-produto.md`. **enviar_foto_produto** chama a Edge Function `produto-fotos` (limites, cache de 30 dias, processamento, verificação de marca e envio) e devolve só `{enviadas, legenda_sugerida}`; sem foto devolve `{enviadas: 0, sem_foto: true, orientacao}`. **Aquecer fotos de madrugada** pede ao banco até 5 grupos (lista vazia se o aquecimento estiver desligado) e chama a função um grupo por vez com pausa de 5 s.
 
 ### pesquisar_preco_mercado
 Cache de 14 dias no banco (`consultar_cache_preco_mercado`) > se vencido, 3 buscas (SearXNG por padrão; Tavily ou Serper por configuração) > um domínio por vez com robots, termos e intervalo (`reservar_acesso_dominio`) > leitura direta ou com navegador (Playwright ou Firecrawl) > extração por regras (quantidade, papel, gramatura, tamanho e acabamento têm de bater; o primeiro preço depois da quantidade) > modelo pequeno só se nenhuma regra achou (texto truncado em 3.500 caracteres, preço precisa aparecer literalmente) > `registrar_pesquisa_mercado` (outliers, mediana, confiança). Limite de cerca de 45 s; falha ou estouro devolve `sem_dado`. Configuração (fonte de busca, URLs internas, leitor de JavaScript, páginas por pesquisa) na caixa **Início e configuração**. Infraestrutura em `docs/agente/infra-busca.md`.
@@ -41,7 +47,7 @@ Cinco chamadas ao banco, sem modelo de IA: expirar condições e orçamentos ven
 
 | Nome exato | Tipo | Onde é usada | Obrigatória? |
 |---|---|---|---|
-| `GBH Supabase (service role)` | Supabase API (host `https://bhlosshvwmlyzhbghsrc.supabase.co` + Service Role Secret) | todos os nós HTTP que falam com o banco, com `mp-criar-link` e com `orcamento-pdf` | **Sim** |
+| `GBH Supabase (service role)` | Supabase API (host `https://bhlosshvwmlyzhbghsrc.supabase.co` + Service Role Secret) | todos os nós HTTP que falam com o banco, com `mp-criar-link`, `orcamento-pdf` e `produto-fotos` | **Sim** |
 | `Google Gemini(PaLM) Api account` | já existe na instância | modelo pequeno de último recurso (pesquisa de preço) | Sim, para o último recurso |
 | `GBH Tavily` | Autenticação personalizada: cabeçalho `Authorization: Bearer chave` | busca, se `fonte_busca = tavily` | Não |
 | `GBH Serper` | Autenticação personalizada: cabeçalho `X-API-KEY` | busca, se `fonte_busca = serper` | Não |
@@ -60,6 +66,7 @@ Os nós HTTP foram criados sem credencial atribuída (limitação de importaçã
 | `gerar_link_pagamento(orcamento_id)` | `GBH | FERRAMENTA | gerar_link_pagamento` | `{ok, link, valida_ate, texto_curto}` |
 | `oferecer_condicao_especial(orcamento_id, gatilho)` | `GBH \| FERRAMENTA \| condicao_especial` | `{tipo, texto_curto, valor, valida_ate}` |
 | `pesquisar_preco_mercado` | **não é ferramenta do agente**: roda dentro da montagem do orçamento (WF3/WF4) antes de `calcular_preco` | interno |
+| `enviar_foto_produto(termo_ou_sku, quantidade_fotos, conversation_id)` | `GBH \| FERRAMENTA \| enviar_foto_produto` | `{enviadas, legenda_sugerida}` (sem URL, origem nem SKU) |
 | `aplicar_desconto` | **removida** (função e ferramenta); nada a migrar, nunca existiu dado | - |
 
 ## Regras ao criar workflows

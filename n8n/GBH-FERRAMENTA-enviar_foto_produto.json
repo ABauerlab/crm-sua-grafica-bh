@@ -1,0 +1,203 @@
+{
+  "name": "GBH | FERRAMENTA | enviar_foto_produto",
+  "nodes": [
+    {
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        192
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | enviar_foto_produto (Etapa 4B)\n**Objetivo:** enviar no WhatsApp até 3 fotos reais do produto pedido pelo cliente, leves (até 150 KB), com legenda curta e natural.\n**Entradas:** termo_ou_sku (produto ou SKU), quantidade_fotos (1 a 3), conversation_id.\n**Saída mínima ao agente:** { enviadas, legenda_sugerida }. Sem foto: { enviadas: 0, sem_foto: true, orientacao }. Nunca devolve URL, origem, SKU nem nome de arquivo.\n**Regras (na Edge Function produto-fotos):** cache de 30 dias por grupo; origem consultada no máximo 1 vez por grupo nesse prazo e 1 requisição por segundo; imagem nova passa por verificação de marca e só é enviada se aprovada; 1 pedido de foto por minuto por conversa, 10 imagens por contato por dia; sem foto cria alerta de gravidade baixa para o dono.\n**Dependências:** credencial GBH Supabase (service role) no nó HTTP; segredo GEMINI_API_KEY (verificação de marca) e app_settings.fotos.origem_base preenchido pelo dono.\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "termo_ou_sku",
+              "type": "string"
+            },
+            {
+              "name": "quantidade_fotos",
+              "type": "number"
+            },
+            {
+              "name": "conversation_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.conversation_id || \"\").length === 36 && String($json.termo_ou_sku || \"\").trim().length > 0 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "name": "Buscar e enviar fotos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/produto-fotos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"enviar\", termo_ou_sku: $json.termo_ou_sku, quantidade_fotos: Math.min(Math.max(Number($json.quantidade_fotos) || 1, 1), 3), conversation_id: $json.conversation_id } }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "name": "Resposta mínima ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json || {};\nif (r.enviadas > 0) return [{ json: { enviadas: r.enviadas, legenda_sugerida: String(r.legenda_sugerida || '') } }];\nif (r.sem_foto) return [{ json: { enviadas: 0, sem_foto: true, orientacao: 'Diga que vai confirmar a foto com a equipe e já retorna. Não envie foto de outro produto.' } }];\nif (r.motivo === 'muito_rapido' || r.motivo === 'limite_diario') return [{ json: { enviadas: 0, motivo: r.motivo, orientacao: String(r.orientacao || '') } }];\nif (r.code === 'window_closed') return [{ json: { enviadas: 0, motivo: 'janela_fechada', orientacao: 'A janela de 24 h fechou. Use um template aprovado.' } }];\nreturn [{ json: { enviadas: 0, sem_foto: true, orientacao: 'Diga que vai confirmar a foto com a equipe e chame o dono com gravidade baixa.' } }];"
+      }
+    },
+    {
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        192
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "enviadas",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "f1",
+              "name": "motivo",
+              "value": "entrada_invalida",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Buscar e enviar fotos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar e enviar fotos": {
+      "main": [
+        [
+          {
+            "node": "Resposta mínima ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "builderVariant": "mcp"
+  }
+}
