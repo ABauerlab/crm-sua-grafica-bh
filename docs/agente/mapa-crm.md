@@ -191,3 +191,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Etapa 7B, Bloco B
 **Novo:** `conversations/tasks/alertas.setor`, `orcamentos.motivo_perda`, tabelas `estrategia_recuperacao`, `oportunidades_bauerlab`, `orcamento_opcoes`, `cupons_recompra`, view `opcoes_conversao`, `app_settings.bauerlab` e `.cupom_recompra`; funções `agente_encaminhar_setor`, `agente_promessas_indevidas`, `agente_bauerlab`, `orcamento_registrar_perda`, `recuperacao_proximo_passo`, `pedido_pendencias`, `montar_opcoes`, `orcamento_opcao_escolher`, `cupom_recompra_emitir/aplicar/simular`, `private.mensagem_incompleta`. **Alteradas:** `agente_debounce(msg, esperar)`, `agente_salvar_contato`, `agente_saida_segura`. Conhecimento: 10 trechos (fonte `Etapa 7B`).
+
+## Etapa 7B, Blocos C e D
+**Novo:** `catalogo_formulas`, `produtos_complementares`, `melhorias_sugeridas`, `experimentos`, `experimento_grupos`, `indicacoes`, `contacts.codigo_indicacao`, view `atribuicao_pedidos`; funções `painel_comercial`, `rentabilidade_cliente`, `complementar_sugerir`, `estudo_diario_coletar`, `melhoria_decidir`, `experimento_variante/resultado`, `indicacao_codigo/registrar`, `private.custo_por_dimensao`.

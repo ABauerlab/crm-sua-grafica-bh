@@ -1,6 +1,6 @@
 # Progresso do agente de IA
 
-## Etapa 7B: melhorias consolidadas (em andamento)
+## Etapa 7B: melhorias consolidadas (blocos A, B, C a F entregues; ver pendências)
 
 Decisões e inventário em `docs/agente/decisoes-e-melhorias.md`. Uma branch de trabalho (`claude/compassionate-ramanujan-s26vog`) com um PR por bloco.
 
@@ -42,6 +42,14 @@ Testes: `npm test` e `supabase/tests/*.sql` (melhorias 71, trava 12, preço 67, 
 | B11 | Validador | `pedido_pendencias` (cliente, itens, SKU, preço aprovado, pagamento, prazo, arte) |
 
 **Ligação ao n8n (PARCIAL, honestidade):** as funções do banco estão prontas e testadas, mas o WF2 ainda não expõe ao modelo as ferramentas novas (`encaminhar_setor`, `bauerlab`, `montar_opcoes`, escolha de opção) nem os campos novos de `salvar_contato`, e o WF6/WF7 não chamam `recuperacao_proximo_passo` nem `cupom_recompra_emitir`. A trava de promessas, o debounce e o conhecimento já valem sem mudar o n8n. Editar o WF2 (26 nós) e o despachante fica para a Etapa 7C/8, com teste de conversa.
+
+### Blocos C a F (01/11/2026): estrutura pronta, partes que dependem de você ou de terceiros ficam registradas
+**Aplicado em produção** (migration `20261103000006`, cópia em `aplicar-etapa7b-cd.sql`). Testes: `supabase/tests/melhorias_bloco_cd.sql` (21).
+
+- **C (preço por dimensão):** `catalogo_formulas` e `private.custo_por_dimensao` (só com fórmula validada, erro até 1%; sem ela não há oferta definitiva). Não consegui investigar o fornecedor (precisa do seu login e dos termos de uso). Passo a passo em `docs/agente/preco-por-dimensao.md`. O workflow de consulta automatizada **não foi criado** de propósito.
+- **D (inteligência):** `painel_comercial` (cinco grupos de indicadores), `atribuicao_pedidos`, `rentabilidade_cliente` (só o dono), `produtos_complementares` + `complementar_sugerir`, `melhorias_sugeridas` (alvo crítico exige autorização, garantido por constraint) + `estudo_diario_coletar`, `experimentos` (só texto e momento; amostra pequena nunca declara vencedor), indicações (`indicacao_codigo`, `indicacao_registrar`, compra válida automática, **sem recompensa**). Definições em `docs/metricas.md`. **Faltam:** o painel Comercial no front, o `GBH | WF11 | Estudo diário` no n8n e a recompra por comportamento (D2), que continuam no backlog.
+- **E (redes sociais):** Postiz lista Facebook, Instagram e Threads, mas só publica. Webhook de comentário exige Análise de app da Meta: `GBH | WF10` não foi implementado; roteiro em `docs/redes-sociais.md` e `docs/backlog.md`.
+- **F (infra):** a VPS não aceita o gerenciador de Docker da Hostinger (Docker é do Coolify), então não instalei o SearXNG. Passo a passo em `docs/infra-coolify.md`. O teste de ponta a ponta com 5 especificações ficou pendente.
 
 ## Etapas concluídas
 
