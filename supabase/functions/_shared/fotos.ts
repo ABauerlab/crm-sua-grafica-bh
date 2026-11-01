@@ -3,7 +3,10 @@
 
 export const LIMITES = {
   maiorLadoPx: 1000,
-  minimoPx: 300,
+  /** abaixo disto é ícone ou lixo e é descartada; entre 100 e 400 px vale (baixa qualidade, o dono aceitou), ampliada para ficar legível */
+  minimoPx: 100,
+  baixaQualidadePx: 400,
+  ampliarAtePx: 640,
   metaBytes: 150 * 1024,
   tetoBytes: 300 * 1024,
   qualidades: [80, 72, 64, 56, 48],
@@ -71,6 +74,8 @@ export interface Processada {
   altura: number
   tamanho: number
   qualidade: number
+  /** a origem só tinha imagem pequena: serve, mas aparece marcada na tela do dono para trocar quando houver foto melhor */
+  baixaQualidade: boolean
 }
 
 /** Subconjunto da biblioteca de imagem usado (imagescript): injetado para testar em Node e rodar no Deno. */
@@ -85,9 +90,14 @@ export async function processarImagem(entrada: Uint8Array, lib: ImagemLib): Prom
   } catch {
     return { descartada: 'imagem ilegível' }
   }
-  if (Math.min(img.width, img.height) < LIMITES.minimoPx) return { descartada: 'imagem menor que 300 px' }
+  if (Math.min(img.width, img.height) < LIMITES.minimoPx) return { descartada: 'imagem pequena demais (ícone)' }
   const maior = Math.max(img.width, img.height)
-  if (maior > LIMITES.maiorLadoPx) {
+  const baixaQualidade = maior < LIMITES.baixaQualidadePx
+  if (maior < LIMITES.ampliarAtePx) {
+    // miniatura: amplia com suavização para o WhatsApp não mostrar um quadradinho; não cria detalhe novo
+    const f = LIMITES.ampliarAtePx / maior
+    img = img.resize(Math.round(img.width * f), Math.round(img.height * f))
+  } else if (maior > LIMITES.maiorLadoPx) {
     const f = LIMITES.maiorLadoPx / maior
     img = img.resize(Math.round(img.width * f), Math.round(img.height * f))
   }
@@ -100,7 +110,7 @@ export async function processarImagem(entrada: Uint8Array, lib: ImagemLib): Prom
     if (ultimo.length <= LIMITES.metaBytes) break
   }
   if (!ultimo || ultimo.length > LIMITES.tetoBytes) return { descartada: 'imagem acima de 300 KB mesmo recomprimida' }
-  return { bytes: ultimo, largura: img.width, altura: img.height, tamanho: ultimo.length, qualidade: q }
+  return { bytes: ultimo, largura: img.width, altura: img.height, tamanho: ultimo.length, qualidade: q, baixaQualidade }
 }
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {

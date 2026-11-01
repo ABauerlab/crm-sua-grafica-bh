@@ -81,7 +81,7 @@ async function requireOwnerOrServer(req: Request, db: SupabaseClient): Promise<'
 }
 
 import {
-  aplicarLimites, escolherCartoes, legendaSugerida, lerCartoes, LIMITES, nomeArquivoNeutro, processarImagem, sha256Hex, slugCategoria, vazaOrigem,
+  aplicarLimites, legendaSugerida, lerCartoes, LIMITES, nomeArquivoNeutro, processarImagem, sha256Hex, slugCategoria, vazaOrigem,
 } from '../_shared/fotos.ts'
 
 // Fotos de produto para o agente. A origem das imagens é INTERNA: o endereço vem de app_settings.fotos.origem_base (banco),
@@ -90,29 +90,37 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GRAPH = 'https://graph.facebook.com/v21.0'
 const WINDOW_MS = 24 * 60 * 60 * 1000
 const BUCKET = 'produto-fotos'
+const ORIENTACAO_SEM_FOTO = 'NUNCA diga ao cliente que não temos foto. Diga que vai separar as fotos e já envia, siga com a conversa (quantidade, arte, orçamento) e não envie foto de outro produto. A equipe já foi avisada.'
 
 interface Body {
-  acao?: 'enviar' | 'preparar' | 'trocar' | 'rebuscar'
+  acao?: 'enviar' | 'rebuscar' | 'trocar' | 'topos' | 'varrer'
   termo_ou_sku?: string
   quantidade_fotos?: number
   conversation_id?: string
-  /** preparar/rebuscar: grupo explícito (usado pelo aquecimento de madrugada e pela tela do dono) */
+  /** rebuscar/trocar: grupo do catálogo */
   grupo?: string
   /** trocar (tela do dono): endereço de uma imagem escolhida por ele */
   url_imagem?: string
+  /** varrer: categoria do menu da origem e página inicial */
+  topo?: string
+  pagina?: number
 }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms))
 let ultimoAcesso = 0
 /** No máximo 1 requisição por segundo à origem, tempo limite de 15 s, User-Agent identificável, sem paralelismo. */
-async function buscarOrigem(url: string, binario: boolean): Promise<Response> {
+async function buscarOrigem(url: string, opcoes: { binario?: boolean; post?: string } = {}): Promise<Response> {
   const espera = LIMITES.intervaloOrigemMs - (Date.now() - ultimoAcesso)
   if (espera > 0) await dormir(espera)
   ultimoAcesso = Date.now()
   const ctl = new AbortController()
   const t = setTimeout(() => ctl.abort(), LIMITES.timeoutOrigemMs)
   try {
-    return await fetch(url, { headers: { 'User-Agent': LIMITES.userAgent, Accept: binario ? 'image/*' : 'text/html' }, signal: ctl.signal, redirect: 'follow' })
+    return await fetch(url, {
+      method: opcoes.post !== undefined ? 'POST' : 'GET',
+      headers: { 'User-Agent': LIMITES.userAgent, Accept: opcoes.binario ? 'image/*' : '*/*', ...(opcoes.post !== undefined ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
+      body: opcoes.post, signal: ctl.signal, redirect: 'follow',
+    })
   } finally {
     clearTimeout(t)
   }
@@ -122,7 +130,8 @@ async function buscarOrigem(url: string, binario: boolean): Promise<Response> {
 async function conferirMarca(jpeg: Uint8Array): Promise<{ limpa: boolean | null; motivo: string }> {
   const chave = Deno.env.get('GEMINI_API_KEY')
   if (!chave) return { limpa: null, motivo: 'verificação automática indisponível' }
-  const b64 = btoa(String.fromCharCode(...jpeg))
+  let bin = ''
+  for (let i = 0; i < jpeg.length; i += 0x8000) bin += String.fromCharCode(...jpeg.subarray(i, i + 0x8000))
   const prompt = 'Olhe esta foto de produto gráfico. Responda SOMENTE em JSON: {"marca": true|false, "motivo": "curto"}. ' +
     'marca = true se houver logotipo, marca, nome de empresa, site, telefone ou qualquer texto que identifique quem fez a foto ou vende o produto. ' +
     'Texto genérico de exemplo (como "Seu Nome Aqui") e arte fictícia da peça NÃO contam como marca.'
@@ -131,7 +140,7 @@ async function conferirMarca(jpeg: Uint8Array): Promise<{ limpa: boolean | null;
     const t = setTimeout(() => ctl.abort(), 20000)
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${chave}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: b64 } }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0 } }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: 'image/jpeg', data: btoa(bin) } }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0 } }),
     })
     clearTimeout(t)
     if (!res.ok) return { limpa: null, motivo: 'verificação automática falhou' }
@@ -146,58 +155,69 @@ async function conferirMarca(jpeg: Uint8Array): Promise<{ limpa: boolean | null;
 
 // deno-lint-ignore no-explicit-any
 type Db = any
+const decode = { decode: (d: Uint8Array) => Image.decode(d) }
 
-/** Busca, processa e guarda as fotos de um grupo. Consulta a origem no máximo uma vez por grupo a cada 30 dias. */
-async function preencherGrupo(db: Db, grupo: string, termo: string | null, origemBase: string, verificar: boolean): Promise<{ situacao: 'ok' | 'sem_foto' | 'erro'; novas: number }> {
-  const base = origemBase.replace(/\/+$/, '')
-  let html: string
+/** Baixa, processa, guarda e confere UMA imagem da origem. Devolve true se ficou guardada (aprovada ou à espera do dono). */
+async function guardarImagem(db: Db, grupo: string, urlImagem: string, sku: string | null, aproximada: boolean, ordem: number, verificar: boolean, fonte = 'site'): Promise<{ guardada: boolean; baixaQualidade: boolean }> {
   try {
-    const res = await buscarOrigem(`${base}/produto/categoria/${slugCategoria(grupo)}`, false)
-    if (res.status === 404) { await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: 'sem_foto', p_detalhe: 'categoria sem página' }); return { situacao: 'sem_foto', novas: 0 } }
-    if (!res.ok) throw new Error(`status ${res.status}`)
-    html = await res.text()
+    const r = await buscarOrigem(urlImagem, { binario: true })
+    if (!r.ok) return { guardada: false, baixaQualidade: false }
+    const p = await processarImagem(new Uint8Array(await r.arrayBuffer()), decode)
+    if ('descartada' in p) return { guardada: false, baixaQualidade: false }
+    const hash = await sha256Hex(p.bytes)
+    const arquivo = nomeArquivoNeutro(hash)
+    const up = await db.storage.from(BUCKET).upload(arquivo, p.bytes, { contentType: 'image/jpeg', upsert: true })
+    if (up.error) return { guardada: false, baixaQualidade: false }
+    const { data: id } = await db.rpc('foto_registrar', {
+      p_grupo: grupo, p_url_origem: urlImagem, p_arquivo: arquivo, p_largura: p.largura, p_altura: p.altura, p_bytes: p.tamanho, p_hash: hash,
+      p_aproximada: aproximada, p_ordem: ordem, p_baixa_qualidade: p.baixaQualidade, p_fonte: fonte, p_sku: sku,
+    })
+    if (!id) return { guardada: false, baixaQualidade: false }
+    // whitelabel: na primeira vez de cada imagem
+    if (verificar) {
+      const v = await conferirMarca(p.bytes)
+      if (v.limpa === true) await db.rpc('foto_decidir', { p_id: id, p_status: 'aprovada', p_motivo: v.motivo || null })
+      else if (v.limpa === false) { await db.rpc('foto_decidir', { p_id: id, p_status: 'bloqueada', p_motivo: `marca visível: ${v.motivo}` }); return { guardada: false, baixaQualidade: p.baixaQualidade } }
+      else await db.from('produto_fotos').update({ revisar: true, motivo: v.motivo }).eq('id', id)
+    } else {
+      await db.rpc('foto_decidir', { p_id: id, p_status: 'aprovada', p_motivo: 'verificação automática desligada' })
+    }
+    return { guardada: true, baixaQualidade: p.baixaQualidade }
   } catch (e) {
-    await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: 'erro', p_detalhe: `origem indisponível: ${(e as Error).message}` })
+    console.error('Falha ao processar uma imagem:', (e as Error).message)
+    return { guardada: false, baixaQualidade: false }
+  }
+}
+
+/** Candidatas do mapa (SKU exato, termo, variedade do grupo). Sem mapa, cai na página da categoria do grupo. */
+async function candidatas(db: Db, grupo: string, sku: string | null, termo: string | null, origemBase: string): Promise<{ imagem: string; exato: boolean }[]> {
+  const { data } = await db.rpc('foto_candidatas', { p_grupo: grupo, p_sku: sku, p_termo: termo, p_limite: 8 })
+  const lista = ((data ?? []) as { imagem: string; exato: boolean }[]).filter((c) => /^https:\/\//.test(c.imagem))
+  if (lista.length) return lista
+  try {
+    const res = await buscarOrigem(`${origemBase.replace(/\/+$/, '')}/produto/categoria/${slugCategoria(grupo)}`)
+    if (!res.ok) return []
+    return lerCartoes(await res.text()).slice(0, 8).map((c) => ({ imagem: c.imagem, exato: false }))
+  } catch { return [] }
+}
+
+/** Preenche o grupo: até 3 imagens aproveitáveis (as grandes primeiro), aceitando baixa qualidade quando é só o que existe. */
+async function preencherGrupo(db: Db, grupo: string, sku: string | null, termo: string | null, origemBase: string, verificar: boolean): Promise<{ situacao: 'ok' | 'sem_foto' | 'erro'; novas: number }> {
+  const lista = await candidatas(db, grupo, sku, termo, origemBase)
+  if (!lista.length) {
+    await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: 'erro', p_detalhe: 'nenhuma imagem mapeada para o grupo' })
     return { situacao: 'erro', novas: 0 }
   }
-  const cartoes = lerCartoes(html)
-  if (!cartoes.length) { await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: 'sem_foto', p_detalhe: 'página sem imagens de produto' }); return { situacao: 'sem_foto', novas: 0 } }
-
-  // até 10 candidatas por grupo (as que combinam com o termo primeiro); para ao ter 3 aproveitáveis. Muitas imagens da origem são miniaturas
-  // (menores que 300 px) e são descartadas: um grupo só com miniaturas fica "sem foto", e o agente chama o dono.
-  const { itens, exato } = escolherCartoes(cartoes, termo, 10)
+  let boas = 0
   let novas = 0
   let ordem = 0
-  for (const c of itens) {
-    if (novas >= LIMITES.porPedido) break
-    try {
-      const r = await buscarOrigem(c.imagem, true)
-      if (!r.ok) continue
-      const bruta = new Uint8Array(await r.arrayBuffer())
-      const p = await processarImagem(bruta, { decode: (d) => Image.decode(d) })
-      if ('descartada' in p) continue
-      const hash = await sha256Hex(p.bytes)
-      const arquivo = nomeArquivoNeutro(hash)
-      const up = await db.storage.from(BUCKET).upload(arquivo, p.bytes, { contentType: 'image/jpeg', upsert: true })
-      if (up.error) continue
-      const { data: id } = await db.rpc('foto_registrar', { p_grupo: grupo, p_url_origem: c.imagem, p_arquivo: arquivo, p_largura: p.largura, p_altura: p.altura, p_bytes: p.tamanho, p_hash: hash, p_aproximada: !exato, p_ordem: ordem++ })
-      if (!id) continue
-      novas++
-      // whitelabel: na primeira vez de cada imagem
-      if (verificar) {
-        const v = await conferirMarca(p.bytes)
-        if (v.limpa === true) await db.rpc('foto_decidir', { p_id: id, p_status: 'aprovada', p_motivo: v.motivo || null })
-        else if (v.limpa === false) await db.rpc('foto_decidir', { p_id: id, p_status: 'bloqueada', p_motivo: `marca visível: ${v.motivo}` })
-        else await db.from('produto_fotos').update({ revisar: true, motivo: v.motivo }).eq('id', id)
-      } else {
-        await db.rpc('foto_decidir', { p_id: id, p_status: 'aprovada', p_motivo: 'verificação automática desligada' })
-      }
-    } catch (e) {
-      console.error('Falha ao processar uma imagem do grupo:', (e as Error).message)
-    }
+  for (const c of lista) {
+    if (boas >= LIMITES.porPedido) break
+    const r = await guardarImagem(db, grupo, c.imagem, c.exato ? sku : null, !c.exato, ordem++, verificar)
+    if (r.guardada) { novas++; if (!r.baixaQualidade) boas++ }
   }
-  await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: novas ? 'ok' : 'sem_foto', p_detalhe: novas ? null : 'nenhuma imagem aproveitável' })
-  return { situacao: novas ? 'ok' : 'sem_foto', novas }
+  await db.rpc('foto_fechar_busca', { p_grupo: grupo, p_situacao: novas ? 'ok' : 'erro', p_detalhe: novas ? null : 'imagens do grupo não puderam ser aproveitadas' })
+  return { situacao: novas ? 'ok' : 'erro', novas }
 }
 
 Deno.serve(async (req) => {
@@ -213,36 +233,57 @@ Deno.serve(async (req) => {
 
   const { data: cfgRow } = await db.from('app_settings').select('value').eq('key', 'fotos').maybeSingle()
   const cfg = (cfgRow?.value ?? {}) as { origem_base?: string; ligado?: boolean; verificar_marca?: boolean }
-  const origemBase = String(cfg.origem_base ?? '')
+  const origemBase = String(cfg.origem_base ?? '').replace(/\/+$/, '')
+  const verificar = cfg.verificar_marca !== false
   const segredosOrigem = [origemBase, (() => { try { return new URL(origemBase).hostname.replace(/^www\./, '') } catch { return '' } })()]
 
-  // ---- tela do dono: trocar por uma imagem escolhida, ou refazer a busca de um grupo
-  if (acao === 'preparar' || acao === 'rebuscar' || acao === 'trocar') {
-    if (quem !== 'dono' && quem !== 'servidor') return json({ error: 'Não autorizado.' }, 401)
+  // ---- tela do dono e agendamentos: mapear o menu da origem, refazer a busca de um grupo, trocar uma imagem
+  if (acao === 'topos' || acao === 'varrer' || acao === 'rebuscar' || acao === 'trocar') {
+    if (!origemBase) return json({ error: 'A origem das fotos ainda não foi configurada pelo dono.' }, 409)
+
+    if (acao === 'topos') {
+      // todas as categorias do menu lateral (a primeira parte de cada caminho)
+      try {
+        const home = await (await buscarOrigem(`${origemBase}/`)).text()
+        const topos = [...new Set([...home.matchAll(/listServico\('[^']*',\s*'([^'/]+)(?:\/[^']*)?'\)/g)].map((m) => m[1]))]
+        return json({ ok: true, topos })
+      } catch { return json({ error: 'Não foi possível ler o menu da origem agora.' }, 502) }
+    }
+
+    if (acao === 'varrer') {
+      // Uma categoria do menu, em partes (a função tem limite de tempo): devolve a próxima página ou null quando acabou.
+      const topo = (input.topo ?? '').trim()
+      if (!/^[a-z0-9-]+$/i.test(topo)) return json({ error: 'Informe a categoria do menu (topo).' }, 400)
+      let pagina = Math.max(0, Number(input.pagina) || 0)
+      const limite = Date.now() + 100_000
+      let itens = 0
+      while (Date.now() < limite) {
+        let cards: string[] = []
+        try {
+          const r = await buscarOrigem(`${origemBase}/home/CategoriaPaginada`, { post: `categoria=${encodeURIComponent(topo)}&pagina=${pagina}` })
+          if (!r.ok) return json({ ok: true, topo, itens, proxima: null, aviso: `origem respondeu ${r.status}` })
+          cards = ((await r.json()) as { cardsHomepage?: string[] }).cardsHomepage ?? []
+        } catch { return json({ ok: false, topo, itens, proxima: pagina, error: 'Falha de rede; tente de novo a partir desta página.' }, 502) }
+        if (!cards.length) return json({ ok: true, topo, itens, proxima: null })
+        const lote = lerCartoes(cards.join('\n')).map((c) => ({ codigo: c.codigo, topo, caminho: c.caminho, imagem: c.imagem }))
+        if (lote.length) { await db.rpc('foto_mapa_gravar', { p_itens: lote }); itens += lote.length }
+        pagina++
+      }
+      return json({ ok: true, topo, itens, proxima: pagina })
+    }
+
     const grupo = input.grupo?.trim()
     if (!grupo) return json({ error: 'Informe o grupo.' }, 400)
-    if (!origemBase) return json({ error: 'A origem das fotos ainda não foi configurada pelo dono.' }, 409)
     if (acao === 'trocar') {
       // só endereços https públicos (nunca rede interna); quem chama é o dono ou o servidor
       let host = ''
       try { host = new URL(input.url_imagem ?? '').hostname } catch { /* inválido */ }
       if (!/^https:\/\//.test(input.url_imagem ?? '') || !host.includes('.') || /^(localhost|127\.|10\.|192\.168\.|169\.254\.)/.test(host)) return json({ error: 'Endereço de imagem inválido.' }, 400)
-      try {
-        const r = await buscarOrigem(input.url_imagem, true)
-        if (!r.ok) return json({ error: 'Não foi possível baixar a imagem.' }, 502)
-        const p = await processarImagem(new Uint8Array(await r.arrayBuffer()), { decode: (d) => Image.decode(d) })
-        if ('descartada' in p) return json({ error: `Imagem recusada: ${p.descartada}.` }, 422)
-        const hash = await sha256Hex(p.bytes)
-        const arquivo = nomeArquivoNeutro(hash)
-        const up = await db.storage.from(BUCKET).upload(arquivo, p.bytes, { contentType: 'image/jpeg', upsert: true })
-        if (up.error) return json({ error: 'Não foi possível guardar a imagem.' }, 500)
-        const { data: id } = await db.rpc('foto_registrar', { p_grupo: grupo, p_url_origem: input.url_imagem, p_arquivo: arquivo, p_largura: p.largura, p_altura: p.altura, p_bytes: p.tamanho, p_hash: hash, p_aproximada: true, p_ordem: 0 })
-        // o dono escolheu: aprova direto
-        await db.rpc('foto_decidir', { p_id: id, p_status: 'aprovada', p_motivo: 'trocada pelo dono' })
-        return json({ ok: true, id, bytes: p.tamanho })
-      } catch { return json({ error: 'Falha ao processar a imagem.' }, 502) }
+      const r = await guardarImagem(db, grupo, input.url_imagem!, null, true, 0, false, 'manual')
+      if (!r.guardada) return json({ error: 'Não foi possível aproveitar essa imagem.' }, 422)
+      return json({ ok: true })
     }
-    const r = await preencherGrupo(db, grupo, input.termo_ou_sku ?? null, origemBase, cfg.verificar_marca !== false)
+    const r = await preencherGrupo(db, grupo, null, input.termo_ou_sku ?? null, origemBase, verificar)
     return json({ ok: true, situacao: r.situacao, novas: r.novas })
   }
 
@@ -271,24 +312,35 @@ Deno.serve(async (req) => {
 
   const semFoto = async (grupo: string | null) => {
     await registrar(grupo, 0, 0, null, 'sem_foto')
-    // a gravidade baixa chama o dono sem interromper o atendimento
-    await db.from('alertas').insert({ tipo: 'foto_indisponivel', gravidade: 'baixa', conversation_id: conv.id, contact_id: conv.contact_id, motivo: `Pedido de foto sem imagem disponível (${grupo ?? 'produto não identificado'}). Confirmar com o cliente.` })
-    return json({ enviadas: 0, sem_foto: true, orientacao: 'Diga que vai confirmar a foto com a equipe e já retorna. Não envie foto de outro produto e continue o atendimento.' })
+    // a equipe é avisada (gravidade baixa) sem interromper o atendimento; o agente nunca diz ao cliente que não há foto
+    await db.from('alertas').insert({ tipo: 'foto_indisponivel', gravidade: 'baixa', conversation_id: conv.id, contact_id: conv.contact_id, motivo: `Pedido de foto sem imagem disponível (${grupo ?? 'produto não identificado'}). Enviar a foto à mão.` })
+    return json({ enviadas: 0, sem_foto: true, orientacao: ORIENTACAO_SEM_FOTO })
   }
 
   if (cfg.ligado === false) return await semFoto(null)
   const { data: res } = await db.rpc('foto_resolver_grupo', { p_termo: termo })
   if (!res?.ok) return await semFoto(null)
   const grupo = res.grupo as string
+  const sku: string | null = res.exato_por_sku ? termo.toUpperCase() : null
 
   let via: 'cache' | 'busca' = 'cache'
   const { data: estado } = await db.rpc('foto_estado_grupo', { p_grupo: grupo })
-  if (!estado?.fresco) {
+  if (!estado?.fresco || (estado.aprovadas ?? 0) === 0) {
     if (!origemBase) return await semFoto(grupo)
     via = 'busca'
-    await preencherGrupo(db, grupo, res.exato_por_sku ? null : termo, origemBase, cfg.verificar_marca !== false)
+    await preencherGrupo(db, grupo, sku, res.exato_por_sku ? null : termo, origemBase, verificar)
   }
-  const { data: fotos } = await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: decisao.quantidade })
+  // pediu um SKU: tenta guardar a foto do próprio item (uma única imagem) quando ainda não existe
+  if (sku && origemBase) {
+    const { data: ja } = await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: 3, p_sku: sku })
+    const temExata = ((ja ?? []) as { aproximada: boolean }[]).some((f) => !f.aproximada)
+    if (!temExata) {
+      const { data: cands } = await db.rpc('foto_candidatas', { p_grupo: grupo, p_sku: sku, p_termo: null, p_limite: 1 })
+      const c = (cands ?? [])[0] as { imagem: string; exato: boolean } | undefined
+      if (c?.exato && /^https:\/\//.test(c.imagem)) { via = 'busca'; await guardarImagem(db, grupo, c.imagem, sku, false, 0, verificar) }
+    }
+  }
+  const { data: fotos } = await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: decisao.quantidade, p_sku: sku })
   const lista = (fotos ?? []) as { arquivo: string; bytes: number; aproximada: boolean }[]
   if (!lista.length) return await semFoto(grupo)
 

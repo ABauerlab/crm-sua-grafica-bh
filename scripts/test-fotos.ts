@@ -44,7 +44,7 @@ function degrade(w: number, h: number): Image {
 // grande: reduz a 1000 px no maior lado, mantém proporção, fica até 150 KB
 const grande = await degrade(2400, 1600).encodeJPEG(95)
 const p1 = await processarImagem(grande, lib)
-assert.ok(!('descartada' in p1))
+assert.ok(!('descartada' in p1) && !p1.baixaQualidade)
 if (!('descartada' in p1)) {
   assert.equal(Math.max(p1.largura, p1.altura), LIMITES.maiorLadoPx)
   assert.equal(p1.largura, 1000); assert.equal(p1.altura, 667)
@@ -54,7 +54,12 @@ if (!('descartada' in p1)) {
   assert.ok(!txt.includes('Exif') && !txt.includes('http') && !txt.includes('Photoshop'))
 }
 // pequena: descartada
-assert.deepEqual(await processarImagem(await degrade(280, 400).encodeJPEG(90), lib), { descartada: 'imagem menor que 300 px' })
+// miniatura (como as de 180 px da origem) vale, vira baixa qualidade e é ampliada; ícone de 48 px é descartado
+const mini = await processarImagem(await degrade(180, 152).encodeJPEG(90), lib)
+assert.ok(!('descartada' in mini) && mini.baixaQualidade && Math.max(mini.largura, mini.altura) === LIMITES.ampliarAtePx && mini.tamanho <= LIMITES.metaBytes)
+const media = await processarImagem(await degrade(500, 400).encodeJPEG(90), lib)
+assert.ok(!('descartada' in media) && !media.baixaQualidade && media.largura === 640, 'entre 400 e 640 px amplia sem marcar')
+assert.deepEqual(await processarImagem(await degrade(48, 48).encodeJPEG(90), lib), { descartada: 'imagem pequena demais (ícone)' })
 // ilegível
 assert.deepEqual(await processarImagem(new Uint8Array([1, 2, 3, 4]), lib), { descartada: 'imagem ilegível' })
 // muito pesada: ruído 1000x1000 nunca chega a 150 KB, mas a regra é recomprimir; se ainda passar de 300 KB, descarta

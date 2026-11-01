@@ -62,7 +62,7 @@ begin
   -- 4. segurança
   perform pg_temp.ck('bucket de fotos é privado', (select coalesce(bool_and(not public), false) from storage.buckets where id = 'produto-fotos'));
   perform pg_temp.ck('anon não lê produto_fotos', not has_table_privilege('anon', 'public.produto_fotos', 'select'));
-  perform pg_temp.ck('anon não executa foto_aprovadas', not has_function_privilege('anon', 'public.foto_aprovadas(text, integer)', 'execute'));
+  perform pg_temp.ck('anon não executa foto_aprovadas', not has_function_privilege('anon', 'public.foto_aprovadas(text, integer, text)', 'execute'));
   perform pg_temp.ck('RLS ligada nas 3 tabelas', (select bool_and(relrowsecurity) from pg_class where oid in ('public.produto_fotos'::regclass, 'public.produto_fotos_grupos'::regclass, 'public.produto_fotos_envios'::regclass)));
   perform pg_temp.ck('configuração nasce sem origem no repositório', (select value ->> 'origem_base' from public.app_settings where key = 'fotos') = '');
   perform set_config('request.jwt.claim.role', 'authenticated', true);
@@ -72,6 +72,33 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claim.sub', v_staff::text, true);
   perform pg_temp.ck('painel lista os grupos do catálogo', (select count(*) from public.fotos_painel() where false) = 0);
+
+  -- 5. mapa código -> imagem, candidatas e cobertura
+  perform pg_temp.ck('grava lote do mapa e liga ao grupo do catálogo pelo SKU', public.foto_mapa_gravar('[
+    {"codigo":"adv01","topo":"black-friday","caminho":"black-friday/adesivos/x/ADV01","imagem":"G-BF-1"},
+    {"codigo":"ADV01","topo":"adesivos","caminho":"adesivos/vinil-brilho/redondo/ADV01","imagem":"G-REG-1"},
+    {"codigo":"ADV02","topo":"adesivos","caminho":"adesivos/vinil-fosco/quadrado/ADV02","imagem":"G-REG-2"},
+    {"codigo":"PFL01","topo":"panfletos","caminho":"panfletos/couche/A5/PFL01","imagem":"G-PF-1"},
+    {"codigo":"","topo":"x","caminho":"x","imagem":"G"}]'::jsonb) >= 3);
+  perform pg_temp.ck('categoria regular vence a promocional para o mesmo SKU', (select imagem from public.produto_fotos_mapa where sku = 'ADV01') = 'G-REG-1');
+  perform public.foto_mapa_gravar('[{"codigo":"ADV01","topo":"black-friday","caminho":"black-friday/adesivos/x/ADV01","imagem":"G-BF-2"}]'::jsonb);
+  perform pg_temp.ck('promocional depois não troca o regular', (select imagem from public.produto_fotos_mapa where sku = 'ADV01') = 'G-REG-1');
+  perform pg_temp.ck('SKU entra em maiúsculas e com grupo', (select grupo_produto from public.produto_fotos_mapa where sku = 'ADV01') = 'ADESIVOS');
+  j := public.foto_candidatas('ADESIVOS', 'ADV02', 'adesivo quadrado', 8);
+  perform pg_temp.ck('candidata do SKU exato vem primeiro', j -> 0 ->> 'imagem' = 'G-REG-2' and (j -> 0 ->> 'exato')::boolean, j::text);
+  j := public.foto_candidatas('ADESIVOS', null, 'vinil brilho', 8);
+  perform pg_temp.ck('sem SKU, o termo ordena', j -> 0 ->> 'imagem' = 'G-REG-1', j::text);
+  perform pg_temp.ck('candidatas só do grupo pedido', not (public.foto_candidatas('ADESIVOS', null, null, 20)::text like '%G-PF-1%'));
+  perform pg_temp.ck('cobertura por grupo lista os SKUs sem imagem', (select skus_com_imagem from public.fotos_cobertura() where grupo_produto = 'ADESIVOS') = 2
+    and (select skus from public.fotos_cobertura() where grupo_produto = 'ADESIVOS') >= 2);
+  perform pg_temp.ck('SKUs sem imagem são listados', exists (select 1 from public.fotos_skus_sem_imagem('CARTÕES DE VISITA')) and not exists (select 1 from public.fotos_skus_sem_imagem('ADESIVOS') where sku in ('ADV01','ADV02')));
+  v_f1 := public.foto_registrar('ADESIVOS', 'https://origem.interna/x/9.jpg', 'ee/ee01.jpg', 640, 540, 30000, 'ee01', false, 0, true, 'site', 'adv02');
+  perform public.foto_decidir(v_f1, 'aprovada');
+  j := public.foto_aprovadas('ADESIVOS', 3, 'ADV02');
+  perform pg_temp.ck('foto do SKU exato sai primeiro e sem aviso de ilustrativa', j -> 0 ->> 'arquivo' = 'ee/ee01.jpg' and not (j -> 0 ->> 'aproximada')::boolean, j::text);
+  perform pg_temp.ck('foto de outro SKU do grupo sai como ilustrativa', (public.foto_aprovadas('ADESIVOS', 3, 'ADV01') -> 0 ->> 'aproximada')::boolean);
+  perform pg_temp.ck('baixa qualidade fica marcada', (public.foto_aprovadas('ADESIVOS', 3, 'ADV02') -> 0 ->> 'baixa_qualidade')::boolean);
+  perform pg_temp.ck('mapa é privado ao dono', not has_table_privilege('anon', 'public.produto_fotos_mapa', 'select'));
 
   select count(*), string_agg(format('%s %s%s', case when ok then 'OK    ' else 'FALHA ' end, nome, case when ok then '' else ' => ' || coalesce(detalhe, '') end), E'\n' order by n),
          string_agg(nome || ' => ' || coalesce(detalhe, ''), E'\n' order by n) filter (where not ok)
