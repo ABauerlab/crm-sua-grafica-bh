@@ -16,6 +16,9 @@ const base: OrcamentoDoc = {
   empresa: { nome: 'Sua Gráfica BH', cnpj: '58.481.181/0001-03', telefone: '(31) 97561-8243', email: 'contato@suagraficabh.com.br', instagram: null, site: null },
 }
 const html = (o: Partial<OrcamentoDoc> = {}) => orcamentoHtml({ ...base, ...o })
+assert.doesNotMatch(html(), /Condições:/, 'sem política configurada, o rodapé não muda')
+assert.match(html({ politica: 'Produto personalizado, produzido após a aprovação da arte. Sem cancelamento após a aprovação da arte.' }), /Condições:<\/b> Produto personalizado, produzido após a aprovação da arte\. Sem cancelamento/, 'resumo da política no rodapé do PDF')
+assert.doesNotMatch(html({ politica: 'Produto personalizado.' }), /custo|margem|piso|fornecedor/i, 'política no PDF sem dado interno')
 
 // escape: nada do cliente vira HTML
 assert.equal(esc(`<script>"a" & 'b'</script>`), '&lt;script&gt;&quot;a&quot; &amp; &#39;b&#39;&lt;/script&gt;')

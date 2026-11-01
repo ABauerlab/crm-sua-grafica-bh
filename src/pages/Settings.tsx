@@ -24,6 +24,7 @@ import DiscountPolicyTab from '@/features/agent/DiscountPolicyTab'
 const NotificationsTab = lazy(() => import('@/features/notifications/NotificationsTab'))
 const KnowledgeTab = lazy(() => import('@/features/agent/KnowledgeTab'))
 const FollowupsTab = lazy(() => import('@/features/agent/FollowupsTab'))
+const PersonasTab = lazy(() => import('@/features/agent/PersonasTab'))
 
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
 
@@ -461,6 +462,7 @@ export default function Settings() {
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
           <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
+          <TabsTrigger value="personas">Personas e política</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>
         <TabsContent value="empresa"><CompanyTab /></TabsContent>
@@ -475,6 +477,7 @@ export default function Settings() {
         <TabsContent value="notificacoes"><Suspense fallback={<Skeleton className="h-40 w-full" />}><NotificationsTab /></Suspense></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>
         <TabsContent value="followups"><Suspense fallback={<Skeleton className="h-40 w-full" />}><FollowupsTab /></Suspense></TabsContent>
+        <TabsContent value="personas"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PersonasTab /></Suspense></TabsContent>
         <TabsContent value="conhecimento"><Suspense fallback={<Skeleton className="h-40 w-full" />}><KnowledgeTab /></Suspense></TabsContent>
         <TabsContent value="dados"><DataTab /></TabsContent>
       </Tabs>

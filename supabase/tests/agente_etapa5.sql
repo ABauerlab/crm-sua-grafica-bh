@@ -1,6 +1,8 @@
 -- Etapa 5: testes das funções do agente (WF1 e WF2). Desfaz tudo no fim.
 -- Sucesso aparece como "OK: N testes passaram"; falha lista os casos.
 begin;
+-- 7C: estes testes cobrem o comportamento ANTIGO (o agente PARA depois do pagamento); o automático (João Victor) é testado em conhecimento_7c.sql
+update public.app_settings set value = jsonb_set(value, '{pos_pagamento_automatico}', 'false') where key = 'personas';
 create temp table _t (n int, ok boolean, nome text);
 create or replace function pg_temp.chk(p_ok boolean, p_nome text) returns void language plpgsql as $$
 begin insert into _t values ((select count(*) + 1 from _t), coalesce(p_ok, false), p_nome); end $$;

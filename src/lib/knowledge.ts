@@ -2,7 +2,11 @@
 // Estilo de vendedor de BH no WhatsApp: curto, uma ideia por vez, sem lista, sem markdown, sem travessão, emoji de vez em quando.
 
 export const KNOWLEDGE_LIMITS = { total: 120, resposta: 40, fatos: 80 } as const
-export const KNOWLEDGE_VARIABLES = ['arte_basica', 'arte_frete', 'pedido_minimo', 'validade', 'horario'] as const
+export const KNOWLEDGE_VARIABLES = [
+  'arte_basica', 'arte_frete', 'pedido_minimo', 'validade', 'horario',
+  // Etapa 7C: nomes das personas e parâmetros de política vêm de Configurações, nunca ficam escritos no trecho
+  'persona_vendas', 'persona_pos_pagamento', 'cupom_percentual', 'cupom_teto', 'cupom_validade_dias', 'troca_prazo',
+] as const
 
 export interface Trecho {
   slug?: string | null
@@ -51,6 +55,10 @@ export function trechoProblemas(t: Trecho): string[] {
     if (/\b\d+\s*(dias?|semanas?)\b/i.test(v)) p.push(`${nome}: prazo escrito no texto (prazo vem da ferramenta ou de variável)`)
     if (/\b[A-Z]{2,4}\d{2,}[A-Z]?\b/.test(v)) p.push(`${nome}: parece um código de produto`)
     for (const m of v.matchAll(/\{\{(\w+)\}\}/g)) if (!(KNOWLEDGE_VARIABLES as readonly string[]).includes(m[1])) p.push(`${nome}: variável desconhecida {{${m[1]}}}`)
+  }
+  // Endereço de retirada só em trecho de pós-pagamento (tag pos_pagamento)
+  if (!(t.tags ?? []).includes('pos_pagamento')) {
+    for (const [nome, v] of campos) if (v && /Rio de Janeiro,?\s*\d|Sala\s*2217|30160/i.test(v)) p.push(`${nome}: endereço de retirada fora de trecho pos_pagamento`)
   }
   const r = t.resposta_pronta ?? ''
   if (/\[CONFIRMAR\]/i.test(r)) p.push('resposta pronta com [CONFIRMAR] (iria ao cliente)')

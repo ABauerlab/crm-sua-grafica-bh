@@ -86,7 +86,15 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date()
+  // Política curta (descrição do link) e máximo de parcelas vêm de Configurações; se falhar, vale o padrão
+  const [{ data: politica }, { data: parc }] = await Promise.all([
+    db.rpc('politica_texto', { p_chave: 'descricao_link' }),
+    db.from('app_settings').select('value').eq('key', 'parcelamento').maybeSingle(),
+  ])
+  const maxParcelas = Number((parc?.value as { maximo_link?: number } | null)?.maximo_link)
   const preference = buildPreference({
+    maxParcelas: Number.isFinite(maxParcelas) && maxParcelas >= 1 ? maxParcelas : undefined,
+    politica: typeof politica === 'string' ? politica : null,
     items,
     reference: formatReference(order.number),
     notificationUrl: `${webhookUrl()}?source_news=webhooks`,

@@ -30,10 +30,14 @@ interface Row {
   ativo: boolean
   embedding_em: string | null
   atualizado_em: string
+  usos: number
+  ultimo_uso_em: string | null
+  substituido_por: string | null
 }
+interface Sugestao { id: string; slug_novo: string; slugs_atuais: string[]; payload: Record<string, unknown>; motivo: string | null; criado_em: string }
 interface Lacuna { id: string; pergunta: string; ocorrencias: number; status: 'aberta' | 'resolvida' | 'ignorada'; ultima_em: string }
 
-const COLS = 'id,slug,titulo,categoria,quando_usar,resposta_pronta,fatos,proximo_passo,tags,revisar,ativo,embedding_em,atualizado_em'
+const COLS = 'id,slug,titulo,categoria,quando_usar,resposta_pronta,fatos,proximo_passo,tags,revisar,ativo,embedding_em,atualizado_em,usos,ultimo_uso_em,substituido_por'
 
 function useTrechos() {
   return useQuery({
@@ -103,7 +107,7 @@ function Editor({ row, onClose, novo }: { row: Row; onClose: () => void; novo?: 
         <div className="space-y-1.5">
           <Label htmlFor="k-tags">Frases que o cliente usa (separe por vírgula)</Label>
           <Textarea id="k-tags" rows={3} value={v.tagsTexto} onChange={(e) => setV({ ...v, tagsTexto: e.target.value })} />
-          <p className="text-xs text-muted-foreground">Ajudam a achar o trecho quando o cliente escreve diferente. Variáveis aceitas: {'{{arte_basica}} {{arte_frete}} {{pedido_minimo}} {{validade}} {{horario}}'}.</p>
+          <p className="text-xs text-muted-foreground">Ajudam a achar o trecho quando o cliente escreve diferente. Variáveis aceitas: {'{{arte_basica}} {{arte_frete}} {{pedido_minimo}} {{validade}} {{horario}} {{persona_vendas}} {{persona_pos_pagamento}} {{cupom_percentual}} {{cupom_teto}} {{cupom_validade_dias}} {{troca_prazo}}'}.</p>
         </div>
         <label className="flex items-center gap-2 text-sm"><Switch checked={v.ativo} onCheckedChange={(c) => setV({ ...v, ativo: c })} /> Trecho ativo</label>
         {problemas.length > 0 && (
@@ -122,7 +126,7 @@ function Editor({ row, onClose, novo }: { row: Row; onClose: () => void; novo?: 
   )
 }
 
-function Lacunas() {
+function Lacunas({ onCriar }: { onCriar: (trechoId: string) => void }) {
   const qc = useQueryClient()
   const toast = useToast()
   const { data, isLoading } = useQuery({
@@ -141,6 +145,15 @@ function Lacunas() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['conhecimento-lacunas'] }),
     onError: (e: Error) => toast('error', e.message),
   })
+  const criar = useMutation({
+    mutationFn: async (l: Lacuna) => {
+      const { data, error } = await supabase.rpc('conhecimento_criar_de_lacuna', { p_lacuna: l.id })
+      if (error) throw new Error(error.message)
+      return (data as { trecho_id: string }).trecho_id
+    },
+    onSuccess: (id) => { qc.invalidateQueries({ queryKey: ['conhecimento'] }); qc.invalidateQueries({ queryKey: ['conhecimento-lacunas'] }); onCriar(id) },
+    onError: (e: Error) => toast('error', e.message),
+  })
   if (isLoading) return <Skeleton className="h-24 w-full" />
   if (!data?.length) return <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Nenhuma pergunta sem resposta. Quando o agente não achar um trecho, a pergunta aparece aqui para você escrever o trecho que falta.</p>
   return (
@@ -148,9 +161,50 @@ function Lacunas() {
       {data.map((l) => (
         <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
           <div className="min-w-0"><p className="truncate text-sm font-semibold">{l.pergunta}</p><p className="text-xs text-muted-foreground tabular">{l.ocorrencias}x · última em {new Date(l.ultima_em).toLocaleDateString('pt-BR')} · {l.status}</p></div>
-          {l.status === 'aberta' && <span className="flex gap-1"><Button size="sm" variant="outline" onClick={() => marcar.mutate({ id: l.id, status: 'resolvida' })}>Já escrevi o trecho</Button><Button size="sm" variant="ghost" onClick={() => marcar.mutate({ id: l.id, status: 'ignorada' })}>Ignorar</Button></span>}
+          {l.status === 'aberta' && <span className="flex flex-wrap gap-1"><Button size="sm" onClick={() => criar.mutate(l)} disabled={criar.isPending}>Criar trecho a partir desta pergunta</Button><Button size="sm" variant="outline" onClick={() => marcar.mutate({ id: l.id, status: 'resolvida' })}>Já escrevi o trecho</Button><Button size="sm" variant="ghost" onClick={() => marcar.mutate({ id: l.id, status: 'ignorada' })}>Ignorar</Button></span>}
         </li>
       ))}
+    </ul>
+  )
+}
+
+function Sugestoes({ trechos }: { trechos: Row[] }) {
+  const qc = useQueryClient()
+  const toast = useToast()
+  const { data, isLoading } = useQuery({
+    queryKey: ['conhecimento-sugestoes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('conhecimento_sugestoes').select('id,slug_novo,slugs_atuais,payload,motivo,criado_em').eq('status', 'pendente').order('criado_em')
+      if (error) throw error
+      return data as Sugestao[]
+    },
+  })
+  const decidir = useMutation({
+    mutationFn: async ({ id, aceitar }: { id: string; aceitar: boolean }) => {
+      const { data, error } = await supabase.rpc('conhecimento_sugestao_decidir', { p_sugestao: id, p_aceitar: aceitar })
+      if (error) throw new Error(error.message)
+      return data
+    },
+    onSuccess: () => { toast('ok', 'Pronto.'); qc.invalidateQueries({ queryKey: ['conhecimento-sugestoes'] }); qc.invalidateQueries({ queryKey: ['conhecimento'] }) },
+    onError: (e: Error) => toast('error', e.message),
+  })
+  if (isLoading) return <Skeleton className="h-24 w-full" />
+  if (!data?.length) return <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">Nenhuma sugestão pendente. Quando uma importação traz uma versão nova de um trecho que você já editou, ela aparece aqui para você comparar. O seu texto nunca é trocado sem a sua decisão.</p>
+  return (
+    <ul className="space-y-3">
+      {data.map((x) => {
+        const atual = trechos.find((t) => x.slugs_atuais.includes(t.slug ?? ''))
+        return (
+          <li key={x.id} className="space-y-2 rounded-md border p-3">
+            <p className="text-sm font-semibold">{String(x.payload.titulo)} <span className="font-normal text-muted-foreground">({x.motivo})</span></p>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              <div className="rounded-md bg-secondary/50 p-2"><p className="mb-1 text-xs font-semibold text-muted-foreground">Seu texto atual</p>{atual?.resposta_pronta ?? '(trecho não encontrado)'}</div>
+              <div className="rounded-md bg-brand-green/10 p-2"><p className="mb-1 text-xs font-semibold text-muted-foreground">Versão nova</p>{String(x.payload.resposta_pronta)}</div>
+            </div>
+            <div className="flex justify-end gap-2"><Button size="sm" variant="outline" onClick={() => decidir.mutate({ id: x.id, aceitar: false })}>Manter o meu</Button><Button size="sm" onClick={() => decidir.mutate({ id: x.id, aceitar: true })}>Usar a versão nova</Button></div>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -164,7 +218,9 @@ export default function KnowledgeTab() {
   const [cat, setCat] = useState('')
   const [soRevisar, setSoRevisar] = useState(false)
   const [edit, setEdit] = useState<{ row: Row; novo?: boolean } | null>(null)
-  const [aba, setAba] = useState<'trechos' | 'lacunas'>('trechos')
+  const [aba, setAba] = useState<'trechos' | 'lacunas' | 'sugestoes'>('trechos')
+  const [ordem, setOrdem] = useState<'categoria' | 'usos' | 'recente'>('categoria')
+  const [uso, setUso] = useState<'' | 'nunca' | 'usados'>('')
   const taxa = useQuery({
     queryKey: ['conhecimento-taxa'],
     queryFn: async () => (await supabase.rpc('conhecimento_taxa', { p_dias: 30 })).data as { consultas: number; acertos: number; taxa_pct: number | null; via_faq: number },
@@ -186,7 +242,9 @@ export default function KnowledgeTab() {
   })
 
   const t = busca.trim().toLowerCase()
-  const lista = (data ?? []).filter((r) => (!cat || r.categoria === cat) && (!soRevisar || r.revisar) && (!t || `${r.titulo} ${r.quando_usar} ${r.resposta_pronta} ${r.tags.join(' ')}`.toLowerCase().includes(t)))
+  const lista = (data ?? []).filter((r) => (!cat || r.categoria === cat) && (!soRevisar || r.revisar) && (uso === '' || (uso === 'nunca' ? r.usos === 0 : r.usos > 0)) && (!t || `${r.titulo} ${r.quando_usar} ${r.resposta_pronta} ${r.tags.join(' ')}`.toLowerCase().includes(t)))
+  if (ordem === 'usos') lista.sort((a, b) => b.usos - a.usos)
+  if (ordem === 'recente') lista.sort((a, b) => (b.ultimo_uso_em ?? '').localeCompare(a.ultimo_uso_em ?? ''))
   const cats = [...new Set((data ?? []).map((r) => r.categoria).filter(Boolean))] as string[]
   const pendRev = (data ?? []).filter((r) => r.revisar).length
   const semVetor = (data ?? []).filter((r) => r.ativo && !r.embedding_em).length
@@ -200,20 +258,23 @@ export default function KnowledgeTab() {
         <Badge className="bg-secondary px-2 py-1 text-xs" title="Perguntas em que o agente achou um trecho, nos últimos 30 dias">Taxa de acerto: {taxa.data?.taxa_pct == null ? 'sem consultas' : `${taxa.data.taxa_pct}% de ${taxa.data.consultas}`}</Badge>
         <span className="ml-auto flex gap-2">
           <Button size="sm" variant="outline" onClick={() => reindexar.mutate()} disabled={reindexar.isPending}><RefreshCw className={cn('h-4 w-4', reindexar.isPending && 'animate-spin')} /> {reindexar.isPending ? 'Reindexando…' : 'Reindexar tudo'}</Button>
-          <Button size="sm" onClick={() => setEdit({ novo: true, row: { id: '', slug: null, titulo: '', categoria: null, quando_usar: '', resposta_pronta: '', fatos: '', proximo_passo: '', tags: [], revisar: true, ativo: true, embedding_em: null, atualizado_em: '' } })}>Novo trecho</Button>
+          <Button size="sm" onClick={() => setEdit({ novo: true, row: { id: '', slug: null, titulo: '', categoria: null, quando_usar: '', resposta_pronta: '', fatos: '', proximo_passo: '', tags: [], revisar: true, ativo: true, embedding_em: null, atualizado_em: '', usos: 0, ultimo_uso_em: null, substituido_por: null } })}>Novo trecho</Button>
         </span>
       </div>
 
       <div className="flex gap-1" role="tablist" aria-label="Conhecimento">
         <button role="tab" aria-selected={aba === 'trechos'} onClick={() => setAba('trechos')} className={cn('rounded-md border px-3 py-1 text-sm font-semibold', aba === 'trechos' && 'bg-ink text-white')}>Trechos</button>
         <button role="tab" aria-selected={aba === 'lacunas'} onClick={() => setAba('lacunas')} className={cn('rounded-md border px-3 py-1 text-sm font-semibold', aba === 'lacunas' && 'bg-ink text-white')}>Perguntas sem resposta</button>
+        <button role="tab" aria-selected={aba === 'sugestoes'} onClick={() => setAba('sugestoes')} className={cn('rounded-md border px-3 py-1 text-sm font-semibold', aba === 'sugestoes' && 'bg-ink text-white')}>Sugestões da importação</button>
       </div>
 
-      {aba === 'lacunas' ? <Lacunas /> : (
+      {aba === 'lacunas' ? <Lacunas onCriar={(id) => { const r = (data ?? []).find((x) => x.id === id); if (r) setEdit({ row: r }); else void qc.fetchQuery({ queryKey: ['conhecimento'], staleTime: 0 }).then((rows) => { const n = (rows as Row[] | undefined)?.find((x) => x.id === id); if (n) setEdit({ row: n }) }) }} /> : aba === 'sugestoes' ? <Sugestoes trechos={data ?? []} /> : (
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-52 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden /><Input className="pl-9" aria-label="Buscar trecho" placeholder="Buscar trecho" value={busca} onChange={(e) => setBusca(e.target.value)} /></div>
             <Select aria-label="Categoria" className="w-48" value={cat} onChange={(e) => setCat(e.target.value)}><option value="">Todas as categorias</option>{cats.map((c) => <option key={c} value={c}>{c}</option>)}</Select>
+            <Select aria-label="Uso" className="w-40" value={uso} onChange={(e) => setUso(e.target.value as typeof uso)}><option value="">Todos os usos</option><option value="usados">Já usados</option><option value="nunca">Nunca usados</option></Select>
+            <Select aria-label="Ordenar" className="w-44" value={ordem} onChange={(e) => setOrdem(e.target.value as typeof ordem)}><option value="categoria">Por categoria</option><option value="usos">Mais usados</option><option value="recente">Usados há pouco</option></Select>
             <label className="flex items-center gap-2 text-sm"><Switch checked={soRevisar} onCheckedChange={setSoRevisar} /> Só para revisar</label>
           </div>
           {isLoading ? <Skeleton className="h-40 w-full" /> : (
@@ -229,8 +290,10 @@ export default function KnowledgeTab() {
                         {acima && <Badge className="bg-brand-red/10 text-brand-red" title="Passa do limite de palavras">Acima do limite</Badge>}
                         {r.fatos?.includes('[CONFIRMAR]') && <Badge className="bg-brand-yellow/30">Confirmar</Badge>}
                         {r.revisar && <Badge className="bg-brand-yellow/30">Revisar</Badge>}
-                        {!r.ativo && <Badge className="bg-ink/10">Inativo</Badge>}
+                        {!r.ativo && <Badge className="bg-ink/10" title={r.substituido_por ? `Substituído por ${r.substituido_por}` : undefined}>{r.substituido_por ? 'Substituído' : 'Inativo'}</Badge>}
                         {r.ativo && !r.embedding_em && <Badge className="bg-secondary">Sem vetor</Badge>}
+                        <Badge className="bg-secondary tabular" title="Quantas vezes o agente recuperou este trecho">{r.usos} usos</Badge>
+                        <Badge className="bg-secondary tabular" title="Última vez que o agente usou este trecho">{r.ultimo_uso_em ? `usado em ${new Date(r.ultimo_uso_em).toLocaleDateString('pt-BR')}` : 'nunca usado'}</Badge>
                         <Badge className="bg-secondary tabular">{n.total} pal.</Badge>
                       </span>
                     </button>

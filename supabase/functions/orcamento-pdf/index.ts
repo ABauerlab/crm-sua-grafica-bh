@@ -69,7 +69,8 @@ Deno.serve(async (req) => {
   const lerDoc = async (oid: string) => {
     const { data, error } = await db.rpc('orcamento_documento', { p_orcamento: oid })
     if (error) throw new Error('Não foi possível montar o documento do orçamento.')
-    return data as (OrcamentoDoc & { hash: string; vencido: boolean; status: string }) | null
+    const { data: pol } = await db.rpc('politica_texto', { p_chave: 'resumo_pdf' })
+    return (data ? { ...data, politica: typeof pol === 'string' ? pol : null } : null) as (OrcamentoDoc & { hash: string; vencido: boolean; status: string }) | null
   }
 
   let doc = await lerDoc(id).catch(() => null)

@@ -111,6 +111,9 @@ export function montarConfirmacaoCliente(i: {
   previsao: string
   arte_status?: string | null
   entrega?: string | null
+  /** Persona do pós-pagamento (ex.: João Victor) e o artigo ("o" ou "a"). Sem persona, a mensagem é a de sempre. */
+  persona?: string | null
+  artigo?: string | null
 }): string {
   const arte =
     i.arte_status === 'aprovada'
@@ -122,7 +125,8 @@ export function montarConfirmacaoCliente(i: {
     i.entrega === 'uber'
       ? 'A entrega a gente combina por aqui assim que o pedido ficar pronto.'
       : 'Quando ficar pronto eu te aviso por aqui com o endereço e o horário de retirada.'
-  return `Pagamento confirmado, ${i.nome}! Seu pedido ${i.pedido} já entrou na fila. Previsão de ficar pronto: ${i.previsao}. ${arte} ${entrega}`
+  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona}, assistente virtual da Sua Gráfica BH. ` : ''
+  return `${i.persona ? `Oi, ${i.nome}! ` : ''}${quem}${i.persona ? 'Seu pagamento foi confirmado' : `Pagamento confirmado, ${i.nome}`}! Seu pedido ${i.pedido} já entrou na fila. Previsão de ficar pronto: ${i.previsao}. ${arte} ${entrega}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
