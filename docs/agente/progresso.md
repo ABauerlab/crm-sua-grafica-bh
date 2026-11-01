@@ -1,5 +1,30 @@
 # Progresso do agente de IA
 
+## Pendências para a auditoria (Etapa 8), herdadas da 7B
+
+Registradas em 01/11/2026. As funções do Mercado Pago (`mp-webhook`, `mp-conferir`, `mp-criar-link`) já foram publicadas pelo dono. A proteção contra senhas vazadas não se aplica ao plano gratuito do Supabase (risco baixo: cadastro público desativado).
+
+**n8n (ligação e ativação)**
+- Ligar ao WF2 e ao despachante as ferramentas novas: `encaminhar_setor`, `bauerlab`, `montar_opcoes` e escolha de opção; passar os campos novos de `salvar_contato` (empresa, e-mail, documento, endereço, nota fiscal, consentimento, urgência).
+- Aplicar o ajuste de tom no prompt do WF2 (`docs/agente/tom-e-vendas.md`).
+- WF6 consultar `recuperacao_proximo_passo`; WF7 chamar `cupom_recompra_emitir`.
+- Publicar o WF9 e ligá-lo a todos os workflows `GBH |`.
+- Conferir credenciais nó a nó nos 26 workflows (`docs/credenciais-n8n.md`).
+- Teste de conversa que tente arrancar cada promessa indevida (pagamento, arte, produção, conclusão, data, desconto, reembolso).
+
+**Produto**
+- Painel Comercial no front (usa `painel_comercial`), workflow `GBH | WF11 | Estudo diário`, recompra por comportamento (D2).
+- PDF de uma página com as 3 opções de orçamento.
+- Segundo link só de Pix e indicador "digitando" do agente.
+
+**Infra e terceiros**
+- SearXNG no Coolify (`docs/infra-coolify.md`) e teste de ponta a ponta com 5 especificações.
+- Bloco C: fórmula ou tabela por m² do fornecedor e pontos de preço para os itens por dimensão (`docs/agente/preco-por-dimensao.md`).
+- Bloco E: Análise de app da Meta antes do `GBH | WF10` (`docs/redes-sociais.md`).
+
+**Decisões do dono**
+- Taxa real do 2x sem juros (hoje 10,50% estimado), política de troca e reembolso, parcelamento acima de 2x, benefício de indicações, telefone da BauerLab, ligar ou não o cupom de recompra (após `cupom_recompra_simular`), apagar `private.bkp_products_etapa2`.
+
 ## Etapa 7B: melhorias consolidadas (blocos A, B, C a F entregues; ver pendências)
 
 Decisões e inventário em `docs/agente/decisoes-e-melhorias.md`. Uma branch de trabalho (`claude/compassionate-ramanujan-s26vog`) com um PR por bloco.
