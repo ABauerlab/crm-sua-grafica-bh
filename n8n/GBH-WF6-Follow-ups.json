@@ -1,0 +1,271 @@
+{
+  "name": "GBH | WF6 | Follow-ups",
+  "nodes": [
+    {
+      "id": "9e09f7f0-6c32-43ee-a437-2a9f946236e5",
+      "name": "A cada 15 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fc5555ff-a072-459c-ac0b-37eff09b00c8",
+      "name": "Expirar condições e orçamentos vencidos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/expirar_condicoes_e_orcamentos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "df845b75-f0a5-4c15-8758-2e271e218a17",
+      "name": "Agendar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/followup_agendar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "c8b039aa-7a2d-4192-ab73-ab3e386376f8",
+      "name": "Reservar os envios que venceram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/followup_reservar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_familia: \"cadencia\", p_limite: 20 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "a6249c34-64e5-4832-9e75-594d337cb8a6",
+      "name": "Um item por mensagem",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "fieldToSplitOut": "itens",
+        "include": "noOtherFields",
+        "options": {}
+      }
+    },
+    {
+      "id": "8b54b922-ba2a-43b3-ab83-6bb7106fe6ed",
+      "name": "Montar, enviar e registrar",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gZsE7enJOnpex8xv"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tipo": "followup",
+            "id": "={{ $json.fila_id }}",
+            "orcamento_id": "={{ $json.orcamento_id ?? \"\" }}",
+            "gatilho": "={{ $json.gatilho ?? \"\" }}",
+            "precisa_condicao": "={{ $json.precisa_condicao === true }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "gatilho",
+              "displayName": "gatilho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "precisa_condicao",
+              "displayName": "precisa_condicao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            }
+          ],
+          "attemptToConvertTypes": false
+        }
+      }
+    },
+    {
+      "id": "e6a145aa-6c19-4417-801e-49347d4bbfd5",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## GBH | WF6 | Follow-ups (Etapa 7)\nCadência F1 a F4 e lembretes de pagamento a cada 15 minutos. O banco decide tudo; o n8n só orquestra. Ver docs/agente-ia.md.",
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "A cada 15 minutos": {
+      "main": [
+        [
+          {
+            "node": "Expirar condições e orçamentos vencidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expirar condições e orçamentos vencidos": {
+      "main": [
+        [
+          {
+            "node": "Agendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar": {
+      "main": [
+        [
+          {
+            "node": "Reservar os envios que venceram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar os envios que venceram": {
+      "main": [
+        [
+          {
+            "node": "Um item por mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um item por mensagem": {
+      "main": [
+        [
+          {
+            "node": "Montar, enviar e registrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 600,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { AlertTriangle, Bot, Clock, MessageSquare, MoreHorizontal, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
+import { StatusPedido } from './StatusPedido'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatBRL, formatPct } from '@/lib/money'
 import { ORCAMENTO_STATUS } from '@/lib/orcamentos'
@@ -131,6 +132,8 @@ export function OrderCardView({
           )}
         </div>
       </div>
+
+      {order.stage === 'producao' && draggable && <StatusPedido order={order} compact />}
 
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2 text-[11px] text-muted-foreground">
         <span className="truncate" title={order.origin_label ?? 'Sem anúncio de origem'}>

@@ -1,0 +1,359 @@
+{
+  "name": "GBH | FERRAMENTA | enviar_proativo",
+  "nodes": [
+    {
+      "id": "e178afad-fc2b-4621-9a32-f5c0e0bfa8c3",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "tipo",
+              "type": "string"
+            },
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "name": "gatilho",
+              "type": "string"
+            },
+            {
+              "name": "precisa_condicao",
+              "type": "boolean"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2dea8099-113d-439d-8bea-ce7038941cb2",
+      "name": "Precisa da condição especial?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "de86ff88-206c-440f-bbd5-68c03ceef6e6",
+              "leftValue": "={{ $json.precisa_condicao === true && $json.tipo === \"followup\" }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "d097c310-1dee-4bfb-98c4-0612f4f83bcc",
+      "name": "Pedir condição especial ao banco",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        -120
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "cxGW9NH43uhINq2h"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}",
+            "gatilho": "={{ $json.gatilho }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "gatilho",
+              "displayName": "gatilho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false
+        }
+      }
+    },
+    {
+      "id": "e93f81d3-4691-4c74-bd8e-93e6cb86fcdf",
+      "name": "Montar a mensagem no banco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/\" + ($(\"Entrada\").first().json.tipo === \"aviso\" ? \"pedido_aviso_montar\" : \"followup_montar\") }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $(\"Entrada\").first().json.tipo === \"aviso\" ? { p_aviso: $(\"Entrada\").first().json.id } : { p_fila: $(\"Entrada\").first().json.id } }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "99f9854a-8aae-488e-8ee2-2608f61ff5a7",
+      "name": "Enviar de verdade?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "65fded4a-02c4-4a57-b7ef-074995e192b5",
+              "leftValue": "={{ $json.acao === \"enviar\" && $json.simular !== true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "9aa59848-9bfd-439a-9340-1f1a38138e45",
+      "name": "Enviar pelo WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/proativo-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversation_id: $json.conversation_id, via: $json.via, texto: $json.texto, template: $json.template, params: $json.params } }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cdfcb66a-5e5f-4811-9f75-c6bbd8fd710b",
+      "name": "Registrar o resultado do envio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        -120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/\" + ($(\"Entrada\").first().json.tipo === \"aviso\" ? \"pedido_aviso_resultado\" : \"followup_resultado\") }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ Object.fromEntries([[$(\"Entrada\").first().json.tipo === \"aviso\" ? \"p_aviso\" : \"p_fila\", $(\"Entrada\").first().json.id], [\"p_ok\", $json.ok === true], [\"p_via\", $json.via ?? null], [\"p_wa\", $json.wa_message_id ?? null], [\"p_erro\", $json.ok === true ? null : ($json.motivo ?? $json.error ?? \"falha\")], [\"p_permanente\", $json.permanente === true]]) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "47024acf-3fad-4bc1-93e2-aa2d8d4e4ece",
+      "name": "Registrar sem envio (simulado ou pulado)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ \"https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/\" + ($(\"Entrada\").first().json.tipo === \"aviso\" ? \"pedido_aviso_resultado\" : \"followup_resultado\") }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ Object.fromEntries([[$(\"Entrada\").first().json.tipo === \"aviso\" ? \"p_aviso\" : \"p_fila\", $(\"Entrada\").first().json.id], [\"p_ok\", $json.acao === \"enviar\"], [\"p_via\", $json.acao === \"enviar\" ? \"simulado\" : null], [\"p_wa\", null], [\"p_erro\", $json.acao === \"enviar\" ? null : ($json.motivo ?? \"pulado\")], [\"p_permanente\", true]]) }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "57a4faba-4d9c-4244-a516-fec41d85ef87",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | enviar_proativo (Etapa 7)\nMonta no banco, envia (proativo-enviar) e registra o resultado de UM follow-up, pós-venda ou aviso de status. Chamado por WF6, WF7 e WF8.",
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Precisa da condição especial?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa da condição especial?": {
+      "main": [
+        [
+          {
+            "node": "Pedir condição especial ao banco",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Montar a mensagem no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir condição especial ao banco": {
+      "main": [
+        [
+          {
+            "node": "Montar a mensagem no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar a mensagem no banco": {
+      "main": [
+        [
+          {
+            "node": "Enviar de verdade?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar de verdade?": {
+      "main": [
+        [
+          {
+            "node": "Enviar pelo WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar sem envio (simulado ou pulado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar pelo WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Registrar o resultado do envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 240,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}

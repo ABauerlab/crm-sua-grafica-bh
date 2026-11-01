@@ -54,10 +54,10 @@ assert.equal(shouldApplyStatus('read', 'failed'), false)
 assert.equal(shouldApplyStatus(null, 'sent'), true)
 
 // Descadastro (PARAR)
-for (const ok of ['PARAR', 'parar', ' Parar! ', 'sair', 'STOP', 'Parar de receber', 'Cancelar inscrição', 'Parar promoções', 'Não quero receber']) {
+for (const ok of ['PARAR', 'parar', ' Parar! ', 'sair', 'STOP', 'Parar de receber', 'Cancelar inscrição', 'Parar promoções', 'Não quero receber', 'Não quero mais', 'não quero mais!', 'Pare']) {
   assert.equal(isOptOutMessage(ok), true, `"${ok}" deve descadastrar`)
 }
-for (const no of ['quero parar o pedido', 'não parar', 'oi', '', 'saiu?']) {
+for (const no of ['quero parar o pedido', 'não parar', 'oi', '', 'saiu?', 'não quero mais esse modelo', 'quero mais 500']) {
   assert.equal(isOptOutMessage(no), false, `"${no}" não deve descadastrar`)
 }
 

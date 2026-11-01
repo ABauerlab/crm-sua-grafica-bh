@@ -1,0 +1,237 @@
+{
+  "name": "GBH | WF7 | Pós-venda e recompra",
+  "nodes": [
+    {
+      "id": "4f3df54a-5501-454a-a2f9-95c0007d53b5",
+      "name": "A cada 10 minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/10 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a9968436-d7be-484b-975e-3ef12acf4193",
+      "name": "Agendar satisfação e recompra",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/followup_agendar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "6f50637c-b521-440a-b89e-f15839681cff",
+      "name": "Reservar os envios que venceram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/followup_reservar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_familia: \"pos\", p_limite: 20 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "cd769faf-bbdd-43dc-88cc-5b451601bfb8",
+      "name": "Um item por mensagem",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "fieldToSplitOut": "itens",
+        "include": "noOtherFields",
+        "options": {}
+      }
+    },
+    {
+      "id": "255f249b-14a0-4392-ac5e-a04987b763e3",
+      "name": "Montar, enviar e registrar",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        896,
+        0
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gZsE7enJOnpex8xv"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tipo": "followup",
+            "id": "={{ $json.fila_id }}",
+            "orcamento_id": "={{ $json.orcamento_id ?? \"\" }}",
+            "gatilho": "",
+            "precisa_condicao": false
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "gatilho",
+              "displayName": "gatilho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "precisa_condicao",
+              "displayName": "precisa_condicao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            }
+          ],
+          "attemptToConvertTypes": false
+        }
+      }
+    },
+    {
+      "id": "ae171916-8d4e-464c-9d97-bbd3a187e037",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ],
+      "parameters": {
+        "content": "## GBH | WF7 | Pós-venda e recompra (Etapa 7)\nSatisfação no dia seguinte à entrega e recompra por produto (cartão 60, adesivo 45, panfleto 30 dias), uma vez por ciclo.",
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "A cada 10 minutos": {
+      "main": [
+        [
+          {
+            "node": "Agendar satisfação e recompra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendar satisfação e recompra": {
+      "main": [
+        [
+          {
+            "node": "Reservar os envios que venceram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar os envios que venceram": {
+      "main": [
+        [
+          {
+            "node": "Um item por mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um item por mensagem": {
+      "main": [
+        [
+          {
+            "node": "Montar, enviar e registrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 600,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import {
   VolumeX,
   Bell,
   ChevronsLeft,
+  ClipboardList,
   ChevronsRight,
   CreditCard,
   FileText,
@@ -40,6 +41,7 @@ import { useQuery } from '@tanstack/react-query'
 const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/painel', label: 'Painel', icon: BarChart3 },
   { to: '/kanban', label: 'Kanban', icon: KanbanSquare },
+  { to: '/pedidos', label: 'Pedidos', icon: ClipboardList },
   { to: '/inbox', label: 'Conversas', icon: MessageSquare },
   { to: '/templates', label: 'Templates', icon: FileText },
   { to: '/contatos', label: 'Contatos', icon: Users },

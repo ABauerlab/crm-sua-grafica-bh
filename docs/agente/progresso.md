@@ -9,7 +9,33 @@
 
 - Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
 - Etapa 6: **concluída** (alertas, PWA e pós-pagamento, aplicada em produção em 01/11/2026; falta o teste no seu iPhone).
+- Etapa 7: **concluída** (01/11/2026): banco e função publicados, workflows criados e desativados; falta a ativação (Etapa 8) e a ligação do WF9.
 - Etapa 5: **concluída e validada** (agente WF1 e WF2, 01/11/2026). Migrations 01 a 03 aplicadas em produção; **21 de 21 cenários passam** com o modelo real; workflows desativados; funções Edge ainda por publicar (ver `depende-de-voce.md`).
+
+## Etapa 7: follow-ups, pós-venda, status do pedido, painel de pedidos e observabilidade (concluída, 01/11/2026)
+
+Branch da sessão `claude/magical-tesla-auylwy` (a pedida era `feat/agente-etapa7-followup-status`). Detalhes e decisões em `docs/agente-ia.md` (seção Etapa 7).
+
+### O que foi feito e já está em produção
+- **Banco** (migration `20261102000001`, aplicada em 3 partes pelo MCP; cópia em `docs/agente/aplicar-etapa7.sql`): `pedido_avisos`, colunas novas, 18 funções (`followup_*`, `pedido_*`, `recompra_*`, `fornecedor_*`, `agente_erro_registrar`, `observabilidade_checar`, `painel_agente`), gatilhos de subestatus e de entrega. Advisors de segurança sem achados novos graves (as funções novas seguem o padrão "executável por logado, conferem o dono por dentro"; as do n8n são só da service role).
+- **Edge Function** `proativo-enviar` publicada (versão 1, só service role).
+- **n8n** (pasta Sua Gráfica BH, tag `gbh`, desativados, exportados em `n8n/`): `GBH | WF6 | Follow-ups` (`ueCyozWur9Y5gs9c`), `GBH | WF7 | Pós-venda e recompra` (`OBHE31bWohDs2fQ4`), `GBH | WF8 | Status do pedido` (`h6Lviy09RV1coW6v`), `GBH | WF9 | Erros e observabilidade` (`vmaMVnZydmHpkW57`) e `GBH | FERRAMENTA | enviar_proativo` (`gZsE7enJOnpex8xv`). WF6, WF7 e WF8 foram executados uma vez em modo manual contra o banco de produção (fila vazia): credenciais e chamadas OK.
+- **CRM**: página Pedidos, subestatus e avisos no cartão e no detalhe do pedido, Configurações > Follow-ups, Painel > Agente.
+- **Testes**: `supabase/tests/followup_etapa7.sql` (**96 passam**) com cadência completa com e sem condição, janela aberta e fechada, `optout`, caçador, condição expirada, pagamento no meio, modo humano, IA pausada, horário, limite diário, falhas e tentativas, pós-venda, recompra, avisos de status, lista do fornecedor e observabilidade; regressão das Etapas 1, 3, 4, 5 e 6 verde; `npm test` (inclui `test:proativo`), typecheck e build verdes.
+
+### O que NÃO foi feito (honestidade)
+- **WF9 não está ligado aos outros workflows**: o n8n exige o fluxo de erro publicado e a regra é não ativar nada antes da Etapa 8. Fica para a ativação (publicar o WF9 e ligar nos 27 workflows `GBH |`).
+- **Nenhum envio real** foi feito à Meta (nem a ninguém): a IA está desligada em produção e a lógica foi testada em SQL; `proativo-enviar` não foi executada contra a Meta (sem Deno aqui). Os templates 4 a 11 ainda precisam estar aprovados na Meta (a função recusa template não aprovado e tenta de novo).
+- As telas novas passaram em typecheck e build, mas não foram conferidas no navegador com dados reais (ainda não há pedidos em Produção nem entregues).
+- `whatsapp-webhook` com as novas palavras de descadastro ("não quero mais", "pare"): **foi republicado em 01/11/2026 (versão 29)**.
+- Custos de template do painel são estimativas.
+
+### Como testar
+```bash
+npm test && npm run typecheck && npm run build
+supabase/tests/rodar-local.sh supabase/tests/followup_etapa7.sql supabase/tests/agente_etapa5.sql supabase/tests/alertas_etapa6.sql
+```
+No CRM: Pedidos, Painel > Agente, Configurações > Follow-ups; em um pedido pago em Produção, os botões Pronto, Saiu e Entregue.
 
 ## Etapa 6: alertas ao dono, PWA e confirmação de pagamento (concluída, 01/11/2026)
 

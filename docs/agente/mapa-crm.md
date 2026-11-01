@@ -169,3 +169,19 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - **Banco** (migration `20261101000004`): `push_subscriptions`, `pagamento_pos`, `app_segredos`; `alertas` ganhou chave, dados, status e tentativas por canal e `lido_em`; `app_settings.notificacoes`. Funções (só service role): `alerta_criar`, `alertas_proximos`, `alerta_resultado`, `alertas_resumo_montar`, `alertas_varredura`, `alerta_destino_dono`, `pagamento_pos_pendentes`, `pagamento_pos_processar`, `pagamento_pos_reservar_msg`, `pagamento_pos_msg_resultado`. `agente_chamar_dono` passa por `alerta_criar`; `agente_bloqueio` ignora o número do dono. Gatilhos: `pagamentos_alertas` (estorno e outros) e `messages` (nova mensagem em modo humano).
 - **Edge Functions:** `alertas-enviar` (processar: service role; teste e chave_publica: dono logado) e `cliente-pago-avisar` (service role). Ambas com `verify_jwt = false` e conferência própria.
 - **n8n:** `GBH | WF5 | Pagamento e alertas` e `chamar_dono` atualizado.
+
+## Etapa 7: follow-ups, status do pedido, painel de pedidos e observabilidade
+**Passo 0:** já existiam `followup_regras` e `followup_fila` (Etapa 1), `agendar_followup` do agente (Etapa 5), `orders.subestatus_pedido` (coluna sem uso), `orders` e `order_events`, o kanban e o botão Pausar IA. Nada foi duplicado: as tabelas foram estendidas e as duas visões (Kanban e Pedidos) leem `useOrders`.
+
+| Ponto | Antes | Agora |
+|---|---|---|
+| Envio de follow-up | fila sem consumidor | `followup_agendar`, `followup_reservar`, `followup_montar`, `followup_resultado`; WF6 e WF7; Edge Function `proativo-enviar` |
+| Subestatus | coluna `subestatus_pedido` sem uso | `em_producao`, `pronto_retirada`, `saiu_entrega` (constraint); botões no cartão e no detalhe; `pedido_avisos` (um aviso por pedido e tipo) |
+| Entregue | só mover o cartão | `pedido_marcar_entregue` e gatilho `orders_entregue_agenda` (satisfação e recompra) |
+| Lista de pedidos | só kanban | `/pedidos` (abas, filtros, lote, CSV, lista para o fornecedor) |
+| Enviado à fábrica | não existia | `orders.enviado_fabrica_em`, `fornecedor_lista_pendente`, `fornecedor_marcar_enviado` |
+| Erros e custo | sem fluxo de erro | `agente_erro_registrar`, `observabilidade_checar`, WF9; `app_settings.observabilidade` e `app_settings.followup`; `app_settings.retirada` |
+| Painel do agente | sem métricas | `painel_agente(de, ate)`; Painel > Agente |
+
+**Telas novas:** Pedidos (`src/pages/Orders.tsx`), `src/features/orders/StatusPedido.tsx`, `src/features/agent/FollowupsTab.tsx`, `src/features/agent/AgentPanel.tsx`, hooks em `src/hooks/etapa7.ts`. **Tempo real:** `pedido_avisos` e `followup_fila` no `useRealtimeSync`.
+**Parâmetro alterado:** `parametros_comerciais.validade_orcamento_horas` 48 para 168.
