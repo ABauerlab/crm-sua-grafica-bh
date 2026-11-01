@@ -11,7 +11,7 @@ const visitados: string[] = []
 const npmImports = new Set<string>()
 const corpos: string[] = []
 
-const IMPORT = /^import\s+([^;\n]*?)\s+from\s+'([^']+)'\s*\n/gm
+const IMPORT = /^import\s+([^;]*?)\s+from\s+'([^']+)'\s*\n/gm
 function incluir(arquivo: string): void {
   if (visitados.includes(arquivo)) return
   visitados.push(arquivo)

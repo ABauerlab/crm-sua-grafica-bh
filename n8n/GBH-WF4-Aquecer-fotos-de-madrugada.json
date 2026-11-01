@@ -1,0 +1,215 @@
+{
+  "name": "GBH | WF4 | Aquecer fotos de madrugada",
+  "nodes": [
+    {
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        80
+      ],
+      "parameters": {
+        "content": "## GBH | WF4 | Aquecer fotos de madrugada (opcional, Etapa 4B)\n**Objetivo:** preencher o cache de fotos dos grupos mais pedidos, em lotes pequenos, fora do horário de atendimento.\n**Gatilho:** todo dia 03:20 (America/Sao_Paulo). Só age se app_settings.fotos.aquecer_ligado = true (desligado por padrão: a função fotos_grupos_para_aquecer devolve lista vazia).\n**Saída:** nenhuma. No máximo 5 grupos por noite; cada grupo consulta a origem no máximo uma vez a cada 30 dias, 1 requisição por segundo.\n**Dependências:** credencial GBH Supabase (service role).\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "name": "Todo dia 03:20",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        80
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 3,
+              "triggerAtMinute": 20
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Grupos para aquecer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        80
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/fotos_grupos_para_aquecer",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_limite: 5 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "name": "Um item por grupo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const lista = $input.first().json;\nconst grupos = Array.isArray(lista) ? lista : (Array.isArray(lista?.fotos_grupos_para_aquecer) ? lista.fotos_grupos_para_aquecer : []);\nreturn grupos.map((g) => ({ json: { grupo: String(g) } }));"
+      }
+    },
+    {
+      "name": "Um grupo por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        672,
+        80
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "name": "Buscar fotos do grupo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/produto-fotos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: \"rebuscar\", grupo: $json.grupo } }}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Pausa de 5 segundos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        80
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      }
+    }
+  ],
+  "connections": {
+    "Todo dia 03:20": {
+      "main": [
+        [
+          {
+            "node": "Grupos para aquecer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grupos para aquecer": {
+      "main": [
+        [
+          {
+            "node": "Um item por grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um item por grupo": {
+      "main": [
+        [
+          {
+            "node": "Um grupo por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar fotos do grupo": {
+      "main": [
+        [
+          {
+            "node": "Pausa de 5 segundos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pausa de 5 segundos": {
+      "main": [
+        [
+          {
+            "node": "Um grupo por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Um grupo por vez": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Buscar fotos do grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ],
+  "meta": {
+    "builderVariant": "mcp"
+  }
+}

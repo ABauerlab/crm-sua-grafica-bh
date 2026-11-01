@@ -7,6 +7,40 @@
 - Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
 - Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
+- Etapa 4B: **pronta para revisão** (fotos de produto, 01/11/2026). Nada foi aplicado em produção.
+
+## Etapa 4B: fotos de produto (pronta para revisão, 01/11/2026)
+
+Branch de trabalho da sessão `claude/fervent-hawking-h6vgqf` (a pedida era `feat/agente-etapa4b-fotos`). Nada aplicado no Supabase, nenhuma função publicada, nenhum workflow ativado. Detalhes em `docs/fotos-de-produto.md`.
+
+### O que foi feito
+- **Passo 0:** o CRM não guardava imagens de produto. A origem (site público de terceiros, interna) tem `robots.txt` liberado e não tem página de termos de uso; páginas de categoria com 36 cartões, link terminando no SKU e imagem de até 1000 px.
+- **Banco** (migrations `20261030000001` e `…02`, juntas em `docs/agente/aplicar-etapa4b.sql`): `produto_fotos`, `produto_fotos_grupos`, `produto_fotos_envios`, bucket privado `produto-fotos`, `app_settings.fotos`, 10 funções em `public` (a service role não alcança `private`), trecho de conhecimento `foto-produto`.
+- **Edge Function `produto-fotos`** (bundle em `docs/agente/funcoes/`): busca na origem (1 req/s, 15 s, User-Agent identificável), reduz a 1000 px, JPEG sem metadados (meta 150 KB, teto 300 KB, descarta menor que 300 px), verificação de marca com modelo de visão (falha fechada), envio de imagem no WhatsApp, limites (3 por pedido, 1 pedido por minuto por conversa, 10 imagens por contato por dia), alerta de gravidade baixa quando não há foto, log sem origem.
+- **CRM:** Catálogo > Fotos (aprovar, bloquear, trocar, buscar de novo, filtros "Para revisar" e "Sem foto", campo interno da origem, chave do aquecimento).
+- **n8n (MCP, desativados, tag gbh, exportados em `n8n/`):** `enviar_foto_produto` (`ybnd6LjGjUO8dgTI`) e `Aquecer fotos de madrugada` (`MYEmz3rCIfhMhxxF`, opcional, desligado).
+- **Testes:** `scripts/test-fotos.ts` (entra no `npm test`), `supabase/tests/fotos_etapa4b.sql` (**25 passam**), Etapas 1 a 4 contra o schema novo (54, 82, 67 e 55 passam), `npm test`, typecheck e build verdes. Teste real com 15 grupos: ver abaixo.
+
+### Ajuste pedido pelo dono (01/11/2026): todo produto precisa de foto
+- Varredura de todo o menu da origem (152 categorias): 26.639 itens, 18.808 códigos. Os 125 grupos do catálogo têm categoria equivalente (100% por grupo); por SKU, cerca de 90% com imagem própria (estimativa; o cruzamento exato sai na tela de Cobertura).
+- Fotos pequenas (miniaturas) agora são aceitas, ampliadas e marcadas como baixa qualidade; o agente nunca diz ao cliente que não há foto.
+- Migration `20261030000003` (mapa código -> imagem, candidatas, cobertura), ação `varrer` na função, botão "Mapear origem" na tela, `scripts/fotos-mapear-origem.ts` e `scripts/fotos-catalogo-pdf.ts` (reserva pelo PDF, 1.051 imagens extraídas no teste).
+- 38 testes SQL de fotos passam.
+- **Aplicado em produção em 01/11/2026 (autorizado pelo dono):** migrations da 4B (aplicadas pelo dono), função `produto-fotos` publicada pelo conector (versão 2; o pacote npm do `imagescript` não roda no Supabase, a função usa a versão Deno `deno.land/x/imagescript@1.3.0`), `app_settings.fotos.origem_base` preenchido, workflow `GBH | WF4 | Mapear fotos da origem` (`iLpTZUm9VLqNLXX1`) executado manualmente no n8n para gravar o mapa. Workflows seguem desativados.
+
+### Decisões
+- Domínio da origem fora do repositório: o `npm test` proíbe o nome do fornecedor em qualquer arquivo e o domínio contém esse nome. Fica em `app_settings.fotos.origem_base` (preenchido pelo dono) e o teste real recebe por variável de ambiente.
+- Processamento na Edge Function (não no nó de imagem do n8n) para servir agente, tela e aquecimento com o mesmo código testado.
+- Imagem sem verificação de marca fica pendente e nunca é enviada (falha fechada).
+
+### O que NÃO foi feito (honestidade)
+- A Edge Function não foi executada (sem Deno aqui), nem testada contra a Meta, o Storage real ou o modelo de visão; só a lógica pura e o processamento de imagem foram testados em Node com imagens reais.
+- Os workflows foram validados, não executados (gatilho "Execute Workflow" não roda pelo MCP).
+- Envio real de imagem e verificação de marca ficam para a auditoria da Etapa 8.
+
+### Pendências (dono)
+Ver `docs/agente/depende-de-voce.md`, seção Etapa 4B.
+
 ## Etapa 4: orçamento em PDF (concluída, aplicada em produção em 29/10/2026)
 
 Branch `feat/agente-etapa4-orcamento`. Aplicado: migrations `…09` e `…10`, função `orcamento-pdf` (pelo painel, com o arquivo `docs/agente/funcoes/orcamento-pdf.bundle.ts`) e Gotenberg em `gotenberg.bauerlab.com.br`. Nenhum workflow do n8n foi ativado. Ajustes pedidos pelo dono no teste: página mais bem preenchida (passos "Como fechar seu pedido") e nome do arquivo `Orcamento-SG-0032-29-10-2026.pdf`. Detalhes em `docs/orcamento-pdf.md`.

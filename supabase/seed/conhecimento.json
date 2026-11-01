@@ -1705,5 +1705,27 @@
       "posso indicar"
     ],
     "revisar": true
+  },
+  {
+    "slug": "foto-produto",
+    "titulo": "Cliente pede foto do produto",
+    "categoria": "guia",
+    "quando_usar": "Cliente pede foto, imagem, exemplo ou como fica o produto.",
+    "resposta_pronta": "Claro! Vou te mandar umas fotos pra você ver como fica. Depois me conta a quantidade e se já tem a arte que eu monto seu orçamento.",
+    "fatos": "Use a ferramenta de foto, no máximo 3 imagens por pedido. A foto pode ser ilustrativa do acabamento e o produto final pode variar. Se não houver foto, diga que vai confirmar com a equipe. Nunca diga de onde veio a imagem.",
+    "proximo_passo": "Depois das fotos, perguntar quantidade e arte e oferecer o orçamento em PDF.",
+    "tags": [
+      "foto",
+      "tem foto",
+      "manda foto",
+      "me mostra",
+      "quero ver como fica",
+      "foto do produto",
+      "tem exemplo",
+      "como fica",
+      "imagem do produto",
+      "tem imagem"
+    ],
+    "revisar": true
   }
 ]
