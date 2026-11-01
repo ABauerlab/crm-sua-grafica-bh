@@ -2,6 +2,27 @@
 
 Data: 02/11/2026. Branch `claude/zealous-curie-n84wpk`. Auditor: Claude (sessão remota, via MCP do Supabase, n8n, WhatsApp Business, Coolify e GitHub).
 
+## 0. Estado final da auditoria (resumo para a Etapa 8B)
+
+**Veredito:** núcleo financeiro e de segurança aprovado; atendimento ao público **pronto para piloto controlado**, ainda não liberado. A liberação depende do teste ponta a ponta da Etapa 8B.
+
+| Área | Estado |
+|---|---|
+| Preço, piso e prejuízo | PASSOU: 5.092 simulações, 0 lucro negativo, 0 abaixo do piso; burla por custo zero corrigida |
+| RLS, segredos e advisors | PASSOU (restam só avisos INFO e senha vazada, limitação do plano) |
+| Pagamento (Pix real de R$ 1) | PASSOU: Pago, taxa real 1,00%, 1 alerta, 1 mensagem ao cliente |
+| Workflows | 25 ativos, WF9 como fluxo de erro de todos; 4 opcionais inativos |
+| Agente com modelo real | 33 de 36 cenários, 15 ataques sem vazamento; fluxo consultivo reescrito (seções 12 a 14) |
+| Conversas reais (número da mãe do dono) | 3 rodadas, 10 falhas encontradas e corrigidas (ferramentas, trava, Kanban, PDF, ordem das fotos, mistura de pedidos) |
+| Piloto | ligado só para `5531985620712`; público fechado (`piloto_ativo = true`, `piloto_percentual = 0`) |
+
+**Não validado de ponta a ponta (entra na 8B):** PDF novo (legenda com resumo e "APROVADO"); opções com foto (`produto-opcoes`, 1ª vez de cada produto); ordem de envio após a correção; mudança de produto na mesma conversa sem misturar pedidos; resumo automático da conversa (ainda pode defasar); mensagem única após pagamento num pedido vindo do agente (só provada com pedido manual); conferência das credenciais nó a nó dos 25 workflows; SearXNG em rede interna; `encaminhar_setor`, `bauerlab` e escolha de opção ainda sem ligação no despachante.
+
+**Como liberar (depois da 8B):** `update agente_config set piloto_ativo = false where id = 1;` (ou `piloto_percentual = 10` para uma fatia). **Como voltar:** `piloto_ativo = true` ou `ia_ligada = false` ou botão "Pausar IA".
+
+**Migrations desta etapa:** `20261105000001` a `20261105000016` (aditivas; todas já aplicadas em produção via MCP; reversões em `docs/rollback-etapa8.sql`). Funções Edge publicadas nesta etapa: `conhecimento` v11, `orcamento-pdf` v16, `produto-opcoes` v2.
+
+
 ## 1. Resumo executivo
 
 **Nota de prontidão: 7,5 de 10.** O núcleo financeiro (preço, piso, prazo, frete, SKU, pagamento, RLS) está sólido e foi provado com evidência. O que impede nota maior não é defeito de regra: é **o que não pôde ser testado daqui** (conversa real com o modelo, Pix real de R$ 1, push no iPhone) e **a ativação dos workflows, que foi barrada pela política de segurança do ambiente** (deploy em produção) e precisa de um "sim" seu.

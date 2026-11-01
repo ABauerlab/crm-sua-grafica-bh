@@ -81,6 +81,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `agente-enviar` | não (só service role) | envio de texto do agente (n8n): confere IA ligada, modo IA, pedido não pago e janela de 24 h antes de enviar |
 | `alertas-enviar` | não (service role para `processar`; dono logado para `teste` e `chave_publica`) | entrega os alertas ao dono: popup (Web Push, VAPID) e WhatsApp (texto livre na janela de 24 h, senão template); tentativas, resumo e aviso pelo outro canal |
 | `cliente-pago-avisar` | não (só service role) | WF5: UMA mensagem ao cliente depois do pagamento confirmado (livre na janela, senão `pedido_pago_confirmacao`), reserva atômica e 3 tentativas |
+| `produto-opcoes` | não (dono ou service role) | uma mensagem por opção com foto e ficha traduzida (legenda montada no servidor), chamada por `enviar_foto_produto` com `opcoes: produto; quantidade` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -143,6 +144,7 @@ supabase functions deploy mp-criar-link --no-verify-jwt
 supabase functions deploy mp-conferir --no-verify-jwt
 supabase functions deploy orcamento-pdf --no-verify-jwt
 supabase functions deploy produto-fotos --no-verify-jwt
+supabase functions deploy produto-opcoes --no-verify-jwt
 supabase functions deploy agente-enviar --no-verify-jwt
 supabase functions deploy alertas-enviar --no-verify-jwt
 supabase functions deploy cliente-pago-avisar --no-verify-jwt

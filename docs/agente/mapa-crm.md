@@ -200,3 +200,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Etapa 8 (auditoria)
 `agente_config.piloto_ativo`, `piloto_wa_ids`, `piloto_percentual` (modo piloto usado por `agente_bloqueio`, retorna `fora_do_piloto`). `private.order_items_validar` usa o custo do catálogo no caminho do CRM. Gatilhos de pedido e orçamento que chamam `taxa_pagamento` agora são `SECURITY DEFINER`. Relatório: `docs/auditoria-agente.md`.
+
+### Etapa 8 (complemento)
+`produto-opcoes` (Edge Function, sem JWT, dono ou service role): manda abertura + uma mensagem por opção, com foto e ficha traduzida; chamada pela ferramenta `enviar_foto_produto` com `opcoes: <produto>; <quantidade>`. `buscar_produto` devolve `em_palavras` e `quantidades_disponiveis`. `private.traduzir_especificacao`, `private.categoria_bate`, `private.wa_variantes`. `orcamento_marcar_enviado` cria o card em "cotando". `preparar_link_pagamento` exige PDF formal enviado. `agente_bloqueio` aceita piloto por número e por percentual, e contatos com tag `teste`.
