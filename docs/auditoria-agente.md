@@ -140,3 +140,10 @@ Reversões: `docs/rollback-etapa8.sql`. Migrations: `20261105000001`, `202611050
 - Custo medido: US$ 0,0143 por rodada em média (máximo US$ 0,0305), cerca de 7.100 tokens por rodada. Estimativa mensal, supondo 8 rodadas por conversa (US$ 0,11 ou cerca de R$ 0,65): 100 conversas ≈ US$ 11, 300 ≈ US$ 34, 1.000 ≈ US$ 114, mais os templates da Meta (R$ 0,35 marketing e R$ 0,04 utilidade por envio, conforme `app_settings.observabilidade`).
 
 **Ainda aberto:** `encaminhar_setor`, `bauerlab` e escolha de opção no despachante e no WF2; SearXNG em rede interna; credenciais nó a nó dos 25 workflows; Pix de R$ 1 pago; segredos do WF1.
+
+## 11. Pós-ativação (02/11/2026)
+
+- **Pix de R$ 1 (pedido nº 23): PASSOU.** Pedido foi para Pago, `payment_status = aprovado`, taxa real do Pix gravada (1,00%, `taxa_fonte = mercado_pago`), alertas `pedido_pago` e `pedido_fora_das_regras` (item fora do catálogo, esperado no teste) criados e entregues. O pagamento foi mantido, como manda a regra.
+- **Bug achado e corrigido: WF6 falhava a cada 15 minutos** com `function extensions.unaccent(text) does not exist`. A extensão `unaccent` não estava instalada em produção (só no banco de testes local). Instalada (`20261105000005`) e `followup_agendar` e `followup_reservar` retestados como service role. Sem essa correção nenhum follow-up sairia.
+- **Duplicidade de notificações (relato do dono): confirmada.** Cada alerta ia aos dois canais com o mesmo texto, e o resumo repetia o que o push já tinha mostrado. Agora o WhatsApp do dono recebe só `pagamento_problema` (estorno, contestação) e `atencao_agente` (cliente esperando humano); tudo o mais vai só no push. Erros de workflow e pedidos fora das regras viraram categorias próprias, só push (`20261105000006`). Ajustável em Configurações > Notificações.
+- Os dois erros de workflow vistos às 18:07 pertencem a outros projetos do n8n (não `GBH`).
