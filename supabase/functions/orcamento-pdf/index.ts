@@ -65,6 +65,7 @@ function resumoDoPedido(doc: OrcamentoDoc): string {
   linhas.push('', `Total: ${brl(doc.total)}`)
   if (doc.data_prevista) linhas.push(`Fica pronto em ${dm(doc.data_prevista)}, pagando e enviando a arte até as ${doc.corte_hora}h`)
   if (doc.validade_ate) linhas.push(`Válido até ${dm(doc.validade_ate)}`)
+  linhas.push('', 'Se estiver tudo certo, responda APROVADO que eu envio o link de pagamento.')
   return linhas.join('\n')
 }
 

@@ -172,3 +172,16 @@ Problemas relatados pelo dono e causa encontrada nos logs (`agente_execucoes`, `
 Testes com o modelo real (webhook de teste do WF1): `e8-fluxo-3-pix` (Pix na hora) e `e8-fluxo-4-especificado` (orçamento + PDF + pergunta de fechamento) passam; `e8-fluxo-1-opcoes` pergunta a quantidade antes de listar preços.
 
 Nota: a versão do `orcamento-pdf` saltou de v12 para v15 durante a sessão (v13 e v14 não foram feitas por mim); a v15 foi publicada a partir do código do repositório, que é a referência.
+
+## 13. Segunda rodada de ajustes do dono (fluxo consultivo, clareza, opções com foto)
+
+Decisões do dono aplicadas:
+- **Clareza total:** a ficha de cada opção é traduzida em palavras simples (4x1 = colorido na frente e preto e branco no verso; medidas em cm; espessura do papel), no prompt (glossário) e no banco (`buscar_produto` devolve `em_palavras`).
+- **Opções por mensagem, com foto:** a ferramenta `enviar_foto_produto` com `opcoes: <produto>; <quantidade>` chama a nova Edge Function `produto-opcoes`, que manda de 3 a 4 mensagens (foto + legenda com ficha traduzida, valor de referência e prazo). A legenda é montada no servidor, não pelo modelo. Sem foto da opção, vai só o texto.
+- **Fluxo:** descoberta → opções por mensagem (sem PDF) → decisão e ficha completa → entrega → prévia por mensagem com total, data e upsell na conversa (uma vez, sem insistir) → PDF formal UMA vez → cliente responde APROVADO → link. Trava no banco: `preparar_link_pagamento` recusa se o PDF formal não foi enviado.
+- **Link sempre chega ao cliente:** o fluxo do n8n acrescenta o link gerado ao fim da resposta se o modelo não o escrever (antes o agente dizia "segue o link" sem o link).
+- **"Pix de qualquer banco" removido** de conhecimento, cache de respostas, follow-ups, texto do link, PDF e prompt; o n8n ainda remove a frase se o modelo a escrever.
+- **PDF:** passo 1 agora é "Responda APROVADO no WhatsApp"; legenda do PDF termina com o pedido de aprovação.
+- **Fotos:** quando o cliente pede foto de um item do orçamento, o prompt manda usar o código do item (não um termo genérico).
+
+Pendente: teste real no WhatsApp (as fotos de opções dependem de imagens já guardadas ou da busca na origem; PDF e legenda novos só se confirmam com envio real). Itens "papel" para PVC ainda saem como "papel fino" em `em_palavras` (o modelo corrige pelo glossário).
