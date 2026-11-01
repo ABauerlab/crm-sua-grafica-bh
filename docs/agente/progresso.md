@@ -1,5 +1,7 @@
 # Progresso do agente de IA
 
+**Próximo passo: Etapa 8 (auditoria e ativação).** Roteiro completo e autorização do dono em `docs/agente/etapa8-roteiro-auditoria.md`. Tudo deve ser resolvido via MCP, sem ação do dono.
+
 ## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
 
 **Concluída (aguarda a Etapa 8) (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.
