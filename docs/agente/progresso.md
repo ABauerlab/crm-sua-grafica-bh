@@ -2,9 +2,9 @@
 
 ## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
 
-**Em andamento / como ficou (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.
+**Concluída (aguarda a Etapa 8) (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.
 
-**Aplicado em produção pelo MCP do Supabase:** partes 1, 2 e 3 (`etapa7c_estrutura`, `etapa7c_importacao`, `etapa7c_personas_arte`). Importação: 33 trechos novos inseridos e 50 viraram sugestões em `conhecimento_sugestoes` (os trechos antigos equivalentes foram revisados depois da carga e a regra de proteção não os sobrescreve; o dono decide em Conhecimento > Sugestões). Indexação concluída (121 ativos, 0 sem vetor).
+**Aplicado em produção pelo MCP do Supabase (02/11/2026):** partes 1, 2 e 3 (`etapa7c_estrutura`, `etapa7c_importacao`, `etapa7c_personas_arte`). Os 83 trechos estão ativos: a regra de proteção tratou 50 como editados (todos os antigos tinham `revisado_em` posterior à criação), então foram aceitos depois comparando o conteúdo atual com o original da carga (iguais, ou seja, sem edição do dono). 0 sugestões pendentes, 113 trechos ativos. Teste de 40 perguntas em produção (texto): 40 de 40. Vetores dos 50 últimos entram pela reindexação automática (5 em 5 minutos).
 **Edge Functions publicadas:** `orcamento-pdf` (v12), `mp-criar-link` (v17) e `cliente-pago-avisar` (v2), todas com `verify_jwt` desligado. Código publicado = bundles de `docs/agente/funcoes/` sem as funções não usadas.
 **n8n (tudo DESATIVADO):** WF2 usa `persona.nome` e `fase` do contexto, prompt com apresentação, regra de reembolso e uso de `arte_receber` e `arte_baixa_ok`, com as duas ferramentas ligadas; o despachante chama `public.arte_receber` e `public.arte_baixa_ok` direto (HTTP com a credencial de serviço; confira a credencial nos dois nós novos). `encaminhar_setor` não existe no n8n: o prompt manda chamar o dono por `chamar_dono`.
 
@@ -20,9 +20,9 @@
 - Trava de saída: endereço liberado depois do pagamento; barra "vou te reembolsar" e variações.
 
 ### O que falta (honestidade)
-1. Dono: revisar as 50 sugestões de conhecimento (aceitar troca o trecho antigo pelo novo). Enquanto isso, a busca devolve os trechos antigos equivalentes (acerto textual de 18 em 40 perguntas no teste de recuperação, porque os 40 casos esperam os slugs novos).
+1. Vetores: conferir `select count(*) filter (where embedding is null) from conhecimento where ativo;` = 0 (reindexação automática).
 2. n8n: WF1 não precisou mudar (repassa `contexto` com `persona`); falta teste de conversa com o modelo real antes da Etapa 8.
-3. Parcelas no Mercado Pago: não consegui conferir a conta pelo conector (ele só dá documentação e credenciais). Confirme em Seu negócio > Parcelamento sem juros que **2x sem juros** está ligado; o link passa a mostrar até 12x.
+3. Parcelas no Mercado Pago: dono confirmou que 2x sem juros já está ligado na conta; o link mostra até 12x.
 4. Cupom de recompra: continua pela lógica própria da 7B com as mesmas travas (piso, gordura, `validar_margem`), não por `calcular_condicao_especial` literalmente.
 5. Aviso ao cliente na aprovação da arte: feito pela tela Fila da arte (texto livre via `whatsapp-send`, só dentro da janela de 24 h; se fechada, a tela avisa o dono).
 6. Decididos pelo dono: 2x sem juros já ligado no Mercado Pago; telefone da BauerLab (+55 31 99802-1169) confirmado e a indicação NÃO alerta mais o dono.
