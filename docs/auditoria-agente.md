@@ -185,3 +185,13 @@ Decisões do dono aplicadas:
 - **Fotos:** quando o cliente pede foto de um item do orçamento, o prompt manda usar o código do item (não um termo genérico).
 
 Pendente: teste real no WhatsApp (as fotos de opções dependem de imagens já guardadas ou da busca na origem; PDF e legenda novos só se confirmam com envio real). Itens "papel" para PVC ainda saem como "papel fino" em `em_palavras` (o modelo corrige pelo glossário).
+
+## 14. Falhas da conversa real de adesivos (cliente Rose) e correções
+
+| Problema | Causa | Correção |
+|---|---|---|
+| Fotos chegaram ANTES do texto do agente ("vou te mostrar as opções" veio depois das 4 fotos) | A ferramenta envia durante a execução; o texto do modelo só sai quando ele termina | `produto-opcoes` (v2) manda ela mesma a frase de abertura antes das fotos; o prompt proíbe o agente de anunciar ou repetir as opções depois e de escrever antes de ferramentas que enviam algo |
+| Agente falou de "1000 unidades" sem o cliente dizer | O resumo da conversa ("Rose quer 1000 cartões de visita") e o orçamento aberto eram de outro produto; o modelo misturou os pedidos | Regras de prioridade máxima no agente: cada produto é um pedido novo, só reaproveita nome, bairro e CEP; só cita número dito agora ou vindo de ferramenta; resposta vaga ("pode ser esse") pede o número da opção. Resumo da conversa de teste reescrito |
+| Ficha dizia "papel médio (120g)" para adesivo BOPP | Tradução tratava todo material como papel | `traduzir_especificacao` agora usa o material (BOPP, PVC, vinil, lona...) |
+
+Melhoria pendente: o resumo automático da conversa deveria separar "pedido anterior" e "pedido atual" (nó "Atualizar o resumo" do WF1); hoje a regra do agente cobre, mas o resumo ainda pode ficar defasado.

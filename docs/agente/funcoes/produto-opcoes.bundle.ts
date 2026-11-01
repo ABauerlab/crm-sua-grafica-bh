@@ -132,6 +132,19 @@ Deno.serve(async (req) => {
 
   const base = Deno.env.get('SUPABASE_URL') ?? ''
   const auth = req.headers.get('Authorization') ?? ''
+  // abertura ANTES das fotos (a resposta do modelo sempre chega depois das ferramentas)
+  const produto = m[1].replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 60)
+  const intro = `Separei ${ops.length} opções de ${produto} para ${m[2]} unidades. Olha só:`
+  try {
+    const ri = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, { method: 'POST', headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: intro } }) })
+    const oi = await ri.json().catch(() => ({}))
+    if (ri.ok) {
+      const agora = new Date().toISOString()
+      await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: oi?.messages?.[0]?.id ?? null, direction: 'out', type: 'text', body: intro, status: 'sent', created_at: agora })
+    }
+  } catch { /* segue sem a abertura */ }
+  await new Promise((res) => setTimeout(res, 1200))
+
   let enviadas = 0
   let fotos = 0
   let bytes = 0
@@ -187,5 +200,5 @@ Deno.serve(async (req) => {
   if (!enviadas) return json({ error: 'Não foi possível enviar as opções agora. Descreva as opções por texto.' }, 502)
   if (fotos) await db.rpc('foto_registrar_envio', { p_conversation: conv.id, p_contact: conv.contact_id, p_grupo: null, p_quantidade: fotos, p_bytes: bytes, p_via: 'cache', p_resultado: 'enviada' })
   // resposta mínima ao agente: nunca traz origem, URL, SKU nem nome de arquivo
-  return json({ enviadas, legenda_sugerida: '' })
+  return json({ enviadas, ja_enviou_abertura: true, legenda_sugerida: '' })
 })
