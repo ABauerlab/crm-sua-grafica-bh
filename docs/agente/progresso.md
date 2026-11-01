@@ -24,6 +24,25 @@ Decisões e inventário em `docs/agente/decisoes-e-melhorias.md`. Uma branch de 
 
 Testes: `npm test` e `supabase/tests/*.sql` (melhorias 71, trava 12, preço 67, orçamento 56, regressão das Etapas 1 a 7 verde).
 
+### Bloco B: agente, conversa e conversão (concluído no banco, 01/11/2026)
+**Aplicado em produção** (migrations `20261103000003` a `20261103000005`, cópias em `aplicar-etapa7b-b.sql` e `-b2.sql`). Testes: `supabase/tests/melhorias_bloco_b.sql` (58). Tom e pesquisa web em `docs/agente/tom-e-vendas.md`.
+
+| # | Item | Resultado |
+|---|---|---|
+| B1 | Debounce 10 s | `agente_config.debounce_segundos = 10`. `agente_debounce` espera até 20 s a mais (teto de 60 s) se a última mensagem parece incompleta; pergunta completa responde já. **A API oficial não avisa quando o cliente digita**: documentado |
+| B2 | Tom humano | `docs/agente/tom-e-vendas.md` + trecho `tom-vendedor` no conhecimento. **O prompt do WF2 não foi alterado** (ver pendências) |
+| B3 | Dados e CRM | `agente_salvar_contato` aceita empresa, e-mail, documento e endereço (só com nota fiscal ou entrega), devolve `falta`, consentimento de promoções em pergunta separada (data e origem `whatsapp`, nunca reverte `opted_out`), urgência |
+| B4 | Pix primeiro, parcelamento | Conhecimento atualizado (`pag-formas`, `pag-pix`, `pag-parcelar`, `pag-nf`, `troca-politica` com `[CONFIRMAR]`) |
+| B5 | Três opções | `montar_opcoes` (até 3 do mesmo grupo, margem validada no pior caso, diferenças reais), `orcamento_opcao_escolher`, view `opcoes_conversao`. **PDF de uma página com as 3 opções: não feito** |
+| B6 | Setores | `conversations/tasks/alertas.setor`, `agente_encaminhar_setor` (comercial, arte, financeiro com resposta do sistema, dono com resumo, histórico, motivo e ação recomendada) |
+| B7 | Promessas indevidas | `agente_promessas_indevidas` dentro de `agente_saida_segura`: pagamento, arte aprovada, produção, conclusão, data não dada, desconto fora da função e reembolso; 12 testes |
+| B8 | Google e cupom | Avaliação sem benefício (trecho `google-avaliacao`). Cupom de recompra 5% incondicional **desligado**, com `cupom_recompra_simular`; não ligue antes de ver a simulação |
+| B9 | Motivo da perda | `orcamentos.motivo_perda`, `estrategia_recuperacao` (condição especial sempre por último), `recuperacao_proximo_passo` (respeita optout). **WF6 ainda não consulta a função** |
+| B10 | BauerLab | `agente_bauerlab` (uma vez, alerta baixo), `oportunidades_bauerlab`, config em `app_settings.bauerlab` (telefone **a confirmar por você**) |
+| B11 | Validador | `pedido_pendencias` (cliente, itens, SKU, preço aprovado, pagamento, prazo, arte) |
+
+**Ligação ao n8n (PARCIAL, honestidade):** as funções do banco estão prontas e testadas, mas o WF2 ainda não expõe ao modelo as ferramentas novas (`encaminhar_setor`, `bauerlab`, `montar_opcoes`, escolha de opção) nem os campos novos de `salvar_contato`, e o WF6/WF7 não chamam `recuperacao_proximo_passo` nem `cupom_recompra_emitir`. A trava de promessas, o debounce e o conhecimento já valem sem mudar o n8n. Editar o WF2 (26 nós) e o despachante fica para a Etapa 7C/8, com teste de conversa.
+
 ## Etapas concluídas
 
 - Etapa 1: Fundação (PR mesclado, aplicada em produção).
