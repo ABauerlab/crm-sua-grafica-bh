@@ -130,6 +130,41 @@ begin
       union all select to_jsonb(t)::text from public.agente_config t union all select to_jsonb(t)::text from public.orcamentos t) q
     where x ~* ('z[._-]{0,2}[a4@][._-]{0,2}' || 'p')) = 0, 'sigilo: nenhum texto gravado cita o fornecedor');
 
+  -- ============================ A10: WF9, tipos de erro e ação por tipo (simulação de cada caso)
+  perform pg_temp.chk(private.erro_tipo('GBH | WF6', 'Enviar', 'proativo-enviar 500') = 'envio_mensagem', 'WF9: falha de envio de mensagem');
+  perform pg_temp.chk(private.erro_tipo('GBH | WF1', 'HTTP', 'ETIMEDOUT timed out') = 'integracao_indisponivel', 'WF9: indisponibilidade de integração');
+  perform pg_temp.chk(private.erro_tipo('GBH | FERRAMENTA', 'Consultar tabela do fornecedor', 'falhou') = 'fornecedor', 'WF9: erro de consulta ao fornecedor');
+  perform pg_temp.chk(private.erro_tipo('GBH | FERRAMENTA | gerar_link_pagamento', 'mp-criar-link', 'erro') = 'checkout', 'WF9: falha ao gerar checkout');
+  perform pg_temp.chk(private.erro_tipo('GBH | WF5', 'Conferir', 'divergência entre valor do pagamento e pedido') = 'divergencia_pagamento', 'WF9: divergência entre pagamento e pedido');
+  perform pg_temp.chk(private.erro_tipo('GBH | WF5', 'Gravar', 'duplicate key value violates unique constraint') = 'evento_duplicado', 'WF9: evento duplicado');
+  perform pg_temp.chk(private.erro_tipo('GBH | WF2', 'salvar_contato', 'supabase rpc violates check') = 'gravar_crm', 'WF9: falha ao gravar no CRM');
+  perform pg_temp.chk(private.erro_tipo('GBH | WF8', 'mudar etapa', 'erro ao atualizar o status do pedido') = 'mudar_status', 'WF9: erro ao mudar status');
+  r := public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'x', 'Enviar', 'proativo-enviar 502', null, null, true);
+  perform pg_temp.chk(r ->> 'acao' = 'repetir' and r ->> 'tipo' = 'envio_mensagem', 'WF9: envio falho é repetido de forma controlada');
+  perform public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'x', 'Enviar', 'proativo-enviar 502', null, null, false);
+  perform public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'x', 'Enviar', 'proativo-enviar 502', null, null, false);
+  perform public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'x', 'Enviar', 'proativo-enviar 502', null, null, false);
+  r := public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'x', 'Enviar', 'proativo-enviar 502', null, null, false);
+  perform pg_temp.chk(r ->> 'acao' = 'interromper_e_alertar' and r -> 'alerta' is not null, 'WF9: depois de 3 repetições seguidas interrompe e alerta o dono');
+  r := public.agente_erro_registrar('GBH | WF3', 'x', 'mp-criar-link', 'checkout falhou', null, v_o4, true);
+  perform pg_temp.chk(r ->> 'acao' = 'interromper_e_alertar' and exists (select 1 from public.alertas where tipo = 'erro_workflow' and gravidade = 'alta'), 'WF9: checkout com falha nunca repete sozinho e alerta com gravidade alta');
+  r := public.agente_erro_registrar('GBH | WF5', 'x', 'Gravar', 'duplicate key value', null, null, true);
+  perform pg_temp.chk(r ->> 'acao' = 'registrar', 'WF9: evento duplicado só é registrado (idempotência já protegeu)');
+  perform pg_temp.chk((select count(*) from public.erros_operacao where simulacao) >= 3, 'WF9: simulações ficam marcadas');
+  -- divergência entre pagamento e pedido
+  update public.pagamentos set valor = valor + 50 where order_id = v_o4 and status = 'aprovado';
+  r := public.pagamentos_divergencias_checar();
+  perform pg_temp.chk((r ->> 'divergencias')::int >= 1 and exists (select 1 from public.alertas where tipo = 'divergencia_pagamento' and order_id = v_o4), 'WF9: divergência entre pagamento e pedido gera alerta alto');
+
+  -- ============================ A12: uma só implementação de prazo (início na aprovação da arte, corte das 12h, feriados)
+    insert into public.orders (contact_id, title, lead_days, payment_method) values (v_ct, 'prazo', 3, 'pix') returning id into v_o;
+    update public.orders set payment_status = 'aprovado', payment_confirmed_at = now() - interval '2 days' where id = v_o;
+    update public.orders set art_status = 'aprovada' where id = v_o;
+    perform pg_temp.chk((select due_date from public.orders where id = v_o) = private.prazo_data(3, greatest(now() - interval '2 days', (select art_approved_at from public.orders where id = v_o))),
+      'prazo: a data do pedido conta da aprovação da arte e usa a mesma função do orçamento');
+    select sku into v_sku from public.catalogo where vendavel and active and prazo_dias_uteis is not null limit 1;
+    perform pg_temp.chk((public.calcular_prazo(v_sku, now(), false) ->> 'data_pronto')::date = private.prazo_data((select prazo_dias_uteis from public.catalogo where sku = v_sku), now()), 'prazo: calcular_prazo e o pedido usam private.prazo_data');
+
   -- ============================ segurança
   reset role;
   perform set_config('request.jwt.claim.role', 'anon', true);

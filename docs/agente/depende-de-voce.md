@@ -115,3 +115,12 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 3. **Revisar os custos estimados** do painel (`app_settings.observabilidade`: R$ 0,35 marketing e R$ 0,04 utilidade) com a fatura da Meta e o teto diário da IA (R$ 15).
 4. **Decisões já tomadas por mim** (reverter se quiser): validade do orçamento 168 h; promoções só para `opted_in`; uma condição por orçamento. Detalhes em `docs/agente-ia.md`.
 5. **Etapa 8**: publicar o WF9 e ligá-lo aos outros; corrigir `agente-enviar` para usar só as 24 h; testar o disparo real de F1, o aviso de pronto e a recompra com o seu número.
+
+
+## Etapa 7B, Bloco A (o que só você pode fazer)
+1. **Publicar 3 funções** (taxa real e limite de 2 parcelas): `supabase functions deploy mp-webhook --no-verify-jwt && supabase functions deploy mp-conferir --no-verify-jwt && supabase functions deploy mp-criar-link --no-verify-jwt`.
+2. **Mercado Pago**: em Seu negócio > Oferecer parcelamento sem juros, deixe ativo até 2 parcelas. Confira em Custos a taxa do 2x e ajuste `parametros_comerciais.taxas_pagamento.cartao_credito_2x.pct` (hoje 10,50%, estimativa conservadora).
+3. **Rotacionar o token de teste do Mercado Pago** (Credenciais de teste > renovar) e atualizar o segredo `MP_ACCESS_TOKEN_TESTE`.
+4. **Proteção contra senhas vazadas** (Supabase): Authentication > Sign In / Providers > Email > ative "Prevent use of leaked passwords" (exige plano Pro). Não há como aplicar pelo MCP.
+5. **Backup `private.bkp_products_etapa2`**: pode apagar quando quiser (idêntico ao catálogo). Comando pronto, só com a sua autorização: `drop table private.bkp_products_etapa2;`
+6. Etapa 8: publicar o WF9 e ligar nos demais (`docs/n8n-mapa.md`).

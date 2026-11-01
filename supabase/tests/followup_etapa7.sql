@@ -360,10 +360,10 @@ begin
   -- ===================================================================================================================
   -- L. Observabilidade
   -- ===================================================================================================================
-  v_r := public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'wf6', 'Enviar mensagem', 'HTTP 500 do envio', 'e1');
+  v_r := public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'wf6', 'Gravar no CRM', 'supabase rpc violates check', 'e1');
   perform pg_temp.chk((v_r ->> 'ok')::boolean and exists (select 1 from public.agent_logs where action = 'erro_workflow' and workflow = 'GBH | WF6 | Follow-ups'), 'L: erro do workflow vai para agent_logs');
   perform pg_temp.chk(exists (select 1 from public.alertas where tipo = 'erro_workflow' and gravidade = 'alta'), 'L: erro gera alerta de gravidade alta ao dono');
-  perform public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'wf6', 'Enviar mensagem', 'HTTP 500 do envio', 'e2');
+  perform public.agente_erro_registrar('GBH | WF6 | Follow-ups', 'wf6', 'Gravar no CRM', 'supabase rpc violates check', 'e2');
   perform pg_temp.chk((select count(*) from public.alertas where tipo = 'erro_workflow') = 1, 'L: o mesmo erro não repete alerta em 30 minutos');
   update public.app_settings set value = jsonb_set(value, '{teto_custo_dia_brl}', '0.01') where key = 'observabilidade';
   insert into public.conversations (contact_id) select id from public.contacts limit 1 on conflict do nothing;
