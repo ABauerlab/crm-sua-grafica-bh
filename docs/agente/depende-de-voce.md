@@ -110,7 +110,7 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 
 
 ## Etapa 7 (follow-ups, status do pedido, painel de pedidos)
-1. **Republicar o `whatsapp-webhook`** com as novas palavras de descadastro ("não quero mais", "pare"): Edge Functions > whatsapp-webhook > Code, colar `docs/agente/funcoes/whatsapp-webhook.bundle.ts` e publicar (Verify JWT desligado).
+1. ~~Republicar o `whatsapp-webhook`~~ (feito em 01/11/2026 pelo conector, versão 29, com "não quero mais" e "pare").
 2. **Templates**: confirmar em Configurações > WhatsApp e templates que os 11 foram aprovados (os de marketing também precisam do botão "Parar promoções"). Sem aprovação, `proativo-enviar` recusa o template e tenta de novo.
 3. **Revisar os custos estimados** do painel (`app_settings.observabilidade`: R$ 0,35 marketing e R$ 0,04 utilidade) com a fatura da Meta e o teto diário da IA (R$ 15).
 4. **Decisões já tomadas por mim** (reverter se quiser): validade do orçamento 168 h; promoções só para `opted_in`; uma condição por orçamento. Detalhes em `docs/agente-ia.md`.

@@ -27,7 +27,7 @@ Branch da sessão `claude/magical-tesla-auylwy` (a pedida era `feat/agente-etapa
 - **WF9 não está ligado aos outros workflows**: o n8n exige o fluxo de erro publicado e a regra é não ativar nada antes da Etapa 8. Fica para a ativação (publicar o WF9 e ligar nos 27 workflows `GBH |`).
 - **Nenhum envio real** foi feito à Meta (nem a ninguém): a IA está desligada em produção e a lógica foi testada em SQL; `proativo-enviar` não foi executada contra a Meta (sem Deno aqui). Os templates 4 a 11 ainda precisam estar aprovados na Meta (a função recusa template não aprovado e tenta de novo).
 - As telas novas passaram em typecheck e build, mas não foram conferidas no navegador com dados reais (ainda não há pedidos em Produção nem entregues).
-- `whatsapp-webhook` com as novas palavras de descadastro ("não quero mais", "pare") está no repositório e em `docs/agente/funcoes/whatsapp-webhook.bundle.ts`, mas **ainda não foi republicado** (ver `depende-de-voce.md`).
+- `whatsapp-webhook` com as novas palavras de descadastro ("não quero mais", "pare"): **foi republicado em 01/11/2026 (versão 29)**.
 - Custos de template do painel são estimativas.
 
 ### Como testar
