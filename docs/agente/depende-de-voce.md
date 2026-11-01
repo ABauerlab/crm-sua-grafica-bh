@@ -98,13 +98,13 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 
 ## Etapa 5: agente de atendimento (pronta para revisão)
 
-Nada foi aplicado em produção. Ordem sugerida:
+**Atualização:** as migrations 01 a 03 já estão aplicadas em produção e os 21 cenários passam. Falta publicar as 3 funções Edge e criar os 2 segredos. Ordem sugerida:
 
-1. **Aplicar a migration:** colar `docs/agente/aplicar-etapa5.sql` no SQL Editor (idempotente). Depois rodar `supabase/tests/agente_etapa5.sql` (deve mostrar "OK: 96 testes passaram") e os advisors de segurança.
+1. ~~Aplicar a migration~~ (feito em 01/11/2026; `docs/agente/aplicar-etapa5.sql` tem as 3 partes se precisar repetir). O teste local `supabase/tests/agente_etapa5.sql` mostra "OK: 101 testes passaram".
 2. **Publicar as Edge Functions** com os bundles de `docs/agente/funcoes/`: `agente-enviar` (nova, "Verify JWT" desligado), `whatsapp-webhook` (substitui a atual) e `whatsapp-media` (substitui a atual, "Verify JWT" ligado).
 3. **Segredos novos** (Edge Functions > Secrets): `N8N_WF1_URL` = `https://n8n.bauerlab.com.br/webhook/gbh-wf1-entrada-7f3a9c2e41b8d605` e `N8N_WF1_TOKEN` = um texto longo qualquer. Sem esses dois o webhook segue como hoje, sem agente.
 4. **n8n:** abrir os 9 workflows `GBH | WF1`, `GBH | WF2` e `GBH | FERRAMENTA | ...` desta etapa e conferir as credenciais (Supabase, Gemini, Groq). Nada é ativado agora.
-5. **Revisar:** nome do atendente (`agente_config.nome_atendente`, hoje "Bia"), modelos (`modelo_padrao`, `modelo_forte`, `modelo_resumo`: Gemini 2.5 Flash, Pro e Flash-Lite; confirme se existem modelos mais novos na sua conta), preços por modelo (`precos_modelo`, estimativas), o texto do prompt no nó "Montar prompt" do WF2 e as mensagens de espera ("já te passo o valor certinho").
-6. **Rodar os 21 cenários** (`docs/agente/etapa5-testes.md`) antes da Etapa 8 e me trazer o resultado.
+5. **Revisar:** nome do atendente (`agente_config.nome_atendente`, hoje "Bia"), modelos (`modelo_padrao`, `modelo_forte`, `modelo_resumo`: hoje `gemini-3-flash-preview` e `gemini-3.1-pro-preview`, que são versões "preview"; `gemini-2.5-*` dão 404 na conta), preços por modelo (`precos_modelo`, estimativas), o texto do prompt no nó "Montar prompt" do WF2 e as mensagens de espera ("já te passo o valor certinho").
+6. ~~Rodar os 21 cenários~~ (feito: 21 de 21, ver `docs/agente/etapa5-testes.md`).
 7. Decisão sua: contato em `optout` (PARAR das promoções) hoje **não é atendido pelo agente**, como pedido na etapa. Isso inclui pedidos reais de orçamento de quem só queria parar de receber promoção. Se preferir atender essas pessoas e bloquear só a promoção, é uma linha em `agente_bloqueio`.
 

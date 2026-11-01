@@ -8,7 +8,7 @@
 - Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
 - Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
-- Etapa 5: **pronta para revisão** (agente WF1 e WF2, 01/11/2026). Migration aplicada em produção (autorizada); workflows desativados; cenários bloqueados pela regra de ativação (ver abaixo).
+- Etapa 5: **concluída e validada** (agente WF1 e WF2, 01/11/2026). Migrations 01 a 03 aplicadas em produção; **21 de 21 cenários passam** com o modelo real; workflows desativados; funções Edge ainda por publicar (ver `depende-de-voce.md`).
 
 ## Etapa 5: o agente de atendimento (pronta para revisão, 01/11/2026)
 
@@ -31,8 +31,8 @@ Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `f
 - `data_atual` (opcional) não foi criada: data e hora vão no prompt.
 
 ### O que NÃO foi feito (honestidade)
-- **Os 21 cenários ainda não rodaram.** Uma execução real do cenário 01 mostrou que o agente só chama ferramentas se o despachante e os 12 sub-workflows estiverem **publicados** (limitação do n8n), o que conflita com "tudo desativado até a Etapa 8". Decisão do dono pendente. Sem transcrições completas nem custo médio medido. Ver `etapa5-testes.md`.
-- `gemini-2.5-flash` dá 404 na conta; o padrão agora é `gemini-3-flash-preview`. O modelo forte `gemini-3-pro-preview` não foi verificado.
+- **Os 21 cenários rodaram com o modelo real e passam** (relatório e custo médio em `etapa5-testes.md`). Para isso os 13 sub-workflows foram publicados só durante o teste (o `toolWorkflow` do n8n exige o sub-workflow publicado) e despublicados no fim. Na Etapa 8 será preciso publicar o despachante e as ferramentas junto com WF1 e WF2.
+- Modelos: `gemini-3-flash-preview` (padrão) e `gemini-3.1-pro-preview` (forte); `gemini-2.5-flash` e `gemini-3-pro-preview` dão 404 na conta.
 - A trava de saída não confere fatos numéricos soltos (ex.: "a partir de 100 unidades"), só R$ e vazamentos.
 - Áudio (download e Groq), `agente-enviar` e o gancho do webhook não foram executados contra a Meta (sem Deno aqui; lógica testada em Node e SQL).
 - Os JSONs dos 9 workflows desta etapa (WF1, WF2, despachante e 6 ferramentas) **não foram exportados para `n8n/`** nesta sessão (o retorno do MCP é grande demais para regravar com segurança). Eles existem no n8n com os IDs de `docs/n8n-mapa.md`; falta só exportar, sem credenciais, e conferir o `docs/n8n-mapa.md`.

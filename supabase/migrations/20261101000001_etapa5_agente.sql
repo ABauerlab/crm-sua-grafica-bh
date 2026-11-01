@@ -18,7 +18,7 @@ alter table public.agente_config add column if not exists max_chamadas_por_rodad
 
 update public.agente_config set
   modelo_padrao = coalesce(modelo_padrao, 'gemini-3-flash-preview'),
-  modelo_forte = coalesce(modelo_forte, 'gemini-3-pro-preview'),
+  modelo_forte = coalesce(modelo_forte, 'gemini-3.1-pro-preview'),
   modelo_resumo = coalesce(modelo_resumo, 'gemini-3-flash-preview'),
   nome_atendente = coalesce(nome_atendente, 'Bia')
 where id = 1;

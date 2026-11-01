@@ -182,14 +182,14 @@ Depois do modelo e antes do envio: troca travessão por vírgula, tira markdown 
 - **Modelos:** `agente_config.modelo_padrao`, `modelo_forte`, `modelo_resumo` (nomes de modelos Gemini). A regra de objeção (palavras) está no nó "Escolher o modelo (regra por palavras)" do WF1.
 - **Debounce, histórico, limites por ferramenta:** `agente_config.debounce_segundos`, `historico_mensagens`, `max_ferramenta_por_rodada`, `max_chamadas_por_rodada`. Tetos de tokens em `parametros_comerciais`.
 - **Preço por modelo (custo estimado):** `agente_config.precos_modelo`.
-- **Palavras proibidas na saída:** função `agente_saida_segura` (nova migration, nunca editar a antiga).
+- **Palavras proibidas na saída:** função `agente_saida_segura` (nova migration, nunca editar a antiga; hoje a `agente_saida_segura` envolve a `agente_saida_base`).
 - **Ligar e desligar:** `agente_config.ia_ligada` e o botão do topo do CRM. Modo humano por conversa continua sendo o botão da conversa.
 
 ### Registro
 Cada rodada é uma linha em `agente_execucoes` (status, modelo, tokens, custo, ferramentas e quantas vezes) e cada passo uma linha em `agent_logs` (`ferramenta`, `modelo`, `tokens_entrada`, `tokens_saida`, `custo_estimado`, `duracao_ms`, sem conteúdo de mensagem). **Tokens e custo do modelo são estimativas** (o n8n não expõe o uso real do Gemini ao workflow); a transcrição entra com custo fixo por áudio.
 
 ### Tabelas e funções novas (migration `20261101000001`)
-`agente_execucoes`; colunas novas em `agente_config` (`precos_modelo`, `modelo_resumo`, `max_ferramenta_por_rodada`, `max_chamadas_por_rodada`); funções (todas só para a service role): `agente_bloqueio`, `agente_entrada`, `agente_debounce`, `agente_iniciar`, `agente_contexto`, `agente_primeiro_contato`, `agente_registrar_midia`, `agente_gravar_transcricao`, `agente_log`, `agente_tool_inicio`, `agente_tool_fim`, `agente_saida_segura`, `agente_pode_enviar`, `agente_finalizar`, `agente_resumo_precisa`, `agente_gravar_resumo`, `agente_salvar_contato`, `agente_chamar_dono`, `agente_agendar_followup`, `agente_teste_preparar`, `agente_teste_registrar_saida`, `agente_teste_avaliar`, `agente_teste_limpar`; 21 cenários `e5-*` em `testes_conversa`.
+`agente_execucoes` (migrations `20261101000001` a `03`); colunas novas em `agente_config` (`precos_modelo`, `modelo_resumo`, `max_ferramenta_por_rodada`, `max_chamadas_por_rodada`); funções (todas só para a service role): `agente_bloqueio`, `agente_entrada`, `agente_debounce`, `agente_iniciar`, `agente_contexto`, `agente_primeiro_contato`, `agente_registrar_midia`, `agente_gravar_transcricao`, `agente_log`, `agente_tool_inicio`, `agente_tool_fim`, `agente_saida_segura`, `agente_pode_enviar`, `agente_finalizar`, `agente_resumo_precisa`, `agente_gravar_resumo`, `agente_salvar_contato`, `agente_chamar_dono`, `agente_agendar_followup`, `agente_teste_preparar`, `agente_teste_registrar_saida`, `agente_teste_avaliar`, `agente_teste_limpar`; 21 cenários `e5-*` em `testes_conversa`.
 
 ### Edge Functions desta etapa
 `agente-enviar` (nova, só service role: confere IA, modo humano, pagamento e janela, envia texto e grava a mensagem), `whatsapp-webhook` (avisa o WF1 com o id da mensagem; sem `N8N_WF1_URL` e `N8N_WF1_TOKEN` não faz nada) e `whatsapp-media` (agora também aceita a service role, para o WF1 baixar o áudio).
