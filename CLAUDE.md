@@ -162,3 +162,7 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
 - BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
 - Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.
+
+
+## Central de conteúdo
+A produção editorial da SUA GRÁFICA BH está no repositório especializado https://github.com/ABauerlab/conteudosuagraficabh. Consulte `docs/conteudos/README.md` para entender a separação de responsabilidades. Não duplique roteiros no CRM nem altere componentes operacionais para essa integração sem escopo aprovado e PR próprio.
