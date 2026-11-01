@@ -42,3 +42,7 @@ verify_jwt = false
 # Orçamento em PDF: aceita o dono logado (botão Reenviar do CRM) ou a service role (n8n); a função confere os dois
 [functions.orcamento-pdf]
 verify_jwt = false
+
+# Fotos de produto: aceita o dono logado (tela Catálogo > Fotos) ou a service role (n8n); a função confere os dois
+[functions.produto-fotos]
+verify_jwt = false
