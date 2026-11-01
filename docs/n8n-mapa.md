@@ -125,3 +125,10 @@ Credencial: `Supabase account` (já atribuída a todos os nós HTTP). WF6, WF7 e
 
 ## Etapa 7B, Bloco A
 `GBH | WF9 | Erros e observabilidade` ganhou o nó "Conferir divergência entre pagamento e pedido" (a cada hora, `pagamentos_divergencias_checar`). `agente_erro_registrar` agora classifica o erro e decide a ação. O WF9 segue **desativado e sem ligação** aos outros (n8n exige WF9 publicado). Credenciais: `docs/credenciais-n8n.md`.
+
+## Estado de ativação (Etapa 8, 02/11/2026)
+- **Publicados (ativos):** WF9 (`vmaMVnZydmHpkW57`, fluxo de erro de todos os `GBH |`), WF5, WF8, WF7, WF6, WF2, WF1 e todas as ferramentas e sub-workflows (o n8n exige sub-workflows publicados para publicar quem os chama; eles só têm gatilho "Execute Workflow").
+- **Inativos (opcionais):** `GBH | WF4 | Aprendizado de preços`, `Aquecer cache de madrugada`, `Aquecer fotos de madrugada`, `Mapear fotos da origem`.
+- Todos os workflows `GBH |` têm `errorWorkflow = vmaMVnZydmHpkW57`.
+- Pesquisa de preço: `searxng_url` aponta para o SearXNG ativo no Coolify (serviço `searxng-0n21vlb3dottiafc7empi21j`).
+- Webhook de teste do WF1 (`/webhook/gbh-wf1-teste-3d81e07a95c2b4f6`, corpo `{caso_id, limpar}`) roda um cenário de `testes_conversa` com o modelo real sem enviar ao WhatsApp, desde que `agente_config.ia_ligada` esteja ligada e o contato de teste esteja dentro do piloto.
