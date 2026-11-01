@@ -31,3 +31,11 @@ Se a sessão acabar no meio de uma etapa, registre em `docs/agente/progresso.md`
 - Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
 - BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
 - Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.
+
+
+## Central de conteúdo
+- A estratégia, roteiros, referências e produção de vídeos ficam no repositório especializado: https://github.com/ABauerlab/conteudosuagraficabh.
+- Documentação da relação com o CRM: `docs/conteudos/README.md`.
+- Não duplicar o acervo editorial dentro deste CRM.
+- Não alterar o app, banco, migrations, Edge Functions ou workflows para integrar conteúdo sem escopo aprovado, branch e PR próprios.
+- Não copiar dados pessoais de contatos/conversas para o repositório de conteúdo. Usar dados agregados e atribuição baseada em evidência.

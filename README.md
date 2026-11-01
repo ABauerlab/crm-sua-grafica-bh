@@ -42,3 +42,8 @@ Entre com o admin, abra **Templates › Sincronizar** para trazer os templates a
 
 ## Páginas legais
 `/privacidade` e `/termos` têm texto **provisório** (marcado na página) e precisam de revisão antes de informar as URLs na Meta.
+
+
+## Conteúdo e aquisição
+
+A estratégia editorial, pesquisa de tendências, roteiros e produção de vídeos da SUA GRÁFICA BH ficam no repositório especializado [conteudosuagraficabh](https://github.com/ABauerlab/conteudosuagraficabh). A integração com o CRM está documentada em [docs/conteudos/](docs/conteudos/). Essa documentação não implica sincronização técnica nem altera o funcionamento do CRM.
