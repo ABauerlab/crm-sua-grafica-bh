@@ -21,8 +21,11 @@ Branch de trabalho da sessão `claude/fervent-hawking-h6vgqf` (a pedida era `fea
 - **n8n (MCP, desativados, tag gbh, exportados em `n8n/`):** `enviar_foto_produto` (`ybnd6LjGjUO8dgTI`) e `Aquecer fotos de madrugada` (`MYEmz3rCIfhMhxxF`, opcional, desligado).
 - **Testes:** `scripts/test-fotos.ts` (entra no `npm test`), `supabase/tests/fotos_etapa4b.sql` (**25 passam**), Etapas 1 a 4 contra o schema novo (54, 82, 67 e 55 passam), `npm test`, typecheck e build verdes. Teste real com 15 grupos: ver abaixo.
 
-### Resultado do teste real (15 grupos)
-10 grupos com 3 fotos (maior 130 KB, segunda rodada com 0 chamadas à origem); **5 grupos sem foto aproveitável** (só miniaturas de 180 px): sacolas e sacos, revista, convites, agendas e cadernos, credenciais. A premissa de que todos os produtos têm foto na origem não se confirmou.
+### Ajuste pedido pelo dono (01/11/2026): todo produto precisa de foto
+- Varredura de todo o menu da origem (152 categorias): 26.639 itens, 18.808 códigos. Os 125 grupos do catálogo têm categoria equivalente (100% por grupo); por SKU, cerca de 90% com imagem própria (estimativa; o cruzamento exato sai na tela de Cobertura).
+- Fotos pequenas (miniaturas) agora são aceitas, ampliadas e marcadas como baixa qualidade; o agente nunca diz ao cliente que não há foto.
+- Migration `20261030000003` (mapa código -> imagem, candidatas, cobertura), ação `varrer` na função, botão "Mapear origem" na tela, `scripts/fotos-mapear-origem.ts` e `scripts/fotos-catalogo-pdf.ts` (reserva pelo PDF, 1.051 imagens extraídas no teste).
+- 38 testes SQL de fotos passam.
 
 ### Decisões
 - Domínio da origem fora do repositório: o `npm test` proíbe o nome do fornecedor em qualquer arquivo e o domínio contém esse nome. Fica em `app_settings.fotos.origem_base` (preenchido pelo dono) e o teste real recebe por variável de ambiente.

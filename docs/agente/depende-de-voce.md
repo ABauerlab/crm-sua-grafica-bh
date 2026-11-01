@@ -92,6 +92,6 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 3. **Segredo** `GEMINI_API_KEY` nas Edge Functions (verificação de marca). Sem ele as imagens ficam pendentes para você aprovar.
 4. **Catálogo > Fotos:** preencher o campo "Origem das fotos (interna)" e salvar; depois abrir cada grupo mais vendido e conferir as imagens.
 5. **Confirmar** que pode usar as imagens da origem: não há página de termos de uso no site, só política de privacidade.
-6. **Cinco grupos sem foto aproveitável** (sacolas e sacos, revista, convites, agendas e cadernos, credenciais): decidir se envia a foto certa à mão (Trocar) ou segue sem foto com aviso à equipe.
+6. **Mapear a origem** (botão em Catálogo > Fotos), conferir a Cobertura e completar SKUs/grupos sem imagem pelo catálogo em PDF (`scripts/fotos-catalogo-pdf.ts`) ou pelo campo Trocar.
 7. **n8n:** atribuir a credencial do Supabase aos nós HTTP de `enviar_foto_produto` e `Aquecer fotos de madrugada`. Seguem desativados até a Etapa 8.
 8. **Auditoria final (Etapa 8):** testar o envio real de imagem no WhatsApp (janela aberta) e a verificação de marca com o modelo de visão.

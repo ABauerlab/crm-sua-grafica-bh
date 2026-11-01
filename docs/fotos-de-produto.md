@@ -13,8 +13,14 @@ Quando o cliente pede foto, o agente envia no WhatsApp até 3 imagens reais do p
 * **Robots e termos:** `robots.txt` com `User-agent: *` e `Allow: /` (nada proibido). **Não há página de termos de uso** (só política de privacidade, que trata de dados pessoais e não de uso de conteúdo). O dono informou que as fotos são sem marca. Pendência registrada em `docs/agente/depende-de-voce.md`: o dono confirma que pode usar as imagens.
 * **Taxa e cortesia:** no máximo 1 requisição por segundo (1,1 s entre acessos), tempo limite de 15 s, `User-Agent` identificável com e-mail de contato, sem paralelismo, uma única consulta por grupo a cada 30 dias.
 
-### Achado que contraria a premissa
-Em teste real com 15 grupos, **10 têm fotos aproveitáveis e 5 não**: sacolas e sacos, revista, convites, agendas/cadernos e credenciais só têm miniaturas de 180 px na origem (menores que o mínimo de 300 px). Para esses grupos o fluxo devolve `sem_foto` (o agente diz que vai confirmar com a equipe e o dono recebe alerta de gravidade baixa). Esses grupos aparecem na tela com o filtro "Sem foto" e podem ser resolvidos trocando a imagem à mão (campo "Trocar").
+### Navegação completa do menu (feita em 01/11/2026)
+O menu lateral do site tem **152 categorias e cerca de 4.900 subcategorias**. Os produtos de cada categoria vêm de um endereço público que o próprio site usa na paginação (36 itens por página, cada item com o **código, que é igual ao nosso SKU**, e o endereço da imagem). A varredura de todas as categorias (`scripts/fotos-mapear-origem.ts`, 1 requisição por segundo, cerca de 25 minutos) encontrou **26.639 itens, 18.808 códigos e 18.808 imagens distintas**. Não guarda preço nem custo.
+
+* **Todos os 125 grupos do nosso catálogo têm uma categoria de mesmo nome no menu**: cobertura de 100% por grupo.
+* **Por SKU:** o catálogo tem 20.381 SKUs; a contagem por grupo indica cerca de 18.400 (90%) com imagem própria no site (estimativa por contagem, não por cruzamento exato; o número exato aparece em Catálogo > Fotos > Cobertura depois do mapeamento). Grupos com mais SKUs fora da listagem: PLACAS (221 de 813), CREDENCIAIS (147 de 258), CONVITES (416 de 583), CARDÁPIOS (1.116 de 1.313), PASTAS (766 de 955), POSTAIS (916 de 1.143), TAGS (1.182 de 1.335). SKU sem imagem própria usa uma foto do mesmo grupo, com legenda ilustrativa.
+* **Baixa qualidade:** vários grupos (revista, sacolas, convites, agendas, credenciais) só têm miniaturas de 180 px. Por decisão do dono, **são aceitas**: a imagem é ampliada com suavização para 640 px, entra marcada como "baixa qualidade" na tela e sai por último na ordem de envio, atrás de qualquer foto melhor.
+* **O agente nunca diz ao cliente que não há foto.** Se mesmo assim não houver imagem, a orientação é "vou separar as fotos e já envio", o atendimento segue e a equipe recebe alerta para mandar à mão.
+* **Reserva pelo catálogo em PDF do dono** (`scripts/fotos-catalogo-pdf.ts`): extrai as imagens de cada página (124 páginas; no teste, 1.051 imagens de 300 px ou mais em 120 páginas), sugere o grupo pelo título da página e envia como **pendentes para aprovação**. O PDF fica fora do repositório.
 
 ## 2. Mapeamento e cache
 
@@ -28,7 +34,7 @@ Em teste real com 15 grupos, **10 têm fotos aproveitáveis e 5 não**: sacolas 
 
 Feito na **Edge Function `produto-fotos`** com `imagescript` (decodificação, redução e codificação JPEG em TypeScript puro). Escolhi a função, e não o nó de imagem do n8n, porque o mesmo código atende o agente, o botão "Buscar de novo" do CRM e o aquecimento noturno, e porque a lógica fica versionada e testada no repositório (`scripts/test-fotos.ts`).
 
-* Reduz para no máximo 1000 px no maior lado, grava JPEG qualidade 80 (desce 72, 64, 56 e 48 até caber), **meta de 150 KB, teto rígido de 300 KB** (acima disso a imagem é descartada). Menor que 300 px: descartada.
+* Reduz para no máximo 1000 px no maior lado, grava JPEG qualidade 80 (desce 72, 64, 56 e 48 até caber), **meta de 150 KB, teto rígido de 300 KB** (acima disso a imagem é descartada). Menor que 100 px (ícone): descartada. Entre 100 e 400 px: aceita como baixa qualidade e ampliada até 640 px.
 * O JPEG é recriado do zero: EXIF, perfil e comentários não passam (testado).
 * **Verificação whitelabel** na primeira vez de cada imagem: modelo de visão pequeno (Gemini Flash-Lite, segredo `GEMINI_API_KEY`) responde se há logotipo, marca, nome de empresa, site ou telefone. Com marca: `bloqueada` + `revisar`. Sem o segredo ou com falha da verificação: a imagem fica `pendente` + `revisar` e **nunca é enviada** até o dono aprovar (falha fechada).
 * **Tela Catálogo > Fotos (dono):** lista dos grupos com situação, pedidos e contagens; filtros "Para revisar" e "Sem foto"; por grupo: ver as imagens, Aprovar, Bloquear, Buscar de novo, Trocar por uma imagem (endereço https) e o campo da origem.
@@ -38,9 +44,10 @@ Feito na **Edge Function `produto-fotos`** com `imagescript` (decodificação, r
 Workflow `GBH | FERRAMENTA | enviar_foto_produto` (n8n, desativado) chama a Edge Function `produto-fotos` (ação `enviar`; autenticação do dono ou service role).
 
 1. Valida a conversa e a janela de atendimento de 24 h (ou 72 h de anúncio).
+2. Prioridade das imagens: foto do próprio SKU, depois itens do grupo que combinam com o termo, depois variedade do grupo; as de qualidade normal antes das de baixa qualidade.
 2. Limites: **3 imagens por pedido, 1 pedido por minuto por conversa, 10 imagens por contato por dia** (fuso de São Paulo). Recusa devolve `muito_rapido` ou `limite_diario` com orientação ao agente.
 3. Resolve o grupo, usa o cache ou busca/processa, e envia **só imagens aprovadas** como mensagem de imagem com legenda curta (`legendaSugerida`). Foto do grupo, e não do item exato, vai com legenda **ilustrativa** ("Foto ilustrativa de ... O seu pode variar no acabamento, a gente confirma na hora do orçamento.").
-4. Sem foto ou erro da origem: `{enviadas: 0, sem_foto: true, orientacao}`; grava alerta `foto_indisponivel` (gravidade baixa) para o dono. Nunca inventa nem usa foto de outro produto sem avisar.
+4. Sem foto ou erro da origem: `{enviadas: 0, sem_foto: true, orientacao}` (a orientação proíbe dizer ao cliente que não há foto); grava alerta `foto_indisponivel` (gravidade baixa) para a equipe. Nunca inventa nem usa foto de outro produto sem avisar.
 5. Registro em `produto_fotos_envios` e em `agent_logs` (grupo, quantidade, bytes, via cache ou busca; sem origem e sem conteúdo de mensagem).
 6. **Resposta ao agente mínima:** `{enviadas, legenda_sugerida}` (ou o formato de sem foto/limite acima). Nunca contém URL, origem, SKU nem nome de arquivo.
 
@@ -61,18 +68,20 @@ Conhecimento: trecho `foto-produto` (categoria `guia`) ensina a oferecer as foto
 | `scripts/fotos-live.ts` (rede, manual) | 15 grupos reais: ver resultado abaixo |
 | `npm run test:conhecimento` | o trecho `foto-produto` passa no lint de tom e vazamento (91 trechos) |
 
-### Resultado do teste real (01/11/2026, 15 grupos de categorias diferentes)
+### Resultado dos testes reais (01/11/2026)
+* Teste de 15 grupos (antes da navegação completa): 10 grupos com 3 fotos cada, maior imagem 130 KB; 5 grupos só com miniaturas (agora aceitas como baixa qualidade); segunda rodada com 0 chamadas à origem.
+* Varredura completa do menu: 152 categorias, 26.639 itens, 18.808 códigos (ver acima).
+* Extração do catálogo em PDF: 1.051 imagens aproveitáveis.
+* **Não testado:** envio real no WhatsApp, verificação de marca com o modelo de visão, a Edge Function publicada e a ampliação de miniaturas vista a olho (sem Deno, Meta e segredos na sessão).
 
-* **10 grupos com 3 fotos cada; maior imagem 130 KB** (meta 150, teto 300); a maioria entre 35 e 110 KB.
-* **Tempo da primeira busca por grupo: cerca de 4,5 s** (1 página + 3 imagens com 1 requisição por segundo); com 10 candidatas e todas pequenas, cerca de 12 s e resultado `sem_foto`.
-* **Segunda rodada: 0 chamadas à origem** (cache), resposta em 0 ms no teste local.
-* 5 grupos sem foto aproveitável (só miniaturas): sacolas e sacos, revista, convites, agendas e cadernos, credenciais.
-* **Não testado:** envio real no WhatsApp, verificação de marca com o modelo de visão e a Edge Function publicada (sem acesso da sessão ao Deno, à Meta e aos segredos).
+## 7. Como ligar (passo a passo)
 
-## 7. Como ligar
-
-1. Aplicar `docs/agente/aplicar-etapa4b.sql` (migrations `20261030000001` e `20261030000002`).
+1. Aplicar `docs/agente/aplicar-etapa4b.sql` no SQL Editor (já inclui as 3 migrations, é idempotente) e rodar os advisors de segurança.
 2. Publicar `produto-fotos` (CLI: `supabase functions deploy produto-fotos --no-verify-jwt`, ou painel com `docs/agente/funcoes/produto-fotos.bundle.ts`).
-3. Segredo `GEMINI_API_KEY` na função (verificação de marca). Sem ele nada é aprovado sozinho.
-4. Catálogo > Fotos: preencher a origem (campo interno) e salvar.
-5. Atribuir a credencial do Supabase aos nós HTTP dos 2 workflows novos. Eles seguem **desativados** até a Etapa 8.
+3. Criar o segredo `GEMINI_API_KEY` nas Edge Functions (verificação de marca).
+4. Catálogo > Fotos: preencher "Origem das fotos (interna)" e salvar.
+5. Clicar em "Mapear origem (varredura completa)" e manter a aba aberta (cerca de 25 a 40 minutos). Ao fim, ler a Cobertura.
+6. Pré-aquecer os grupos mais vendidos: abrir cada um e clicar "Buscar de novo"; revisar e aprovar as imagens.
+7. Para SKUs/grupos sem imagem: extrair do PDF (`scripts/fotos-catalogo-pdf.ts`) e aprovar na tela.
+8. Atribuir a credencial do Supabase aos nós HTTP dos 2 workflows do n8n (seguem desativados até a Etapa 8).
+9. Etapa 8: teste real de envio de imagem no WhatsApp.
