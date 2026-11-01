@@ -15,9 +15,9 @@ Leia o plano (`lote-N.json`). Para cada turno `n` da tarefa, em ordem:
 2. **Disparar** (Bash, uma vez só por caso):
    `curl -sS -m 60 -o /dev/null -w "%{http_code}\n" -X POST "$URL_TESTE" -H 'content-type: application/json' -d '{"caso_id":"<id>","limpar":false}'`
    (resposta 200 sem corpo é normal: o n8n processa em segundo plano). Nunca repita o disparo do mesmo caso.
-3. **Aguardar e coletar** (SQL): `select public.e2e_aguardar('<id>'::uuid, 100) snap;`
+3. **Aguardar e coletar** (SQL): `select public.e2e_aguardar('<id>'::uuid, 45) snap;`
    O retrato traz `status`, `saidas` (o que o agente "enviaria"), `ferramentas`, `valores_vistos`, `links_vistos`, `links_orcamento`, `alerta`, `violacao_lucro`, `tokens`, `custo`, `conversation_id` e `contact_id`.
-   Se `status` vier nulo, o turno estourou o tempo: espere mais uma vez com o mesmo comando; se continuar nulo, registre assim mesmo (o avaliador marca erro) e siga para a próxima tarefa.
+   Se `status` vier nulo, o turno estourou o tempo: espere mais uma vez com o mesmo comando; o limite da ferramenta MCP é 60 s por chamada, então use 45 e repita o mesmo comando até 3 vezes; se continuar nulo, registre assim mesmo (o avaliador marca erro) e siga para a próxima tarefa.
 
 ## Arquivo de saída
 
