@@ -50,3 +50,11 @@ verify_jwt = false
 # Envio do agente: só a service role (n8n). Antes de enviar confere IA ligada, modo IA, pedido não pago e janela de 24 h
 [functions.agente-enviar]
 verify_jwt = false
+
+# Alertas ao dono (push e WhatsApp): processar só com a service role (n8n); teste e chave pública com o dono logado. A função confere os dois.
+[functions.alertas-enviar]
+verify_jwt = false
+
+# Confirmação ao cliente depois do pagamento (WF5): só a service role
+[functions.cliente-pago-avisar]
+verify_jwt = false

@@ -10,6 +10,12 @@
 - Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
 - Etapa 5: **concluída e validada** (agente WF1 e WF2, 01/11/2026). Migrations 01 a 03 aplicadas em produção; **21 de 21 cenários passam** com o modelo real; workflows desativados; funções Edge ainda por publicar (ver `depende-de-voce.md`).
 
+## Em andamento: Etapa 6 (alertas, PWA e pós-pagamento)
+
+Branch `feat/agente-etapa6-alertas-pwa`. **Feito e testado localmente:** migration `20261101000004_etapa6_alertas_push.sql` (48 testes SQL em `supabase/tests/alertas_etapa6.sql`, regressão das Etapas 1, 4 e 5 verde), Edge Functions `alertas-enviar` e `cliente-pago-avisar`, PWA (manifest, ícones, `sw.js`, `offline.html`), tela Configurações > Notificações, `scripts/test-alertas.ts`, `npm test` e build verdes.
+**Falta:** aplicar a migration em produção (o conector do Supabase pediu confirmação do dono e ela não veio), publicar as 2 funções, criar WF5 e as automações no n8n (pasta Sua Gráfica BH, desativados), exportar para `n8n/`, `docs/pwa-e-notificacoes.md`, `docs/n8n-mapa.md`, `mapa-crm.md` e fechar este bloco.
+
+
 ## Etapa 5: o agente de atendimento (pronta para revisão, 01/11/2026)
 
 Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `feat/agente-etapa5-agente`). **Atualização:** migration aplicada em produção em 01/11/2026 (autorizada). Funções Edge ainda não publicadas, workflows desativados. Detalhes em `docs/agente-ia.md` (seção Etapa 5) e testes em `docs/agente/etapa5-testes.md`.

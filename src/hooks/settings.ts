@@ -23,12 +23,42 @@ export interface CampaignGoals {
   min_roas: number
 }
 
+export interface PreferenciaTipo {
+  push: boolean
+  whatsapp: boolean
+  fura_silencio: boolean
+}
+
+export interface NotificacoesSettings {
+  tipos: Record<string, PreferenciaTipo>
+  silencio: { ativo: boolean; inicio: string; fim: string }
+  limites: { horas_pagamento_pendente: number; horas_sem_arte: number }
+  resumo_minutos: number
+  url_base: string
+}
+
 export const DEFAULTS = {
   agent: { enabled: false, hours: { start: '08:00', end: '18:00', days: [1, 2, 3, 4, 5] }, handoff_message: 'Vou chamar um atendente para te ajudar. Um instante!' } as AgentSettings,
   company: { name: 'Sua Gráfica BH', legal_name: '', cnpj: '', address: '', email: '', phone: '', hours: '' } as CompanySettings,
   labels: ['dúvida', 'orçamento', 'reclamação', 'arte', 'recompra'] as string[],
   campaign_goals: { max_cost_per_conversation: 6, max_cost_per_sale: 60, min_roas: 4 } as CampaignGoals,
   repurchase: { days: 45 } as { days: number },
+  notificacoes: {
+    tipos: {
+      pedido_pago: { push: true, whatsapp: true, fura_silencio: true },
+      atencao_agente: { push: true, whatsapp: true, fura_silencio: true },
+      pagamento_problema: { push: true, whatsapp: true, fura_silencio: true },
+      nova_mensagem_humano: { push: true, whatsapp: false, fura_silencio: false },
+      pagamento_pendente: { push: true, whatsapp: true, fura_silencio: false },
+      pedido_sem_arte: { push: true, whatsapp: true, fura_silencio: false },
+      politica_desconto: { push: true, whatsapp: true, fura_silencio: false },
+      resumo: { push: true, whatsapp: true, fura_silencio: false },
+    },
+    silencio: { ativo: true, inicio: '22:00', fim: '07:00' },
+    limites: { horas_pagamento_pendente: 6, horas_sem_arte: 12 },
+    resumo_minutos: 120,
+    url_base: 'https://crm.suagraficabh.com.br',
+  } as NotificacoesSettings,
 }
 
 type Key = keyof typeof DEFAULTS

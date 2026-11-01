@@ -27,7 +27,9 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '@/auth/AuthProvider'
 import { Logo, LogoMark } from '@/components/brand/Logo'
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
+import { useAlertasPendentes, useMarcarLidos } from '@/hooks/alertas'
 import { useConversations, useQualityAlerts, useRealtimeSync } from '@/hooks/queries'
+import { atualizarSelo } from '@/lib/push'
 import { DEFAULTS, useSaveSetting, useSetting } from '@/hooks/settings'
 import { setSoundEnabled, soundEnabled } from '@/lib/notify'
 import { useToast } from '@/components/ui/toast'
@@ -232,6 +234,32 @@ export default function Layout() {
   useRealtimeSync()
   const { data: alerts } = useQualityAlerts()
   const location = useLocation()
+  const navigate = useNavigate()
+  const { data: pendentes } = useAlertasPendentes()
+  const marcarLidos = useMarcarLidos()
+
+  // selo com o número de pendências no ícone do app (iPhone 16.4 ou superior, app instalado)
+  useEffect(() => { atualizarSelo(pendentes ?? 0) }, [pendentes])
+
+  // toque na notificação com o app já aberto: o service worker pede para abrir o pedido ou a conversa (sem recarregar)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+    const ouvir = (e: MessageEvent) => {
+      const d = e.data as { tipo?: string; url?: string } | undefined
+      if (d?.tipo === 'abrir' && typeof d.url === 'string' && d.url.startsWith('/')) navigate(d.url)
+    }
+    navigator.serviceWorker.addEventListener('message', ouvir)
+    return () => navigator.serviceWorker.removeEventListener('message', ouvir)
+  }, [navigate])
+
+  // abrir o pedido ou a conversa de um aviso marca o aviso como lido
+  useEffect(() => {
+    const alvo = location.pathname + location.search
+    if (/^\/kanban\?pedido=|^\/inbox\/[0-9a-f-]{36}/.test(alvo)) {
+      void supabase.from('alertas').update({ lido_em: new Date().toISOString() }).is('lido_em', null).like('dados->>url', `%${alvo}`).then(() => marcarLidos.reset())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.search])
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('sgbh.nav.collapsed') === '1'
