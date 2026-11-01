@@ -8,7 +8,7 @@ JSONs exportados (sem credenciais) em `n8n/` (os 9 workflows da Etapa 5 ainda n�
 
 | Workflow | ID no n8n | Arquivo | Gatilho | Estado |
 |---|---|---|---|---|
-| `GBH \| FERRAMENTA \| pesquisar_preco_mercado` | `V1Bx2NRuPgJxj139` | `n8n/GBH-FERRAMENTA-pesquisar_preco_mercado.json` | Execute Workflow (entradas `sku`, `especificacao`) | Desativado, 32 nós |
+| `GBH \| FERRAMENTA \| pesquisar_preco_mercado` | `V1Bx2NRuPgJxj139` | `n8n/GBH-FERRAMENTA-pesquisar_preco_mercado.json` | Execute Workflow (entradas `sku`, `especificacao`) | Desativado, 34 nós (Etapa 7C: arte_receber e arte_baixa_ok chamam as funções do banco direto, com resposta simulada em teste) |
 | `GBH \| FERRAMENTA \| condicao_especial` | `cxGW9NH43uhINq2h` | `n8n/GBH-FERRAMENTA-condicao_especial.json` | Execute Workflow (entradas `orcamento_id`, `gatilho`) | Desativado, 13 nós |
 | `GBH \| WF4 \| Aprendizado de preços` | `qDMVB2BVqdR2qsdm` | `n8n/GBH-WF4-Aprendizado-de-precos.json` | Agenda: segunda 03:30 (America/Sao_Paulo) | Desativado, 8 nós |
 | `GBH \| WF4 \| Aquecer cache de madrugada` (opcional) | `bGjqgxT7EJuViM79` | `n8n/GBH-WF4-Aquecer-cache-de-madrugada.json` | Agenda: todo dia 03:00; só age se `parametros_comerciais.aquecer_cache_ligado = true` | Desativado, 5 nós |
@@ -84,8 +84,8 @@ Os nós HTTP foram criados sem credencial atribuída (limitação de importaçã
 | Workflow | ID no n8n | Gatilho | Estado |
 |---|---|---|---|
 | `GBH \| WF1 \| Entrada e roteamento` | `DO8wiALq6q1jZbYN` | Webhook POST `/webhook/gbh-wf1-entrada-7f3a9c2e41b8d605` (chamado pelo `whatsapp-webhook`) e Webhook de teste `/webhook/gbh-wf1-teste-3d81e07a95c2b4f6` (corpo `{caso_id, limpar}`) | Desativado, 61 nós |
-| `GBH \| WF2 \| Agente` | `NKN7RgAJmRWZXRIT` | Execute Workflow (chamado pelo WF1) | Desativado, 26 nós (AI Agent Gemini, 11 ferramentas) |
-| `GBH \| FERRAMENTA \| despachar` | `1rm82046svIE1TLl` | Execute Workflow (chamado pelas 11 ferramentas do WF2) | Desativado, 32 nós |
+| `GBH \| WF2 \| Agente` | `NKN7RgAJmRWZXRIT` | Execute Workflow (chamado pelo WF1) | Desativado, 28 nós (AI Agent Gemini, 13 ferramentas; Etapa 7C: persona.nome e fase do contexto, arte_receber e arte_baixa_ok) |
+| `GBH \| FERRAMENTA \| despachar` | `1rm82046svIE1TLl` | Execute Workflow (chamado pelas 11 ferramentas do WF2) | Desativado, 34 nós (Etapa 7C: arte_receber e arte_baixa_ok chamam as funções do banco direto, com resposta simulada em teste) |
 | `GBH \| FERRAMENTA \| buscar_conhecimento` | `MJLl5aJkBA2t9jfS` | Execute Workflow (`pergunta`, `conversation_id`) | Desativado |
 | `GBH \| FERRAMENTA \| buscar_produto` | `2BkgUaqxkS198jmA` | Execute Workflow (`termo`, `quantidade`, `filtros`) | Desativado |
 | `GBH \| FERRAMENTA \| salvar_contato` | `JDjfx586IeN9YaWN` | Execute Workflow (`contact_id` e campos) | Desativado |

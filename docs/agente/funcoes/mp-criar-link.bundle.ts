@@ -273,8 +273,10 @@ function parseExpiraHoras(v: unknown): number {
   return n
 }
 
-/** Máximo de parcelas permitido no link (parametros_comerciais.parcelas_sem_juros_max). */
-const MAX_PARCELAS = 2
+/** Parcelas sem juros (a taxa é absorvida e já está no preço). Configurado na conta do Mercado Pago (Seu negócio > Parcelamento sem juros). */
+const MAX_PARCELAS_SEM_JUROS = 2
+/** Máximo de parcelas que o link mostra (app_settings.parcelamento.maximo_link). Acima de 2x os juros são do cliente e aparecem no link. */
+const MAX_PARCELAS = 12
 
 function buildPreference(opts: {
   items: ItemPreferencia[]
@@ -283,6 +285,9 @@ function buildPreference(opts: {
   backBase: string
   now: Date
   horas: number
+  maxParcelas?: number
+  /** Resumo curto da política (produto personalizado, refação, cancelamento). Vai na descrição do link. */
+  politica?: string | null
 }) {
   const to = new Date(opts.now.getTime() + opts.horas * 3_600_000)
   return {
@@ -299,9 +304,10 @@ function buildPreference(opts: {
     expiration_date_from: opts.now.toISOString(),
     expiration_date_to: to.toISOString(),
     statement_descriptor: 'SUAGRAFICABH',
-    // Pix e cartão. Boleto e lotérica ficam de fora. No máximo 2 parcelas (as sem juros que a conta absorve);
-    // acima disso só por decisão do dono. O "sem juros" em si é configurado na conta (Seu negócio > Parcelamento sem juros).
-    payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }], installments: MAX_PARCELAS },
+    // Pix e cartão. Boleto e lotérica ficam de fora. Até 2x sem juros (a conta absorve); acima disso o cliente vê as parcelas e os
+    // juros no próprio link e escolhe lá. O "sem juros" é configurado na conta (Seu negócio > Parcelamento sem juros).
+    payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }], installments: Math.min(Math.max(Math.trunc(opts.maxParcelas ?? MAX_PARCELAS), 1), 12) },
+    ...(opts.politica ? { additional_info: opts.politica.slice(0, 600) } : {}),
   }
 }
 
@@ -412,7 +418,15 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date()
+  // Política curta (descrição do link) e máximo de parcelas vêm de Configurações; se falhar, vale o padrão
+  const [{ data: politica }, { data: parc }] = await Promise.all([
+    db.rpc('politica_texto', { p_chave: 'descricao_link' }),
+    db.from('app_settings').select('value').eq('key', 'parcelamento').maybeSingle(),
+  ])
+  const maxParcelas = Number((parc?.value as { maximo_link?: number } | null)?.maximo_link)
   const preference = buildPreference({
+    maxParcelas: Number.isFinite(maxParcelas) && maxParcelas >= 1 ? maxParcelas : undefined,
+    politica: typeof politica === 'string' ? politica : null,
     items,
     reference: formatReference(order.number),
     notificationUrl: `${webhookUrl()}?source_news=webhooks`,
