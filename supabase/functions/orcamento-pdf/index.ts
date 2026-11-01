@@ -47,6 +47,27 @@ async function renderizar(html: string): Promise<Uint8Array> {
 
 // Gera (ou reaproveita) o PDF do orçamento e, se pedido, envia como documento no WhatsApp.
 // Só lê o documento público de orcamento_documento: nunca custo, margem, piso, fornecedor, SKU nem endereço de retirada.
+/** Resumo curto do pedido que vai na legenda do PDF (gerado a partir do orçamento: sem custo, margem, piso, SKU nem endereço). */
+function resumoDoPedido(doc: OrcamentoDoc): string {
+  const brl = (n: number) => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const dm = (iso: string) => { const [, m, d] = iso.slice(0, 10).split('-'); return `${d}/${m}` }
+  const linhas: string[] = [`Resumo do seu pedido (orçamento ${doc.numero})`, '']
+  for (const i of doc.itens) {
+    const nome = [i.descricao, i.especificacao].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+    linhas.push(`${i.quantidade > 1 ? i.quantidade + 'x ' : ''}${nome}: ${brl(i.valor_total)}`)
+  }
+  if (doc.arte.modo === 'paga' || doc.arte.modo === 'com_frete') linhas.push(`Criação da arte: ${brl(doc.arte.valor)}`)
+  else if (doc.arte.modo === 'cliente') linhas.push('Arte: você envia pronta')
+  if (doc.frete.modo === 'bike_gratis') linhas.push('Entrega: grátis na região central, em horário comercial')
+  else if (doc.frete.modo === 'uber_cliente') linhas.push(`Entrega: Uber ou 99 Entrega por conta do cliente, saindo da Praça Sete${doc.frete.valor > 0 ? ` (valor de referência ${brl(doc.frete.valor)})` : ''}`)
+  else linhas.push('Retirada: grátis no centro de BH, depois do pagamento')
+  if (doc.desconto > 0) linhas.push(`Desconto: ${brl(doc.desconto)}`)
+  linhas.push('', `Total: ${brl(doc.total)}`)
+  if (doc.data_prevista) linhas.push(`Fica pronto em ${dm(doc.data_prevista)}, pagando e enviando a arte até as ${doc.corte_hora}h`)
+  if (doc.validade_ate) linhas.push(`Válido até ${dm(doc.validade_ate)}`)
+  return linhas.join('\n')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405)
@@ -153,7 +174,7 @@ Deno.serve(async (req) => {
     if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
-  const legenda = texto ?? `Segue o orçamento ${doc.numero}.`
+  const legenda = (texto ?? resumoDoPedido(doc)).slice(0, 1000)
   let res: Response
   try {
     res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {

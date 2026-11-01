@@ -151,3 +151,24 @@ Reversões: `docs/rollback-etapa8.sql`. Migrations: `20261105000001`, `202611050
 - **WF6 após a correção do `unaccent`: execução 5526 com sucesso** (18:45).
 - **Lembretes de pagamento do SG-0019 (Delvani Chaveiro, venda real fora do chat, 3 lembretes PAG_1H/6H/24H) foram SEGURADOS** (`status = cancelado`, motivo registrado). Para reativar: `update followup_fila set status='pendente' where order_id='df961fb5-cf74-489b-9644-f028b457daa9' and regra_codigo like 'PAG_%';`
 - **Liberar ao público (depois do teste com o número da mãe):** `update agente_config set piloto_ativo = false where id = 1;` Para voltar ao piloto: `piloto_ativo = true`. Para 10% do tráfego: `piloto_ativo = true, piloto_percentual = 10`.
+
+## 12. Primeira conversa real (cliente Rose, número da mãe do dono) e correções
+
+Problemas relatados pelo dono e causa encontrada nos logs (`agente_execucoes`, `agent_logs`, `alertas`):
+
+| Problema | Causa | Correção |
+|---|---|---|
+| "Só trabalho com o modelo de 500" (o catálogo tem 56 SKUs de cartão com 1.000 un.) | `buscar_produto` escolhia as 5 famílias mais parecidas e a quantidade mais próxima de cada, sem priorizar as que têm a quantidade pedida; "cartão" (singular) não casava com a categoria "CARTÕES" (plural) | `buscar_produto` reescrita: até 4 opções na quantidade pedida, do mais barato ao mais premium, só de categorias que contêm os termos; devolve `quantidades_disponiveis`; sinônimos de plural |
+| Erro "Falha da ferramenta verificar_frete" | `service_role` (n8n) sem acesso ao schema `private`, usado por `verificar_frete`, `calcular_preco`, `calcular_prazo`, `validar_margem`, `calcular_condicao_especial` e `kit_preco` | `grant usage on schema private` e execute das funções auxiliares ao `service_role` (migration 07) |
+| `buscar_conhecimento` falhando 3 vezes por conversa (4 s de timeout cada, e o agente chamava o dono) | Edge Function `conhecimento` v8 anterior à correção de autenticação da service role | Republicada v11 a partir do repositório |
+| "Deixa eu confirmar" repetido | A trava de saída bloqueava qualquer "custo" (ex.: "custo da arte") e trocava a resposta final por uma frase neutra | Regra estreitada para custo interno (nosso custo, preço de custo, custo de produção, custo do fornecedor); margem, piso, fornecedor e SKU seguem bloqueados |
+| Conversa não aparecia no Kanban | O card só nascia ao gerar o link de pagamento | Ao enviar o orçamento, o card nasce em "Cotando" (itens, arte, desconto); o link move para "Aguardando pagamento". Card da Rose criado retroativamente (pedido 26) |
+| Orçamento sem resumo do pedido | PDF ia com a legenda "Segue o orçamento" | `orcamento-pdf` (v15) manda como legenda o resumo montado a partir do orçamento (itens, arte, entrega, total, data, validade), sem custo, margem, piso, SKU nem endereço |
+| Sem fechamento depois do orçamento | Prompt sem etapa de fechamento | Prompt reescrito em fluxo consultivo de 9 etapas (descoberta, opções, confirmação, entrega, orçamento, fechamento com Pix na hora, objeção, upsell) |
+| Entrega fora do centro | Agente "ia confirmar" | Prompt: Uber ou 99 Entrega, por conta do cliente, saindo da Praça Sete, com valor de referência; retirada grátis no centro |
+| "Teto de tokens da conversa atingido" (40 mil tokens, a Rose disse "vai ser Pix" e ninguém respondeu) | `tokens_max_conversa = 40000`, `tokens_max_dia = 1,5 milhão` e teto diário de R$ 15 | Tetos praticamente removidos (2 milhões por conversa, 200 milhões por dia, R$ 3.000 por dia como fusível); custo acompanhado no painel |
+| Respostas demoradas (28 a 57 s por rodada) | 7 a 8 chamadas de ferramenta por rodada, 3 delas falhando e repetindo | Ferramentas corrigidas, prompt limita a 4 chamadas por resposta, debounce de 10 s para 6 s |
+
+Testes com o modelo real (webhook de teste do WF1): `e8-fluxo-3-pix` (Pix na hora) e `e8-fluxo-4-especificado` (orçamento + PDF + pergunta de fechamento) passam; `e8-fluxo-1-opcoes` pergunta a quantidade antes de listar preços.
+
+Nota: a versão do `orcamento-pdf` saltou de v12 para v15 durante a sessão (v13 e v14 não foram feitas por mim); a v15 foi publicada a partir do código do repositório, que é a referência.

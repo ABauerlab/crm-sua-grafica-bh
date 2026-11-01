@@ -30,3 +30,9 @@ alter function private.orcamentos_metodo_pior_caso() security invoker;
 alter function private.orcamentos_validar() security invoker;
 alter function private.orcamento_itens_validar() security invoker;
 alter function private.orcamento_itens_recalcular() security invoker;
+-- Primeira conversa real (Rose), correções 20261105000007..13
+-- 07: revoke usage on schema private from service_role; revoke execute on all functions in schema private from service_role;
+-- 08: insert into sinonimos(grupo,termo) values ('cartao de visita','cartao'); delete dos plurais.
+-- 09: recriar public.orcamento_marcar_enviado só com o update de status (sem o bloco do pedido).
+-- 12: update parametros_comerciais set tokens_max_conversa=40000, tokens_max_dia=1500000; observabilidade.teto_custo_dia_brl=15; debounce_segundos=10.
+-- 13: buscar_produto anterior: ver git (migration 20261028..._agente_funcoes / 7B) e drop function private.categoria_bate(text,text[]).
