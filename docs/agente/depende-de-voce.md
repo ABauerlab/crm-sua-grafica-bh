@@ -95,3 +95,16 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 6. **Mapear a origem** (botão em Catálogo > Fotos), conferir a Cobertura e completar SKUs/grupos sem imagem pelo catálogo em PDF (`scripts/fotos-catalogo-pdf.ts`) ou pelo campo Trocar.
 7. **n8n:** atribuir a credencial do Supabase aos nós HTTP de `enviar_foto_produto` e `Aquecer fotos de madrugada`. Seguem desativados até a Etapa 8.
 8. **Auditoria final (Etapa 8):** testar o envio real de imagem no WhatsApp (janela aberta) e a verificação de marca com o modelo de visão.
+
+## Etapa 5: agente de atendimento (pronta para revisão)
+
+Nada foi aplicado em produção. Ordem sugerida:
+
+1. **Aplicar a migration:** colar `docs/agente/aplicar-etapa5.sql` no SQL Editor (idempotente). Depois rodar `supabase/tests/agente_etapa5.sql` (deve mostrar "OK: 96 testes passaram") e os advisors de segurança.
+2. **Publicar as Edge Functions** com os bundles de `docs/agente/funcoes/`: `agente-enviar` (nova, "Verify JWT" desligado), `whatsapp-webhook` (substitui a atual) e `whatsapp-media` (substitui a atual, "Verify JWT" ligado).
+3. **Segredos novos** (Edge Functions > Secrets): `N8N_WF1_URL` = `https://n8n.bauerlab.com.br/webhook/gbh-wf1-entrada-7f3a9c2e41b8d605` e `N8N_WF1_TOKEN` = um texto longo qualquer. Sem esses dois o webhook segue como hoje, sem agente.
+4. **n8n:** abrir os 9 workflows `GBH | WF1`, `GBH | WF2` e `GBH | FERRAMENTA | ...` desta etapa e conferir as credenciais (Supabase, Gemini, Groq). Nada é ativado agora.
+5. **Revisar:** nome do atendente (`agente_config.nome_atendente`, hoje "Bia"), modelos (`modelo_padrao`, `modelo_forte`, `modelo_resumo`: Gemini 2.5 Flash, Pro e Flash-Lite; confirme se existem modelos mais novos na sua conta), preços por modelo (`precos_modelo`, estimativas), o texto do prompt no nó "Montar prompt" do WF2 e as mensagens de espera ("já te passo o valor certinho").
+6. **Rodar os 21 cenários** (`docs/agente/etapa5-testes.md`) antes da Etapa 8 e me trazer o resultado.
+7. Decisão sua: contato em `optout` (PARAR das promoções) hoje **não é atendido pelo agente**, como pedido na etapa. Isso inclui pedidos reais de orçamento de quem só queria parar de receber promoção. Se preferir atender essas pessoas e bloquear só a promoção, é uma linha em `agente_bloqueio`.
+

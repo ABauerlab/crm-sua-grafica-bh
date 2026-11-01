@@ -741,6 +741,8 @@ begin
     elsif v_prep in ('orcamento_aberto', 'condicao_expirada') then
       v_orc := public.montar_orcamento(v_contact, '[{"sku":"CFV02","quantidade":1}]'::jsonb,
         jsonb_build_object('conversation_id', v_conv, 'teste', true, 'bairro', 'Centro', 'arte', 'nenhuma'));
+      -- como no fluxo real: o orçamento já foi enviado (PDF) antes de o cliente reclamar do preço
+      if (v_orc ->> 'orcamento_id') is not null then perform public.orcamento_marcar_enviado((v_orc ->> 'orcamento_id')::uuid); end if;
       if v_prep = 'condicao_expirada' and (v_orc ->> 'orcamento_id') is not null then
         insert into public.condicoes_especiais (orcamento_id, contact_id, degrau, gatilho, tipo, valor, texto_curto, valida_ate, resultado)
         values ((v_orc ->> 'orcamento_id')::uuid, v_contact, 2, 'G1', 'desconto', 5, 'condição de teste expirada', now() - interval '2 hours', 'expirada');

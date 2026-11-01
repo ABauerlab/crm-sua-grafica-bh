@@ -7,7 +7,44 @@
 - Etapa 3: **concluída** (PR #24 mesclado, aplicada em produção em 28/10/2026).
 - Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
-- Etapa 4B: **pronta para revisão** (fotos de produto, 01/11/2026). Nada foi aplicado em produção.
+- Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
+- Etapa 5: **pronta para revisão** (agente WF1 e WF2, 01/11/2026). Nada foi aplicado em produção, nada foi ativado.
+
+## Etapa 5: o agente de atendimento (pronta para revisão, 01/11/2026)
+
+Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `feat/agente-etapa5-agente`). Nada aplicado no Supabase, nenhuma função publicada, nenhum workflow ativado. Detalhes em `docs/agente-ia.md` (seção Etapa 5) e testes em `docs/agente/etapa5-testes.md`.
+
+### O que foi feito
+- **Passo 0:** o receptor da Meta (`whatsapp-webhook`) já gravava a mensagem de forma atômica e idempotente; conversa nova nasce em modo humano; origem do anúncio já ficava em contato e conversa. Não criei outro webhook na Meta: o receptor passou a avisar o n8n com o id da mensagem.
+- **Banco** (migration `20261101000001`, cópia em `docs/agente/aplicar-etapa5.sql`): `agente_execucoes` e 23 funções `agente_*` (ignorar sem chamar o modelo, debounce, trava por conversa, contexto enxuto, trava de saída, loop de ferramentas, tetos de tokens com alerta, primeiro contato, follow-up, modo de teste com avaliação automática) e 21 cenários.
+- **Edge Functions:** `agente-enviar` (nova), `whatsapp-webhook` (gancho para o WF1) e `whatsapp-media` (aceita service role). Bundles em `docs/agente/funcoes/`.
+- **n8n (MCP, desativados, tag gbh, pasta Sua Gráfica BH):** `GBH | WF1 | Entrada e roteamento`, `GBH | WF2 | Agente` (AI Agent Gemini com 11 ferramentas), `GBH | FERRAMENTA | despachar` e 6 ferramentas novas. Ver `docs/n8n-mapa.md`.
+- **Testes:** 96 testes SQL passam, regressão das etapas 1 a 4B passa, `npm run test:agente` passa, e o despachante, o WF1 e o WF2 foram testados no n8n com os nós de rede fixados.
+
+### Decisões
+- **Despachante único** (`GBH | FERRAMENTA | despachar`): as 11 ferramentas continuam sub-workflows `GBH | FERRAMENTA | nome`, mas o WF2 as chama por um ponto só, que aplica loop, limpeza de custo e SKU, registro, aviso ao dono na falha e a conversa e o contato fixos (o modelo nunca escolhe).
+- **Trava de saída em SQL** (`agente_saida_segura`): testável e única. Bloqueia vazamento e qualquer R$ que nenhuma ferramenta devolveu.
+- **Tokens e custo são estimativas** (o n8n não expõe o uso real do Gemini): caracteres ÷ 3,5, marcado como estimativa no log.
+- **Transcrição de áudio com Groq `whisper-large-v3-turbo`**, a opção mais barata já disponível na instância (cerca de R$ 0,002 por áudio de 1 minuto).
+- **A IA assume o primeiro contato** de conversa nova (o CRM nasce em modo humano) e retoma quando o cliente responde um follow-up.
+- Sem validação real do token do webhook (limitação do n8n sem variáveis de ambiente); a URL do webhook é longa e imprevisível e a rodada é idempotente. Ver `docs/n8n-mapa.md` para endurecer.
+- `data_atual` (opcional) não foi criada: data e hora vão no prompt.
+
+### O que NÃO foi feito (honestidade)
+- **Os 21 cenários com o modelo de verdade não rodaram**: exigem aplicar a migration e publicar as funções. Sem transcrições reais nem custo médio medido (só a estimativa em `etapa5-testes.md`).
+- Áudio (download e Groq), `agente-enviar` e o gancho do webhook não foram executados contra a Meta (sem Deno aqui; lógica testada em Node e SQL).
+- Os JSONs dos 9 workflows desta etapa (WF1, WF2, despachante e 6 ferramentas) **não foram exportados para `n8n/`** nesta sessão (o retorno do MCP é grande demais para regravar com segurança). Eles existem no n8n com os IDs de `docs/n8n-mapa.md`; falta só exportar, sem credenciais, e conferir o `docs/n8n-mapa.md`.
+- O prompt tem cerca de 890 tokens fixos (alvo de 700).
+
+### Pendências (dono)
+Ver `docs/agente/depende-de-voce.md`, seção Etapa 5.
+
+### Como testar
+```bash
+npm test && npm run typecheck && npm run build
+supabase/tests/rodar-local.sh supabase/tests/agente_etapa5.sql
+```
+Depois de aplicar: cenários de `docs/agente/etapa5-testes.md`.
 
 ## Etapa 4B: fotos de produto (pronta para revisão, 01/11/2026)
 

@@ -197,6 +197,11 @@ begin
   v_p := public.agente_teste_preparar(v_caso);
   perform pg_temp.chk((v_p ->> 'ok')::boolean and (select tags @> array['teste'] from public.contacts where id = (v_p ->> 'contact_id')::uuid), 'teste: cria contato de teste');
   perform pg_temp.chk(exists (select 1 from public.orcamentos where contact_id = (v_p ->> 'contact_id')::uuid and teste), 'teste: prepara orçamento aberto marcado como teste');
+  perform pg_temp.chk((select status = 'enviado' from public.orcamentos where contact_id = (v_p ->> 'contact_id')::uuid and teste), 'teste: orçamento do cenário já está enviado (como depois do PDF)');
+  v_r := public.oferecer_condicao_especial((select id from public.orcamentos where contact_id = (v_p ->> 'contact_id')::uuid and teste), 'G1');
+  perform pg_temp.chk(v_r ->> 'tipo' <> 'sem_condicao' or v_r ->> 'motivo' is not null, 'cenário G1: a função de condição responde sobre o orçamento enviado (decide sozinha)');
+  perform pg_temp.chk(v_r::text !~* '(custo|piso|margem|lucro|fornecedor)', 'cenário G1: a resposta da condição não vaza custo, piso, margem nem lucro');
+  perform pg_temp.chk((public.oferecer_condicao_especial((select id from public.orcamentos where contact_id = (v_p ->> 'contact_id')::uuid and teste), 'G1') ->> 'tipo') = 'sem_condicao', 'cenário: uma condição por orçamento, a segunda tentativa não repete');
   v_r := public.agente_entrada((v_p ->> 'ultima_mensagem')::uuid, true);
   perform pg_temp.chk((v_r ->> 'processar')::boolean and (v_r ->> 'teste')::boolean, 'teste: entrada do caso segue em modo de teste');
   perform public.agente_teste_registrar_saida((v_p ->> 'conversation_id')::uuid, 'Consegui uma condição especial até amanhã.');

@@ -1,6 +1,6 @@
 // Testes locais (Node >= 22): npm run test:agente
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { acionarAgente } from '../supabase/functions/_shared/agente.ts'
 
 // ---- Gancho do webhook: sem segredos fica desligado; com segredos manda só o id da mensagem
@@ -24,7 +24,4 @@ const wh = readFileSync(new URL('../supabase/functions/whatsapp-webhook/index.ts
 assert.ok(wh.indexOf('confirmOptOut(db') < wh.indexOf('acionarAgente('), 'o agente é acionado depois do tratamento de PARAR')
 assert.ok(/!\(m\.type === 'text' && isOptOutMessage/.test(wh), 'mensagem PARAR não aciona o agente')
 
-// ---- Código dos nós do n8n exportados (se já existirem): roda o código real contra casos
-const dir = new URL('../n8n/', import.meta.url)
-const arquivos = readdirSync(dir).filter((f) => f.startsWith('GBH-WF1') || f.startsWith('GBH-WF2') || f.startsWith('GBH-FERRAMENTA'))
-console.log('Gancho do webhook: OK. Workflows do agente exportados:', arquivos.length)
+console.log('Gancho do webhook: OK')
