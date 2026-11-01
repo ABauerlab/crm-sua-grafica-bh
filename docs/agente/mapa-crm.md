@@ -161,3 +161,11 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 **Novo:** tabela `agente_execucoes`; colunas em `agente_config`; 23 funções `agente_*` (lista em `docs/agente-ia.md`); 21 cenários `e5-*` em `testes_conversa`; função `agente-enviar`; 9 workflows no n8n (`docs/n8n-mapa.md`). Migration `20261101000001_etapa5_agente.sql` (cópia em `docs/agente/aplicar-etapa5.sql`). Testes: `supabase/tests/agente_etapa5.sql` (96) e `npm run test:agente`.
 
+
+
+## Etapa 6: alertas ao dono, PWA e pós-pagamento
+- **PWA:** `public/manifest.webmanifest`, `public/sw.js` (cache do casco, `push`, `notificationclick`), `public/offline.html`, ícones em `public/icons/` (gerados de `public/favicon.svg` por `scripts/gerar-icones-pwa.cjs`, incluindo 180x180 do iOS e maskable). Meta tags do iOS em `index.html`. O login continua em `localStorage` ("Continuar conectado").
+- **CRM:** Configurações > Notificações (`src/features/notifications/NotificationsTab.tsx`, `src/lib/push.ts`, `src/hooks/alertas.ts`). Layout: selo de pendências, abertura do pedido ou da conversa ao tocar, aviso marcado como lido ao abrir.
+- **Banco** (migration `20261101000004`): `push_subscriptions`, `pagamento_pos`, `app_segredos`; `alertas` ganhou chave, dados, status e tentativas por canal e `lido_em`; `app_settings.notificacoes`. Funções (só service role): `alerta_criar`, `alertas_proximos`, `alerta_resultado`, `alertas_resumo_montar`, `alertas_varredura`, `alerta_destino_dono`, `pagamento_pos_pendentes`, `pagamento_pos_processar`, `pagamento_pos_reservar_msg`, `pagamento_pos_msg_resultado`. `agente_chamar_dono` passa por `alerta_criar`; `agente_bloqueio` ignora o número do dono. Gatilhos: `pagamentos_alertas` (estorno e outros) e `messages` (nova mensagem em modo humano).
+- **Edge Functions:** `alertas-enviar` (processar: service role; teste e chave_publica: dono logado) e `cliente-pago-avisar` (service role). Ambas com `verify_jwt = false` e conferência própria.
+- **n8n:** `GBH | WF5 | Pagamento e alertas` e `chamar_dono` atualizado.

@@ -1,6 +1,6 @@
 // Web Push (padrão, com VAPID). Chaves: segredos VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY; sem eles, a função gera um par na primeira vez
 // e guarda em public.app_segredos (tabela fechada: só a service role lê). Nada disso fica no repositório nem no front.
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import webpush from 'npm:web-push@3.6.7'
 
 const b64u = (b: Uint8Array): string => btoa(String.fromCharCode(...b)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')

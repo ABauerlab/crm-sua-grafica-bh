@@ -1,0 +1,288 @@
+{
+  "name": "GBH | WF5 | Pagamento e alertas",
+  "nodes": [
+    {
+      "name": "A cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "* * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Eventos de pagamento pendentes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/pagamento_pos_pendentes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {
+          "timeout": 20000
+        }
+      }
+    },
+    {
+      "name": "Processar pagamento no banco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/pagamento_pos_processar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_evento: $json.evento_id } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "name": "Avisar o cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/cliente-pago-avisar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { order_id: $('Eventos de pagamento pendentes').item.json.order_id } }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Enviar alertas ao dono agora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/alertas-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: 'processar' } }}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Aviso imediato do Supabase",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gbh-wf5-pagamento",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "name": "Disparo dos alertas a cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        416
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "* * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Enviar alertas e varredura",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        416
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/alertas-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: 'processar', varredura: $now.minute % 10 === 0 } }}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        384,
+        416
+      ],
+      "parameters": {
+        "content": "## GBH | WF5 | Pagamento e alertas (Etapa 6)\nLiga o pagamento JÁ confirmado ao agente e aos alertas. Ver docs/pwa-e-notificacoes.md e docs/n8n-mapa.md.",
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "A cada minuto": {
+      "main": [
+        [
+          {
+            "node": "Eventos de pagamento pendentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eventos de pagamento pendentes": {
+      "main": [
+        [
+          {
+            "node": "Processar pagamento no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar pagamento no banco": {
+      "main": [
+        [
+          {
+            "node": "Avisar o cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o cliente": {
+      "main": [
+        [
+          {
+            "node": "Enviar alertas ao dono agora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aviso imediato do Supabase": {
+      "main": [
+        [
+          {
+            "node": "Eventos de pagamento pendentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disparo dos alertas a cada minuto": {
+      "main": [
+        [
+          {
+            "node": "Enviar alertas e varredura",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 240,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}

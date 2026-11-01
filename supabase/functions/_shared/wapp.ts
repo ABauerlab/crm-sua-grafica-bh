@@ -1,5 +1,5 @@
 // Envio pela API oficial do WhatsApp (Graph) usado pelos alertas e pela confirmação ao cliente. O token fica só no servidor.
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
 const GRAPH = 'https://graph.facebook.com/v21.0'
 

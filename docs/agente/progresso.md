@@ -8,13 +8,32 @@
 - Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
 - Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
+- Etapa 6: **concluída** (alertas, PWA e pós-pagamento, aplicada em produção em 01/11/2026; falta o teste no seu iPhone).
 - Etapa 5: **concluída e validada** (agente WF1 e WF2, 01/11/2026). Migrations 01 a 03 aplicadas em produção; **21 de 21 cenários passam** com o modelo real; workflows desativados; funções Edge ainda por publicar (ver `depende-de-voce.md`).
 
-## Em andamento: Etapa 6 (alertas, PWA e pós-pagamento)
+## Etapa 6: alertas ao dono, PWA e confirmação de pagamento (concluída, 01/11/2026)
 
-Branch `feat/agente-etapa6-alertas-pwa`. **Feito e testado localmente:** migration `20261101000004_etapa6_alertas_push.sql` (48 testes SQL em `supabase/tests/alertas_etapa6.sql`, regressão das Etapas 1, 4 e 5 verde), Edge Functions `alertas-enviar` e `cliente-pago-avisar`, PWA (manifest, ícones, `sw.js`, `offline.html`), tela Configurações > Notificações, `scripts/test-alertas.ts`, `npm test` e build verdes.
-**Falta:** aplicar a migration em produção (o conector do Supabase pediu confirmação do dono e ela não veio), publicar as 2 funções, criar WF5 e as automações no n8n (pasta Sua Gráfica BH, desativados), exportar para `n8n/`, `docs/pwa-e-notificacoes.md`, `docs/n8n-mapa.md`, `mapa-crm.md` e fechar este bloco.
+Branch `feat/agente-etapa6-alertas-pwa`. Detalhes e passo a passo do iPhone em `docs/pwa-e-notificacoes.md`.
 
+### O que foi feito
+- **Passo 0:** o CRM não tinha manifest, service worker nem push; `alertas` existia só como tabela e `chamar_dono` era um stub; "Marcar como pago" e o webhook já passavam por `private.confirmar_pagamento` (um só caminho) e gravavam `pagamento_confirmado`. Estendi tudo isso, sem recriar o pagamento.
+- **Aplicado em produção (autorizado pelo dono):** migration `20261101000004` em 6 partes (`etapa6_alertas_push_parte1` a `5` e `etapa6_bloqueio_numero_do_dono`; o arquivo do repositório é a mesma coisa em um só), Edge Functions `alertas-enviar` e `cliente-pago-avisar` publicadas pelo conector (versão enxuta, sem comentários; o código completo está em `supabase/functions/` e em `docs/agente/funcoes/*.bundle.ts`). Advisors de segurança sem achados novos.
+- **n8n (MCP, desativados, tag gbh, pasta Sua Gráfica BH):** `GBH | WF5 | Pagamento e alertas` (`rLER5HoORdxVy0S0`) e `chamar_dono` real (`TwvgUc15htbWkyDu`). Exportados em `n8n/`.
+- **Testes:** 48 casos SQL novos (`alertas_etapa6.sql`), regressão das Etapas 1, 4 e 5 verde (54, 55 e 101), `npm test`, typecheck e build verdes.
+
+### Decisões
+- Fila única `alertas` com status por canal; gravidade baixa fica `agrupado` e sai no resumo de 2 h; "nova mensagem em modo humano" é só popup por padrão (WhatsApp ligável).
+- Chaves VAPID: segredos de ambiente, ou geradas pela função e guardadas em `app_segredos` (assim você não precisa configurar nada).
+- O agente nunca responde o número do dono (`numero_do_dono`), para o dono poder responder os alertas sem virar "cliente".
+- WF5 por fila a cada minuto, com Database Webhook opcional para aviso imediato.
+
+### O que NÃO foi feito (honestidade)
+- **Teste real no iPhone:** não tenho o aparelho. Falta você instalar o PWA, ativar e tocar em "Enviar notificação de teste" (passo a passo no doc). O envio Web Push e o WhatsApp reais não foram executados daqui (sem Deno e sem acesso ao aparelho); a lógica foi testada em Node e em SQL e as funções estão publicadas.
+- A simulação de pedido pago e do `chamar_dono` de ponta a ponta contra o WhatsApp só acontece com os workflows ativos (Etapa 8). Os 48 testes SQL cobrem o banco inteiro dessas duas rotas.
+- Não existe `GBH | WF9 | Erros` na instância; os workflows novos não têm fluxo de erro global ainda.
+
+### Pendências (dono)
+1. Instalar no iPhone e fazer o teste (doc). 2. Opcional: Database Webhook para aviso imediato. 3. Ativação dos workflows só na Etapa 8.
 
 ## Etapa 5: o agente de atendimento (pronta para revisão, 01/11/2026)
 

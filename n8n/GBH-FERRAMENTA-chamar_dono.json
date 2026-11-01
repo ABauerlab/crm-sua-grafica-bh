@@ -1,0 +1,150 @@
+{
+  "name": "GBH | FERRAMENTA | chamar_dono",
+  "nodes": [
+    {
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "conversation_id",
+              "type": "string"
+            },
+            {
+              "name": "motivo",
+              "type": "string"
+            },
+            {
+              "name": "gravidade",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Gravar alerta no banco",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_chamar_dono",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_motivo: String($json.motivo || \"\").slice(0, 300), p_gravidade: String($json.gravidade || \"baixa\") } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Enviar alerta agora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/alertas-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { acao: 'processar' } }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "name": "Resposta mínima ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "let r = {};\ntry { r = $('Gravar alerta no banco').first().json || {}; } catch (e) { r = {}; }\nif (r.ok === true) return [{ json: { ok: true, orientacao: 'O dono foi avisado. Continue atendendo normalmente e diga ao cliente que vai confirmar.' } }];\nreturn [{ json: { ok: false, orientacao: 'Não foi possível avisar agora. Continue atendendo e diga ao cliente que vai confirmar.' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Gravar alerta no banco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar alerta no banco": {
+      "main": [
+        [
+          {
+            "node": "Enviar alerta agora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar alerta agora": {
+      "main": [
+        [
+          {
+            "node": "Resposta mínima ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 120,
+    "availableInMCP": true
+  },
+  "tags": [
+    {
+      "name": "gbh"
+    }
+  ]
+}
