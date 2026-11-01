@@ -1,5 +1,17 @@
 # Etapa 5: relatório de testes do agente (WF1 e WF2)
 
+## Atualização: migration aplicada e primeira execução real (01/11/2026)
+
+**Aplicado em produção (autorizado):** migration em 3 partes (24 funções `agente_*`, 21 cenários, permissões: só a service role executa; os advisors não mostram nada novo). IA desligada de novo ao fim; dados de teste apagados.
+
+**O que a execução real mostrou (cenário 01):**
+- O fluxo WF1 > WF2 funcionou de ponta a ponta com o modelo real: debounce, contexto, resposta em 3 mensagens curtas, trava de saída, registro, avaliação automática e gravação em `testes_conversa` (o cenário foi marcado "falhou" corretamente por não ter usado `buscar_produto`).
+- **`gemini-2.5-flash` devolve 404 na sua conta.** Troquei em `agente_config` para `gemini-3-flash-preview` (funciona). `gemini-3-pro-preview` (modelo forte) **não foi verificado**.
+- **As ferramentas falharam: "Workflow is not active".** O nó "Call n8n Workflow Tool" só executa o sub-workflow se ele estiver **publicado**, e o despachante só publica se os 11 sub-workflows (e `pesquisar_preco_mercado`, chamado por `montar_orcamento`) também estiverem. Isso conflita com a regra de manter tudo desativado até a Etapa 8. Você autorizou ativar só o despachante, mas o sistema bloqueou a publicação de 2 dos workflows como "deploy em produção" e eu parei, desfiz as 8 publicações que tinham passado e voltei ao estado desativado. **Os 21 cenários seguem sem rodar.**
+- Quando as ferramentas falharam, o agente se comportou bem: não inventou preço, tentou `chamar_dono` e perguntou arte e quantidade. Mas escreveu "Temos opções a partir de 100 unidades", um fato que nenhuma ferramenta devolveu: a trava de saída só confere valores em R$ e vazamentos, não fatos numéricos soltos. Fica como risco conhecido (ver `progresso.md`).
+- A estimativa de tokens estava inflada pelas assinaturas internas do Gemini (23.970 estimados contra cerca de 3.500 reais por chamada). Corrigida no nó do WF2 (agora só conta o nome e os argumentos da ferramenta e a resposta dela). O uso real aparece nos dados de execução do n8n (`llm.tokens.in`), mas não é acessível ao workflow.
+
+
 Data: 01/11/2026. Tudo abaixo foi feito **sem aplicar nada em produção** e com os workflows **desativados**.
 
 ## O que foi testado de verdade

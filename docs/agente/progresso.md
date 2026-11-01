@@ -8,11 +8,11 @@
 - Etapa 4: **concluída e testada em produção** (29/10/2026). Banco (migrations 09 a 12), função `orcamento-pdf` e `mp-criar-link` publicadas pelo painel, Gotenberg no ar. PDF SG-0033 enviado e recebido no WhatsApp com o nome `Orcamento-SG-0033-29-10-2026.pdf`; segundo envio devolveu `ja_enviado` (sem mensagem duplicada). Pendente só para a auditoria final: botão Reenviar do CRM (ver abaixo).
 
 - Etapa 4B: **concluída** (fotos de produto, aplicada em produção em 01/11/2026).
-- Etapa 5: **pronta para revisão** (agente WF1 e WF2, 01/11/2026). Nada foi aplicado em produção, nada foi ativado.
+- Etapa 5: **pronta para revisão** (agente WF1 e WF2, 01/11/2026). Migration aplicada em produção (autorizada); workflows desativados; cenários bloqueados pela regra de ativação (ver abaixo).
 
 ## Etapa 5: o agente de atendimento (pronta para revisão, 01/11/2026)
 
-Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `feat/agente-etapa5-agente`). Nada aplicado no Supabase, nenhuma função publicada, nenhum workflow ativado. Detalhes em `docs/agente-ia.md` (seção Etapa 5) e testes em `docs/agente/etapa5-testes.md`.
+Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `feat/agente-etapa5-agente`). **Atualização:** migration aplicada em produção em 01/11/2026 (autorizada). Funções Edge ainda não publicadas, workflows desativados. Detalhes em `docs/agente-ia.md` (seção Etapa 5) e testes em `docs/agente/etapa5-testes.md`.
 
 ### O que foi feito
 - **Passo 0:** o receptor da Meta (`whatsapp-webhook`) já gravava a mensagem de forma atômica e idempotente; conversa nova nasce em modo humano; origem do anúncio já ficava em contato e conversa. Não criei outro webhook na Meta: o receptor passou a avisar o n8n com o id da mensagem.
@@ -31,7 +31,9 @@ Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `f
 - `data_atual` (opcional) não foi criada: data e hora vão no prompt.
 
 ### O que NÃO foi feito (honestidade)
-- **Os 21 cenários com o modelo de verdade não rodaram**: exigem aplicar a migration e publicar as funções. Sem transcrições reais nem custo médio medido (só a estimativa em `etapa5-testes.md`).
+- **Os 21 cenários ainda não rodaram.** Uma execução real do cenário 01 mostrou que o agente só chama ferramentas se o despachante e os 12 sub-workflows estiverem **publicados** (limitação do n8n), o que conflita com "tudo desativado até a Etapa 8". Decisão do dono pendente. Sem transcrições completas nem custo médio medido. Ver `etapa5-testes.md`.
+- `gemini-2.5-flash` dá 404 na conta; o padrão agora é `gemini-3-flash-preview`. O modelo forte `gemini-3-pro-preview` não foi verificado.
+- A trava de saída não confere fatos numéricos soltos (ex.: "a partir de 100 unidades"), só R$ e vazamentos.
 - Áudio (download e Groq), `agente-enviar` e o gancho do webhook não foram executados contra a Meta (sem Deno aqui; lógica testada em Node e SQL).
 - Os JSONs dos 9 workflows desta etapa (WF1, WF2, despachante e 6 ferramentas) **não foram exportados para `n8n/`** nesta sessão (o retorno do MCP é grande demais para regravar com segurança). Eles existem no n8n com os IDs de `docs/n8n-mapa.md`; falta só exportar, sem credenciais, e conferir o `docs/n8n-mapa.md`.
 - O prompt tem cerca de 890 tokens fixos (alvo de 700).

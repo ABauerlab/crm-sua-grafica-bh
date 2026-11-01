@@ -18,9 +18,9 @@ alter table public.agente_config add column if not exists max_ferramenta_por_rod
 alter table public.agente_config add column if not exists max_chamadas_por_rodada smallint not null default 12;
 
 update public.agente_config set
-  modelo_padrao = coalesce(modelo_padrao, 'gemini-2.5-flash'),
-  modelo_forte = coalesce(modelo_forte, 'gemini-2.5-pro'),
-  modelo_resumo = coalesce(modelo_resumo, 'gemini-2.5-flash-lite'),
+  modelo_padrao = coalesce(modelo_padrao, 'gemini-3-flash-preview'),
+  modelo_forte = coalesce(modelo_forte, 'gemini-3-pro-preview'),
+  modelo_resumo = coalesce(modelo_resumo, 'gemini-3-flash-preview'),
   nome_atendente = coalesce(nome_atendente, 'Bia')
 where id = 1;
 
