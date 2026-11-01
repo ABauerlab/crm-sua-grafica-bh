@@ -1,4 +1,4 @@
-# Mapa do CRM (Etapas 1 a 4)
+# Mapa do CRM (Etapas 1 a 5)
 
 Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1, e o que muda. Atualizar a cada etapa.
 
@@ -145,3 +145,19 @@ Cada ponto do CRM que exibe ou grava preço, e o que fazer com ele. Regra: **o �
 ## 9. Etapa 4B: fotos de produto
 
 Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fotos`, `produto_fotos_grupos`, `produto_fotos_envios`; bucket privado `produto-fotos`; funções `foto_resolver_grupo`, `foto_estado_grupo`, `foto_limites`, `foto_registrar`, `foto_decidir`, `foto_fechar_busca`, `foto_registrar_envio`, `foto_aprovadas`, `fotos_painel`, `fotos_grupos_para_aquecer` (todas em `public`, com checagem interna de dono ou servidor); `app_settings.fotos` (origem, cache, aquecimento, verificação de marca, limites); Edge Function `produto-fotos`; tela Catálogo > Fotos; trecho de conhecimento `foto-produto`; 2 workflows no n8n. Ver `docs/fotos-de-produto.md`.
+
+## 10. Etapa 5: agente de atendimento
+
+**Passo 0 (como o CRM gravava a entrada):** `whatsapp-webhook` (único receptor da Meta) valida a assinatura e chama `ingest_inbound_message` (atômica e idempotente por `wa_message_id`, devolve o id da mensagem ou `null` se duplicada). Conversa nova nasce com `ai_handled = false` (modo humano); `contacts.first_referral` e `conversations.last_referral` guardam o anúncio; `optout` é coluna gerada de `marketing_consent`. Nenhum webhook novo na Meta: o receptor passou a avisar o n8n.
+
+| Ponto | Antes | Agora |
+|---|---|---|
+| Acionar o agente | nada | `whatsapp-webhook` chama o webhook do WF1 (segredos `N8N_WF1_URL` e `N8N_WF1_TOKEN`), só com o id da mensagem, depois do tratamento de PARAR; sem segredo não faz nada |
+| Enviar como agente | `whatsapp-send` exigia JWT de atendente | nova `agente-enviar` (só service role; confere IA, modo humano, pedido pago e janela) |
+| Baixar mídia no n8n | `whatsapp-media` só para atendente | também aceita a service role |
+| IA ligada | botão do topo (`app_settings.agent.enabled`) e `agente_config.ia_ligada` separados | o agente só responde com **os dois** ligados |
+| Conversa nova | modo humano | a IA assume o primeiro contato (sem troca de atendente e sem resposta enviada) |
+| Resposta a follow-up | n/d | volta para a IA (salvo dono no comando ou pagamento em andamento) e cancela lembretes pendentes |
+
+**Novo:** tabela `agente_execucoes`; colunas em `agente_config`; 23 funções `agente_*` (lista em `docs/agente-ia.md`); 21 cenários `e5-*` em `testes_conversa`; função `agente-enviar`; 9 workflows no n8n (`docs/n8n-mapa.md`). Migration `20261101000001_etapa5_agente.sql` (cópia em `docs/agente/aplicar-etapa5.sql`). Testes: `supabase/tests/agente_etapa5.sql` (96) e `npm run test:agente`.
+

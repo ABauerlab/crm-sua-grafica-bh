@@ -46,3 +46,7 @@ verify_jwt = false
 # Fotos de produto: aceita o dono logado (tela Catálogo > Fotos) ou a service role (n8n); a função confere os dois
 [functions.produto-fotos]
 verify_jwt = false
+
+# Envio do agente: só a service role (n8n). Antes de enviar confere IA ligada, modo IA, pedido não pago e janela de 24 h
+[functions.agente-enviar]
+verify_jwt = false

@@ -2,7 +2,7 @@
 
 Instância: n8n.bauerlab.com.br (projeto pessoal do dono). Pasta **Sua Gráfica BH**, tag `gbh`. Todos os workflows `GBH |` nascem **desativados**; a ativação é da Etapa 8, depois da auditoria e da autorização do dono. Nenhum workflow de outro projeto foi lido ou alterado.
 
-JSONs exportados (sem credenciais) em `n8n/`. Para importar em outra instância: n8n > Workflows > Importar de arquivo, depois selecionar as credenciais nos nós HTTP.
+JSONs exportados (sem credenciais) em `n8n/` (os 9 workflows da Etapa 5 ainda não foram exportados; ficam salvos no n8n: ver `docs/agente/progresso.md`). Para importar em outra instância: n8n > Workflows > Importar de arquivo, depois selecionar as credenciais nos nós HTTP.
 
 ## Workflows (Etapas 3 e 4)
 
@@ -77,4 +77,28 @@ Os nós HTTP foram criados sem credencial atribuída (limitação de importaçã
 - Criar e alterar **somente pelo MCP do n8n**, validar antes de salvar, testar com dados simulados e exportar o JSON sem credenciais para `n8n/`.
 - Segredos só em credenciais do n8n. Usar o único webhook da Meta que já existe; nunca criar outro.
 - Retentativas com espera nas chamadas externas, tempos limite definidos, idempotência em tudo que vem de webhook.
-- Pendente de etapas futuras: `GBH | WF9 | Erros` (workflow global de erros ligado a todos os outros), WF1, WF2, WF5 a WF8.
+- Pendente de etapas futuras: `GBH | WF9 | Erros` (workflow global de erros ligado a todos os outros), WF5 a WF8.
+
+## Workflows da Etapa 5 (agente de atendimento)
+
+| Workflow | ID no n8n | Gatilho | Estado |
+|---|---|---|---|
+| `GBH \| WF1 \| Entrada e roteamento` | `DO8wiALq6q1jZbYN` | Webhook POST `/webhook/gbh-wf1-entrada-7f3a9c2e41b8d605` (chamado pelo `whatsapp-webhook`) e Webhook de teste `/webhook/gbh-wf1-teste-3d81e07a95c2b4f6` (corpo `{caso_id, limpar}`) | Desativado, 61 nós |
+| `GBH \| WF2 \| Agente` | `NKN7RgAJmRWZXRIT` | Execute Workflow (chamado pelo WF1) | Desativado, 26 nós (AI Agent Gemini, 11 ferramentas) |
+| `GBH \| FERRAMENTA \| despachar` | `1rm82046svIE1TLl` | Execute Workflow (chamado pelas 11 ferramentas do WF2) | Desativado, 32 nós |
+| `GBH \| FERRAMENTA \| buscar_conhecimento` | `MJLl5aJkBA2t9jfS` | Execute Workflow (`pergunta`, `conversation_id`) | Desativado |
+| `GBH \| FERRAMENTA \| buscar_produto` | `2BkgUaqxkS198jmA` | Execute Workflow (`termo`, `quantidade`, `filtros`) | Desativado |
+| `GBH \| FERRAMENTA \| salvar_contato` | `JDjfx586IeN9YaWN` | Execute Workflow (`contact_id` e campos) | Desativado |
+| `GBH \| FERRAMENTA \| verificar_frete` | `JQp5BTgu2Hum8PfE` | Execute Workflow (`cep_ou_bairro`, `itens`) | Desativado |
+| `GBH \| FERRAMENTA \| agendar_followup` | `GVyk2nZPlf5QNWti` | Execute Workflow (`conversation_id`, `tipo`, `quando`) | Desativado |
+| `GBH \| FERRAMENTA \| chamar_dono` | `TwvgUc15htbWkyDu` | Execute Workflow (`conversation_id`, `motivo`, `gravidade`) | Desativado |
+
+Pasta Sua Gráfica BH, tag `gbh`, nota (sticky) em todos. As ferramentas das Etapas 3, 4 e 4B (`montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `condicao_especial`, `enviar_foto_produto`) continuam as mesmas e agora são chamadas pelo despachante. Arquitetura, regras e como editar em `docs/agente-ia.md` (seção Etapa 5).
+
+**Credenciais usadas (já existem na instância):** `Supabase account` (service role, em todos os nós HTTP), `Google Gemini(PaLM) Api account` (modelos do WF2 e do resumo) e `Groq account` (transcrição de áudio, `whisper-large-v3-turbo`). Foram atribuídas aos nós pelo MCP; confira ao abrir cada workflow.
+
+**Segredos novos nas Edge Functions (não ficam no n8n):** `N8N_WF1_URL` (URL de produção do webhook do WF1) e `N8N_WF1_TOKEN` (qualquer texto longo; o webhook confere só que o cabeçalho `x-gbh-token` veio, porque o n8n não lê variáveis de ambiente nos nós. Para validar o valor, ligue uma credencial Header Auth ao nó "Mensagem de entrada" do WF1 com o mesmo valor).
+
+**Testes pelo MCP:** `test_workflow` com os nós de rede fixados (despachante, WF1 e WF2). Os cenários com o modelo real estão em `docs/agente/etapa5-testes.md`.
+
+**Pendente de etapas futuras:** `GBH | WF9 | Erros`, WF5 a WF8.

@@ -147,3 +147,49 @@ Cada orçamento entra em `precos_praticados` (especificação, quantidade, preç
 
 ### Edição manual de preço
 `definir_preco_item_pedido(item, preco, confirmar, motivo, apenas_simular)`: abaixo do piso duro bloqueia para todos; entre o piso duro e o piso exige confirmação do dono e grava em `precos_manuais_log`; acima é livre. Um gatilho recusa reduzir o preço abaixo do piso por qualquer outro caminho do CRM.
+
+## Etapa 5: o agente de atendimento (WF1 e WF2)
+
+Detalhes dos testes em `docs/agente/etapa5-testes.md`. Tudo desativado até a Etapa 8.
+
+### Arquitetura
+
+```
+Meta  ->  whatsapp-webhook (único receptor, grava a mensagem)  ->  POST no webhook do WF1 (só o id da mensagem)
+WF1 GBH | WF1 | Entrada e roteamento
+    agente_entrada (ignora?)  ->  espera 8 s  ->  agente_debounce (sou a última?)  ->  agente_iniciar (trava da conversa)
+    ->  mídia (áudio: Groq; imagem e documento: registro no CRM)  ->  agente_primeiro_contato  ->  agente_contexto
+    ->  escolhe o modelo por regra  ->  WF2  ->  divide em até 3 mensagens com atraso de 1 a 6 s  ->  agente-enviar
+    ->  agente_finalizar  ->  resumo (a cada 8 mensagens novas, modelo pequeno)
+WF2 GBH | WF2 | Agente
+    prompt  ->  nó AI Agent (Gemini) com 11 ferramentas  ->  estimativa de tokens  ->  agente_saida_segura  ->  agente_log
+Ferramentas: o nó AI Agent chama sempre GBH | FERRAMENTA | despachar, que roda o sub-workflow GBH | FERRAMENTA | <nome>
+```
+
+### Quando o WF1 ignora (sem chamar o modelo)
+IA pausada (`agente_config.ia_ligada` **e** botão do topo `app_settings.agent.enabled`, os dois precisam estar ligados), fora do horário (`atende_24h` e `horario_ia`), contato em `optout`, conversa em modo humano, pedido já pago (etapas Pago, Arte, Prova e Produção), mensagem duplicada (`agente_execucoes.message_id` é único), tipo sem resposta (figurinha, vídeo, localização), teto de tokens da conversa (24 h) ou do dia (`parametros_comerciais.tokens_max_conversa` e `tokens_max_dia`, com alerta). Mensagens de status (entregue, lida) nunca chegam ao WF1: o webhook só aciona o agente para mensagem nova.
+
+Conversa nova nasce em modo humano (padrão do CRM). Com a IA ligada, a IA assume o **primeiro contato** (sem troca de atendente registrada e sem nenhuma mensagem de saída). Se o cliente responde um follow-up (template da fila), a IA retoma, salvo se o dono assumiu ou há pagamento em andamento; os lembretes pendentes são cancelados e lead frio volta a "qualificando".
+
+### Ferramentas (11, todas via despachante)
+`buscar_conhecimento`, `buscar_produto`, `montar_orcamento`, `gerar_pdf_orcamento`, `salvar_contato`, `oferecer_condicao_especial` (o gatilho G1 é fixo no despachante), `verificar_frete`, `gerar_link_pagamento`, `agendar_followup` (opções fixas, envio na Etapa 7), `chamar_dono` (grava em `alertas`, status pendente, envio na Etapa 6), `enviar_foto_produto`. `data_atual` não foi criada: a data e a hora (America/Sao_Paulo) já vão no prompt. O despachante: conversa e contato vêm do WF2, nunca do modelo; detector de loop (mais de 3 chamadas da mesma ferramenta ou 12 no total encerra a rodada); remove custo, piso, margem, fornecedor, endereço, bicicleta e SKU (o SKU só passa em `buscar_produto`); guarda SKUs e valores devolvidos; se a ferramenta falha avisa o dono (alerta alto) e manda dizer "vou confirmar"; antes do primeiro `montar_orcamento` da rodada manda uma frase curta de espera.
+
+### Trava de saída (`agente_saida_segura`)
+Depois do modelo e antes do envio: troca travessão por vírgula, tira markdown e marcadores, e **bloqueia** a mensagem (o cliente recebe "Deixa eu confirmar isso certinho aqui e já te respondo, tá?" e o dono recebe alerta alto) se aparecer custo, margem, piso, fornecedor, "sku", bicicleta ou bike, o endereço do escritório, um SKU que uma ferramenta devolveu, ou um valor em R$ que nenhuma ferramenta devolveu (fora R$ 39,90, R$ 49,90 e o pedido mínimo). Antes de enviar cada parte, `agente_pode_enviar` confere de novo (o dono assumiu ou o pagamento entrou enquanto o modelo escrevia).
+
+### Como editar
+- **Regras e prompt:** nó "Montar prompt" do WF2 (texto fixo no código do nó, seção 12 do contexto). Editar lá e republicar. Nome do atendente: `agente_config.nome_atendente` (padrão "Bia", revise).
+- **Modelos:** `agente_config.modelo_padrao`, `modelo_forte`, `modelo_resumo` (nomes de modelos Gemini). A regra de objeção (palavras) está no nó "Escolher o modelo (regra por palavras)" do WF1.
+- **Debounce, histórico, limites por ferramenta:** `agente_config.debounce_segundos`, `historico_mensagens`, `max_ferramenta_por_rodada`, `max_chamadas_por_rodada`. Tetos de tokens em `parametros_comerciais`.
+- **Preço por modelo (custo estimado):** `agente_config.precos_modelo`.
+- **Palavras proibidas na saída:** função `agente_saida_segura` (nova migration, nunca editar a antiga; hoje a `agente_saida_segura` envolve a `agente_saida_base`).
+- **Ligar e desligar:** `agente_config.ia_ligada` e o botão do topo do CRM. Modo humano por conversa continua sendo o botão da conversa.
+
+### Registro
+Cada rodada é uma linha em `agente_execucoes` (status, modelo, tokens, custo, ferramentas e quantas vezes) e cada passo uma linha em `agent_logs` (`ferramenta`, `modelo`, `tokens_entrada`, `tokens_saida`, `custo_estimado`, `duracao_ms`, sem conteúdo de mensagem). **Tokens e custo do modelo são estimativas** (o n8n não expõe o uso real do Gemini ao workflow); a transcrição entra com custo fixo por áudio.
+
+### Tabelas e funções novas (migration `20261101000001`)
+`agente_execucoes` (migrations `20261101000001` a `03`); colunas novas em `agente_config` (`precos_modelo`, `modelo_resumo`, `max_ferramenta_por_rodada`, `max_chamadas_por_rodada`); funções (todas só para a service role): `agente_bloqueio`, `agente_entrada`, `agente_debounce`, `agente_iniciar`, `agente_contexto`, `agente_primeiro_contato`, `agente_registrar_midia`, `agente_gravar_transcricao`, `agente_log`, `agente_tool_inicio`, `agente_tool_fim`, `agente_saida_segura`, `agente_pode_enviar`, `agente_finalizar`, `agente_resumo_precisa`, `agente_gravar_resumo`, `agente_salvar_contato`, `agente_chamar_dono`, `agente_agendar_followup`, `agente_teste_preparar`, `agente_teste_registrar_saida`, `agente_teste_avaliar`, `agente_teste_limpar`; 21 cenários `e5-*` em `testes_conversa`.
+
+### Edge Functions desta etapa
+`agente-enviar` (nova, só service role: confere IA, modo humano, pagamento e janela, envia texto e grava a mensagem), `whatsapp-webhook` (avisa o WF1 com o id da mensagem; sem `N8N_WF1_URL` e `N8N_WF1_TOKEN` não faz nada) e `whatsapp-media` (agora também aceita a service role, para o WF1 baixar o áudio).

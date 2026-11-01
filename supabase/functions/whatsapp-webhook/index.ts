@@ -1,3 +1,4 @@
+import { acionarAgente } from '../_shared/agente.ts'
 import { serviceClient } from '../_shared/http.ts'
 import { confirmOptOut } from '../_shared/optout.ts'
 import { extractEvents, isOptOutMessage, shouldApplyStatus } from '../_shared/parse.ts'
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
 
   try {
     for (const m of messages) {
-      const { error } = await db.rpc('ingest_inbound_message', {
+      const { data: gravada, error } = await db.rpc('ingest_inbound_message', {
         p_wa_id: m.waId,
         p_name: m.name,
         p_wa_message_id: m.waMessageId,
@@ -78,6 +79,12 @@ Deno.serve(async (req) => {
           .select('id')
         if (optErr) throw optErr
         if (changed?.length) await confirmOptOut(db, changed[0].id, m.waId)
+      }
+
+      // Mensagem nova (a duplicada devolve null) e que não é o PARAR: avisa o WF1 do n8n, depois do descadastro (o agente confere o optout).
+      // O agente decide se responde; falha aqui nunca derruba o webhook.
+      if (gravada && !(m.type === 'text' && isOptOutMessage(m.body))) {
+        await acionarAgente(String(gravada), { url: Deno.env.get('N8N_WF1_URL'), token: Deno.env.get('N8N_WF1_TOKEN') })
       }
     }
 
