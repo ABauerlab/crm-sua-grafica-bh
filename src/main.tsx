@@ -6,6 +6,9 @@ import App from './App'
 import { AuthProvider } from './auth/AuthProvider'
 import { ToastProvider } from './components/ui/toast'
 import './index.css'
+import { registrarServiceWorker } from './lib/push'
+
+registrarServiceWorker()
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: true, retry: 1 } },

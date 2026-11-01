@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase'
 
 import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
 import DiscountPolicyTab from '@/features/agent/DiscountPolicyTab'
+const NotificationsTab = lazy(() => import('@/features/notifications/NotificationsTab'))
 const KnowledgeTab = lazy(() => import('@/features/agent/KnowledgeTab'))
 
 const TemplatesPanel = lazy(() => import('@/pages/Templates'))
@@ -455,6 +456,7 @@ export default function Settings() {
           <TabsTrigger value="prazos">Prazos e feriados</TabsTrigger>
           <TabsTrigger value="metas">Metas</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           <TabsTrigger value="agente">Agente de IA</TabsTrigger>
           <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
@@ -468,6 +470,7 @@ export default function Settings() {
         <TabsContent value="prazos"><HolidaysTab /></TabsContent>
         <TabsContent value="metas"><GoalsTab /></TabsContent>
         <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
+        <TabsContent value="notificacoes"><Suspense fallback={<Skeleton className="h-40 w-full" />}><NotificationsTab /></Suspense></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>
         <TabsContent value="conhecimento"><Suspense fallback={<Skeleton className="h-40 w-full" />}><KnowledgeTab /></Suspense></TabsContent>
         <TabsContent value="dados"><DataTab /></TabsContent>

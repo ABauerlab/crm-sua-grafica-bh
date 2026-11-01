@@ -91,7 +91,7 @@ Os nós HTTP foram criados sem credencial atribuída (limitação de importaçã
 | `GBH \| FERRAMENTA \| salvar_contato` | `JDjfx586IeN9YaWN` | Execute Workflow (`contact_id` e campos) | Desativado |
 | `GBH \| FERRAMENTA \| verificar_frete` | `JQp5BTgu2Hum8PfE` | Execute Workflow (`cep_ou_bairro`, `itens`) | Desativado |
 | `GBH \| FERRAMENTA \| agendar_followup` | `GVyk2nZPlf5QNWti` | Execute Workflow (`conversation_id`, `tipo`, `quando`) | Desativado |
-| `GBH \| FERRAMENTA \| chamar_dono` | `TwvgUc15htbWkyDu` | Execute Workflow (`conversation_id`, `motivo`, `gravidade`) | Desativado |
+| `GBH \| FERRAMENTA \| chamar_dono` | `TwvgUc15htbWkyDu` | Execute Workflow (`conversation_id`, `motivo`, `gravidade`) | Desativado (Etapa 6: agora dispara os alertas reais, `n8n/GBH-FERRAMENTA-chamar_dono.json`) |
 
 Pasta Sua Gráfica BH, tag `gbh`, nota (sticky) em todos. As ferramentas das Etapas 3, 4 e 4B (`montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `condicao_especial`, `enviar_foto_produto`) continuam as mesmas e agora são chamadas pelo despachante. Arquitetura, regras e como editar em `docs/agente-ia.md` (seção Etapa 5).
 
@@ -102,3 +102,10 @@ Pasta Sua Gráfica BH, tag `gbh`, nota (sticky) em todos. As ferramentas das Eta
 **Testes pelo MCP:** `test_workflow` com os nós de rede fixados (despachante, WF1 e WF2). Os cenários com o modelo real estão em `docs/agente/etapa5-testes.md`.
 
 **Pendente de etapas futuras:** `GBH | WF9 | Erros`, WF5 a WF8.
+
+## Etapa 6: pagamento e alertas
+| Workflow | ID no n8n | Arquivo | Gatilho | Estado |
+|---|---|---|---|---|
+| `GBH \| WF5 \| Pagamento e alertas` | `rLER5HoORdxVy0S0` | `n8n/GBH-WF5-Pagamento-e-alertas.json` | Agenda a cada minuto (fila `eventos_pagamento`), webhook opcional `gbh-wf5-pagamento` e segunda agenda a cada minuto que entrega alertas (varredura a cada 10 min) | Desativado, 9 nós |
+
+Credencial: `Supabase account` (service role) em todos os nós HTTP. Chama as funções do banco `pagamento_pos_pendentes` e `pagamento_pos_processar` e as Edge Functions `cliente-pago-avisar` e `alertas-enviar`. Fluxo e solução de problemas em `docs/pwa-e-notificacoes.md`. Não existe `GBH | WF9 | Erros` na instância ainda; ligue-o aos workflows na Etapa 8.
