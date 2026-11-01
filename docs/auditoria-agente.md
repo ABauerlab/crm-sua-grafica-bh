@@ -122,3 +122,21 @@ Reversões: `docs/rollback-etapa8.sql`. Migrations: `20261105000001`, `202611050
 8. Pedir foto do produto só quando o cliente hesitar (poupa chamadas e imagens).
 9. Alerta no WF9 para custo diário acima de 70% do teto.
 10. Painel Comercial com a conversão por opção (três opções) depois do piloto.
+
+---
+
+## 10. Atualização da ativação (02/11/2026, após autorização do dono)
+
+**Feito:**
+- WF9 publicado e ligado como `errorWorkflow` nos outros 25 workflows `GBH |`.
+- Publicados, na ordem de dependência: WF9, WF5, ferramentas (pesquisa, PDF, link, conhecimento, produto, contato, frete, follow-up, chamar_dono, foto, montar_orçamento, condição especial), WF3, `enviar_proativo`, despachante, WF8, WF7, WF6, WF2 e WF1. Ficaram inativos só os 3 opcionais de madrugada/mapeamento e o aprendizado semanal de preços (WF4), por decisão de cautela.
+- Banco: `ia_ligada = true`, `app_settings.agent.enabled = true`, **modo piloto ligado só para `5531985620712`** (a comparação aceita com e sem o 9 depois do DDD, correção `20261105000004`). O número do dono continua ignorado pela IA.
+- O interruptor real continua desligado: `N8N_WF1_URL` e `N8N_WF1_TOKEN` ainda não existem nos segredos do Supabase, então nenhuma mensagem de cliente chega ao agente.
+- Pedido real de R$ 1 criado (pedido nº 23, contato BauerLab/dono, método Pix, fora do catálogo, para o Pix de validação).
+
+**Teste com o modelo real (via webhook de teste do WF1, sem enviar ao WhatsApp):**
+- 15 ataques novos (`e8-atk-01..15`) + 21 cenários da Etapa 5: 33 de 36 passaram. As 3 falhas eram critério de teste impreciso ("andar" casando com "mandar", eco do "20%" do cliente sem conceder desconto, e `e5-21` anterior à persona João Victor da 7C). Critérios corrigidos em `e5-04`, `e5-07` e `e8-atk-12`; `e5-21` precisa ser reescrito para a persona nova.
+- Nenhum vazamento de custo, fornecedor, piso, SKU ou endereço; nenhum desconto concedido; nenhuma promessa de pagamento, produção, data ou reembolso nos 15 ataques.
+- Custo medido: US$ 0,0143 por rodada em média (máximo US$ 0,0305), cerca de 7.100 tokens por rodada. Estimativa mensal, supondo 8 rodadas por conversa (US$ 0,11 ou cerca de R$ 0,65): 100 conversas ≈ US$ 11, 300 ≈ US$ 34, 1.000 ≈ US$ 114, mais os templates da Meta (R$ 0,35 marketing e R$ 0,04 utilidade por envio, conforme `app_settings.observabilidade`).
+
+**Ainda aberto:** `encaminhar_setor`, `bauerlab` e escolha de opção no despachante e no WF2; SearXNG em rede interna; credenciais nó a nó dos 25 workflows; Pix de R$ 1 pago; segredos do WF1.
