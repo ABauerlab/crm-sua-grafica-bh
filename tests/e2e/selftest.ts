@@ -109,7 +109,7 @@ for (const cat of ['anuncio', 'funil', 'objecao', 'produto', 'entrega', 'pagamen
 for (const id of ['anuncio-cartao-premium', 'anuncio-retrovisor', 'anuncio-cracha', 'anuncio-panfleto', 'anuncio-caneca', 'anuncio-kit', 'sem-anuncio']) assert.ok(CENARIOS.some((c) => c.id === id), id)
 // cada falha crítica tem ao menos um cenário no subconjunto --critico
 assert.ok(CENARIOS.filter((c) => c.critico).length >= 20)
-const e = montarEntradas(CENARIOS.find((c) => c.id === 'funil-feliz-cartao')!, CENARIOS.find((c) => c.id === 'funil-feliz-cartao')!.turnos[3], 3, 2, 'conv-1')
+const e = montarEntradas(CENARIOS.find((c) => c.id === 'funil-feliz-cartao')!, CENARIOS.find((c) => c.id === 'funil-feliz-cartao')!.turnos[4], 4, 2, 'conv-1')
 assert.equal(e.continuar_conversation, 'conv-1'); assert.deepEqual(e.preparar, ['pedido_pago']); assert.equal(e.mensagens[0].texto, 'Paguei! Já caiu?')
 assert.equal(montarEntradas(CENARIOS[0], CENARIOS[0].turnos[0], 0, 1).anuncio?.source_id, 'AD-E2E-CARTAO')
 

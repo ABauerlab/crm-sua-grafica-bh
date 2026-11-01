@@ -13,12 +13,12 @@ const ORC = ['orcamento_aberto']
 export const CENARIOS: Cenario[] = [
   // ---------------------------------------------------------------- Abertura por anúncio
   { id: 'anuncio-cartao-premium', categoria: 'anuncio', titulo: 'Abertura pelo anúncio do cartão premium', persona: 'neutro', anuncio: AD('Cartão de visita premium', 'AD-E2E-CARTAO'),
-    turnos: [{ cliente: [t('Oi, vi o anúncio do cartão premium. Quanto custa?', 'Boa tarde! Queria saber do cartão que vi no Instagram', 'ola, cartao de visita premium, qual o valor?')], espera: { ferramentas: ['buscar_produto'] } },
-             { cliente: [t('Quero 500, com a minha arte', 'umas 500 unidades, já tenho a arte pronta', '500 e eu mando a arte')] }] },
+    turnos: [{ cliente: [t('Oi, vi o anúncio do cartão premium. Quanto custa?', 'Boa tarde! Queria saber do cartão que vi no Instagram', 'ola, cartao de visita premium, qual o valor?')] },
+             { cliente: [t('Quero 500, com a minha arte', 'umas 500 unidades, já tenho a arte pronta', '500 e eu mando a arte')], espera: { ferramentas: ['buscar_produto'] } }] },
   { id: 'anuncio-retrovisor', categoria: 'anuncio', titulo: 'Abertura pelo anúncio do adesivo de retrovisor', persona: 'giria', anuncio: AD('Adesivo para retrovisor', 'AD-E2E-RETRO'),
     turnos: [{ cliente: [t('vi o anuncio do retrovisor, qnto custa?', 'mano quanto sai aquele adesivo de retrovisor', 'blz, o adesivo do retrovisor qual o preco?')], espera: { ferramentas: ['buscar_produto'] } }] },
   { id: 'anuncio-cracha', categoria: 'anuncio', titulo: 'Abertura pelo anúncio do crachá', persona: 'neutro', anuncio: AD('Crachá personalizado', 'AD-E2E-CRACHA'),
-    turnos: [{ cliente: [t('Oi, preciso de crachás para minha equipe, vi o anúncio', 'Bom dia, anúncio do crachá, como funciona?', 'quero cracha pra 30 funcionarios')], espera: { ferramentas: ['buscar_produto'] } }] },
+    turnos: [{ cliente: [t('Oi, preciso de crachás para minha equipe, vi o anúncio', 'Bom dia, anúncio do crachá, como funciona?', 'quero cracha pra 30 funcionarios')] }] },
   { id: 'anuncio-panfleto', categoria: 'anuncio', titulo: 'Abertura pelo anúncio do panfleto', persona: 'apressado', anuncio: AD('Panfleto 10x15 colorido', 'AD-E2E-PANFLETO'),
     turnos: [{ cliente: [t('panfleto quanto', 'vi o anuncio do panfleto, 1000 unidades quanto fica', 'preco panfleto 1000')], espera: { ferramentas: ['buscar_produto'] } }] },
   { id: 'anuncio-caneca', categoria: 'anuncio', titulo: 'Abertura pelo anúncio da caneca', persona: 'estudante', anuncio: AD('Caneca personalizada', 'AD-E2E-CANECA'),
@@ -34,7 +34,8 @@ export const CENARIOS: Cenario[] = [
     turnos: [
       { cliente: [t('Oi, vi o anúncio do cartão de visita. Quero fazer', 'Boa tarde, quero cartões de visita premium', 'oi quero fazer cartao de visita')], espera: { ferramentas: ['buscar_produto'] } },
       { cliente: [t('1000 unidades, já tenho a arte. Entrego aqui no Centro mesmo', 'mil cartões, a arte está pronta. Moro no Centro de BH', '1000, arte pronta, pode entregar no centro')], espera: { ferramentas: ['montar_orcamento'] } },
-      { cliente: [t('Gostei! Pode fechar', 'Perfeito, vou querer. Como pago?', 'fechado, manda o link')], espera: { ferramentas: ['gerar_link_pagamento'] } },
+      { cliente: [t('Gostei! Pode fechar', 'Perfeito, vou querer. Como pago?', 'fechado, manda o link')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
+      { cliente: [t('APROVADO', 'Aprovado!', 'aprovo, pode mandar o link')], espera: { ferramentas: ['gerar_link_pagamento'] } },
       { preparar: ['pedido_pago'], cliente: [t('Pronto, paguei no Pix', 'Paguei! Já caiu?', 'feito o pagamento')] },
       { cliente: [t('Qual o endereço pra retirar? Prefiro buscar', 'Posso buscar ai? onde fica?', 'onde retiro?')], espera: { semFerramentas: ['montar_orcamento'] } },
     ] },
@@ -42,7 +43,8 @@ export const CENARIOS: Cenario[] = [
     turnos: [
       { cliente: [t('quero 1000 panfletos coloridos', 'panfleto colorido 1000 un', 'preciso de mil panfletos')], espera: { ferramentas: ['buscar_produto'] } },
       { cliente: [t('tenho arte. vou retirar', 'arte pronta, prefiro buscar', 'com arte, retirada')], espera: { ferramentas: ['montar_orcamento'] } },
-      { cliente: [t('fecha', 'pode fechar', 'beleza fecha')], espera: { ferramentas: ['gerar_link_pagamento'] } },
+      { cliente: [t('fecha', 'pode fechar', 'beleza fecha')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
+      { cliente: [t('aprovado', 'APROVADO', 'tá aprovado, manda o link')], espera: { ferramentas: ['gerar_link_pagamento'] } },
     ] },
   { id: 'funil-opcoes-e-escolha', categoria: 'funil', titulo: 'Três opções, escolha e fechamento', persona: 'indeciso',
     turnos: [
@@ -101,7 +103,7 @@ export const CENARIOS: Cenario[] = [
   { id: 'produto-valor-muito-alto', categoria: 'produto', titulo: 'Pedido de valor muito alto', persona: 'empresario', critico: true,
     turnos: [{ cliente: [t('Preciso de 100 mil panfletos para a campanha da prefeitura', 'quero 50 mil cartões e 100 mil folders', 'cotação de 200.000 panfletos')] }] },
   { id: 'produto-foto', categoria: 'produto', titulo: 'Pedido de foto', persona: 'neutro',
-    turnos: [{ cliente: [t('Tem foto de como fica o cartão com verniz localizado?', 'manda uma foto do cartão fosco?', 'queria ver foto do panfleto')], espera: { ferramentas: ['enviar_foto_produto'] } }] },
+    turnos: [{ cliente: [t('Tem foto de como fica o cartão com verniz localizado?', 'manda uma foto do cartão fosco?', 'queria ver foto do panfleto')] }] },
   { id: 'produto-foto-limite', categoria: 'produto', titulo: 'Pedidos de foto em sequência (limite)', persona: 'imagem',
     turnos: [{ cliente: [t('manda foto do cartão fosco', 'foto do cartão com verniz', 'foto do cartão premium')] }, { cliente: [t('e do panfleto?', 'foto do panfleto', 'mostra o panfleto')] }, { cliente: [t('e do adesivo?', 'foto do adesivo', 'mostra adesivo')] }, { cliente: [t('mais uma, do cartão laminado', 'foto do banner', 'foto da caneca')] }] },
 
@@ -119,7 +121,8 @@ export const CENARIOS: Cenario[] = [
 
   // ---------------------------------------------------------------- Pagamento
   { id: 'pagamento-pix', categoria: 'pagamento', titulo: 'Pix primeiro', persona: 'neutro', preparar: ORC,
-    turnos: [{ cliente: [t('Pode fechar. Como pago?', 'fechado, qual a forma de pagamento?', 'ok, me manda o pagamento')], espera: { ferramentas: ['gerar_link_pagamento'], contemAlgum: ['pix'] } }] },
+    turnos: [{ cliente: [t('Pode fechar. Como pago?', 'fechado, qual a forma de pagamento?', 'ok, me manda o pagamento')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
+             { cliente: [t('APROVADO', 'aprovado, manda o link', 'pode mandar o link, aprovo')], espera: { ferramentas: ['gerar_link_pagamento'], contemAlgum: ['pix'] } }] },
   { id: 'pagamento-cartao-2x', categoria: 'pagamento', titulo: 'Cartão em 2x', persona: 'estudante', critico: true, preparar: ORC,
     turnos: [{ cliente: [t('Posso pagar no cartão em 2x?', 'cartão em duas vezes sem juros?', 'passa em 2 vezes?')] }] },
   { id: 'pagamento-mais-de-2x', categoria: 'pagamento', titulo: 'Mais de 2x', persona: 'estudante', critico: true, preparar: ORC,

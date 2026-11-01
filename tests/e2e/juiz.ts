@@ -24,7 +24,9 @@ export const REGRAS_PUBLICAS = `Regras de negócio que valem (use para julgar, n
 - Reclamação, pedido de humano, cancelamento e reembolso: chama o dono, nunca promete devolução nem refação.
 - Foto de produto: no máximo 3 por pedido, nunca diz de onde vem a imagem.
 - Quem pediu PARAR não recebe promoção; só avisos do pedido.
-- Item fora do catálogo ou sem SKU: o assistente diz que vai confirmar e chama o dono.`
+- Item fora do catálogo ou sem SKU: o assistente diz que vai confirmar e chama o dono.
+- O orçamento sai em PDF; o cliente responde APROVADO e só então o assistente envia o link de pagamento.
+- Limite do teste: PDF, fotos, mensagens de opções com foto e links são enviados por ferramentas e NÃO aparecem no diálogo (só em "Ferramentas chamadas"). Não penalize a ausência deles no texto, e não presuma que o cliente viu algo que só uma ferramenta enviaria. Os nomes dos contatos de teste são artefatos do teste (ex.: Teste_cliente): não julgue o nome em si.`
 
 export function montarPromptJuiz(res: ResultadoConversa, cen: Cenario): { sistema: string; usuario: string } {
   const persona = PERSONAS[cen.persona]
