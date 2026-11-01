@@ -77,3 +77,12 @@ export async function requireOwnerOrServer(req: Request, db: SupabaseClient): Pr
   if (ownerEmail && (userData.user.email ?? '').toLowerCase() !== ownerEmail) return null
   return 'dono'
 }
+
+/** Só a service role (outro servidor da própria Sua Gráfica, como o n8n). Nenhum usuário logado passa. */
+export async function requireServiceRole(req: Request): Promise<boolean> {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+  if (!token) return false
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (serviceKey && token.length === serviceKey.length && token === serviceKey) return true
+  return ehServiceRole(token)
+}

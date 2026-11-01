@@ -1,4 +1,4 @@
-import { json, requireEnv, requireStaff, serviceClient } from '../_shared/http.ts'
+import { json, requireEnv, requireServiceRole, requireStaff, serviceClient } from '../_shared/http.ts'
 
 const GRAPH = 'https://graph.facebook.com/v21.0'
 const cors = {
@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
   if (req.method !== 'GET') return json({ error: 'Método não permitido.' }, 405)
 
   const db = serviceClient()
-  if (!(await requireStaff(req, db))) return json({ error: 'Não autorizado.' }, 401)
+  // atendente logado (tela do CRM) ou o n8n com a service role (transcrição de áudio do agente)
+  if (!(await requireStaff(req, db)) && !(await requireServiceRole(req))) return json({ error: 'Não autorizado.' }, 401)
   const env = requireEnv('WHATSAPP_TOKEN')
   if (!env) return json({ error: 'Integração com o WhatsApp não configurada no servidor.' }, 500)
 
