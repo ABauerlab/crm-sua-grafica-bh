@@ -415,3 +415,9 @@ npm test && npm run typecheck
 psql "$DATABASE_URL" -f supabase/tests/agente_etapa1.sql   # desfaz tudo; sucesso aparece como "OK: 54 testes passaram"
 ```
 No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente e o status (clique em Sincronizar).
+
+## Etapa 8 (auditoria) - 02/11/2026: relatório entregue, ativação aguardando autorização
+- Relatório completo em `docs/auditoria-agente.md` (nota 7,5/10). Correções: custo real no item de pedido, gatilhos de pedido como definer, advisors, modo piloto da IA (`agente_config.piloto_*`). Reversões em `docs/rollback-etapa8.sql`.
+- SearXNG ligado no Coolify e `searxng_url` do workflow de pesquisa atualizado. Workflows `GBH |` continuam DESATIVADOS: `publish_workflow` foi negado pelo ambiente; WF9 ainda sem ligação como `errorWorkflow`.
+- Falta: ligar `encaminhar_setor`, `bauerlab` e escolha de opção no despachante e no WF2; testes de conversa com o modelo real (só possíveis com WF1 e WF2 ativos); Pix de R$ 1; segredos `N8N_WF1_URL` e `N8N_WF1_TOKEN`.
+- Branch `claude/zealous-curie-n84wpk`; arquivos: `supabase/migrations/20261105000001..3`, `docs/auditoria-agente.md`, `docs/rollback-etapa8.sql`.
