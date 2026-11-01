@@ -131,3 +131,9 @@ Os 90 trechos nascem com `revisar = true`. Leia em **Configurações > Conhecime
 3. Revisar os 10 trechos novos do conhecimento (Configurações > Conhecimento, marcados "revisar").
 4. **Cupom de recompra:** rode `select public.cupom_recompra_simular();` (no SQL Editor) e, se a margem estiver boa, ligue com o comando que a própria simulação devolve. Hoje desligado.
 5. **Benefício de indicações** (se houver): ainda sem recompensa.
+
+## Etapa 7B, Blocos C a F (o que só você pode fazer)
+1. **Fornecedor (Bloco C):** pergunte a fórmula ou a tabela por m² dos itens por dimensão e passe 8 a 10 pontos (largura, altura, preço) de cada. Detalhes em `docs/agente/preco-por-dimensao.md`.
+2. **SearXNG (Bloco F):** crie o serviço no Coolify seguindo `docs/infra-coolify.md` e me diga o nome interno; depois rodo o teste das 5 especificações.
+3. **Redes sociais (Bloco E):** se quiser responder comentários e DMs automaticamente, solicite a Análise de app da Meta pelo roteiro de `docs/redes-sociais.md`.
+4. **Indicações:** defina se haverá benefício (hoje o custo é zero e nada é prometido).
