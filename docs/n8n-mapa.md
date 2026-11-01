@@ -2,7 +2,7 @@
 
 Instância: n8n.bauerlab.com.br (projeto pessoal do dono). Pasta **Sua Gráfica BH**, tag `gbh`. Todos os workflows `GBH |` nascem **desativados**; a ativação é da Etapa 8, depois da auditoria e da autorização do dono. Nenhum workflow de outro projeto foi lido ou alterado.
 
-JSONs exportados (sem credenciais) em `n8n/` (os 9 workflows da Etapa 5 ainda não foram exportados: ver `docs/agente/progresso.md`). Para importar em outra instância: n8n > Workflows > Importar de arquivo, depois selecionar as credenciais nos nós HTTP.
+JSONs exportados (sem credenciais) em `n8n/` (os 9 workflows da Etapa 5 ainda não foram exportados; ficam salvos no n8n: ver `docs/agente/progresso.md`). Para importar em outra instância: n8n > Workflows > Importar de arquivo, depois selecionar as credenciais nos nós HTTP.
 
 ## Workflows (Etapas 3 e 4)
 

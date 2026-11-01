@@ -35,7 +35,8 @@ Branch de trabalho da sessão `claude/admiring-einstein-apt8ei` (a pedida era `f
 - Modelos: `gemini-3-flash-preview` (padrão) e `gemini-3.1-pro-preview` (forte); `gemini-2.5-flash` e `gemini-3-pro-preview` dão 404 na conta.
 - A trava de saída não confere fatos numéricos soltos (ex.: "a partir de 100 unidades"), só R$ e vazamentos.
 - Áudio (download e Groq), `agente-enviar` e o gancho do webhook não foram executados contra a Meta (sem Deno aqui; lógica testada em Node e SQL).
-- Os JSONs dos 9 workflows desta etapa (WF1, WF2, despachante e 6 ferramentas) **não foram exportados para `n8n/`** nesta sessão (o retorno do MCP é grande demais para regravar com segurança). Eles existem no n8n com os IDs de `docs/n8n-mapa.md`; falta só exportar, sem credenciais, e conferir o `docs/n8n-mapa.md`.
+- Os JSONs dos 9 workflows desta etapa (WF1, WF2, despachante e 6 ferramentas) **não foram exportados para `n8n/`**: o retorno do MCP chega a mais de 100 KB e retranscrever à mão arrisca corromper o fluxo. Eles estão salvos no n8n (versionados) com os IDs de `docs/n8n-mapa.md`. Para exportar: n8n > workflow > Download, ou pedir a exportação em uma sessão com acesso à API do n8n.
+- Edge Functions `agente-enviar`, `whatsapp-media` e `whatsapp-webhook` (com o gancho do agente) **publicadas**. Os segredos `N8N_WF1_URL` e `N8N_WF1_TOKEN` ficam para a Etapa 8: sem eles o webhook se comporta como antes.
 - O prompt tem cerca de 890 tokens fixos (alvo de 700).
 
 ### Pendências (dono)
