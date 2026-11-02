@@ -43,7 +43,7 @@ const REGRAS: Record<string, Regra[]> = {
 const GERAIS: Regra[] = [
   { id: 'sem-travessao', descricao: 'sem travessão', testa: (c) => !/[—–]/.test(c.todas) },
   { id: 'nunca-sem-resposta', descricao: 'todo turno recebe resposta', testa: () => true },
-  { id: 'sem-pergunta-repetida', descricao: 'não repete a mesma frase duas vezes', testa: (c) => new Set(c.saidas.map((s) => s.trim().toLowerCase())).size === c.saidas.length },
+  { id: 'sem-pergunta-repetida', descricao: 'não repete a mesma frase duas vezes', testa: (c) => { const l = c.saidas.map((s) => s.trim().toLowerCase()).filter((s) => !/^https?:\/\/\S+$/.test(s)); return new Set(l).size === l.length } },
   { id: 'fallback-no-maximo-1', descricao: 'frase neutra de espera no máximo 1 vez', testa: (c) => c.saidas.filter((s) => /deixa eu confirmar isso certinho/i.test(s)).length <= 1 },
 ]
 

@@ -352,3 +352,36 @@ Frase apontada (tom, 6): "A retirada é feita em um prédio comercial no Centro,
 ## Limpeza
 
 Ao final foram apagados 75 contatos de teste (`is_teste`) e todos os casos `e2e-*`; os 5 contatos reais ficaram intactos e não restou orçamento de teste.
+
+---
+
+# Etapa 8C: clone de teste, ciclos 2 a 9 e rumo ao MVP (02/11/2026)
+
+O dono NÃO autorizou publicar a versão `9621c5c2` do WF2; a partir daqui tudo roda num **clone isolado** (`GBH | TESTE | Agente (clone do WF2)` + `GBH | TESTE | Entrada de teste (clone)`). Isolamento e executor dentro do banco: ver `progresso.md` (seção 8C) e `tests/e2e/README.md`. Em seguida o dono pediu o **MVP** (nota perfeita deixou de ser critério): critérios em `mvp-criterios-de-liberacao.md`.
+
+## Rodadas (formulação 1, 70 cenários, exceto onde indicado)
+
+| Rodada | O que mudou | Críticas automáticas | Média do juiz | Observação |
+|---|---|---|---|---|
+| c1 (8B) | prompt de produção | 0 | 7,71 | juiz sem o estado de preparo |
+| c2 | rascunho de prompt do ciclo 1 no clone | 0 (1 do juiz) | 7,41 | regra "peça o número da opção" atrapalhou "pode fechar" |
+| c3 | regras de aprovação, uma pergunta, datas, orçamentos independentes | 0 reais (6 apontadas: 1 era o número do orçamento SG-0130, 5 por fluxo/repetição) | 7,61 | resposta vazia do modelo virava frase neutra repetida |
+| c4, c5 | lembretes no turno do cliente, cenários alinhados ao fluxo real | 0 | sem juiz | portão de fluxo: 2 essenciais reprovados; 4 conversas perderam o tempo por `57014` (banco saturado pelo próprio teste) |
+| c6 a c8 | repetição de 4 cenários essenciais (3 vezes) com modelo padrão, forte e simulador corrigido | 0 | sem juiz | modelo forte esgotou a cota diária (250 pedidos, Gemini Tier 1) e foi revertido |
+| c9 (a, b, c) | modelo padrão, simulador corrigido (PDF enviado, opções em ordem), cenário do panfleto com o segundo APROVADO | 0 | sem juiz | funil completo (orçamento, PDF, link) passou nas 3 repetições; sobrou só a repetição do mesmo link |
+
+## O que a 8C encontrou e corrigiu (com impacto em produção)
+
+1. **Alertas de teste chegavam ao dono** (`alerta_criar` não conhecia `is_teste`). Corrigido (migration `20261107000001`).
+2. **Link de pagamento saía sem o cliente aprovar** o PDF: o banco só exigia PDF enviado, e o agente gerava PDF e link na mesma resposta. Agora `preparar_link_pagamento` exige uma mensagem do cliente com aprovação depois do PDF (`20261107000006`; teste `supabase/tests/link_aprovacao_etapa8c.sql`).
+3. **Orçamento absurdo (ex.: R$ 23 mil)**: a quantidade do item é o número de pacotes da opção, e o banco aceitava até 50 pacotes e qualquer total. Agora máximo de 20 pacotes e total acima de `orcamento_agente.valor_max_agente` (padrão R$ 5.000) volta `bloqueado: valor_alto` e o agente chama o dono (`20261107000004`). Causa confirmada na leitura do código; não havia registro do caso para reproduzir.
+4. **Memória**: contexto passa a listar até 4 orçamentos abertos com itens (`20261107000003`) e o histórico subiu de 6 para 10 mensagens (`agente_config.historico_mensagens`).
+5. **Pesquisa de preço de mercado nunca rodou**: os nós de banco de `pesquisar_preco_mercado` estavam sem credencial ("Credentials not found"). Religada só no rascunho; falta publicar.
+6. **Resposta vazia do modelo padrão depois de usar ferramentas** (virava "Deixa eu confirmar isso certinho..."). Mitigada pelo lembrete no turno do cliente; com o modelo forte desaparece, mas a cota diária do modelo forte é de 250 pedidos (Tier 1).
+7. **Cota do Gemini**: o modelo forte (usado em objeções) para de responder depois de 250 pedidos por dia. Precisa de plano pago/Tier maior ou de queda automática para o modelo padrão antes do tráfego pago.
+
+## Limites desta etapa
+
+- Nota do juiz não passou de 7,6 nas rodadas julgadas (c2, c3). Não foi julgada nenhuma rodada depois dos ajustes de c9.
+- Formulações 2 e 3 e as duas rodadas completas seguidas não foram executadas (o dono redirecionou para o MVP).
+- O simulador não envia PDF, foto, link nem Pix de verdade; isso só o roteiro manual prova.
