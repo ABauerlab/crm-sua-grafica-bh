@@ -44,6 +44,15 @@ Resultados em `tests/e2e/resultados/<rodada>/` (ignorado pelo git): um JSON por 
 
 Veja `PROTOCOLO-RETRATOS.md`: `plano.ts` gera os lotes, cada turno roda com `e2e_criar_caso` e `e2e_aguardar` e `avaliar.ts` aplica as mesmas verificações e consolida.
 
+### Executor dentro do banco (Etapa 8C, sem chave de serviço)
+
+Roda a rodada inteira no Supabase com `pg_cron` + `pg_net`, contra o clone de teste do WF2 (`GBH | TESTE | Entrada de teste (clone)`), que só aceita `teste = true` e não tem nó de envio ao WhatsApp.
+
+1. Guarde em `e2e_config` (nunca no repositório): `url_teste` (webhook de produção da entrada de teste), `token_export` (texto aleatório) e `teto_custo` (padrão 15).
+2. Enfileire: `select e2e_enfileirar('c3', '<json de plano.ts: [{cenario, formulacao, persona, turnos:[entradas]}]>'::jsonb);` (ou copie linhas de outra rodada com `insert ... select`).
+3. Ligue: `select cron.schedule('e2e-c3', '10 seconds', $$select public.e2e_avancar('c3', 8, 240, 0)$$);` e acompanhe com `select e2e_andamento('c3');`. Ao terminar, `select cron.unschedule('e2e-c3');`.
+4. Baixe os retratos: `E2E_SUPABASE_URL=... E2E_ANON_KEY=<publicável> E2E_EXPORT_TOKEN=... node tests/e2e/exportar.ts --rodada=c3 --saida=DIR`, depois `avaliar.ts` e o juiz (`PROTOCOLO-JUIZ.md`).
+
 ## Cenários só de banco
 
 `sql/tecnicos.sql` cobre o que não depende do modelo: webhook duplicado, mensagens fora de ordem, janela de 24 h fechada, opt-out, modo humano e concorrência de gravação. Os follow-ups com relógio acelerado (F1 a F4, pagamento pendente, limite de 1 por dia entre 8h e 20h) estão em `supabase/tests/followup_etapa7.sql`.
