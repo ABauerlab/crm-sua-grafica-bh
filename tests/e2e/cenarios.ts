@@ -33,7 +33,8 @@ export const CENARIOS: Cenario[] = [
     foco: 'Condução até o link, Laura até pagar e João Victor depois, sem endereço antes, preço só das ferramentas, avaliação sem benefício no pós-venda.',
     turnos: [
       { cliente: [t('Oi, vi o anúncio do cartão de visita. Quero fazer', 'Boa tarde, quero cartões de visita premium', 'oi quero fazer cartao de visita')], espera: { ferramentas: ['buscar_produto'] } },
-      { cliente: [t('1000 unidades, já tenho a arte. Entrego aqui no Centro mesmo', 'mil cartões, a arte está pronta. Moro no Centro de BH', '1000, arte pronta, pode entregar no centro')], espera: { ferramentas: ['montar_orcamento'] } },
+      { cliente: [t('1000 unidades, já tenho a arte. Entrego aqui no Centro mesmo', 'mil cartões, a arte está pronta. Moro no Centro de BH', '1000, arte pronta, pode entregar no centro')], espera: { ferramentas: ['enviar_foto_produto'] } },
+      { cliente: [t('Quero a primeira opção', 'Fico com a opção 1', 'a primeira mesmo')], espera: { ferramentas: ['montar_orcamento'] } },
       { cliente: [t('Gostei! Pode fechar', 'Perfeito, vou querer. Como pago?', 'fechado, manda o link')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
       { cliente: [t('APROVADO', 'Aprovado!', 'aprovo, pode mandar o link')], espera: { ferramentas: ['gerar_link_pagamento'] } },
       { preparar: ['pedido_pago'], cliente: [t('Pronto, paguei no Pix', 'Paguei! Já caiu?', 'feito o pagamento')] },
@@ -42,9 +43,11 @@ export const CENARIOS: Cenario[] = [
   { id: 'funil-feliz-panfleto-retirada', categoria: 'funil', titulo: 'Funil feliz com retirada', persona: 'apressado', critico: true,
     turnos: [
       { cliente: [t('quero 1000 panfletos coloridos', 'panfleto colorido 1000 un', 'preciso de mil panfletos')], espera: { ferramentas: ['buscar_produto'] } },
-      { cliente: [t('tenho arte. vou retirar', 'arte pronta, prefiro buscar', 'com arte, retirada')], espera: { ferramentas: ['montar_orcamento'] } },
+      { cliente: [t('tenho arte. vou retirar', 'arte pronta, prefiro buscar', 'com arte, retirada')], espera: { ferramentas: ['enviar_foto_produto'] } },
+      { cliente: [t('a primeira', 'opção 1', 'pode ser a primeira')], espera: { ferramentas: ['montar_orcamento'] } },
       { cliente: [t('fecha', 'pode fechar', 'beleza fecha')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
-      { cliente: [t('aprovado', 'APROVADO', 'tá aprovado, manda o link')], espera: { ferramentas: ['gerar_link_pagamento'] } },
+      { cliente: [t('aprovado', 'APROVADO', 'tá aprovado, manda o link')], espera: { ferramentas: ['gerar_pdf_orcamento'] } },
+      { cliente: [t('APROVADO', 'aprovado, pode mandar o link', 'tudo certo, APROVADO')], espera: { ferramentas: ['gerar_link_pagamento'] } },
     ] },
   { id: 'funil-opcoes-e-escolha', categoria: 'funil', titulo: 'Três opções, escolha e fechamento', persona: 'indeciso',
     turnos: [
@@ -191,7 +194,10 @@ export const CENARIOS: Cenario[] = [
   { id: 'tecnico-imagem', categoria: 'tecnico', titulo: 'Imagem com pouco texto', persona: 'imagem',
     turnos: [{ cliente: [img('[imagem: foto de um cartão de visita azul com logo de dentista] quero igual', '[imagem: print de um panfleto de pizzaria] faz assim', '[imagem: foto de uma caneca com desenho de gato] quero uma dessas')] }] },
   { id: 'tecnico-falha-ferramenta', categoria: 'tecnico', titulo: 'Falha de ferramenta (montar_orcamento)', persona: 'neutro', critico: true, preparar: ['falha_ferramenta:montar_orcamento'],
-    turnos: [{ cliente: [t('Quero orçamento de 1000 cartões de visita fosco, entrego no Centro', 'orçamento de mil cartões fosco, Centro', '1000 cartões fosco, entrega no Centro, quanto?')], espera: { alerta: true } }] },
+    turnos: [
+      { cliente: [t('Quero orçamento de 1000 cartões de visita fosco, entrego no Centro', 'orçamento de mil cartões fosco, Centro', '1000 cartões fosco, entrega no Centro, quanto?')] },
+      { cliente: [t('Pode ser a primeira opção, com a minha arte', 'a primeira, já tenho a arte', 'opção 1, arte pronta')], espera: { alerta: true } },
+    ] },
   { id: 'tecnico-idosa-texto-longo', categoria: 'tecnico', titulo: 'Texto longo com erros', persona: 'idosa',
     turnos: [{ cliente: [t('Boa tarde minha filha, meu neto me ensinou a mexer nisso aqui, eu tenho uma padaria ha 30 anos no bairo Floresta e queria uns cartaozinho pra entregar aos fregueses, uns quinhentos mais ou menos, mas nao sei se precisa de arte ou como faz, voce me ajuda?', 'oi bom dia, sou a dona Maria da padaria, preciso de panfletos pra divulgar os pao de queijo, nao sei mexer em computador, o que preciso fazer?', 'boa tarde, queria um negocio pra colocar o nome da minha loja, tipo um cartao, nao entendo desses negocios de arte')] }] },
 ]
