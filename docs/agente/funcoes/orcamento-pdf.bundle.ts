@@ -112,6 +112,8 @@ interface OrcamentoDoc {
   upsell?: { tipo: string; texto: string } | null
   /** Resumo curto da política de troca e cancelamento (app_settings.politica.resumo_pdf), no rodapé */
   politica?: string | null
+  /** Quadro "Opções e sugestões alternativas" (orcamentos.alternativas): título e texto, sem custo, SKU nem fornecedor */
+  alternativas?: { titulo: string; texto: string }[] | null
   empresa: { nome: string; cnpj: string; telefone?: string | null; email?: string | null; instagram?: string | null; site?: string | null }
 }
 
@@ -194,6 +196,10 @@ td small { display: block; color: #5c5c5c; font-size: 9.5pt; margin-top: 1px; }
 .sec { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .12em; color: #5c5c5c; margin: 0 0 3px; font-weight: 500; }
 .nota { font-size: 11.5pt; color: #333; margin: 0 0 5px; }
 .upsell { margin-top: 18px; font-size: 11.5pt; color: #5c5c5c; }
+section.alt { margin: 12px 0 0; padding: 10px 14px; border: 1px solid #cfe3ee; border-left: 5px solid #00A6D6; border-radius: 8px; background: #f4f9fc; page-break-inside: avoid; }
+section.alt p { margin: 0 0 6px; font-size: 10.5pt; color: #333; line-height: 1.4; }
+section.alt p.intro { color: #555; }
+p.arredonda { margin: 4px 0 0; font-size: 8.5pt; color: #666; }
 p.politica { margin: 8px 0 0; font-size: 8.5pt; color: #5c5c5c; line-height: 1.35; }
 footer { margin-top: auto; padding-top: 10px; border-top: 1px solid #dedede; font-size: 10pt; color: #5c5c5c; display: flex; justify-content: space-between; gap: 14px; }
 footer b { color: #171717; }
@@ -211,6 +217,16 @@ function orcamentoHtml(d: OrcamentoDoc): string {
       (i) => `<tr><td>${esc(i.descricao)}${i.especificacao ? `<small>${esc(i.especificacao)}</small>` : ''}</td><td class="n">${esc(i.quantidade)}</td><td class="n">${brl(i.valor_unitario)}</td><td class="n">${brl(i.valor_total)}</td></tr>`,
     )
     .join('')
+
+  // quadro de alternativas (consultoria) e nota de arredondamento, quando o unitário exibido não multiplica exatamente até o total
+  const alternativas = d.alternativas?.length
+    ? `<section class="alt"><p class="sec">Opções e sugestões alternativas</p><p class="intro">Estas são as alternativas que podemos produzir para o seu pedido:</p>${d.alternativas
+        .map((a) => `<p><b>${esc(a.titulo)}.</b> ${esc(a.texto)}</p>`)
+        .join('')}</section>`
+    : ''
+  const arredonda = d.itens.some((i) => Math.abs(Number(i.quantidade) * Number(i.valor_unitario) - Number(i.valor_total)) >= 0.01)
+    ? '<p class="arredonda">Valores unitários arredondados; vale o total de cada item.</p>'
+    : ''
 
   const artePago = d.arte.modo === 'paga' || d.arte.modo === 'com_frete'
   const freteLinha =
@@ -274,10 +290,11 @@ function orcamentoHtml(d: OrcamentoDoc): string {
   </div>
   <div>${totais}</div>
 </section>
+${alternativas}${arredonda}
 <section class="cols">
   <div>
     <p class="sec">Pagamento</p>
-    <p class="nota">Pix (de qualquer banco) ou cartão, pelo link de pagamento enviado no WhatsApp. O pedido só entra em produção depois da confirmação do pagamento.</p>
+    <p class="nota">Pix ou cartão, pelo link que enviamos no WhatsApp depois da sua aprovação. O pedido só entra em produção depois da confirmação do pagamento e da aprovação da arte.</p>
   </div>
   <div>
     <p class="sec">Retirada e entrega</p>
@@ -285,7 +302,7 @@ function orcamentoHtml(d: OrcamentoDoc): string {
   </div>
 </section>
 <section class="passos"><p class="sec">Como fechar seu pedido</p><ol>
-  <li><b>Pague pelo link</b>Pix (de qualquer banco) ou cartão, no WhatsApp.</li>
+  <li><b>Aprove e pague</b>Responda APROVADO no WhatsApp, receba o link e pague no Pix ou cartão.</li>
   <li><b>Envie a arte</b>${d.arte.modo === 'paga' || d.arte.modo === 'com_frete' ? 'Ou aprove a que criamos para você.' : 'Pronta para impressão, até o horário de corte.'}</li>
   <li><b>Receba ou retire</b>Avisamos assim que estiver pronto.</li>
 </ol></section>
@@ -359,6 +376,7 @@ function resumoDoPedido(doc: OrcamentoDoc): string {
   linhas.push('', `Total: ${brl(doc.total)}`)
   if (doc.data_prevista) linhas.push(`Fica pronto em ${dm(doc.data_prevista)}, pagando e enviando a arte até as ${doc.corte_hora}h`)
   if (doc.validade_ate) linhas.push(`Válido até ${dm(doc.validade_ate)}`)
+  linhas.push('', 'Se estiver tudo certo, responda APROVADO que eu envio o link de pagamento.')
   return linhas.join('\n')
 }
 
