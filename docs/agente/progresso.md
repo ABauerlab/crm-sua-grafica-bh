@@ -2,6 +2,10 @@
 
 **Próximo passo: Etapa 8 (auditoria e ativação).** Roteiro completo e autorização do dono em `docs/agente/etapa8-roteiro-auditoria.md`. Tudo deve ser resolvido via MCP, sem ação do dono.
 
+## Layout consolidado do orçamento em PDF (branch `claude/brave-cori-2xq21w`)
+
+Migration `20261106000001_orcamento_exibicao_consolidada.sql` (aditiva): `orcamentos.itens_exibicao` e `orcamentos.alternativas`, usados por `orcamento_documento`; modelo `_shared/orcamento-html.ts` ganhou o quadro de alternativas e a nota de arredondamento; testes em `scripts/test-orcamento.ts`. **Falta (depende do dono):** aplicar a migration, publicar `orcamento-pdf` (bundle em `docs/agente/funcoes/`) e preencher os dois campos no orçamento SG-0234. Detalhes em `docs/orcamento-pdf.md`.
+
 ## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
 
 **Concluída (aguarda a Etapa 8) (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.

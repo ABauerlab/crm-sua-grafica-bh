@@ -13,6 +13,15 @@ O cliente recebe no WhatsApp um PDF com a identidade da Sua Gráfica BH. O preç
 | `orcamento-pdf` | Edge Function | Renderiza `_shared/orcamento-html.ts` no Gotenberg, guarda no bucket privado `orcamentos`, registra o hash, passa o rascunho para `enviado` e envia o PDF como documento no WhatsApp (legenda = frase do agente). Ações: `gerar`, `enviar` (uma vez por versão do PDF), `reenviar` (botão do CRM). |
 | n8n | `GBH | FERRAMENTA | montar_orcamento`, `gerar_pdf_orcamento`, `gerar_link_pagamento`, `GBH | WF3 | Orçamento PDF` | Ferramentas do agente e pipeline. Desativados até a Etapa 8. Ver `docs/n8n-mapa.md`. |
 
+## Exibição consolidada e alternativas (migration `20261106000001`)
+
+O cálculo continua em lotes do catálogo (`orcamento_itens`), que é o que `validar_margem` e o link de pagamento usam. Para o cliente corporativo, o PDF pode mostrar **uma linha por produto, com a quantidade real**:
+
+* `orcamentos.itens_exibicao` (jsonb): lista de `{descricao, especificacao, quantidade, valor_unitario, valor_total}`. `orcamento_documento` só usa a lista se a soma dos totais for igual ao subtotal; senão cai para as linhas calculadas. O prazo continua vindo dos SKUs.
+* `orcamentos.alternativas` (jsonb): lista de `{titulo, texto}` para o quadro "Opções e sugestões alternativas" (consultoria). Sem custo, SKU nem fornecedor.
+* Quando `quantidade x valor_unitario` não fecha com o total da linha, o PDF mostra "Valores unitários arredondados; vale o total de cada item."
+* Sem os dois campos nada muda: orçamentos do agente seguem como antes.
+
 ## Regras
 
 * **Opções de arte:** R$ 39,90 só a arte (`parametros_comerciais.arte_valor`) e R$ 49,90 arte com frete grátis na região central (`arte_frete_valor`, sem exigir o pedido mínimo). Se a entrega não for elegível, a arte com frete vira só a arte e o agente recebe o aviso `arte_com_frete_indisponivel`. Sem arte definida, o PDF mostra as duas opções.
