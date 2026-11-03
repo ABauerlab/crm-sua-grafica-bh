@@ -211,3 +211,10 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - **Código:** `tests/e2e/` (cenários, personas, verificações, juiz, executor, retratos). `npm run e2e` (completo, `--critico`, `--categoria`, `--cenario`) e `npm run test:e2e` (autoteste offline, dentro do `npm test`). Protocolos sem chave de serviço: `PROTOCOLO-RETRATOS.md` e `PROTOCOLO-JUIZ.md`.
 - **Banco (aditivo):** `contacts.is_teste`; `e2e_mensagens`; `agente_teste_preparar` aceita `continuar_conversation` e o preparo `optout`; `e2e_criar_caso`, `e2e_snapshot`, `e2e_aguardar`, `e2e_apagar_casos`, `e2e_limpar` (só apaga `is_teste`), todas só para `service_role`. `agente_debounce` com espera extra máxima de 5 s.
 - **Docs:** `docs/agente/e2e-relatorio.md`, `e2e-liberacao-gradual.md`, `e2e-roteiro-manual.md`, `e2e-prompt-wf2-ciclo1.md`.
+
+## MVP final (03/11/2026)
+- `app_settings.orcamento_agente` (`valor_alerta` 10000, `unidades_max` 50000, `pacotes_max_linha` 100) comanda os limites de `montar_orcamento`; a chave `valor_max_agente` (trava de R$ 5.000) foi removida.
+- `parametros_comerciais.markup_minimo_bloco` (R$ 1,80): piso por bloco no preço sem mercado (`calcular_preco`).
+- Alerta `orcamento_valor_alto` (categoria própria em `private.alerta_categoria`, só WhatsApp, respeita o silêncio noturno).
+- `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
+- n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.

@@ -22,7 +22,7 @@ Decisão do dono (02/11/2026): chegar rápido a um agente comercial funcional, c
 
 **G2. Fluxo comercial.** `node tests/e2e/mvp.ts --dir=<retratos>` aprovado: todos os cenários essenciais passam (funil completo até o link, funil de retirada, pagamento Pix, falha de ferramenta, pedido gigante chama o dono, pedido de pessoa, reclamação, recebimento de arte) e pelo menos 90% das demais verificações.
 
-**G3. Preço e margem.** `violacao_lucro = false` em todas as conversas, nenhum orçamento abaixo do piso duro, testes SQL `preco_etapa3.sql` e `orcamento_etapa4.sql` passando, e a trava de valor alto ativa (`orcamento_agente.valor_max_agente`, padrão R$ 5.000; no máximo 20 pacotes por item).
+**G3. Preço e margem.** `violacao_lucro = false` em todas as conversas, nenhum orçamento abaixo do piso duro, testes SQL `preco_etapa3.sql` e `orcamento_etapa4.sql` passando, e os limites do orçamento ativos (decisão do dono de 03/11/2026: sem trava de R$ 5.000; bloqueio só acima de 50.000 unidades no total; até 100 pacotes por linha; alerta silencioso no WhatsApp do dono acima de R$ 10.000; ver `orcamento_agente`).
 
 **G4. Qualidade percebida (amostra, não nota perfeita).** Juiz independente sobre uma amostra de 20 conversas: média geral **7,5 ou mais**, nenhum critério abaixo de 6,5 e nenhuma falha crítica **real** apontada (falso positivo conferido na conversa não conta).
 
