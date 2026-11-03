@@ -62,3 +62,27 @@ for (const no of ['quero parar o pedido', 'não parar', 'oi', '', 'saiu?', 'não
 }
 
 console.log('OK: assinatura, parsing, ordem de status e descadastro validados')
+
+// Tipos novos: vídeo, figurinha, contato, reação, resposta a uma mensagem, encaminhada, não suportada
+{
+  const ev = extractEvents({ entry: [{ changes: [{ value: { messages: [
+    { from: '5531999990000', id: 'w.vid', timestamp: '1790000010', type: 'video', video: { id: 'V1', mime_type: 'video/mp4', caption: 'olha' } },
+    { from: '5531999990000', id: 'w.stk', timestamp: '1790000011', type: 'sticker', sticker: { id: 'S1', animated: false } },
+    { from: '5531999990000', id: 'w.ctt', timestamp: '1790000012', type: 'contacts', contacts: [{ name: { formatted_name: 'João' }, phones: [{ phone: '+55 31 90000-0000', wa_id: '553190000000' }] }] },
+    { from: '5531999990000', id: 'w.rea', timestamp: '1790000013', type: 'reaction', reaction: { message_id: 'wamid.ALVO', emoji: '👍' } },
+    { from: '5531999990000', id: 'w.rep', timestamp: '1790000014', type: 'text', text: { body: 'sim' }, context: { id: 'wamid.ORIG', forwarded: true } },
+    { from: '5531999990000', id: 'w.uns', timestamp: '1790000015', type: 'unsupported', errors: [{ code: 131051, title: 'Message type is not supported' }] },
+    { from: '5531999990000', id: 'w.aud', timestamp: '1790000016', type: 'audio', audio: { id: 'A1', voice: true, mime_type: 'audio/ogg; codecs=opus' } },
+    { from: '5531999990000', id: 'w.doc', timestamp: '1790000017', type: 'document', document: { id: 'D1', filename: 'proposta.pdf', mime_type: 'application/pdf' } },
+  ] } }] }] })
+  const por = Object.fromEntries(ev.messages.map((m) => [m.waMessageId, m]))
+  assert.equal(por['w.vid'].type, 'video'); assert.equal(por['w.vid'].mediaId, 'V1'); assert.ok(por['w.vid'].body.includes('olha'))
+  assert.equal(por['w.stk'].type, 'sticker')
+  assert.equal(por['w.ctt'].type, 'contacts'); assert.ok(por['w.ctt'].body.includes('João'))
+  assert.equal(por['w.rea'].type, 'reaction'); assert.equal(por['w.rea'].body, '👍'); assert.equal(por['w.rea'].meta?.alvo, 'wamid.ALVO')
+  assert.equal(por['w.rep'].replyToWaId, 'wamid.ORIG'); assert.equal(por['w.rep'].forwarded, true)
+  assert.equal(por['w.uns'].body, '[mensagem não suportada]'); assert.equal(por['w.uns'].rawType, 'unsupported'); assert.ok(por['w.uns'].meta)
+  assert.equal(por['w.aud'].meta?.voice, true)
+  assert.equal(por['w.doc'].meta?.filename, 'proposta.pdf')
+  console.log('OK: vídeo, figurinha, contato, reação, resposta, encaminhada, áudio de voz, documento e tipo não suportado')
+}

@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bot, FileText, Link2, Lock, Paperclip, Send, StickyNote, User } from 'lucide-react'
+import { ArrowLeft, Bot, FileText, Link2, Lock, Mic, Paperclip, Send, Square, StickyNote, User, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageStatusIcon } from '@/components/MessageStatusIcon'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,10 +15,12 @@ import { invokeFunction } from '@/lib/api'
 import { contactLabel, formatDay, formatPhone, formatTime } from '@/lib/format'
 import { formatBRL } from '@/lib/money'
 import { supabase } from '@/lib/supabase'
-import type { ConversationWithContact } from '@/lib/types'
+import { reacoesPorMensagem, resumo } from '@/lib/messages'
+import type { ConversationWithContact, Message } from '@/lib/types'
 import { windowInfo } from '@/lib/window'
 import { cn } from '@/lib/utils'
-import { LocationLink, MediaView } from './MediaView'
+import { MessageBubble } from './MessageBubble'
+import { MessageInfo } from './MessageInfo'
 import { TemplatePicker } from './TemplatePicker'
 
 const PAGE = 60
@@ -50,6 +51,12 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   const orcAtivo = (orcs ?? []).find((o) => ['rascunho', 'enviado', 'aceito'].includes(o.status))
   const enviarPdf = useReenviarOrcamento()
   const fileInput = useRef<HTMLInputElement>(null)
+  const [replyTo, setReplyTo] = useState<Message | null>(null)
+  const [arquivos, setArquivos] = useState<File[]>([])
+  const [arrastando, setArrastando] = useState(false)
+  const [info, setInfo] = useState<Message | null>(null)
+  const [gravando, setGravando] = useState<{ rec: MediaRecorder; inicio: number } | null>(null)
+  const [segundos, setSegundos] = useState(0)
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000)
@@ -91,21 +98,98 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   })
 
   const sendFile = useMutation({
-    mutationFn: (arg: { file: File; caption: string }) => {
+    mutationFn: (arg: { file: File; caption: string; replyTo?: string | null }) => {
       const form = new FormData()
       form.append('conversation_id', conversation.id)
       form.append('file', arg.file)
       if (arg.caption) form.append('caption', arg.caption)
+      if (arg.replyTo) form.append('reply_to', arg.replyTo)
       return invokeFunction('whatsapp-send', form)
-    },
-    onSuccess: () => {
-      setError(null)
-      setText('')
-      qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
-      qc.invalidateQueries({ queryKey: ['conversations'] })
     },
     onError: (e: Error) => setError(e.message),
   })
+
+  /** apagar no CRM, restaurar e reagir (ações sobre uma mensagem) */
+  const acaoMsg = useMutation({
+    mutationFn: (body: Record<string, unknown>) => invokeFunction('whatsapp-send', { conversation_id: conversation.id, ...body }),
+    onSuccess: () => {
+      setError(null)
+      qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  /** Envia os arquivos escolhidos (a legenda e a resposta vão no primeiro que aceita legenda) e depois o texto que sobrar. */
+  async function enviarComArquivos() {
+    const t = text.trim()
+    const naoAceitaLegenda = (f: File) => f.type.startsWith('audio/') || f.type === 'image/webp'
+    const idxLegenda = t ? arquivos.findIndex((f) => !naoAceitaLegenda(f)) : -1
+    let primeiro = true
+    try {
+      for (let i = 0; i < arquivos.length; i++) {
+        await sendFile.mutateAsync({ file: arquivos[i], caption: i === idxLegenda ? t : '', replyTo: primeiro ? replyTo?.wa_message_id : null })
+        primeiro = false
+      }
+      if (t && idxLegenda === -1) await send.mutateAsync({ text: t, ...(primeiro && replyTo?.wa_message_id ? { reply_to: replyTo.wa_message_id } : {}) })
+      setArquivos([])
+      setText('')
+      setReplyTo(null)
+      setError(null)
+      qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+    } catch {
+      /* o erro já aparece no aviso acima */
+    }
+  }
+
+  function adicionarArquivos(lista: FileList | File[] | null) {
+    const novos = Array.from(lista ?? []).filter((f) => f.size > 0)
+    if (!novos.length) return
+    setError(null)
+    setArquivos((a) => [...a, ...novos].slice(0, 10))
+  }
+
+  function formatoGravacao(): string | null {
+    const candidatos = ['audio/ogg;codecs=opus', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4']
+    return typeof MediaRecorder === 'undefined' ? null : (candidatos.find((c) => MediaRecorder.isTypeSupported(c)) ?? null)
+  }
+
+  async function alternarGravacao() {
+    if (gravando) {
+      gravando.rec.stop()
+      return
+    }
+    const formato = formatoGravacao()
+    if (!formato) {
+      setError('Este navegador grava áudio em um formato que o WhatsApp não aceita. Grave pelo celular ou anexe um arquivo de áudio (MP3, OGG, M4A).')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const rec = new MediaRecorder(stream, { mimeType: formato })
+      const partes: BlobPart[] = []
+      rec.ondataavailable = (e) => e.data.size && partes.push(e.data)
+      rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop())
+        setGravando(null)
+        const ext = formato.startsWith('audio/ogg') ? 'ogg' : 'm4a'
+        const tipo = formato.split(';')[0]
+        const arq = new File(partes, `audio-${Date.now()}.${ext}`, { type: tipo })
+        if (arq.size > 0) setArquivos((a) => [...a, arq])
+      }
+      rec.start()
+      setSegundos(0)
+      setGravando({ rec, inicio: Date.now() })
+    } catch {
+      setError('Não consegui usar o microfone. Libere a permissão do navegador e tente de novo.')
+    }
+  }
+
+  useEffect(() => {
+    if (!gravando) return
+    const id = setInterval(() => setSegundos(Math.floor((Date.now() - gravando.inicio) / 1000)), 500)
+    return () => clearInterval(id)
+  }, [gravando])
 
   function enviarOrcamentoPdf() {
     if (!orcAtivo) return setText(quoteText())
@@ -149,13 +233,14 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   function submit() {
     const t = text.trim()
+    if (mode === 'reply' && arquivos.length) return void enviarComArquivos()
     if (!t) return
     if (mode === 'note') {
       addNote.mutate(t, { onSuccess: () => setText('') })
       return
     }
     if (send.isPending) return
-    send.mutate({ text: t }, { onSuccess: () => setText('') })
+    send.mutate({ text: t, ...(replyTo?.wa_message_id ? { reply_to: replyTo.wa_message_id } : {}) }, { onSuccess: () => { setText(''); setReplyTo(null) } })
   }
 
   // Atalho "/": sugere respostas rápidas
@@ -178,17 +263,41 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   const timeline = useMemo(() => {
     const items = [
-      ...(messages ?? []).map((m) => ({ kind: 'msg' as const, at: m.created_at, m })),
+      ...(messages ?? []).filter((m) => m.type !== 'reaction').map((m) => ({ kind: 'msg' as const, at: m.created_at, m })),
       ...(notes ?? []).map((n) => ({ kind: 'note' as const, at: n.created_at, n })),
     ]
     return items.sort((a, b) => a.at.localeCompare(b.at))
   }, [messages, notes])
 
+  const reacoes = useMemo(() => reacoesPorMensagem(messages ?? []), [messages])
+  const irPara = (waId: string) => document.getElementById(`msg-${waId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   let lastDay = ''
   const canReply = !ai && win.open && !forceTemplate
 
   return (
-    <div className="flex h-full flex-col bg-secondary/40">
+    <div
+      className="relative flex h-full flex-col bg-secondary/40"
+      onDragOver={(e) => {
+        if (mode !== 'reply' || !canReply || !e.dataTransfer.types.includes('Files')) return
+        e.preventDefault()
+        setArrastando(true)
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget === e.target) setArrastando(false)
+      }}
+      onDrop={(e) => {
+        if (mode !== 'reply' || !canReply) return
+        e.preventDefault()
+        setArrastando(false)
+        adicionarArquivos(e.dataTransfer.files)
+      }}
+    >
+      {arrastando && (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center border-4 border-dashed border-brand-cyan bg-brand-cyan/10 text-lg font-black">
+          Solte para anexar (foto, vídeo, áudio ou documento)
+        </div>
+      )}
+      <MessageInfo m={info} onClose={() => setInfo(null)} />
       <header className="space-y-2 border-b bg-card px-4 py-3">
         <div className="flex items-center gap-3">
           <Link to="/inbox" className="flex h-11 w-11 items-center justify-center md:hidden" aria-label="Voltar para a lista">
@@ -287,23 +396,23 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
             )
           }
           const m = item.m
-          const out = m.direction === 'out'
           return (
             <div key={m.id}>
               {dayEl}
-              <div className={cn('flex', out ? 'justify-end' : 'justify-start')}>
-                <div className={cn('max-w-[80%] rounded-lg px-3 py-2 text-sm shadow-sm', out ? 'bg-brand-cyan/20' : 'bg-card', m.status === 'failed' && 'ring-1 ring-destructive')}>
-                  {m.type === 'template' && <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">Template: {m.template_name}</p>}
-                  <MediaView message={m} />
-                  <LocationLink body={m.body ?? ''} />
-                  <p className={cn('whitespace-pre-wrap break-words', m.type !== 'text' && m.type !== 'template' && 'italic text-muted-foreground')}>{m.body}</p>
-                  <div className="mt-1 flex items-center justify-end gap-1 text-[11px] text-muted-foreground tabular">
-                    {formatTime(m.created_at)}
-                    {out && <MessageStatusIcon status={m.status} error={m.error} />}
-                  </div>
-                  {m.status === 'failed' && m.error && <p className="mt-1 text-[11px] text-destructive">Falha no envio: {m.error}</p>}
-                </div>
-              </div>
+              <MessageBubble
+                m={m}
+                todas={messages ?? []}
+                reacoes={m.wa_message_id ? reacoes[m.wa_message_id] : undefined}
+                podeReagir={canReply && !!m.wa_message_id}
+                onResponder={(x) => setReplyTo(x)}
+                onReagir={(x, emoji) => acaoMsg.mutate({ action: 'react', message_id: x.id, emoji })}
+                onApagar={(x) => {
+                  if (window.confirm('Apagar esta mensagem no CRM? O cliente continua vendo a dele (a API oficial do WhatsApp não apaga no celular do cliente). Dá para restaurar depois.')) acaoMsg.mutate({ action: 'delete', message_id: x.id })
+                }}
+                onRestaurar={(x) => acaoMsg.mutate({ action: 'restore', message_id: x.id })}
+                onDados={setInfo}
+                onIrPara={irPara}
+              />
             </div>
           )
         })}
@@ -361,22 +470,45 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 ))}
               </ul>
             )}
+            {mode === 'reply' && replyTo && (
+              <div className="mb-2 flex items-start gap-2 rounded-md border-l-4 border-brand-blue bg-background px-3 py-2 text-xs">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-brand-blue">Respondendo {replyTo.direction === 'out' ? 'a você' : 'ao cliente'}</p>
+                  <p className="line-clamp-2 text-muted-foreground">{resumo(replyTo)}</p>
+                </div>
+                <button aria-label="Cancelar resposta" onClick={() => setReplyTo(null)} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-secondary"><X className="h-4 w-4" /></button>
+              </div>
+            )}
+            {mode === 'reply' && arquivos.length > 0 && (
+              <ul className="mb-2 flex flex-wrap gap-1.5" aria-label="Arquivos para enviar">
+                {arquivos.map((f, i) => (
+                  <li key={`${f.name}-${i}`} className="flex max-w-full items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs">
+                    {f.type.startsWith('image/') ? <img src={URL.createObjectURL(f)} alt="" className="h-8 w-8 rounded object-cover" /> : f.type.startsWith('audio/') ? <Mic className="h-4 w-4" aria-hidden /> : <FileText className="h-4 w-4" aria-hidden />}
+                    <span className="max-w-40 truncate">{f.name}</span>
+                    <button aria-label={`Remover ${f.name}`} onClick={() => setArquivos((a) => a.filter((_, j) => j !== i))} className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="flex items-end gap-2">
               {mode === 'reply' && (
                 <>
                   <input
                     ref={fileInput}
                     type="file"
+                    multiple
                     className="hidden"
-                    accept="application/pdf,image/jpeg,image/png,.doc,.docx,.xls,.xlsx"
+                    accept="image/jpeg,image/png,image/webp,video/mp4,video/3gpp,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
                     onChange={(e) => {
-                      const f = e.target.files?.[0]
+                      adicionarArquivos(e.target.files)
                       e.target.value = ''
-                      if (f) sendFile.mutate({ file: f, caption: text.trim() })
                     }}
                   />
-                  <Button type="button" variant="outline" size="icon" aria-label="Anexar arquivo" title="Anexar PDF, imagem, Word ou Excel (até 10 MB)" disabled={sendFile.isPending || !win.open} onClick={() => fileInput.current?.click()}>
+                  <Button type="button" variant="outline" size="icon" aria-label="Anexar arquivo" title="Anexar foto, vídeo, áudio ou documento (até 16 MB). Também dá para arrastar e soltar ou colar uma imagem." disabled={sendFile.isPending || !win.open} onClick={() => fileInput.current?.click()}>
                     <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant={gravando ? 'destructive' : 'outline'} size="icon" aria-label={gravando ? 'Parar gravação' : 'Gravar áudio'} title={gravando ? `Gravando ${segundos}s. Clique para parar.` : 'Gravar áudio'} disabled={sendFile.isPending || !win.open} onClick={() => void alternarGravacao()}>
+                    {gravando ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
                 </>
               )}
@@ -384,12 +516,19 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={onKeyDown}
+                onPaste={(e) => {
+                  const imgs = Array.from(e.clipboardData.files)
+                  if (imgs.length && mode === 'reply' && win.open) {
+                    e.preventDefault()
+                    adicionarArquivos(imgs)
+                  }
+                }}
                 rows={mode === 'reply' && text.includes('\n') ? 5 : 2}
                 placeholder={mode === 'note' ? 'Nota só para você (o cliente não recebe)' : 'Digite uma mensagem ou / para respostas rápidas'}
                 aria-label={mode === 'note' ? 'Nota interna' : 'Mensagem'}
                 className={cn('resize-none', mode === 'note' && 'border-brand-yellow bg-brand-yellow/10')}
               />
-              <Button onClick={submit} disabled={!text.trim() || send.isPending || addNote.isPending} size="icon" aria-label={mode === 'note' ? 'Salvar nota' : 'Enviar'}>
+              <Button onClick={submit} disabled={(!text.trim() && !(mode === 'reply' && arquivos.length)) || send.isPending || sendFile.isPending || addNote.isPending} size="icon" aria-label={mode === 'note' ? 'Salvar nota' : 'Enviar'}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>

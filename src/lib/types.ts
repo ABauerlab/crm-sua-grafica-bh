@@ -63,7 +63,7 @@ export interface Message {
   conversation_id: string
   wa_message_id: string | null
   direction: 'in' | 'out'
-  type: 'text' | 'image' | 'document' | 'audio' | 'template' | 'other'
+  type: 'text' | 'image' | 'document' | 'audio' | 'video' | 'sticker' | 'location' | 'contacts' | 'reaction' | 'template' | 'other'
   body: string | null
   template_name: string | null
   media_id: string | null
@@ -71,6 +71,16 @@ export interface Message {
   status: MessageStatus | null
   error: string | null
   created_at: string
+  /** wa_message_id da mensagem a que esta responde */
+  reply_to_wa_id?: string | null
+  raw_type?: string | null
+  /** arquivo (filename, mime_type, tamanho), local, contatos, reação (alvo)... */
+  meta?: Record<string, unknown> | null
+  forwarded?: boolean
+  sent_by?: string | null
+  /** apagada só no CRM (a API do WhatsApp não apaga no celular do cliente) */
+  deleted_at?: string | null
+  deleted_by?: string | null
 }
 
 export interface Template {

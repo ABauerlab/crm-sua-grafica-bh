@@ -20,6 +20,8 @@ Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1
 
 **Orçamento em PDF:** `orcamentos.itens_exibicao` e `orcamentos.alternativas` (exibição consolidada e quadro de alternativas, migration `20261106000001`).
 
+**Mensagens:** `messages.type` aceita text, image, document, audio, video, sticker, location, contacts, reaction, template e other; colunas `reply_to_wa_id`, `meta`, `forwarded`, `sent_by`, `deleted_at` (apagada só no CRM). `whatsapp-send` ganhou `action` (delete, restore, react), `reply_to` e anexos de vários tipos.
+
 **Edge Functions**: `whatsapp-webhook`, `whatsapp-send`, `whatsapp-sync-templates`, `whatsapp-media`, `admin-create-agent`, `meta-ads-sync`, `mp-webhook`, `mp-criar-link`, `mp-conferir`, `orcamento-pdf`, `conhecimento`, `produto-fotos` (Etapa 4B). O webhook da Meta é único e continua sendo o `whatsapp-webhook`.
 
 **n8n** (n8n.bauerlab.com.br): 13 workflows de outros projetos do dono (Iracema, Teggly, Fluxo Dos Mercados, SUALOJALAB). Nenhum `GBH |`, nenhuma pasta, nenhuma tag. Credenciais existentes: Google Drive, Postgres, Gemini, Groq, 2 Header Auth. Não falta nada para a Etapa 1; faltam credenciais do Supabase (service role) e do WhatsApp para a Etapa 5. Nenhum workflow de outro projeto foi lido ou alterado.
