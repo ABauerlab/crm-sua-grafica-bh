@@ -2,6 +2,17 @@ import { corsHeaders, json, requireEnv, requireStaff, serviceClient } from '../_
 
 const WINDOW_MS = 24 * 60 * 60 * 1000
 const GRAPH = 'https://graph.facebook.com/v21.0'
+const MAX_ANEXO = 10 * 1024 * 1024
+/** Tipos aceitos como anexo manual na conversa (a Meta aceita estes como documento ou imagem). */
+const ANEXOS: Record<string, 'image' | 'document'> = {
+  'application/pdf': 'document',
+  'application/msword': 'document',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'document',
+  'application/vnd.ms-excel': 'document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'document',
+  'image/jpeg': 'image',
+  'image/png': 'image',
+}
 
 interface SendBody {
   conversation_id?: string
@@ -32,8 +43,17 @@ Deno.serve(async (req) => {
   if (!env) return json({ error: 'Integração com o WhatsApp não configurada no servidor.' }, 500)
 
   let input: SendBody
+  let file: File | null = null
   try {
-    input = await req.json()
+    if ((req.headers.get('content-type') ?? '').includes('multipart/form-data')) {
+      const form = await req.formData()
+      const f = form.get('file')
+      file = f instanceof File ? f : null
+      input = { conversation_id: String(form.get('conversation_id') ?? ''), text: String(form.get('caption') ?? '') }
+      if (!file) return json({ error: 'Anexe um arquivo.' }, 400)
+    } else {
+      input = await req.json()
+    }
   } catch {
     return json({ error: 'Corpo da requisição inválido.' }, 400)
   }
@@ -41,8 +61,10 @@ Deno.serve(async (req) => {
   const text = input.text?.trim()
   const templateName = input.template_name?.trim()
   if (!input.conversation_id) return json({ error: 'conversation_id é obrigatório.' }, 400)
-  if (!text && !templateName) return json({ error: 'Informe o texto ou o template.' }, 400)
+  if (!text && !templateName && !file) return json({ error: 'Informe o texto ou o template.' }, 400)
   if (text && templateName) return json({ error: 'Envie texto ou template, não os dois.' }, 400)
+  if (file && file.size > MAX_ANEXO) return json({ error: 'O arquivo passa de 10 MB.' }, 400)
+  if (file && !ANEXOS[file.type]) return json({ error: 'Tipo de arquivo não aceito. Envie PDF, Word, Excel, JPG ou PNG.' }, 400)
   if (text && text.length > 4096) return json({ error: 'Texto acima de 4096 caracteres.' }, 400)
 
   const { data: conv } = await db
@@ -60,7 +82,39 @@ Deno.serve(async (req) => {
   let storedBody: string
   let language = input.language
 
-  if (text) {
+  let mediaId: string | null = null
+  let tipoMsg: 'text' | 'template' | 'document' | 'image' = text ? 'text' : 'template'
+  if (file) {
+    // anexo: só dentro da janela (mídia é mensagem livre). Sobe para a Meta e envia pelo id, sem guardar o arquivo no CRM.
+    const until = Math.max(
+      conv.last_inbound_at ? new Date(conv.last_inbound_at).getTime() + WINDOW_MS : 0,
+      conv.ad_window_until ? new Date(conv.ad_window_until).getTime() : 0,
+    )
+    if (until <= Date.now()) return json({ error: 'A janela de atendimento está fechada. Envie um template aprovado.', code: 'window_closed' }, 409)
+    const up = new FormData()
+    up.append('messaging_product', 'whatsapp')
+    up.append('type', file.type)
+    up.append('file', file, file.name)
+    let upRes: Response
+    try {
+      upRes = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/media`, { method: 'POST', headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}` }, body: up })
+    } catch {
+      return json({ error: 'Não foi possível falar com a API do WhatsApp. Tente novamente.' }, 502)
+    }
+    const upJson = await upRes.json().catch(() => ({}))
+    if (!upRes.ok || !upJson?.id) {
+      console.error('Erro da Meta ao subir o anexo:', upJson?.error?.code)
+      return json({ error: 'A Meta recusou o arquivo. Confira o tipo e o tamanho.' }, 502)
+    }
+    mediaId = String(upJson.id)
+    tipoMsg = ANEXOS[file.type] === 'image' ? 'image' : 'document'
+    const nome = file.name.replace(/[^\w.\- ()]/g, '_').slice(0, 100)
+    metaBody = {
+      messaging_product: 'whatsapp', to: waId, type: tipoMsg,
+      [tipoMsg]: tipoMsg === 'image' ? { id: mediaId, ...(text ? { caption: text.slice(0, 1000) } : {}) } : { id: mediaId, filename: nome, ...(text ? { caption: text.slice(0, 1000) } : {}) },
+    }
+    storedBody = text ? `${nome}\n${text}` : nome
+  } else if (text) {
     // 24 h desde a última mensagem do cliente, ou 72 h quando a conversa veio de anúncio (clique para o WhatsApp)
     const until = Math.max(
       conv.last_inbound_at ? new Date(conv.last_inbound_at).getTime() + WINDOW_MS : 0,
@@ -137,9 +191,10 @@ Deno.serve(async (req) => {
     conversation_id: conv.id,
     wa_message_id: waMessageId ?? null,
     direction: 'out',
-    type: text ? 'text' : 'template',
+    type: tipoMsg,
+    media_id: mediaId,
     body: storedBody,
-    template_name: text ? null : templateName,
+    template_name: tipoMsg === 'template' ? templateName : null,
     status: 'sent',
     created_at: now,
   })

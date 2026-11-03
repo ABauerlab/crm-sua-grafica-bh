@@ -10,6 +10,7 @@ const COLUNAS =
 export function useOrcamentosDoPedido(orderId: string, contactId: string) {
   return useQuery({
     queryKey: ['orcamentos', orderId],
+    enabled: !!orderId,
     queryFn: async (): Promise<Orcamento[]> => {
       const { data, error } = await supabase
         .from('orcamentos')
@@ -39,6 +40,15 @@ export function useReenviarOrcamento() {
       qc.invalidateQueries({ queryKey: ['orcamentos'] })
       qc.invalidateQueries({ queryKey: ['orders'] })
     },
+  })
+}
+
+/** Só gera (ou reaproveita) o PDF e guarda no pedido, sem enviar nada ao cliente. */
+export function useGerarPdfOrcamento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (orcamentoId: string) => invokeFunction<Reenvio>('orcamento-pdf', { orcamento_id: orcamentoId, acao: 'gerar' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['orcamentos'] }),
   })
 }
 
