@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { abrirPdfOrcamento, useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
+import { abrirPdfOrcamento, useGerarPdfOrcamento, useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
 import { formatBRL, formatPct } from '@/lib/money'
 import { ARTE_LABEL, CONFIANCA_PRECO, ORCAMENTO_STATUS, orcamentoNumero, REGRA_PRECO } from '@/lib/orcamentos'
 import { metodoLabel, type OrderCard } from '@/lib/orders'
@@ -51,6 +51,7 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
   const toast = useToast()
   const { data, isLoading } = useOrcamentosDoPedido(order.id, order.contact.id)
   const reenviar = useReenviarOrcamento()
+  const gerar = useGerarPdfOrcamento()
 
   const enviar = (id: string) =>
     reenviar.mutate(id, {
@@ -96,11 +97,22 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
             <LucroPorMetodo id={o.id} />
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" disabled={!o.pdf_path} onClick={() => abrirPdfOrcamento(o.pdf_path!).catch((e: Error) => toast('error', e.message))}>
-                <FileText className="h-4 w-4" aria-hidden /> {o.pdf_path ? 'Abrir PDF' : 'PDF ainda não gerado'}
-              </Button>
+              {o.pdf_path ? (
+                <Button size="sm" variant="outline" onClick={() => abrirPdfOrcamento(o.pdf_path!).catch((e: Error) => toast('error', e.message))}>
+                  <FileText className="h-4 w-4" aria-hidden /> Abrir PDF
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={encerrado || gerar.isPending}
+                  onClick={() => gerar.mutate(o.id, { onSuccess: (r) => toast('ok', `PDF do ${r.numero} gerado. Nada foi enviado ao cliente.`), onError: (e) => toast('error', e.message) })}
+                >
+                  <FileText className="h-4 w-4" aria-hidden /> {gerar.isPending ? 'Gerando…' : 'Gerar PDF (sem enviar)'}
+                </Button>
+              )}
               <Button size="sm" disabled={encerrado || !o.conversation_id || reenviar.isPending} onClick={() => enviar(o.id)} title={!o.conversation_id ? 'Orçamento sem conversa de WhatsApp' : undefined}>
-                <Send className="h-4 w-4" aria-hidden /> {reenviar.isPending ? 'Enviando…' : o.pdf_enviado_em ? 'Reenviar' : 'Enviar'}
+                <Send className="h-4 w-4" aria-hidden /> {reenviar.isPending ? 'Enviando…' : o.pdf_enviado_em ? 'Reenviar PDF' : 'Enviar PDF ao cliente'}
               </Button>
               {o.link_pagamento && (
                 <a className="inline-flex items-center gap-1 text-xs font-semibold text-link underline" href={o.link_pagamento} target="_blank" rel="noopener noreferrer">

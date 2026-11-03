@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bot, FileText, Link2, Lock, Send, StickyNote, User } from 'lucide-react'
+import { ArrowLeft, Bot, FileText, Link2, Lock, Paperclip, Send, StickyNote, User } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { MessageStatusIcon } from '@/components/MessageStatusIcon'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { useOrders } from '@/hooks/orders'
+import { useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
 import { useNotes, useQuickReplies } from '@/hooks/crm'
 import { useMessages } from '@/hooks/queries'
 import { useSetting } from '@/hooks/settings'
@@ -45,6 +46,10 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   const ai = conversation.ai_handled
   const linked = useMemo(() => (orders ?? []).filter((o) => o.contact_id === conversation.contact_id), [orders, conversation.contact_id])
   const openOrder = linked.find((o) => !['entregue', 'recompra'].includes(o.stage)) ?? linked[0]
+  const { data: orcs } = useOrcamentosDoPedido(openOrder?.id ?? '', conversation.contact_id)
+  const orcAtivo = (orcs ?? []).find((o) => ['rascunho', 'enviado', 'aceito'].includes(o.status))
+  const enviarPdf = useReenviarOrcamento()
+  const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000)
@@ -84,6 +89,33 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
     },
     onError: (e: Error) => setError(e.message),
   })
+
+  const sendFile = useMutation({
+    mutationFn: (arg: { file: File; caption: string }) => {
+      const form = new FormData()
+      form.append('conversation_id', conversation.id)
+      form.append('file', arg.file)
+      if (arg.caption) form.append('caption', arg.caption)
+      return invokeFunction('whatsapp-send', form)
+    },
+    onSuccess: () => {
+      setError(null)
+      setText('')
+      qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  function enviarOrcamentoPdf() {
+    if (!orcAtivo) return setText(quoteText())
+    const jaEnviado = !!orcAtivo.pdf_enviado_em
+    if (!window.confirm(jaEnviado ? 'Este orçamento já foi enviado. Enviar o PDF de novo ao cliente?' : 'Enviar o PDF do orçamento ao cliente agora?')) return
+    enviarPdf.mutate(orcAtivo.id, {
+      onSuccess: (r) => toast('ok', `Orçamento ${r.numero} enviado no WhatsApp.`),
+      onError: (e) => setError(e.message),
+    })
+  }
 
   const addNote = useMutation({
     mutationFn: async (body: string) => {
@@ -295,8 +327,13 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
           </button>
           {mode === 'reply' && canReply && (
             <>
-              <button disabled={!openOrder || openOrder.items.length === 0} onClick={() => setText(quoteText())} className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40">
-                <FileText className="h-3.5 w-3.5" aria-hidden /> Enviar orçamento
+              <button
+                disabled={(!orcAtivo && (!openOrder || openOrder.items.length === 0)) || enviarPdf.isPending}
+                onClick={enviarOrcamentoPdf}
+                title={orcAtivo ? 'Envia o PDF do orçamento no WhatsApp' : 'Sem orçamento em PDF: monta o resumo em texto'}
+                className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40"
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden /> {enviarPdf.isPending ? 'Enviando…' : orcAtivo ? 'Enviar PDF do orçamento' : 'Enviar orçamento'}
               </button>
               <button
                 disabled={!openOrder?.payment_link}
@@ -325,6 +362,24 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
               </ul>
             )}
             <div className="flex items-end gap-2">
+              {mode === 'reply' && (
+                <>
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    className="hidden"
+                    accept="application/pdf,image/jpeg,image/png,.doc,.docx,.xls,.xlsx"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      e.target.value = ''
+                      if (f) sendFile.mutate({ file: f, caption: text.trim() })
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="icon" aria-label="Anexar arquivo" title="Anexar PDF, imagem, Word ou Excel (até 10 MB)" disabled={sendFile.isPending || !win.open} onClick={() => fileInput.current?.click()}>
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
               <Textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
