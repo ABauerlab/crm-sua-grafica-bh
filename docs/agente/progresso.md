@@ -1,5 +1,36 @@
 # Progresso do agente de IA
 
+**Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
+
+## MVP final (03/11/2026): liberação formal pelo dono
+
+Decisão do dono (proprietário), registrada por escrito nesta sessão: liberar o atendimento ao público, ciente de que o relatório do PR #43 (`docs/agente/e2e-relatorio.md`) trazia o ciclo 1 com média 7,7 e condução e recuperação abaixo de 8, e de que o registro das 3 repetições do funil não foi localizado no repositório. Nenhuma bateria de teste nova foi rodada por ordem do dono.
+
+**Migration `20261108000001_mvp_final_orcamento_limites_piso.sql` (aplicada em produção; versão renomeada para vir DEPOIS da `20261107000004`, que reinstalaria a trava de R$ 5.000 em um banco novo):**
+- `montar_orcamento`: até 100 pacotes por linha (cabe 500 + 250 + 50); teto de 50.000 unidades no total (`quantidade_irreal`); SKU fora do catálogo continua bloqueado com `sku_nao_encontrado` (agente não informa valor e chama o dono); trava de R$ 5.000 removida; acima de R$ 10.000 o orçamento sai normal e o dono recebe alerta só no WhatsApp (`orcamento_valor_alto`, sem push); sub-lotes do mesmo produto viram uma linha no PDF (`itens_exibicao`, ex.: 800 un., unitário médio, total). Limites em `app_settings.orcamento_agente` (`valor_alerta`, `unidades_max`, `pacotes_max_linha`).
+- `calcular_preco`: sem dado de mercado nem histórico, o preço nunca fica abaixo de custo + R$ 1,80 por bloco (`parametros_comerciais.markup_minimo_bloco`); o piso de lucro (R$ 60 por orçamento) e o piso duro continuam valendo.
+- Verificado em produção dentro de transação desfeita: 500 + 250 + 50 de sacolas = 1 linha de 800 un., total R$ 16.799,70 e 1 alerta de valor alto; SKU inexistente = `sku_nao_encontrado`; 100 x SAC1OX1000 = `quantidade_irreal`.
+
+**n8n:** `GBH | FERRAMENTA | pesquisar_preco_mercado` publicado só com SearXNG e Playwright (Tavily, Serper, Firecrawl e os seletores de fonte removidos). Fontes prioritárias na lista `PRIORITARIOS` do nó "Escolher páginas" e `SITES` do nó "Montar buscas". **Falta:** o domínio da Gráfica Silcor (não consegui localizá-lo) e a conferência de robots/termos antes de acrescentá-lo também em `public.fontes_pesquisa`. O modelo do WF2 NÃO foi mexido: o dono seleciona e ativa direto no n8n.
+
+**Liberação:** `agente_config.piloto_ativo = false` aplicado depois do merge; a Laura passa a responder qualquer número assim que o modelo do WF2 estiver ativo no n8n. Reverter: `update agente_config set piloto_ativo = true where id = 1;` (o piloto volta a valer só para `piloto_wa_ids`).
+
+## Etapa 8C: clone de teste do WF2, ciclos de correção e pendências do CRM (em andamento, 02/11/2026)
+Decisão do dono: NÃO publicar a versão `9621c5c2` do WF2 em produção; testar num clone isolado. Público segue fechado, nada de produção foi publicado, piloto intacto.
+- **Clone isolado (publicado só ele e a entrada de teste):** `GBH | TESTE | Agente (clone do WF2)` (`UApV4FFAqpNsATyz`) e `GBH | TESTE | Entrada de teste (clone)` (`zTm85cM0ueX1hUvo`, webhook com caminho secreto). Isolamento provado: o clone só roda com `teste=true` (o nó `Montar prompt` lança erro se não for), a entrada de teste não tem gatilho da Meta nem nó de envio ao WhatsApp (só RPCs do banco e o clone), o despachante simula PDF, foto, link de pagamento e arte quando `teste=true`, só existem contatos `is_teste`, follow-ups de contato de teste são `simular`, e (novo, migration `20261107000001`) `alerta_criar` grava alerta de contato de teste com push e WhatsApp `desligado` (antes o alerta de uma conversa simulada podia chegar ao dono).
+- **Executor dentro do banco (migration `20261107000002`):** `e2e_enfileirar`, `e2e_avancar` (pg_cron a cada 10 s + pg_net), `e2e_exportar` (leitura por token, para `tests/e2e/exportar.ts`). Uma rodada de 70 conversas leva uns 20 minutos e custa ~R$ 3. Sem subagentes executores; o juiz continua sendo agente independente.
+- **Ciclo 2 (rascunho de prompt do ciclo 1, formulação 1):** zero críticas automáticas, 1 crítica do juiz (prazo "sexta-feira" sem data), média 7,41 (tom 6,84, condução 6,10, exatidão 6,91, honestidade 8,0, sigilo 9,4, personas 8,33, recuperação 6,30). Pior que o ciclo 1 (7,71): o juiz agora vê o estado de preparo e a regra 5 ("peça o número da opção") atrapalhou "pode fechar" e "APROVADO".
+- **Ciclo 3 (em execução):** regras reescritas no clone (aprovação, uma pergunta, datas, orçamentos independentes, exceções), `agente_config.historico_mensagens` 6 para 10, contexto com lista de orçamentos abertos (migration `20261107000003`).
+- **Achados fora do prompt:** (1) `pesquisar_preco_mercado` falhava no primeiro nó por falta de credencial Supabase (a pesquisa nunca chegou a rodar; corrigido só no rascunho, falta publicar); (2) SearXNG funciona mas está em endereço público sem senha; (3) Silcor tem páginas com `data-variants` (preço por quantidade) e robots liberado: ver `pesquisa-concorrentes.md`; (4) o simulador não grava as mensagens de "opções com foto" no histórico, então cenários de escolha por posição subestimam a nota.
+
+**Etapa 8B (teste ponta a ponta, 02/11/2026): medição feita, liberação NÃO aprovada.** Relatório em `docs/agente/e2e-relatorio.md`, plano de liberação em `e2e-liberacao-gradual.md`, roteiro manual em `e2e-roteiro-manual.md`. Branch `claude/ecstatic-lamport-5ko2nc`.
+
+### Em andamento (passagem de bastão da 8B)
+- **Feito:** `tests/e2e/` (70 cenários x 3 formulações, personas, verificações automáticas, juiz independente, executor, `npm run e2e`, `npm run test:e2e` no `npm test`); migrations aditivas `20261106000001` a `04` (flag `contacts.is_teste`, `e2e_mensagens`, funções `e2e_*`, preparo multi-turno em `agente_teste_preparar`, correção do `agente_debounce` que estourava os 8 s do PostgREST e deixava o cliente sem resposta); ciclo 1 (70 conversas, formulação 1) julgado por 5 agentes independentes: média 7,7, condução 6,5, recuperação 6,8, 3 críticas apontadas (1 real, 2 artefato de preparo, já corrigido no juiz); `sql/tecnicos.sql` passa; botão Pausar IA testado (`ignorada:ia_pausada`); dados de teste limpos.
+- **Falta:** publicar a versão rascunho `9621c5c2-a21a-41f4-900a-e76ab72c819a` do WF2 (correções de prompt em `e2e-prompt-wf2-ciclo1.md`). A publicação foi negada pelo classificador de permissões e **depende de autorização do dono**. Depois: ciclo 2 (mesmos 70 cenários), formulações 2 e 3, e duas rodadas completas seguidas aprovadas (zero críticas, média 9 ou mais, nenhum critério abaixo de 8). Também: atualizar critérios antigos de `testes_conversa` (`e5-04`, `e5-07`, `e5-21`, `e8-fluxo-1/2`), rodar concorrência de 20 conversas e o reinício do n8n.
+- **Arquivos tocados:** `tests/e2e/*`, `supabase/migrations/20261106*`, `docs/agente/e2e-*.md`, `.gitignore`, `package.json`. No n8n: só o rascunho do WF2 (nó `Agente de atendimento`, `options.systemMessage`, itens 6 a 15), sem publicar.
+- **Nada foi ativado.** Estado de produção confirmado: workflows publicados, `ia_ligada = true`, mas `piloto_ativo = true`, percentual 0, um número no piloto.
+
 **Próximo passo: Etapa 8 (auditoria e ativação).** Roteiro completo e autorização do dono em `docs/agente/etapa8-roteiro-auditoria.md`. Tudo deve ser resolvido via MCP, sem ação do dono.
 
 ## Layout consolidado do orçamento em PDF (branch `claude/brave-cori-2xq21w`)
