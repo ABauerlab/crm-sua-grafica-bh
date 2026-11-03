@@ -1,6 +1,6 @@
 // Extração dos eventos do payload do webhook do WhatsApp Cloud API (sem dependências de Deno).
 
-export type InboundType = 'text' | 'image' | 'document' | 'audio' | 'other'
+export type InboundType = 'text' | 'image' | 'document' | 'audio' | 'video' | 'sticker' | 'location' | 'contacts' | 'reaction' | 'other'
 
 export interface InboundMessage {
   waId: string
@@ -12,6 +12,13 @@ export interface InboundMessage {
   timestamp: Date
   /** Origem do anúncio (click to WhatsApp), presente só na primeira mensagem vinda de anúncio. */
   referral: Referral | null
+  /** Mensagem a que esta responde (context.id da Meta) */
+  replyToWaId: string | null
+  forwarded: boolean
+  /** Tipo original da Meta (ex.: "unsupported", "reaction") */
+  rawType: string
+  /** Detalhes: nome do arquivo, formato, local, contatos, reação... */
+  meta: Record<string, unknown> | null
 }
 
 export interface Referral {
@@ -37,9 +44,12 @@ const MEDIA_LABELS: Record<string, [InboundType, string]> = {
   image: ['image', '[imagem recebida]'],
   document: ['document', '[documento recebido]'],
   audio: ['audio', '[áudio recebido]'],
-  video: ['other', '[vídeo recebido]'],
-  sticker: ['other', '[figurinha recebida]'],
+  video: ['video', '[vídeo recebido]'],
+  sticker: ['sticker', '[figurinha recebida]'],
 }
+
+/** Texto padrão quando a Meta não entrega o conteúdo (tipo que a API não repassa). */
+export const TEXTO_NAO_SUPORTADO = '[mensagem não suportada]'
 
 function extractReferral(r: Json): Referral | null {
   if (!r || typeof r !== 'object') return null
@@ -75,7 +85,7 @@ export function extractEvents(payload: Json): { messages: InboundMessage[]; stat
         const waId = String(m.from).replace(/\D/g, '')
         if (!waId) continue
         const ts = new Date(Number(m.timestamp) * 1000)
-        const base = {
+        const base0 = {
           waId,
           name: names.get(String(m.from)) ?? null,
           waMessageId: String(m.id),
@@ -83,33 +93,69 @@ export function extractEvents(payload: Json): { messages: InboundMessage[]; stat
           referral: extractReferral(m.referral),
         }
 
+        const ctx = m.context && typeof m.context === 'object' ? m.context : null
+        const base = {
+          ...base0,
+          replyToWaId: typeof ctx?.id === 'string' && ctx.id ? ctx.id : null,
+          forwarded: !!(ctx?.forwarded || ctx?.frequently_forwarded),
+          rawType: String(m.type ?? 'desconhecido'),
+        }
+        const add = (x: Omit<InboundMessage, keyof typeof base | 'referral' | 'meta'> & { meta?: Record<string, unknown> | null }) =>
+          messages.push({ ...base, meta: null, ...x })
+
         const media = MEDIA_LABELS[m.type]
         if (m.type === 'text') {
-          messages.push({ ...base, type: 'text', body: String(m.text?.body ?? ''), mediaId: null })
+          add({ type: 'text', body: String(m.text?.body ?? ''), mediaId: null })
         } else if (media) {
-          const caption = m[m.type]?.caption
-          messages.push({
-            ...base,
+          const item = m[m.type] ?? {}
+          const caption = item.caption
+          add({
             type: media[0],
             body: caption ? `${media[1]} ${caption}` : media[1],
-            mediaId: m[m.type]?.id ?? null,
+            mediaId: item.id ?? null,
+            meta: {
+              ...(item.mime_type ? { mime_type: item.mime_type } : {}),
+              ...(item.filename ? { filename: item.filename } : {}),
+              ...(item.voice ? { voice: true } : {}),
+              ...(item.animated ? { animated: true } : {}),
+            },
           })
         } else if (m.type === 'location' && m.location) {
           const { latitude, longitude, name, address } = m.location
           const label = [name, address].filter(Boolean).join(', ')
-          messages.push({
-            ...base,
-            type: 'other',
+          add({
+            type: 'location',
             body: `[localização] ${label ? `${label} ` : ''}https://www.google.com/maps?q=${latitude},${longitude}`,
             mediaId: null,
+            meta: { latitude, longitude, name: name ?? null, address: address ?? null },
           })
+        } else if (m.type === 'contacts' && Array.isArray(m.contacts)) {
+          const lista = m.contacts.slice(0, 10).map((c: Json) => ({
+            nome: String(c?.name?.formatted_name ?? c?.name?.first_name ?? 'Contato'),
+            telefones: (c?.phones ?? []).map((p: Json) => String(p?.wa_id ?? p?.phone ?? '')).filter(Boolean),
+          }))
+          add({
+            type: 'contacts',
+            body: `[contato] ${lista.map((c: { nome: string; telefones: string[] }) => [c.nome, c.telefones[0]].filter(Boolean).join(' ')).join(', ')}`,
+            mediaId: null,
+            meta: { contatos: lista },
+          })
+        } else if (m.type === 'reaction' && m.reaction) {
+          // reação a uma mensagem: emoji vazio = o cliente retirou a reação
+          add({ type: 'reaction', body: String(m.reaction.emoji ?? ''), mediaId: null, meta: { alvo: String(m.reaction.message_id ?? '') } })
         } else if (m.type === 'button' && m.button?.text) {
-          messages.push({ ...base, type: 'text', body: String(m.button.text), mediaId: null })
+          add({ type: 'text', body: String(m.button.text), mediaId: null, meta: m.button.payload ? { payload: String(m.button.payload) } : null })
         } else if (m.type === 'interactive') {
-          const title = m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title
-          messages.push({ ...base, type: 'text', body: title ? String(title) : '[mensagem não suportada]', mediaId: null })
+          const r = m.interactive?.button_reply ?? m.interactive?.list_reply
+          if (r?.title) add({ type: 'text', body: String(r.title), mediaId: null, meta: { resposta_id: r.id ?? null } })
+          else add({ type: 'other', body: m.interactive?.nfm_reply ? '[resposta de formulário]' : TEXTO_NAO_SUPORTADO, mediaId: null, meta: { raw: m.interactive ?? null } })
+        } else if (m.type === 'order') {
+          add({ type: 'other', body: '[pedido do catálogo do WhatsApp]', mediaId: null, meta: { raw: m.order ?? null } })
+        } else if (m.type === 'system') {
+          add({ type: 'other', body: `[aviso do sistema] ${String(m.system?.body ?? '')}`.trim(), mediaId: null, meta: { raw: m.system ?? null } })
         } else {
-          messages.push({ ...base, type: 'other', body: '[mensagem não suportada]', mediaId: null })
+          // "unsupported" (enquete, mídia de visualização única...) ou tipo novo da Meta: guarda o que veio para diagnóstico
+          add({ type: 'other', body: TEXTO_NAO_SUPORTADO, mediaId: null, meta: { erros: m.errors ?? null, raw: { type: m.type ?? null } } })
         }
       }
 

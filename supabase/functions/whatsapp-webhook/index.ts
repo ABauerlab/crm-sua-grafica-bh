@@ -68,6 +68,15 @@ Deno.serve(async (req) => {
       })
       if (error) throw error
 
+      // detalhes da mensagem (resposta a outra, encaminhada, tipo original, arquivo, local...). Falha aqui não derruba o webhook.
+      if (gravada) {
+        const { error: extraErr } = await db
+          .from('messages')
+          .update({ reply_to_wa_id: m.replyToWaId, forwarded: m.forwarded, raw_type: m.rawType, meta: m.meta })
+          .eq('id', gravada)
+        if (extraErr) console.error('Falha ao gravar os detalhes da mensagem:', extraErr.message)
+      }
+
       // "PARAR": registra o descadastro das promoções (mensagens de pedido seguem normalmente)
       if (m.type === 'text' && isOptOutMessage(m.body)) {
         // só na mudança de estado: reenvio do webhook ou PARAR repetido não gera nova confirmação
@@ -83,7 +92,7 @@ Deno.serve(async (req) => {
 
       // Mensagem nova (a duplicada devolve null) e que não é o PARAR: avisa o WF1 do n8n, depois do descadastro (o agente confere o optout).
       // O agente decide se responde; falha aqui nunca derruba o webhook.
-      if (gravada && !(m.type === 'text' && isOptOutMessage(m.body))) {
+      if (gravada && m.type !== 'reaction' && !(m.type === 'text' && isOptOutMessage(m.body))) {
         await acionarAgente(String(gravada), { url: Deno.env.get('N8N_WF1_URL'), token: Deno.env.get('N8N_WF1_TOKEN') })
       }
     }

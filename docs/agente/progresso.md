@@ -37,6 +37,10 @@ Decisão do dono: NÃO publicar a versão `9621c5c2` do WF2 em produção; testa
 
 Migration `20261106000001_orcamento_exibicao_consolidada.sql` (aditiva): `orcamentos.itens_exibicao` e `orcamentos.alternativas`, usados por `orcamento_documento`; modelo `_shared/orcamento-html.ts` ganhou o quadro de alternativas e a nota de arredondamento; testes em `scripts/test-orcamento.ts`. **Falta (depende do dono):** aplicar a migration, publicar `orcamento-pdf` (bundle em `docs/agente/funcoes/`) e preencher os dois campos no orçamento SG-0234. Detalhes em `docs/orcamento-pdf.md`.
 
+## Conversa completa como no WhatsApp (branch `claude/brave-cori-2xq21w`)
+
+Migration `20261106000003_mensagens_whatsapp_completo.sql` (aditiva): `messages` ganhou `reply_to_wa_id`, `raw_type`, `meta`, `forwarded`, `sent_by`, `deleted_at`, `deleted_by` e os tipos `video`, `sticker`, `location`, `contacts`, `reaction`. O webhook passa a guardar todos os tipos (o que a Meta não repassa, como mídia de visualização única e enquete, aparece com aviso claro em vez de "[mensagem não suportada]" solto). `whatsapp-send` aceita imagem, vídeo, áudio, figurinha e documento (até 16 MB), resposta a uma mensagem, reação e apagar/restaurar no CRM. Tela: citação da mensagem respondida, reações, menu da mensagem (responder, reagir, copiar, dados, apagar no CRM), arrastar e soltar, colar imagem e gravar áudio. **Limites da API oficial:** não apaga nem edita mensagem já entregue ao cliente (apagar só esconde no CRM) e a gravação de áudio depende de o navegador gravar OGG ou M4A.
+
 ## Etapa 7C: banco de conhecimento v2, personas e fila da arte (branch `feat/agente-etapa7c-conhecimento`)
 
 **Concluída (aguarda a Etapa 8) (02/11/2026).** Detalhes: `docs/agente/conhecimento-diferencas.md`, `conhecimento-testes.md`, `docs/agente-ia.md`.
