@@ -18,6 +18,8 @@ Fotografia do CRM como ele estava em 28/10/2026, antes das migrations da Etapa 1
 | Prazo | `holidays` (30 feriados 2026/2027), `is_business_day`, `add_business_days` |
 | Configuração | `app_settings` (`pricing`, `kanban`, `owner`, `agent`, `company`, `labels`, `campaign_goals`, `repurchase`, `deadline`), `agent_logs` |
 
+**Orçamento em PDF:** `orcamentos.itens_exibicao` e `orcamentos.alternativas` (exibição consolidada e quadro de alternativas, migration `20261106000001`).
+
 **Edge Functions**: `whatsapp-webhook`, `whatsapp-send`, `whatsapp-sync-templates`, `whatsapp-media`, `admin-create-agent`, `meta-ads-sync`, `mp-webhook`, `mp-criar-link`, `mp-conferir`, `orcamento-pdf`, `conhecimento`, `produto-fotos` (Etapa 4B). O webhook da Meta é único e continua sendo o `whatsapp-webhook`.
 
 **n8n** (n8n.bauerlab.com.br): 13 workflows de outros projetos do dono (Iracema, Teggly, Fluxo Dos Mercados, SUALOJALAB). Nenhum `GBH |`, nenhuma pasta, nenhuma tag. Credenciais existentes: Google Drive, Postgres, Gemini, Groq, 2 Header Auth. Não falta nada para a Etapa 1; faltam credenciais do Supabase (service role) e do WhatsApp para a Etapa 5. Nenhum workflow de outro projeto foi lido ou alterado.

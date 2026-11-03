@@ -68,6 +68,19 @@ assert.ok(html({ arte: { modo: 'paga', valor: 39.9, opcoes: null } }).includes('
 // uma página para orçamento comum: 10 itens quebram sem cortar linha (page-break-inside: avoid)
 assert.ok(html().includes('page-break-inside: avoid'))
 
+// layout consolidado: uma linha por produto, quadro de alternativas e nota de arredondamento
+const alt = html({
+  itens: [{ descricao: 'Caneta Roy', especificacao: 'Retrátil', quantidade: 500, valor_unitario: 3.07, valor_total: 1537.45 }],
+  subtotal: 1537.45, total: 1537.45,
+  alternativas: [{ titulo: 'Sacola', texto: 'Oxford ou algodão cru.' }, { titulo: 'Bloco', texto: 'Também em 100 folhas.' }],
+})
+assert.ok(alt.includes('Opções e sugestões alternativas') && alt.includes('<b>Sacola.</b> Oxford ou algodão cru.'), 'quadro de alternativas')
+assert.ok(alt.includes('Valores unitários arredondados'), 'nota de arredondamento quando o unitário não fecha com o total')
+assert.ok(!html().includes('Opções e sugestões alternativas') && !html().includes('Valores unitários arredondados'), 'sem alternativas e com contas exatas, nada disso aparece')
+assert.ok(!proibidos.test(alt) && !/lote/i.test(alt), 'quadro sem dado interno nem lotes')
+assert.ok(html({ alternativas: [{ titulo: '<b>x</b>', texto: 'a & b' }] }).includes('&lt;b&gt;x&lt;/b&gt;'), 'alternativas escapadas')
+
+
 // PDFs de exemplo versionados: 6 arquivos, até 2 páginas, leves e sem dado interno (confere só se o pdftotext existir)
 const pasta = new URL('../docs/exemplos-orcamento/', import.meta.url).pathname
 const pdfs = existsSync(pasta) ? readdirSync(pasta).filter((f) => f.endsWith('.pdf')) : []
