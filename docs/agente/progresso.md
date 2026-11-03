@@ -2,6 +2,14 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Pós-liberação (03/11/2026)
+
+- **Laura respondendo ao vivo:** o dono testou de outro WhatsApp e confirmou a resposta.
+- **Modelo:** `agente_config.modelo_padrao`, `modelo_forte` e `modelo_resumo` = `gemini-flash-latest`, o mesmo modelo e a mesma credencial (`Google Gemini(PaLM) Api account`) do workflow da Iracema, que já funcionava. Modelo único: o Pro nunca é chamado. Mudança só de configuração no banco. Voltar ao anterior: `update public.agente_config set modelo_padrao='gemini-3-flash-preview', modelo_forte='gemini-3-flash-preview', modelo_resumo='gemini-3-flash-preview' where id=1;`
+- **Pesquisa de mercado:** Gráfica Silcor (`www.graficasilcor.com.br`) registrada em `fontes_pesquisa` como prioridade 1 (AlfaCards prioridade 2) e incluída nos nós "Montar buscas" e "Escolher páginas" do workflow `pesquisar_preco_mercado`. robots.txt conferido (libera produto); termos de uso ainda por conferir (`termos_ok` vazio).
+- **Conversa em modo humano:** conversas atendidas manualmente (ex.: negociação em andamento) são ignoradas pela IA de propósito (`agente_execucoes.motivo = modo_humano`). Teste sempre com um número sem conversa.
+- **Pendência de segurança:** `public.e2e_exportar` é executável por `anon` (exige token); revogar depois do lançamento se o executor de testes não precisar.
+
 ## MVP final (03/11/2026): liberação formal pelo dono
 
 Decisão do dono (proprietário), registrada por escrito nesta sessão: liberar o atendimento ao público, ciente de que o relatório do PR #43 (`docs/agente/e2e-relatorio.md`) trazia o ciclo 1 com média 7,7 e condução e recuperação abaixo de 8, e de que o registro das 3 repetições do funil não foi localizado no repositório. Nenhuma bateria de teste nova foi rodada por ordem do dono.
