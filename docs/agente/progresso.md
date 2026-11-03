@@ -10,6 +10,8 @@
 - **Conversa em modo humano:** conversas atendidas manualmente (ex.: negociação em andamento) são ignoradas pela IA de propósito (`agente_execucoes.motivo = modo_humano`). Teste sempre com um número sem conversa.
 - **Pendência de segurança:** `public.e2e_exportar` é executável por `anon` (exige token); revogar depois do lançamento se o executor de testes não precisar.
 
+- **Limpeza dos pedidos de teste (03/11/2026):** removidos os 148 pedidos dos contatos de teste (`TESTE_...` e `Teste_...`, todos de 02/11, sendo 48 com pagamento simulado) pela rotina `public.e2e_limpar`, que só apaga contatos marcados `is_teste` e o que depende deles (orçamentos, conversas, alertas, filas). Sobraram 7 pedidos reais; um com flag de teste e 2 contatos de teste cujo nome não começa com "teste" ficaram de fora de propósito (pedido do dono foi pelo nome).
+
 ## MVP final (03/11/2026): liberação formal pelo dono
 
 Decisão do dono (proprietário), registrada por escrito nesta sessão: liberar o atendimento ao público, ciente de que o relatório do PR #43 (`docs/agente/e2e-relatorio.md`) trazia o ciclo 1 com média 7,7 e condução e recuperação abaixo de 8, e de que o registro das 3 repetições do funil não foi localizado no repositório. Nenhuma bateria de teste nova foi rodada por ordem do dono.
