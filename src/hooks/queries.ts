@@ -7,6 +7,8 @@ import type { Contact, ConversationWithContact, Message, Profile, Template } fro
 export function useConversations() {
   return useQuery({
     queryKey: ['conversations'],
+    // rede de segurança: se o Realtime cair, a lista ainda se atualiza sozinha (pausa com a aba em segundo plano)
+    refetchInterval: 10_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conversations')
@@ -23,6 +25,8 @@ export function useMessages(conversationId: string | undefined, limit = 60) {
   return useQuery({
     queryKey: ['messages', conversationId, limit],
     enabled: !!conversationId,
+    // rede de segurança para a conversa aberta: mesmo sem Realtime, a mensagem aparece em poucos segundos
+    refetchInterval: 8_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('messages')
@@ -86,7 +90,18 @@ function aplicarMudancaMensagem(
 export function useRealtimeSync() {
   const qc = useQueryClient()
   useEffect(() => {
-    const channel = supabase
+    let canal: ReturnType<typeof supabase.channel> | null = null
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let ativo = true
+    // ao voltar (aba, PWA, rede) ou ao reconectar, busca o que foi perdido enquanto o socket estava fora
+    const atualizar = () => {
+      qc.invalidateQueries({ queryKey: ['messages'] })
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+    }
+    const conectar = () => {
+      if (!ativo) return
+      if (canal) void supabase.removeChannel(canal)
+      canal = supabase
       .channel('crm-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
         const row = (payload.new ?? payload.old) as Partial<Message>
@@ -131,9 +146,30 @@ export function useRealtimeSync() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pagamentos_alertas' }, () => {
         qc.invalidateQueries({ queryKey: ['pagamentos-alertas'] })
       })
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') return atualizar()
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          clearTimeout(timer)
+          timer = setTimeout(conectar, 2000)
+        }
+      })
+    }
+    const aoVoltar = () => {
+      if (document.visibilityState !== 'visible') return
+      atualizar()
+      if (!canal || canal.state !== 'joined') conectar()
+    }
+    conectar()
+    document.addEventListener('visibilitychange', aoVoltar)
+    window.addEventListener('focus', aoVoltar)
+    window.addEventListener('online', aoVoltar)
     return () => {
-      supabase.removeChannel(channel)
+      ativo = false
+      clearTimeout(timer)
+      document.removeEventListener('visibilitychange', aoVoltar)
+      window.removeEventListener('focus', aoVoltar)
+      window.removeEventListener('online', aoVoltar)
+      if (canal) void supabase.removeChannel(canal)
     }
   }, [qc])
 }

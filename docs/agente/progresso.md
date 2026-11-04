@@ -25,11 +25,15 @@ Conferência de cada item do relatório contra o banco de produção, os workflo
 | 14 | Nota de áudio transcrita | OK | WF1 baixa o áudio (`whatsapp-media`) e transcreve (Groq `whisper-large-v3-turbo`). |
 | 15 | Calcular preço só com SKU e quantidade | OK | `calcular_preco(sku, 1, '{}')` retorna `ok` (testado com rollback). |
 | 16 | Preço livre (override) no pedido | Parcial | Campo de total do item e preço manual quando a busca falha. O piso duro continua bloqueando, por regra do projeto. Preço livre abaixo do piso exige decisão do dono. |
-| 17 | Normalização dos SKUs | Parcial | 20.388 SKUs no catálogo; 32 ainda com letras minúsculas. Corrigir exige atualizar 9 tabelas com FK (`orcamento_itens`, `order_items`, `kit_items` etc.). Feito em migration própria. |
+| 17 | Normalização dos SKUs | OK | Migration `20261109000002_normalizar_skus_catalogo` aplicada em 04/11/2026: 32 SKUs normalizados, 0 colisões, 0 vínculos órfãos, 9 FKs recriadas com o mesmo estado de validação. |
 | 18 | Mensagem consolidada em um balão (4.5) | Pendente (decisão) | O fluxo atual divide a resposta em mensagens curtas ("Dividir em mensagens curtas"). O relatório pede um único balão. Mudança de comportamento em produção: precisa de decisão do dono. |
 | 19 | Auditoria noturna às 23h30 com Gemini | Pendente | Não existe a tabela `knowledge_audit_logs` nem o job. É construção nova. |
 
-**Decisões pendentes do dono:** itens 10, 16 (preço abaixo do piso), 18 e 19.
+**Decisões do dono (04/11/2026):** preço abaixo do piso continua bloqueado (item 16). Normalização dos SKUs autorizada e aplicada (item 17).
+
+**Pendências do dono:** itens 10 (Pix direto), 18 (mensagem em um balão) e 19 (auditoria noturna).
+
+**Tempo real (04/11/2026):** o log do Supabase mostrou que o streaming do Realtime caía quando o cliente desconectava (celular em segundo plano, PWA) e não voltava sozinho, então a tela parava de receber mensagens até o F5. Correção no `useRealtimeSync`: estado do canal observado com reconexão automática, atualização completa ao voltar para o app (visibilidade, foco e rede) e, como rede de segurança, polling de 8 s nas mensagens da conversa aberta e de 10 s na lista de conversas. O polling pausa com a aba em segundo plano.
 
 ## Correções aplicadas direto nos workflows do n8n (produção, 04/11/2026)
 
