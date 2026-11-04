@@ -486,7 +486,8 @@ Deno.serve(async (req) => {
     if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
-  const legenda = (texto ?? resumoDoPedido(doc)).slice(0, 1000)
+  // legenda curta: o cliente recebe o PDF, não um resumo (o resumo fica só no CRM, se precisar)
+  const legenda = (texto ?? `Orçamento ${doc.numero} em PDF. Qualquer dúvida, é só responder por aqui.`).slice(0, 1000)
   let res: Response
   try {
     res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {

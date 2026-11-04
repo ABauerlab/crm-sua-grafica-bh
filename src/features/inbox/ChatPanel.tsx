@@ -208,7 +208,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   }, [gravando])
 
   function enviarOrcamentoPdf() {
-    if (!orcAtivo) return setText(quoteText())
+    if (!orcAtivo) return setError('Este pedido não tem orçamento ativo para enviar em PDF.')
     const jaEnviado = !!orcAtivo.pdf_enviado_em
     if (!window.confirm(jaEnviado ? 'Este orçamento já foi enviado. Enviar o PDF de novo ao cliente?' : 'Enviar o PDF do orçamento ao cliente agora?')) return
     enviarPdf.mutate(orcAtivo.id, {
@@ -273,12 +273,6 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
       if (suggestions.length === 1 && slash !== null) setText(suggestions[0].body)
       else submit()
     }
-  }
-
-  function quoteText() {
-    if (!openOrder) return ''
-    const lines = openOrder.items.map((i) => `${i.qty}x ${i.description}`)
-    return `Orçamento ${openOrder.title}:\n${lines.join('\n')}\nTotal: ${formatBRL(openOrder.fin.total)}\nSe estiver tudo certo, é só confirmar por aqui que eu já envio o link de pagamento.`
   }
 
   const timeline = useMemo(() => {
@@ -457,12 +451,12 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
           {mode === 'reply' && canReply && (
             <>
               <button
-                disabled={(!orcAtivo && (!openOrder || openOrder.items.length === 0)) || enviarPdf.isPending}
+                disabled={!orcAtivo || enviarPdf.isPending}
                 onClick={enviarOrcamentoPdf}
-                title={orcAtivo ? 'Envia o PDF do orçamento no WhatsApp' : 'Sem orçamento em PDF: monta o resumo em texto'}
+                title={orcAtivo ? 'Envia o PDF do orçamento no WhatsApp' : 'Este pedido não tem orçamento ativo. Crie ou abra o orçamento no pedido.'}
                 className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40"
               >
-                <FileText className="h-3.5 w-3.5" aria-hidden /> {enviarPdf.isPending ? 'Enviando…' : orcAtivo ? 'Enviar PDF do orçamento' : 'Enviar orçamento'}
+                <FileText className="h-3.5 w-3.5" aria-hidden /> {enviarPdf.isPending ? 'Enviando…' : 'Enviar PDF do orçamento'}
               </button>
               <button
                 disabled={!openOrder?.payment_link}
