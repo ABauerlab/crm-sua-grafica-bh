@@ -1,8 +1,10 @@
 import { ChevronDown, Copy, CornerUpLeft, Forward, Info, Pencil, RotateCcw, SmilePlus, Trash2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { MessageStatusIcon } from '@/components/MessageStatusIcon'
+import { supabase } from '@/lib/supabase'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatTime } from '@/lib/format'
-import { ehNaoSuportada, REACOES, resumo, textoVisivel } from '@/lib/messages'
+import { ehNaoSuportada, metadadosNaoSuportada, REACOES, resumo, textoVisivel } from '@/lib/messages'
 import type { Message } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ContactsView, LocationLink, MediaView } from './MediaView'
@@ -25,7 +27,19 @@ interface Props {
 export function MessageBubble({ m, todas, reacoes, podeReagir, onResponder, onReagir, onApagar, onRestaurar, onDados, onIrPara }: Props) {
   const out = m.direction === 'out'
   const apagada = !!m.deleted_at
-  const alvo = m.reply_to_wa_id ? todas.find((x) => x.wa_message_id === m.reply_to_wa_id) : undefined
+  const alvoNaJanela = m.reply_to_wa_id ? todas.find((x) => x.wa_message_id === m.reply_to_wa_id) : undefined
+  // se a mensagem citada saiu do trecho carregado, busca só ela no banco (cita sempre o texto original)
+  const alvoFora = useQuery({
+    queryKey: ['mensagem-citada', m.conversation_id, m.reply_to_wa_id],
+    enabled: !!m.reply_to_wa_id && !alvoNaJanela,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('messages').select('*').eq('conversation_id', m.conversation_id).eq('wa_message_id', m.reply_to_wa_id!).maybeSingle()
+      if (error) throw error
+      return (data as Message | null) ?? null
+    },
+  })
+  const alvo = alvoNaJanela ?? alvoFora.data ?? undefined
   const texto = textoVisivel(m)
   const naoSuportada = ehNaoSuportada(m)
 
@@ -81,7 +95,7 @@ export function MessageBubble({ m, todas, reacoes, podeReagir, onResponder, onRe
                 className="mb-1 block w-full rounded-md border-l-4 border-brand-blue bg-background/70 px-2 py-1 text-left text-xs"
               >
                 <span className="block font-bold text-brand-blue">{alvo ? (alvo.direction === 'out' ? 'Você' : 'Cliente') : 'Mensagem anterior'}</span>
-                <span className="line-clamp-2 text-muted-foreground">{alvo ? resumo(alvo) : 'Mensagem fora do trecho carregado'}</span>
+                <span className="line-clamp-2 text-muted-foreground">{alvo ? resumo(alvo) : alvoFora.isLoading ? 'Carregando…' : 'Mensagem não encontrada'}</span>
               </button>
             )}
             {m.type === 'template' && <p className="mb-0.5 text-[11px] font-medium text-muted-foreground">Template: {m.template_name}</p>}
@@ -92,6 +106,7 @@ export function MessageBubble({ m, todas, reacoes, podeReagir, onResponder, onRe
               <div className="rounded-md border border-dashed border-brand-yellow bg-brand-yellow/20 px-2 py-1.5 text-xs">
                 <p className="font-bold">Mensagem não suportada pelo WhatsApp Business</p>
                 <p className="text-muted-foreground">A API oficial não repassa alguns tipos (como mídia de visualização única, enquete ou evento). Peça para o cliente reenviar de outra forma, por exemplo como arquivo ou foto normal.</p>
+                {metadadosNaoSuportada(m).map((l) => <p key={l} className="font-mono text-[11px] text-muted-foreground">{l}</p>)}
               </div>
             ) : (
               texto && <p className={cn('whitespace-pre-wrap break-words', !['text', 'template', 'image', 'video', 'audio', 'sticker', 'document'].includes(m.type) && m.type !== 'location' && 'italic text-muted-foreground')}>{m.type === 'location' ? texto.replace(/https?:\/\/\S+/, '').trim() : texto}</p>

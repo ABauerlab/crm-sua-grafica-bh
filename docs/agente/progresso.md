@@ -2,6 +2,37 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Correções aplicadas direto nos workflows do n8n (produção, 04/11/2026)
+
+Aplicadas no n8n pelo MCP, sem passar por este repositório. Os workflows exportados em `n8n/` ainda não refletem estas mudanças (ver pendências no fim desta seção).
+
+**GBH | WF1 (entrada e debounce)**
+- **Deadlock no debounce:** o nó "Separar mensagens do grupo" emite um item vazio controlado quando o array chega zerado. Assim `agente_finalizar` é sempre chamada. Corrige o travamento de 27 minutos sem resposta no WhatsApp.
+- **Normalização de medidas:** regex converte variações (`50×50`, `50X50`, `50*50`, `50 por 50`) para o formato canônico `50x50`.
+- **Ingestão contextual de mídia:** PDF e imagem deixam de ser tratados como arte pós-pago. Se a conversa está na fase de orçamento, viram modelo ou referência técnica para a dúvida.
+
+**GBH | WF2 (agente de atendimento)**
+- **Abertura adaptativa:** proibida a pergunta genérica "O que você precisa produzir hoje?" quando o cliente já chega com pergunta específica (ex.: caso impressão A1). A IA responde a dúvida técnica de imediato.
+- **Pergunta-filtro antes das opções:** a IA qualifica as variáveis mestras (ex.: frente ou frente e verso) antes de disparar opções de catálogo com foto, para não enviar opções irrelevantes.
+- **SDR closer e nichos:** qualificação ativa por nicho (barbearia, restaurante, estética), gravada no CRM para orientar upsell cirúrgico.
+- **Cut-off operacional:** horário limite para produção no mesmo dia ajustado de 12h00 para 10h30.
+- **Medidas técnicas obrigatórias:** tamanho final refilado e tamanho da arte com sangria de 3 mm.
+- **Regra da casa:** fotos de mostruário físico antes do pagamento. Montagem formal da arte personalizada só depois do pagamento.
+- **Checkout ágil Pix:** emissão de Pix direto pelo Mercado Pago na conversa, para pedido de balcão, sem exigir PDF prévio.
+
+**Pendências desta seção**
+- Atualizar `n8n/` com a exportação dos dois workflows (sem credenciais).
+- Registrar no mapa (`docs/n8n-mapa.md`) os nós alterados.
+
+## Comando /resetchat (04/11/2026)
+
+- **O que faz:** no chat do CRM, o operador digita `/resetchat` (só no modo resposta). A mensagem não vai ao cliente. O sistema:
+  1. Chama a RPC `resetar_contexto_conversa`: grava `conversations.contexto_desde`, limpa `summary` e `collected_data`, devolve a IA (`ai_handled = true`) e registra em `agent_logs`.
+  2. Envia a saudação inicial pelo `whatsapp-send`.
+- **Como o agente "esquece":** `agente_contexto_base` ignora mensagens e orçamentos anteriores a `contexto_desde`. Os pedidos e orçamentos continuam no banco, só saem do contexto.
+- **Migration:** `supabase/migrations/20261109000001_resetchat_contexto.sql` (aditiva; recria `agente_contexto_base`).
+- **Antes de usar:** aplicar a migration e publicar `whatsapp-send` (se ainda não estiver na versão atual). Sem a migration, o comando mostra erro e nada é alterado.
+
 ## Pós-liberação (03/11/2026)
 
 - **Laura respondendo ao vivo:** o dono testou de outro WhatsApp e confirmou a resposta.
