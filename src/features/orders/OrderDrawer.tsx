@@ -212,8 +212,8 @@ function ItemsTab({ order }: { order: OrderCard }) {
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       if (!it.id) {
-        // item novo entra com preço 0 e o preço digitado passa pelo banco (piso duro bloqueia; se falhar, a linha é removida)
-        const { data: novo, error } = await supabase.from('order_items').insert({ ...row, unit_price: 0 }).select('id').single()
+        // item novo já entra com o preço digitado; o banco confere o piso logo depois (piso duro bloqueia; se falhar, a linha é removida)
+        const { data: novo, error } = await supabase.from('order_items').insert(row).select('id').single()
         if (error) throw new Error(error.message)
         const { data, error: erroPreco } = await supabase.rpc('definir_preco_item_pedido', { p_item: novo.id, p_preco: it.unit_price!, p_confirmar: false, p_motivo: null, p_apenas_simular: false })
         if (!erroPreco && data?.ok !== false) return
@@ -327,9 +327,9 @@ function ItemsTab({ order }: { order: OrderCard }) {
           <label className="col-span-2 flex items-center gap-2 text-sm sm:col-span-6"><input type="checkbox" checked={manual} onChange={(e) => setManual(e.target.checked)} /> Item fora do catálogo (manual, sem SKU)</label>
           <div className="col-span-2 flex items-center gap-2 sm:col-span-6"><span className="text-xs font-medium text-muted-foreground">SKU escolhido:</span><SkuBadge sku={draft.code || null} />{draft.origem && <span className="text-xs text-muted-foreground">{draft.origem}</span>}</div>
           <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-4" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
+          <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Pacotes / Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
           <Input aria-label="Prazo do fornecedor em dias úteis" type="number" min="0" inputMode="numeric" placeholder="Prazo (d.u.)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
-          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly={!manual} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
+          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
           <Input aria-label="Total do item" inputMode="decimal" placeholder="Total do item (R$), opcional" title="Se preenchido, vale no lugar do unitário (total ÷ quantidade)" className="sm:col-span-2" value={draft.total} onChange={(e) => setDraft({ ...draft, total: e.target.value })} />
           <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || (!manual && !draft.code)}><Plus className="h-4 w-4" /> Adicionar</Button>
