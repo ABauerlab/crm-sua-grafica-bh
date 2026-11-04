@@ -9,8 +9,14 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
 - O SKU do fornecedor é interno.
-- O endereço de retirada só é informado depois do pagamento.
+- O endereço fabril completo e a retirada exata só são informados depois do pagamento.
+- Antes do pagamento, o agente pode dar a localização de referência comercial para ganhar confiança: hipercentro de Belo Horizonte, próximo à Praça Sete. Nunca citar o endereço fabril nem o SKU do fornecedor.
 - Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
+
+## Fluxo de fechamento (padrão)
+1. Envio obrigatório do PDF formal via `gerar_pdf_orcamento`.
+2. Coleta do aceite do cliente: a palavra "APROVADO".
+3. Geração do link do Mercado Pago com Pix via `gerar_link_pagamento`. Pix continua sendo a primeira opção.
 
 ## Fluxo de trabalho
 - Uma branch e um PR por etapa. Nunca faça commit direto na `main`, porque cada merge publica o CRM em produção.

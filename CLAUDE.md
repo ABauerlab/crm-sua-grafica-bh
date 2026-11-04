@@ -14,7 +14,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
 - O SKU do fornecedor é interno.
-- O endereço de retirada só é informado depois do pagamento.
+- O endereço fabril completo e a retirada exata só são informados depois do pagamento. Antes do pagamento, o agente pode dar a localização de referência comercial (hipercentro de Belo Horizonte, próximo à Praça Sete). Nunca citar o endereço fabril nem o SKU do fornecedor.
 - Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
 
 ### Fluxo de trabalho
@@ -164,3 +164,4 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
 - BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
 - Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.
+- Fechamento padrão: (1) PDF formal via `gerar_pdf_orcamento`; (2) aceite do cliente com "APROVADO"; (3) link do Mercado Pago com Pix via `gerar_link_pagamento`.
