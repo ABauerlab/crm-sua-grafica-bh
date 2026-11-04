@@ -7,6 +7,7 @@ import { DataDeletion, Privacy, Terms } from '@/pages/Legal'
 import Login from '@/pages/Login'
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const Laura = lazy(() => import('@/pages/Laura'))
 const Kanban = lazy(() => import('@/pages/Kanban'))
 const Orders = lazy(() => import('@/pages/Orders'))
 const ArteQueue = lazy(() => import('@/pages/ArteQueue'))
@@ -58,6 +59,7 @@ export default function App() {
         <Route element={<RequireStaff />}>
           <Route element={<Layout />}>
             <Route path="/painel" element={<Dashboard />} />
+            <Route path="/laura" element={<Laura />} />
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/pedidos" element={<Orders />} />
             <Route path="/arte" element={<ArteQueue />} />

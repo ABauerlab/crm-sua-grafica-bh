@@ -548,3 +548,12 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Edge `agente-enviar`:** texto acima de 1.500 caracteres é quebrado automaticamente em mensagens sequenciais, até 6.000 caracteres por envio. Acima disso, responde 400 claro.
 - **Diretrizes (`AGENTS.md` e `CLAUDE.md`):** antes do pagamento, o agente pode citar a localização de referência (hipercentro de BH, próximo à Praça Sete). O endereço fabril completo continua proibido antes do pagamento. Fluxo de fechamento padrão: PDF formal, aceite "APROVADO", link do Mercado Pago com Pix.
 - **Pendências:** deploy das Edge Functions `orcamento-pdf` e `agente-enviar`; o prompt do WF2 no n8n ainda diz que o endereço só vai depois do pagamento (mudar pelo MCP do n8n); aplicar a migration de custos m² só após confirmação do dono.
+
+## Sincronização e telemetria da Laura (10/11/2026)
+
+- **Migrations versionadas (já estavam em produção):** `20261110000001_motor_vendas_producao` (montar_orcamento, agente_debounce, agente_iniciar com teto de 60 s, agente_watchdog_reconciliar, private.order_items_validar, definir_preco_item_pedido, calcular_acabamento_seguro, pg_trgm e índice). Conferido por hash do corpo das funções (diferenças só de espaço no fim de linha).
+- **Migrations novas, aplicadas em produção:** `20261110000002_v_funil_percentis` (P50/P95, rodadas de até 10 min), `20261110000003_webhook_fila_entrada` (tabela `webhook_eventos`), `20261110000004_v_funil_total_rodadas` (total de rodadas, denominador das taxas).
+- **Pendência de segurança e de código:** `calcular_acabamento_seguro` consulta `public.acabamentos`, tabela que não existe em produção. Não é chamada por `montar_orcamento` (que usa `produto_acabamentos`). Revisar ou remover.
+- **Webhook (fila de entrada):** grava o evento em `webhook_eventos`, responde 200 e processa em segundo plano; eventos pendentes são reprocessados nas chamadas seguintes; processados são apagados após 3 dias. Não usa BullMQ/Redis (não há Redis no Supabase Edge). **Não deployado:** precisa de deploy de `whatsapp-webhook` (e `_shared`), testado com um número real antes de ir ao ar.
+- **Tela `/laura`:** KPIs (conversas, orçamentos, pedidos pagos, faturamento, conversão), latência (P50/P95), taxas de ocupadas e erros, gráfico e tabela diária, filtros hoje/7/15/30 dias.
+- **n8n:** `n8n/GBH-WF2-Agente.json` reexportado (atualizado em 04/11 às 23h00). `n8n/GBH-WF1-Entrada-e-roteamento.json` continua da exportação anterior: a instância mostra atualização de 04/11 às 22h18, então precisa de nova exportação.
