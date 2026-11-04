@@ -97,6 +97,22 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
     onError: (e: Error) => setError(e.message),
   })
 
+  // /resetchat: zera o contexto do agente nesta conversa (só o que vem depois) e manda a saudação inicial, para novos testes com o mesmo número
+  const resetChat = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('resetar_contexto_conversa', { p_conversation: conversation.id })
+      if (error) throw new Error(error.message)
+      await invokeFunction('whatsapp-send', { conversation_id: conversation.id, text: 'Oi! Tudo bem? Aqui é da Sua Gráfica BH. Como posso te ajudar hoje?' })
+    },
+    onSuccess: () => {
+      setText('')
+      setError(null)
+      qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
   const sendFile = useMutation({
     mutationFn: (arg: { file: File; caption: string; replyTo?: string | null }) => {
       const form = new FormData()
@@ -236,6 +252,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   function submit() {
     const t = text.trim()
+    if (mode === 'reply' && t.toLowerCase() === '/resetchat') return void resetChat.mutate()
     if (mode === 'reply' && arquivos.length) return void enviarComArquivos()
     if (!t) return
     if (mode === 'note') {

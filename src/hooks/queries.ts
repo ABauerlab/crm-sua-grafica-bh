@@ -69,6 +69,19 @@ export function useContacts() {
   })
 }
 
+/** Aplica uma mudança de `messages` na lista em cache (ordem cronológica, sem duplicar). */
+function aplicarMudancaMensagem(
+  atual: Message[] | undefined,
+  payload: { eventType: string; new: Partial<Message>; old: Partial<Message> },
+): Message[] | undefined {
+  if (!atual) return atual
+  if (payload.eventType === 'DELETE') return atual.filter((m) => m.id !== payload.old.id)
+  const nova = payload.new as Message
+  const i = atual.findIndex((m) => m.id === nova.id)
+  if (i >= 0) return atual.map((m, j) => (j === i ? { ...m, ...nova } : m))
+  return [...atual, nova].sort((a, b) => a.created_at.localeCompare(b.created_at))
+}
+
 /** Mantém o cache do TanStack Query em sincronia com mudanças em tempo real. */
 export function useRealtimeSync() {
   const qc = useQueryClient()
@@ -77,7 +90,8 @@ export function useRealtimeSync() {
       .channel('crm-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
         const row = (payload.new ?? payload.old) as Partial<Message>
-        if (row.conversation_id) qc.invalidateQueries({ queryKey: ['messages', row.conversation_id] })
+        // atualiza o cache direto com o payload (sem refetch); a lista de conversas segue por invalidação (prévia e contagem)
+        if (row.conversation_id) qc.setQueriesData<Message[]>({ queryKey: ['messages', row.conversation_id] }, (atual) => aplicarMudancaMensagem(atual, payload))
         if (payload.eventType === 'INSERT' && (payload.new as Partial<Message>).direction === 'in') notifyInbound()
         qc.invalidateQueries({ queryKey: ['conversations'] })
       })
