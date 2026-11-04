@@ -15,6 +15,17 @@ export function textoVisivel(m: Message): string {
 export const NAO_SUPORTADA = '[mensagem não suportada]'
 export const ehNaoSuportada = (m: Message) => m.type === 'other' && (m.body ?? '').startsWith(NAO_SUPORTADA)
 
+/** Metadados de uma mensagem não suportada: tipo recebido da Meta e motivo informado (quando houver). */
+export function metadadosNaoSuportada(m: Message): string[] {
+  const meta = (m.meta ?? {}) as { raw?: { type?: unknown } | null; erros?: { code?: unknown; title?: unknown; message?: unknown }[] | null }
+  const linhas: string[] = []
+  const tipo = meta.raw?.type
+  linhas.push(`Tipo recebido: ${typeof tipo === 'string' && tipo ? tipo : 'não informado pela Meta'}`)
+  const erro = meta.erros?.[0]
+  if (erro) linhas.push(`Motivo da Meta: ${String(erro.title ?? erro.message ?? `código ${erro.code ?? '?'}`)}`)
+  return linhas
+}
+
 export const TIPO_ROTULO: Record<Message['type'], string> = {
   text: 'Texto', image: 'Imagem', document: 'Documento', audio: 'Áudio', video: 'Vídeo', sticker: 'Figurinha',
   location: 'Localização', contacts: 'Contato', reaction: 'Reação', template: 'Template', other: 'Outro',

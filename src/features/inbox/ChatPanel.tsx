@@ -223,8 +223,11 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
     supabase.from('agent_logs').insert({ conversation_id: conversation.id, actor: 'humano', action, detail: { reason }, result: 'ok' })
 
   function takeOver() {
+    const eraIA = conversation.ai_handled
     updateConv.mutate({ ai_handled: false, attendant_changed_at: new Date().toISOString(), attendant_change_reason: 'Assumido pelo dono', needs_human: false })
     void logAction('assumiu_conversa', 'Assumido pelo dono')
+    // aviso ao cliente só na passagem IA -> humano; sai por whatsapp-send (a API da Meta só é chamada nas Edge Functions)
+    if (eraIA) send.mutate({ text: 'Olá! Aqui é a equipe da Sua Gráfica BH. Um atendente assumiu sua conversa e vai continuar o atendimento por aqui.' })
   }
   function giveBack() {
     updateConv.mutate({ ai_handled: true, attendant_changed_at: new Date().toISOString(), attendant_change_reason: 'Devolvido para a IA' })

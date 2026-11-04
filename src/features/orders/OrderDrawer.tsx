@@ -184,7 +184,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const { data: settings } = useSettings()
   const rules = settings?.pricing ?? DEFAULT_PRICING
   const [manual, setManual] = useState(false)
-  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
+  const [draft, setDraft] = useState({ code: '', description: '', qty: '1', cost: '', price: '', total: '', lead: '', origem: '' })
   const [discount, setDiscount] = useState(String(order.discount_pct))
   const [tax, setTax] = useState(String(order.tax_pct))
   const [fee, setFee] = useState(String(order.payment_fee_pct))
@@ -212,9 +212,13 @@ function ItemsTab({ order }: { order: OrderCard }) {
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       if (!it.id) {
-        const { error } = await supabase.from('order_items').insert(row)
+        // item novo entra com preço 0 e o preço digitado passa pelo banco (piso duro bloqueia; se falhar, a linha é removida)
+        const { data: novo, error } = await supabase.from('order_items').insert({ ...row, unit_price: 0 }).select('id').single()
         if (error) throw new Error(error.message)
-        return
+        const { data, error: erroPreco } = await supabase.rpc('definir_preco_item_pedido', { p_item: novo.id, p_preco: it.unit_price!, p_confirmar: false, p_motivo: null, p_apenas_simular: false })
+        if (!erroPreco && data?.ok !== false) return
+        await supabase.from('order_items').delete().eq('id', novo.id)
+        throw new Error(erroPreco?.message ?? 'Preço abaixo do piso: o item não foi adicionado. Use um valor igual ou acima do piso.')
       }
       // O preço editado à mão passa por definir_preco_item_pedido: bloqueia abaixo do piso duro, pede confirmação do dono entre o piso duro e o piso e registra o motivo.
       const { unit_price: novoPreco, ...resto } = row
@@ -241,13 +245,16 @@ function ItemsTab({ order }: { order: OrderCard }) {
   })
 
   function addItem() {
-    const it = { description: draft.description.trim(), qty: Math.max(1, Math.floor(Number(draft.qty) || 1)), unit_cost: parseMoney(draft.cost), unit_price: parseMoney(draft.price), lead_days: draft.lead.trim() ? Math.max(0, Math.round(Number(draft.lead) || 0)) : null }
+    const qtd = Math.max(1, Math.floor(Number(draft.qty) || 1))
+    const precoUnit = draft.total.trim() ? Math.round((parseMoney(draft.total) / qtd) * 100) / 100 : parseMoney(draft.price)
+    const it = { description: draft.description.trim(), qty: qtd, unit_cost: parseMoney(draft.cost), unit_price: precoUnit, lead_days: draft.lead.trim() ? Math.max(0, Math.round(Number(draft.lead) || 0)) : null }
     if (!manual && !draft.code) return toast('error', 'Escolha o produto pela busca do catálogo ou marque "item fora do catálogo".')
     if (!it.description) return toast('error', 'Informe a descrição do item.')
+    if (!(it.unit_price > 0)) return toast('error', 'Informe o valor unitário ou o total do item.')
     const next = [...(items ?? []), { ...it, id: 'novo', order_id: order.id, code: manual ? null : draft.code || null }]
     guarded({ items: next, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => {
       await saveItem.mutateAsync({ ...it, code: manual ? '' : draft.code, fora_catalogo: manual })
-      setDraft({ code: '', description: '', qty: '1', cost: '', price: '', lead: '', origem: '' })
+      setDraft({ code: '', description: '', qty: '1', cost: '', price: '', total: '', lead: '', origem: '' })
     })
   }
 
@@ -305,12 +312,15 @@ function ItemsTab({ order }: { order: OrderCard }) {
           // o preço vem de calcular_preco (mercado, histórico e trava de lucro); o custo vem do catálogo; a linha é UMA opção fechada de quantidade
           const { data, error } = await supabase.rpc('calcular_preco', { p_sku: p.sku, p_quantidade: 1, p_contexto: {} })
           const r = data as { ok: boolean; preco_total?: number; regra?: string; confianca?: string; erro?: string } | null
-          if (error || !r?.ok) return toast('error', r?.erro === 'item_nao_vendavel' ? 'Este item não está disponível para venda.' : 'Não foi possível calcular o preço deste item.')
+          if (r?.erro === 'item_nao_vendavel') return toast('error', 'Este item não está disponível para venda.')
+          // sem preço automático não há bloqueio: SKU e custo ficam, e o operador digita o valor unitário ou o total
+          const ok = !error && !!r?.ok
+          if (!ok) toast('error', 'Preço automático indisponível. Digite o valor unitário ou o total do item.')
           setDraft({
             code: p.sku ?? '',
             description: `${p.category ?? ''} ${p.description} ${p.colors ?? ''} ${p.size && !/^0\s*x\s*0$/i.test(p.size) ? p.size : ''} (${p.qty ?? 1} un)`.replace(/\s+/g, ' ').trim(),
-            qty: '1', cost: String(p.cost), price: String(r.preco_total), lead: p.lead_days === null ? '' : String(p.lead_days),
-            origem: `Preço de calcular_preco (${r.regra}, confiança ${r.confianca}).`,
+            qty: '1', cost: String(p.cost), price: ok && r?.preco_total != null ? String(r.preco_total) : '', total: '', lead: p.lead_days === null ? '' : String(p.lead_days),
+            origem: ok ? `Preço de calcular_preco (${r?.regra}, confiança ${r?.confianca}).` : 'Preço manual: a busca automática não calculou este item.',
           })
         }} />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
@@ -321,6 +331,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
           <Input aria-label="Prazo do fornecedor em dias úteis" type="number" min="0" inputMode="numeric" placeholder="Prazo (d.u.)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
           <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly={!manual} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
+          <Input aria-label="Total do item" inputMode="decimal" placeholder="Total do item (R$), opcional" title="Se preenchido, vale no lugar do unitário (total ÷ quantidade)" className="sm:col-span-2" value={draft.total} onChange={(e) => setDraft({ ...draft, total: e.target.value })} />
           <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || (!manual && !draft.code)}><Plus className="h-4 w-4" /> Adicionar</Button>
         </div>
       </fieldset>

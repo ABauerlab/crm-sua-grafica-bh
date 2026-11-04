@@ -2,7 +2,7 @@ import { ChevronDown, Copy, CornerUpLeft, Forward, Info, Pencil, RotateCcw, Smil
 import { MessageStatusIcon } from '@/components/MessageStatusIcon'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatTime } from '@/lib/format'
-import { ehNaoSuportada, REACOES, resumo, textoVisivel } from '@/lib/messages'
+import { ehNaoSuportada, metadadosNaoSuportada, REACOES, resumo, textoVisivel } from '@/lib/messages'
 import type { Message } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { ContactsView, LocationLink, MediaView } from './MediaView'
@@ -92,6 +92,7 @@ export function MessageBubble({ m, todas, reacoes, podeReagir, onResponder, onRe
               <div className="rounded-md border border-dashed border-brand-yellow bg-brand-yellow/20 px-2 py-1.5 text-xs">
                 <p className="font-bold">Mensagem não suportada pelo WhatsApp Business</p>
                 <p className="text-muted-foreground">A API oficial não repassa alguns tipos (como mídia de visualização única, enquete ou evento). Peça para o cliente reenviar de outra forma, por exemplo como arquivo ou foto normal.</p>
+                {metadadosNaoSuportada(m).map((l) => <p key={l} className="font-mono text-[11px] text-muted-foreground">{l}</p>)}
               </div>
             ) : (
               texto && <p className={cn('whitespace-pre-wrap break-words', !['text', 'template', 'image', 'video', 'audio', 'sticker', 'document'].includes(m.type) && m.type !== 'location' && 'italic text-muted-foreground')}>{m.type === 'location' ? texto.replace(/https?:\/\/\S+/, '').trim() : texto}</p>
