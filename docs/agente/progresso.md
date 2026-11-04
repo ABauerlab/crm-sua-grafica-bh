@@ -2,6 +2,35 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Auditoria do relatório de aprimoramento (04/11/2026)
+
+Conferência de cada item do relatório contra o banco de produção, os workflows exportados em `n8n/` e o código. Status: **OK** (verificado), **Parcial** (existe, mas diverge do relatório) e **Pendente** (não existe).
+
+| # | Item | Status | Evidência e observação |
+|---|---|---|---|
+| 1 | Deadlock do debounce (WF1) | OK | Nó "Separar mensagens do grupo" emite item vazio controlado; `agente_finalizar` é chamada. |
+| 1b | Lock com TTL | Parcial | Concorrência por `agente_execucoes` com janela de 3 min. O relatório pede 90 s. Reduzir pode gerar resposta duplicada se a rodada passar de 90 s, então não foi alterado. |
+| 2 | Normalização de medidas (WF1) | OK | Regex `(\d+)\s*([×X*]|por)\s*(\d+)` gera `NxM`. |
+| 3 | Ingestão contextual de mídia | Parcial | Documento entra no CRM e é transcrito/lido. A separação "referência de orçamento" x "arte pós-pago" está no fluxo de arte (`arte_receber`), não foi confirmada no export do WF1. |
+| 4 | Abertura adaptativa (WF2) | OK | Proibida a pergunta genérica quando o cliente já especificou o pedido. |
+| 5 | Pergunta-filtro antes das opções (WF2) | OK | Prompt exige a variável-chave (ex.: 4x0 x 4x4) antes de `enviar_foto_produto`. Filtro aplicado no prompt, não na busca. |
+| 6 | SDR closer e nichos (WF2) | OK | Captura segmento (barbearia, restaurante/delivery, estética etc.) e orienta o cross-sell. |
+| 7 | Cut-off das 10h30 (WF2) | OK | Prompt usa 10h30 em dias úteis. |
+| 8 | Medidas técnicas com sangria de 3 mm (WF2) | OK | Prompt exige tamanho refilado e tamanho com sangria. |
+| 9 | Regra da casa (WF2) | OK | Fotos de mostruário antes do pagamento; prova digital só depois. |
+| 10 | Pix direto na conversa | Pendente | Não há geração de Pix copia e cola no `mp-criar-link` nem na ferramenta `gerar_link_pagamento`. Hoje sai só o link do Checkout Pro. |
+| 11 | Realtime em `messages` e `conversations` | OK | Publicação `supabase_realtime` confirmada; front atualiza o cache pelo payload. |
+| 12 | Mensagem automática ao assumir conversa | OK | Texto do relatório, enviado pelo `whatsapp-send` só na passagem IA para humano. |
+| 13 | `/resetchat` com auditoria | OK | Migration aplicada; grava `reset_chat` com operador em `agent_logs`. |
+| 14 | Nota de áudio transcrita | OK | WF1 baixa o áudio (`whatsapp-media`) e transcreve (Groq `whisper-large-v3-turbo`). |
+| 15 | Calcular preço só com SKU e quantidade | OK | `calcular_preco(sku, 1, '{}')` retorna `ok` (testado com rollback). |
+| 16 | Preço livre (override) no pedido | Parcial | Campo de total do item e preço manual quando a busca falha. O piso duro continua bloqueando, por regra do projeto. Preço livre abaixo do piso exige decisão do dono. |
+| 17 | Normalização dos SKUs | Parcial | 20.388 SKUs no catálogo; 32 ainda com letras minúsculas. Corrigir exige atualizar 9 tabelas com FK (`orcamento_itens`, `order_items`, `kit_items` etc.). Feito em migration própria. |
+| 18 | Mensagem consolidada em um balão (4.5) | Pendente (decisão) | O fluxo atual divide a resposta em mensagens curtas ("Dividir em mensagens curtas"). O relatório pede um único balão. Mudança de comportamento em produção: precisa de decisão do dono. |
+| 19 | Auditoria noturna às 23h30 com Gemini | Pendente | Não existe a tabela `knowledge_audit_logs` nem o job. É construção nova. |
+
+**Decisões pendentes do dono:** itens 10, 16 (preço abaixo do piso), 18 e 19.
+
 ## Correções aplicadas direto nos workflows do n8n (produção, 04/11/2026)
 
 Aplicadas no n8n pelo MCP, sem passar por este repositório. Os workflows exportados em `n8n/` ainda não refletem estas mudanças (ver pendências no fim desta seção).
