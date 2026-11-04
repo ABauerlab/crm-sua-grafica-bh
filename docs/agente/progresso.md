@@ -20,18 +20,16 @@ Aplicadas no n8n pelo MCP, sem passar por este repositório. Os workflows export
 - **Regra da casa:** fotos de mostruário físico antes do pagamento. Montagem formal da arte personalizada só depois do pagamento.
 - **Checkout ágil Pix:** emissão de Pix direto pelo Mercado Pago na conversa, para pedido de balcão, sem exigir PDF prévio.
 
-**Pendências desta seção**
-- Atualizar `n8n/` com a exportação dos dois workflows (sem credenciais).
-- Registrar no mapa (`docs/n8n-mapa.md`) os nós alterados.
+**Exportação (resolvido em 04/11/2026):** `n8n/GBH-WF1-Entrada-e-roteamento.json` (61 nós) e `n8n/GBH-WF2-Agente.json` (28 nós) foram reexportados da instância, sem credenciais (o campo `credentials` foi removido de cada nó e não há segredos no arquivo).
 
 ## Comando /resetchat (04/11/2026)
 
 - **O que faz:** no chat do CRM, o operador digita `/resetchat` (só no modo resposta). A mensagem não vai ao cliente. O sistema:
-  1. Chama a RPC `resetar_contexto_conversa`: grava `conversations.contexto_desde`, limpa `summary` e `collected_data`, devolve a IA (`ai_handled = true`) e registra em `agent_logs`.
+  1. Chama a RPC `resetar_contexto_conversa`: grava `conversations.contexto_desde`, limpa `summary` e `collected_data`, devolve a IA (`ai_handled = true`) e grava em `agent_logs` a ação `reset_chat`, com `operador_id` e `operador_nome` de quem executou (só staff).
   2. Envia a saudação inicial pelo `whatsapp-send`.
 - **Como o agente "esquece":** `agente_contexto_base` ignora mensagens e orçamentos anteriores a `contexto_desde`. Os pedidos e orçamentos continuam no banco, só saem do contexto.
 - **Migration:** `supabase/migrations/20261109000001_resetchat_contexto.sql` (aditiva; recria `agente_contexto_base`).
-- **Antes de usar:** aplicar a migration e publicar `whatsapp-send` (se ainda não estiver na versão atual). Sem a migration, o comando mostra erro e nada é alterado.
+- **Status:** migration `resetchat_contexto` aplicada em produção em 04/11/2026 (coluna, RPC e grants conferidos). `whatsapp-send` precisa estar na versão atual.
 
 ## Pós-liberação (03/11/2026)
 

@@ -1,0 +1,1630 @@
+{
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Montar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar prompt": {
+      "main": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de atendimento": {
+      "main": [
+        [
+          {
+            "node": "Estimar tokens e extrair texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Gemini (padrão ou forte)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_conhecimento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_produto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "montar_orcamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_pdf_orcamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "salvar_contato": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "oferecer_condicao_especial": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verificar_frete": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_link_pagamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agendar_followup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chamar_dono": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "enviar_foto_produto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estimar tokens e extrair texto": {
+      "main": [
+        [
+          {
+            "node": "O agente respondeu?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "O agente respondeu?": {
+      "main": [
+        [
+          {
+            "node": "Trava de saída (estilo, vazamento, valor)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da falha do agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava de saída (estilo, vazamento, valor)": {
+      "main": [
+        [
+          {
+            "node": "Registrar resposta, tokens e custo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar resposta, tokens e custo": {
+      "main": [
+        [
+          {
+            "node": "Saída segura?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Saída segura?": {
+      "main": [
+        [
+          {
+            "node": "Resposta pronta para enviar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da resposta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o dono da resposta bloqueada": {
+      "main": [
+        [
+          {
+            "node": "Resposta neutra (saída bloqueada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o dono da falha do agente": {
+      "main": [
+        [
+          {
+            "node": "Resposta: erro do agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_receber": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_baixa_ok": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "name": "GBH | WF2 | Agente",
+  "nodes": [
+    {
+      "id": "832c5da7-0454-4fad-b647-d63318ed4d75",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "execucao_id",
+              "type": "string"
+            },
+            {
+              "name": "conversation_id",
+              "type": "string"
+            },
+            {
+              "name": "contact_id",
+              "type": "string"
+            },
+            {
+              "name": "texto_cliente",
+              "type": "string"
+            },
+            {
+              "name": "contexto",
+              "type": "object"
+            },
+            {
+              "name": "modelo",
+              "type": "string"
+            },
+            {
+              "name": "teste",
+              "type": "string"
+            },
+            {
+              "name": "nome_atendente",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4085510b-a6a2-480c-a86d-6a4628ad505a",
+      "name": "Montar prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e = $input.first().json || {};\nconst c = e.contexto || {};\nconst S = (v) => (v === undefined || v === null ? '' : String(v));\nconst ct = c.contato || {};\nconst contato = [ct.primeiro_nome ? 'nome ' + ct.primeiro_nome : 'nome não informado', ct.segmento ? 'segmento ' + ct.segmento : '', ct.bairro ? 'bairro ' + ct.bairro : '', ct.cep ? 'CEP ' + ct.cep : '', ct.cliente_recorrente ? 'já comprou antes' : 'cliente novo'].filter(Boolean).join(', ');\nlet anuncio = 'não veio de anúncio (contato direto)';\nif (c.anuncio) { anuncio = '\"' + S(c.anuncio.titulo) + '\"' + (c.anuncio.texto ? ' - ' + S(c.anuncio.texto) : '') + (c.anuncio.produto && c.anuncio.produto.descricao ? ' (produto do anúncio: ' + S(c.anuncio.produto.descricao) + ')' : '') + '. O anúncio nunca mostra preço'; }\nconst et = c.etapa || {};\nconst etapa = 'conversa ' + S(et.conversa || 'nova') + (et.pedido ? ', pedido ' + et.pedido : '');\nconst dados = Object.keys(c.dados_coletados || {}).length ? JSON.stringify(c.dados_coletados) : 'nada ainda';\nlet orc = 'nenhum';\nif (c.orcamento_aberto) { const o = c.orcamento_aberto; orc = o.numero + ' (orcamento_id ' + o.orcamento_id + '), status ' + o.status + ', total R$ ' + o.total + ', pronto em ' + S(o.data_prevista) + ', válido até ' + S(o.validade) + (o.pdf_enviado ? ', PDF formal já enviado (aguardando o cliente aprovar)' : ', PDF formal ainda não enviado') + (o.link_pagamento_valido ? ', link de pagamento já gerado' : ''); }\nconst hist = (c.ultimas_mensagens || []).map((m) => (m.quem === 'cliente' ? 'Cliente: ' : 'Você: ') + S(m.texto)).join('\\n') || '(primeira mensagem)';\nconst per = c.persona || {};\nconst nome = S(per.nome) || S(e.nome_atendente) || 'Laura';\nconst fase = S(per.fase) || S(c.fase) || 'vendas';\nconst system = 'Você é ' + nome + ', da Sua Gráfica BH, gráfica digital de Belo Horizonte com milhares de produtos, bom preço e agilidade. Você atende como um vendedor consultivo (SDR Closer) no WhatsApp: entende a necessidade real, qualifica o nicho, mostra opções reais do catálogo, orça com preço firme e conduz ao fechamento.\\n\\n' +\n'AGORA: ' + S(c.agora) + '.\\nCONTATO: ' + contato + '.\\nVEIO DO ANÚNCIO: ' + anuncio + '.\\nETAPA: ' + etapa + '.\\nRESUMO: ' + (S(c.resumo) || 'sem resumo ainda') + '.\\nDADOS JÁ COLETADOS: ' + dados + '.\\nORÇAMENTO ABERTO: ' + orc + '.\\nÚLTIMAS MENSAGENS:\\n' + hist + '\\n\\n' +\n'PERSONA: seu nome neste atendimento é ' + nome + ' (fase: ' + (fase === 'pos_pagamento' ? 'depois do pagamento' : 'vendas, antes do pagamento') + '). Laura e João Victor são nomes do mesmo assistente virtual. Na primeira mensagem da conversa com cliente novo, diga: \"' + nome + ', assistente virtual da Sua Gráfica BH\". Nunca negue ser virtual. Não repita essa saudação formal em mensagens subsequentes no mesmo dia. Depois do pagamento você cuida da arte e do andamento do pedido: quando o cliente mandar arquivo ou briefing de arte depois de pagar, chame arte_receber e avise que a equipe vai montar e mandar para aprovação formal antes da impressão física.\\n\\n' +\n'COMO CONVERSAR: escreva como uma pessoa de BH no WhatsApp: simpática, direta, ágil e segura. CADA mensagem tem no máximo 2 frases curtas, separadas por uma linha em branco; uma ideia por mensagem; no máximo uma ou duas perguntas no total. Sem listas complexas nem markdown pesado. Use o primeiro nome do cliente. Nunca pergunte novamente dados que o cliente já informou (tamanho, quantidade, formato ou preferência). Se o cliente pedir preço, passe o valor de imediato sem segurar para mandar fotos.\\n\\n' +\n'CLAREZA TOTAL E MEDIDAS TÉCNICAS: traduza tudo em palavras simples. Sempre que informar medidas de itens com corte (cartão, panfleto, adesivo, placa), informe o tamanho final refilado E o tamanho da arte com sangria (3 mm de margem de segurança para o corte). Ex: cartão refilado 8,8 x 4,8 cm | arte com sangria: 9,1 x 5,1 cm. Glossário: 4x0 = colorido só frente; 4x4 = colorido frente e verso; 1x0 = preto só frente; couchê = papel liso brilhante/fosco; laminação = película protetora; verniz = brilho localizado ou total. Nunca mostre código técnico isolado.\\n\\n' +\n'FLUXO DE ATENDIMENTO E QUALIFICAÇÃO:\\n' +\n'1) ABERTURA ADAPTATIVA: apresente-se com simpatia. SE O CLIENTE JÁ FEZ UMA PERGUNTA DIRETA OU INFORMOU O QUE PRECISA (ex: formato A1, tipo de papel, cartões frente e verso), RESPONDA DIRETAMENTE À DÚVIDA TÉCNICA PRIMEIRO! É proibido fazer perguntas abertas genéricas (\"O que você precisa produzir hoje?\") quando o cliente já especificou o que quer.\\n' +\n'2) DESCOBERTA E NICHO: capture produto, quantidade, prazo e o SEGMENTO/NICHO do negócio (barbearia, restaurante/delivery, loja, estética, eventos). Salve o segmento no CRM com salvar_contato. Use o nicho para direcionar sugestões e upsell cirúrgico (ex: barbearia -> capas de corte e placas; restaurante -> cardápios e lacres).\\n' +\n'3) PERGUNTA-FILTRO ANTES DAS OPÇÕES: antes de enviar opções de catálogo com fotos, qualifique a variável técnica essencial se o cliente não informou (ex: cartão/panfleto: se quer só na frente ou frente e verso; adesivo: se é vinil impermeável ou papel). Com a resposta, filtre o catálogo com precisão e chame enviar_foto_produto enviando apenas opções relevantes (se o cliente quer frente e verso, envie só opções 4x4, nunca 4x0).\\n' +\n'4) FOTOS E PROVA DA ARTE: antes do pagamento, envie fotos de mostruário físico real para comprovar qualidade e acabamento. Esclareça com total segurança que a prova digital personalizada com a arte/logo dele é montada pela equipe e enviada no WhatsApp logo após a confirmação do pagamento, antes de qualquer impressão física.\\n' +\n'5) ENTREGA E FRETE: use verificar_frete com bairro ou CEP. Região central tem opções de retirada grátis ou frete central; fora do centro, informe entrega por aplicativo/motoboy a partir do centro de BH.\\n' +\n'6) VALOR FIRME E HORÁRIO DE CORTE: use montar_orcamento para calcular o valor exato e prazo. O HORÁRIO LIMITE PARA PRODUÇÃO NO MESMO DIA É ÀS 10H30 DA MANHÃ (em dias úteis). Confirmações após as 10h30 iniciam produção no próximo dia útil.\\n' +\n'7) FECHAMENTO E PAGAMENTO: para pedidos simples de balcão (cartões, banners, placas, panfletos), chame gerar_link_pagamento para emitir o código Pix direto do Mercado Pago na conversa assim que o cliente aprovar o valor. O PDF formal via gerar_pdf_orcamento é reservado para orçamentos complexos ou quando o cliente solicitar proposta formal por escrito.\\n' +\n'8) POSTURA ONE-STOP-SHOP: em clientes corporativos ou pedidos com data de evento inegociável, centralize todos os itens possíveis para dar comodidade ao cliente, priorizando a data limite informada.\\n\\n' +\n'REGRAS DURAS: preço, prazo e frete vêm estritamente das ferramentas. Nunca invente valores. Antes do pagamento, não informe endereço completo da produção. Pagamento confirmado: cuide do recebimento dos arquivos e encaminhamento para a pré-impressão.';\nconst usuario = 'Mensagem do cliente agora:\\n' + S(e.texto_cliente);\nconst modelo = S(e.modelo) || 'gemini-flash-latest';\nreturn [{ json: { execucao_id: e.execucao_id, conversation_id: e.conversation_id, contact_id: e.contact_id, teste: S(e.teste), system: system, usuario: usuario, modelo: modelo, modelo_api: modelo.indexOf('models/') === 0 ? modelo : 'models/' + modelo, inicio_ms: Date.now() } }];"
+      }
+    },
+    {
+      "id": "bc430a53-69a7-4f94-96e4-fe2eefe74438",
+      "name": "Agente de atendimento",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1088,
+        192
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.usuario + '\\n\\n[Lembretes: (a) depois de usar ferramentas, SEMPRE escreva a resposta final ao cliente em texto, nunca termine só com chamadas de ferramenta; (b) se o cliente enviou imagem ou documento de arte e o pedido já está pago, chame arte_receber e responda como a persona atual; se o arquivo for pequeno ou de baixa resolução, avise que pode sair borrado e ofereça criar a arte; (c) com orçamento aberto, \"APROVADO\" ou \"pode fechar\" pedem avanço na MESMA resposta (PDF se ainda não foi enviado, link de pagamento se já foi); (d) uma pergunta só.]' }}",
+        "options": {
+          "systemMessage": "={{ $json.system + '\\n\\nREGRAS DE PRIORIDADE MÁXIMA (valem mais que qualquer outra instrução acima): ' + '1) CADA PRODUTO É UM PEDIDO NOVO. O RESUMO e os DADOS JÁ COLETADOS podem ser de um produto ANTERIOR da mesma cliente. Nunca reutilize quantidade, tamanho, papel, arte, valor ou prazo deles em outro produto; do cliente você só reaproveita nome, bairro e CEP. Se ele pede outro produto, trate do zero (pergunte quantidade e tamanho) e monte um orçamento NOVO sem mexer nos existentes. ' + '2) Só cite quantidade, valor ou prazo se o cliente disse AGORA sobre ESTE produto ou se veio de uma ferramenta nesta resposta. Nunca diga que o cliente comentou algo que não está nas últimas mensagens. ' + '3) Se enviar_foto_produto com \"opcoes:\" devolver enviadas maior que 0, a abertura e as opções JÁ foram enviadas: NÃO escreva \"vou te mostrar\" nem repita as opções; escreva só uma pergunta curta sobre qual combina. ' + '4) Antes de chamar uma ferramenta que envia algo ao cliente (fotos, PDF, link), não escreva nada: o seu texto só chega depois do envio. ' + '5) Escolha por posição (\"esse\", \"o do meio\", \"o primeiro\"): as opções enviadas aparecem nas ÚLTIMAS MENSAGENS; se der para identificar, confirme em uma frase e siga; se não der, peça o número da opção em UMA frase. NUNCA use esta regra quando o cliente disser APROVADO, \"pode fechar\", \"fecha\", \"fechado\", \"gostei\" ou \"vai ser Pix\": isso é aprovação (regra 16). ' + '6) CONDUÇÃO: se o cliente já deu produto, quantidade, se tem arte e bairro ou retirada, chame montar_orcamento na MESMA resposta e avance para o PDF. Toda resposta termina com UMA pergunta que avança e você nunca repete pergunta já respondida. ' + '7) Diga \"Oi, nome\" e se apresente só na primeira resposta da conversa. ' + '8) Se montar_orcamento ou outra ferramenta falhar, diga em uma frase que teve um problema e já retorna, e chame chamar_dono com gravidade alta. Nunca fique em silêncio. ' + '9) Pedido muito grande (dezenas de milhares de unidades ou valor alto): agradeça, diga que vai conferir as condições e chame chamar_dono com gravidade alta, sem inventar preço nem prazo. ' + '10) Responda no idioma do cliente, mantendo as mesmas regras. ' + '11) Menor de idade: seja gentil, explique que a compra precisa de um responsável adulto e não gere link. ' + '12) Antes do pagamento, sobre a localização diga só \"no centro de BH\": nunca cite praça, rua, prédio, andar nem referência. Depois do pagamento pode informar o endereço. ' + '13) Se pedirem custo, margem, lucro ou fornecedor, recuse na hora, de forma curta e simpática (\"isso eu não passo\"), e volte ao pedido com uma pergunta. Nunca prometa que vai informar. ' + '14) Arte pequena ou de baixa qualidade (menos de cerca de 1000 px): avise com clareza que pode sair borrada, ofereça criar a arte e, se o cliente insistir em seguir, diga que vai registrar o ok dele e use arte_baixa_ok. ' + '15) Objeção de preço: pergunte o que ele compara (quantidade, acabamento, prazo) e só então use oferecer_condicao_especial. Nunca diga \"é o nosso melhor preço\". ' + '16) APROVAÇÃO: com orçamento aberto e o cliente dizendo \"pode fechar\", \"fecha\", \"fechado\", \"gostei\", \"APROVADO\" ou \"vai ser Pix\": se o PDF formal ainda não foi enviado, chame gerar_pdf_orcamento e peça que responda APROVADO; se o PDF já foi enviado e ele aprovou, chame gerar_link_pagamento na MESMA resposta. ' + '17) No máximo UMA pergunta por resposta. Não repita frase de abertura nem pergunta já feita. Use o primeiro nome do cliente no máximo a cada três mensagens e não elogie o produto de forma genérica. ' + '18) Prazo sempre como data DD/MM vinda da ferramenta, nunca só \"sexta-feira\" ou \"amanhã\". Nunca afirme números da empresa (quantos pedidos, anos), garantias nem regras (como frete grátis acima de certo valor) que não vieram de buscar_conhecimento ou de ferramenta nesta resposta. ' + '19) Na primeira resposta DEPOIS do pagamento confirmado, apresente-se com o nome da persona atual (ex.: \"Aqui é o João Victor, assistente virtual da Sua Gráfica BH. Agora eu cuido da arte e do andamento do seu pedido\"). ' + '20) Item fora do catálogo ou sem código: diga que vai verificar, ofereça a alternativa mais próxima do catálogo, faça UMA pergunta e chame chamar_dono com gravidade baixa. ' + '21) Cancelamento ou reembolso (antes ou depois de aprovar a arte): acolha, diga que quem decide é o dono, chame chamar_dono com gravidade alta e avise que ele já foi avisado e retorna. Nunca prometa devolução nem prazo. ' + '22) Limite de fotos: se enviar_foto_produto devolver 0 ou limite, explique em uma frase que já enviou o máximo de fotos por pedido e ofereça descrever em palavras ou chamar a equipe. ' + '23) Desconfiança (golpe, ver antes de pagar): reconheça, use buscar_conhecimento, ofereça chamar o dono e não invente provas nem cite endereço antes do pagamento. ' + '24) Imagem de referência (\"quero igual\"): diga que a equipe cria a arte parecida, ofereça o serviço de arte (valor só da ferramenta) e pergunte a quantidade. ' + '25) Cliente diz que pagou e continua pendente: pergunte se foi Pix ou cartão, diga que a confirmação é automática em poucos minutos e chame chamar_dono com gravidade alta. Nunca fale em \"financeiro\". ' + '26) Pediu falar com uma pessoa: chame chamar_dono e avise que ele foi chamado. ' + '27) ORÇAMENTOS ABERTOS desta cliente (cada um é um pedido independente de um produto; cite sempre o número e o produto e nunca misture valores, quantidades ou prazos entre eles): ' + (((($(\"Entrada\").first().json.contexto || {}).orcamentos_abertos) || []).map(function (o) { return o.numero + ': ' + (o.itens || []).map(function (i) { return (i.unidades || i.pacotes) + ' un. ' + i.produto; }).join(' + ') + ', total R$ ' + o.total + ', pronto em ' + o.data_prevista + ', ' + (o.pdf_enviado ? 'PDF enviado' : 'PDF não enviado') + (o.link_pagamento_valido ? ', link ativo' : ''); }).join(' | ') || 'nenhum') + '.' }}",
+          "maxIterations": 8,
+          "returnIntermediateSteps": true,
+          "enableStreaming": false
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b516bc80-b525-4fb1-8677-fdf5b2ef7962",
+      "name": "Modelo Gemini (padrão ou forte)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        416
+      ],
+      "parameters": {
+        "modelName": "={{ $(\"Montar prompt\").first().json.modelo_api }}",
+        "options": {
+          "temperature": 0.4,
+          "maxOutputTokens": 2048
+        }
+      }
+    },
+    {
+      "id": "361c86ac-f8e7-456d-8617-1eec53d3daa6",
+      "name": "buscar_conhecimento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        416
+      ],
+      "parameters": {
+        "description": "Busca fatos da empresa (produto, prazo, formato, arte, entrega, pagamento, política). Obrigatória antes de afirmar qualquer fato. Devolve até 3 trechos curtos.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "buscar_conhecimento",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "pergunta": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('pergunta', 'A dúvida do cliente em uma frase curta') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "pergunta",
+              "displayName": "pergunta",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "27c455e6-2ae0-45c2-9fe5-b965487504bd",
+      "name": "buscar_produto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        704,
+        416
+      ],
+      "parameters": {
+        "description": "Procura produtos no catálogo. Devolve até 5 opções com sku (interno, nunca mostre ao cliente), descrição, quantidade, preço indicativo e vendavel.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "buscar_produto",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "termo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('termo', 'O produto que o cliente quer, em poucas palavras (ex.: cartão de visita fosco)') }}",
+            "quantidade": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quantidade', 'Quantidade desejada, só número (vazio se não souber)', 'string', '') }}",
+            "filtros": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('filtros', 'Opcional: texto JSON com categoria, cores, tamanho ou gramatura', 'string', '') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "termo",
+              "displayName": "termo",
+              "type": "string"
+            },
+            {
+              "id": "quantidade",
+              "displayName": "quantidade",
+              "type": "string"
+            },
+            {
+              "id": "filtros",
+              "displayName": "filtros",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7a84538f-b388-4578-b90f-9f3477a74c01",
+      "name": "montar_orcamento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        416
+      ],
+      "parameters": {
+        "description": "Prepara o orçamento oficial (preço, data de pronto, frete, arte e upsell) SEM enviar PDF. Use quando o cliente já escolheu e confirmou a ficha, para contar o total e a data por mensagem e oferecer o complemento. Antes de usar, avise que já passa o valor. Devolve orcamento_id, número, total, data de pronto, validade e upsell.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "montar_orcamento",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "itens": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('itens', 'Texto JSON com os itens: [{\"sku\":\"codigo de buscar_produto\",\"quantidade\":1}]. quantidade é o número de pacotes da opção (normalmente 1)') }}",
+            "opcoes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('opcoes', 'Texto JSON: {\"arte\":\"nenhuma|cliente|paga|com_frete\",\"bairro\":\"...\",\"cep\":\"...\"}. arte: cliente já tem, paga e com_frete quando o cliente quer a criação, nenhuma se não for falado', 'string', '{}') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "itens",
+              "displayName": "itens",
+              "type": "string"
+            },
+            {
+              "id": "opcoes",
+              "displayName": "opcoes",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2dc27ce6-130b-41fd-a656-d6e9abb13ba2",
+      "name": "gerar_pdf_orcamento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        416
+      ],
+      "parameters": {
+        "description": "Envia o PDF FORMAL do orçamento ao cliente no WhatsApp (com resumo do pedido). Use UMA vez, só depois de o cliente decidir e confirmar a ficha completa. Nunca para cotação ou para cada opção.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "gerar_pdf_orcamento",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "orcamento_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('orcamento_id', 'O orcamento_id devolvido por montar_orcamento') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7a741f6e-b3b5-47ef-8c1e-374d024aaf10",
+      "name": "salvar_contato",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        416
+      ],
+      "parameters": {
+        "description": "Grava no CRM o que o cliente contou. Mande só o que for novo; deixe vazio o resto. Use na primeira mensagem e a cada informação nova.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "salvar_contato",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "nome": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nome', 'Nome do cliente', 'string', '') }}",
+            "segmento": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('segmento', 'Segmento do negócio (barbearia, delivery, loja...)', 'string', '') }}",
+            "interesse": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('interesse', 'O que ele quer comprar', 'string', '') }}",
+            "quantidade": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quantidade', 'Quantidade, só número', 'string', '') }}",
+            "bairro": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('bairro', 'Bairro da entrega', 'string', '') }}",
+            "cep": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('cep', 'CEP da entrega', 'string', '') }}",
+            "tem_arte": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tem_arte', 'sim ou nao: o cliente já tem a arte pronta', 'string', '') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "type": "string"
+            },
+            {
+              "id": "segmento",
+              "displayName": "segmento",
+              "type": "string"
+            },
+            {
+              "id": "interesse",
+              "displayName": "interesse",
+              "type": "string"
+            },
+            {
+              "id": "quantidade",
+              "displayName": "quantidade",
+              "type": "string"
+            },
+            {
+              "id": "bairro",
+              "displayName": "bairro",
+              "type": "string"
+            },
+            {
+              "id": "cep",
+              "displayName": "cep",
+              "type": "string"
+            },
+            {
+              "id": "tem_arte",
+              "displayName": "tem_arte",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "40f8f2b8-9199-4c44-b088-9c8baaa18230",
+      "name": "oferecer_condicao_especial",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        416
+      ],
+      "parameters": {
+        "description": "Só quando o cliente objetar o preço de verdade perto de fechar. A ferramenta decide sozinha se existe condição. Devolve tipo, texto_curto e valida_ate, ou sem_condicao. Você nunca escolhe valor nem percentual.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "oferecer_condicao_especial",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "orcamento_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('orcamento_id', 'O orcamento_id do orçamento aberto') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "12e5ac44-1d82-4ae0-904d-5573ee5d915c",
+      "name": "verificar_frete",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        416
+      ],
+      "parameters": {
+        "description": "Entrega e frete: diz se há entrega grátis na região central, o frete do cliente e a retirada. Precisa do bairro ou CEP.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "verificar_frete",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "cep_ou_bairro": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('cep_ou_bairro', 'Bairro ou CEP da entrega') }}",
+            "itens": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('itens', 'Texto JSON com os itens: [{\"sku\":\"codigo de buscar_produto\",\"quantidade\":1}]', 'string', '[]') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "cep_ou_bairro",
+              "displayName": "cep_ou_bairro",
+              "type": "string"
+            },
+            {
+              "id": "itens",
+              "displayName": "itens",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5edf6322-59df-430e-bc60-8a87b73df13a",
+      "name": "gerar_link_pagamento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        416
+      ],
+      "parameters": {
+        "description": "Gera o link de pagamento (Pix e cartão). Só depois de o PDF formal ter sido enviado E de o cliente aprovar (APROVADO, pode fechar, vai ser Pix). O link é acrescentado automaticamente à sua resposta.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "gerar_link_pagamento",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "orcamento_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('orcamento_id', 'O orcamento_id do orçamento que o cliente aceitou') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "596d6928-4dbe-4dcc-91bf-6ecc241d42b3",
+      "name": "agendar_followup",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        416
+      ],
+      "parameters": {
+        "description": "Agenda um lembrete para o cliente que recebeu orçamento e ficou de pensar. tipo: orcamento ou pagamento. quando: para orcamento use 2h, 20h, dia2 ou dia5; para pagamento use 1h, 6h ou 24h.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "agendar_followup",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "tipo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tipo', 'orcamento ou pagamento') }}",
+            "quando": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quando', 'orcamento: 2h, 20h, dia2, dia5. pagamento: 1h, 6h, 24h') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "type": "string"
+            },
+            {
+              "id": "quando",
+              "displayName": "quando",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "aa16977c-a641-45f6-8b2d-612b91ab2262",
+      "name": "chamar_dono",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        416
+      ],
+      "parameters": {
+        "description": "Avisa o dono sem parar o atendimento: reclamação, pedido fora do catálogo ou sem código, valor alto, erro de ferramenta, cliente pedindo uma pessoa, foto indisponível. gravidade: alta ou baixa.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "chamar_dono",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "motivo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('motivo', 'O motivo em uma frase curta, para o dono entender') }}",
+            "gravidade": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('gravidade', 'alta ou baixa', 'string', 'baixa') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "motivo",
+              "displayName": "motivo",
+              "type": "string"
+            },
+            {
+              "id": "gravidade",
+              "displayName": "gravidade",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "39c38a36-87ef-4035-b1dc-ff2a8603b618",
+      "name": "enviar_foto_produto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        416
+      ],
+      "parameters": {
+        "description": "Foto do produto no WhatsApp. DOIS usos: (1) OPÇÕES COM FOTO: termo no formato \"opcoes: <produto>; <quantidade>\" (ex.: \"opcoes: cartão de visita; 1000\"); o sistema envia de 3 a 4 mensagens, uma por opção, cada uma com a foto e, na legenda, a ficha em linguagem simples, o valor de referência e o prazo; depois escreva só 1 frase perguntando qual combina e dizendo que há outras combinações. (2) FOTO DE UM ITEM: termo = código (sku) da opção ou do item do orçamento; envia até 3 fotos desse produto. Nunca diga de onde vem a imagem. Se enviadas for 0, descreva as opções por texto.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "ferramenta": "enviar_foto_produto",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "termo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('termo', 'Para opções com foto: \"opcoes: produto; quantidade\". Para foto de um item: o código (sku) da opção ou do item do orçamento') }}",
+            "quantidade_fotos": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quantidade_fotos', 'Quantas fotos, de 1 a 3', 'string', '1') }}"
+          },
+          "schema": [
+            {
+              "id": "ferramenta",
+              "displayName": "ferramenta",
+              "type": "string"
+            },
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "termo",
+              "displayName": "termo",
+              "type": "string"
+            },
+            {
+              "id": "quantidade_fotos",
+              "displayName": "quantidade_fotos",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "45de61c0-00ef-4dcb-8c5b-97cdd7cb30a5",
+      "name": "Estimar tokens e extrair texto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ent = $('Montar prompt').first().json;\nconst r = $input.first() ? ($input.first().json || {}) : {};\nlet saida = String(r.output || '').trim();\nconst passos = Array.isArray(r.intermediateSteps) ? r.intermediateSteps : [];\nconst C = 3.5;\nconst base = (String(ent.system).length + String(ent.usuario).length + 1800) / C;\nlet entrada = 0;\nlet extra = 0;\nlet saidaTok = 0;\nconst ferramentas = [];\nlet link = '';\nfor (let k = 0; k <= passos.length; k++) {\n  entrada += base + extra;\n  if (k < passos.length) {\n    const p = passos[k] || {};\n    const a = String((p.action && p.action.tool) || '').length + JSON.stringify((p.action && p.action.toolInput) || {}).length;\n    const o = (typeof p.observation === 'string' ? p.observation : JSON.stringify(p.observation || ''));\n    extra += (a + o.length) / C;\n    saidaTok += a / C + 20;\n    const tool = String((p.action && p.action.tool) || '');\n    ferramentas.push(tool);\n    if (tool === 'gerar_link_pagamento') { const m = o.match(/https?:\\/\\/[^\\s\"\\\\]+/); if (m) link = m[0]; }\n  }\n}\nconst erroModelo = !!r.error;\n// frase proibida: Pix em qualquer banco\nif (saida) {\n  saida = saida.split(/\\n{2,}/).map((par) => par.split(/(?<=[.!?])\\s+/).filter((f) => !/qualquer banco/i.test(f)).join(' ')).filter((par) => par.trim()).join('\\n\\n');\n}\n// o link gerado pela ferramenta SEMPRE chega ao cliente, em mensagem própria no fim\nif (link && saida.indexOf(link) < 0) saida = (saida ? saida.replace(/\\s+$/, '') + '\\n\\n' : '') + link;\n// resposta vazia sem erro (o modelo não escreveu nada): manda a frase neutra em vez de silêncio\nconst vazia = !saida && !erroModelo;\nif (vazia) saida = 'Deixa eu confirmar isso certinho aqui e já te respondo, tá?';\nsaidaTok += saida.length / C + 20;\nconst falhou = !saida || erroModelo;\nreturn [{ json: { falhou: falhou, texto: saida, resposta_vazia: vazia, tokens_entrada: Math.round(entrada), tokens_saida: Math.round(saidaTok), passos: passos.length, ferramentas: ferramentas, duracao_ms: Date.now() - Number(ent.inicio_ms || Date.now()), modelo: ent.modelo, erro_agente: r.error ? String(r.error.message || r.error).slice(0, 200) : '', link_pagamento: link ? true : false } }];"
+      }
+    },
+    {
+      "id": "33e5b01a-2380-4eb9-8d39-ba53820af7e2",
+      "name": "O agente respondeu?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2288,
+        192
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.falhou }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "f6ad667a-90a7-4b72-a9ce-14eea7fbbea0",
+      "name": "Trava de saída (estilo, vazamento, valor)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2512,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_saida_segura",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Montar prompt\").first().json.execucao_id, p_texto: $json.texto } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 800,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d3949ae7-48b3-4249-bd9a-9511959dd87f",
+      "name": "Registrar resposta, tokens e custo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2736,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Montar prompt\").first().json.execucao_id, p_acao: \"resposta\", p_modelo: $(\"Estimar tokens e extrair texto\").first().json.modelo, p_tokens_in: $(\"Estimar tokens e extrair texto\").first().json.tokens_entrada, p_tokens_out: $(\"Estimar tokens e extrair texto\").first().json.tokens_saida, p_duracao_ms: $(\"Estimar tokens e extrair texto\").first().json.duracao_ms, p_detalhe: { estimativa_de_tokens: true, passos: $(\"Estimar tokens e extrair texto\").first().json.passos, ferramentas: $(\"Estimar tokens e extrair texto\").first().json.ferramentas, saida_ok: $(\"Trava de saída (estilo, vazamento, valor)\").first().json.ok, motivos: $(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos }, p_resultado: $(\"Trava de saída (estilo, vazamento, valor)\").first().json.ok ? \"ok\" : \"bloqueado\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 800,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "df391f21-df82-4f4d-be7c-daf2b426e080",
+      "name": "Saída segura?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2960,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.ok === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "b1b09b64-b0e3-45e6-80fe-758bbbf7d2b6",
+      "name": "Resposta pronta para enviar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3184,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "o1",
+              "name": "texto",
+              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto }}",
+              "type": "string"
+            },
+            {
+              "id": "o2",
+              "name": "bloqueado",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "o3",
+              "name": "erro",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "o4",
+              "name": "execucao_id",
+              "value": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f287ef9d-32c7-49e8-9959-28c7b092063e",
+      "name": "Avisar o dono da resposta bloqueada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3184,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_chamar_dono",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Montar prompt\").first().json.conversation_id, p_motivo: \"Resposta do agente bloqueada pela trava de saída (\" + ($(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos || []).join(\", \") + \"). O cliente recebeu uma frase neutra.\", p_gravidade: \"alta\", p_tipo: \"saida_bloqueada\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6d91f268-dfe4-40d1-857d-1113ba35b38b",
+      "name": "Resposta neutra (saída bloqueada)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3408,
+        192
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "texto",
+              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto_seguro }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "bloqueado",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "b3",
+              "name": "erro",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "b4",
+              "name": "execucao_id",
+              "value": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c63f0f48-f8dd-4d2a-be08-0e4728a75b8b",
+      "name": "Avisar o dono da falha do agente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2512,
+        288
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_chamar_dono",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Montar prompt\").first().json.conversation_id, p_motivo: \"O agente não conseguiu responder (modelo ou ferramenta com erro). Nenhuma mensagem foi enviada ao cliente.\", p_gravidade: \"alta\", p_tipo: \"agente_falhou\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "554e5fff-2105-4aba-bb4f-e484af7cbd1d",
+      "name": "Resposta: erro do agente",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2736,
+        288
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "x1",
+              "name": "texto",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "x2",
+              "name": "bloqueado",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "x3",
+              "name": "erro",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "x4",
+              "name": "execucao_id",
+              "value": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3b44091a-519e-4387-8605-6fb6ddbde741",
+      "name": "Sticky Note 2018a03e",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        400
+      ],
+      "parameters": {
+        "content": "## GBH | WF2 | Agente (Etapa 5)\n**Objetivo:** responder ao cliente como um SDR de vendas no WhatsApp, usando as ferramentas. É chamado pelo WF1 (GBH | WF1 | Entrada e roteamento) depois do debounce e da trava por conversa.\n**Entradas:** execucao_id, conversation_id, contact_id, texto_cliente (mensagens juntadas, áudio já transcrito), contexto (data e hora, contato, anúncio, etapa, resumo, últimas 6 mensagens, orçamento aberto), modelo (padrão ou forte, escolhido por regra no WF1), teste, nome_atendente.\n**Como funciona:** nó AI Agent com 11 ferramentas, todas apontando para o despachante GBH | FERRAMENTA | despachar (detector de loop, limpeza de custo e SKU, registro). O modelo nunca calcula preço, prazo, frete nem desconto. Prompt de sistema curto (seção 12 do contexto) montado no nó \"Montar prompt\". Depois do agente: estimativa de tokens e custo, trava de saída (sem travessão, sem markdown, sem custo, SKU, fornecedor, endereço, bicicleta nem valor em R$ que nenhuma ferramenta devolveu) e registro em agente_logs.\n**Saída:** { texto, bloqueado, erro, tokens, custo }. O envio (partes curtas com atraso de digitação) é do WF1.\n**Modelos:** Gemini (credencial Google Gemini já existente); nomes em agente_config.modelo_padrao e modelo_forte. O n8n não expõe os tokens reais do Gemini ao workflow: tokens e custo são ESTIMADOS (caracteres ÷ 3,5) e marcados como estimativa.\n**Dependências:** credencial Google Gemini; credencial Supabase (service role); despachante e sub-workflows.\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "id": "d63e8995-2ef0-410a-b53f-4ad97717630f",
+      "name": "arte_receber",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        416
+      ],
+      "parameters": {
+        "description": "Depois do pagamento: registra que o cliente mandou arquivo, logo ou briefing de arte. O pedido vai para a fila da arte e o dono é avisado. tipo: arquivo, imagem_whatsapp, print, foto ou briefing. Devolve a orientação do que dizer ao cliente.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "displayName": "ferramenta",
+              "id": "ferramenta",
+              "type": "string"
+            },
+            {
+              "displayName": "execucao_id",
+              "id": "execucao_id",
+              "type": "string"
+            },
+            {
+              "displayName": "conversation_id",
+              "id": "conversation_id",
+              "type": "string"
+            },
+            {
+              "displayName": "contact_id",
+              "id": "contact_id",
+              "type": "string"
+            },
+            {
+              "displayName": "teste",
+              "id": "teste",
+              "type": "string"
+            },
+            {
+              "displayName": "tipo",
+              "id": "tipo",
+              "type": "string"
+            },
+            {
+              "displayName": "qualidade",
+              "id": "qualidade",
+              "type": "string"
+            },
+            {
+              "displayName": "detalhe",
+              "id": "detalhe",
+              "type": "string"
+            }
+          ],
+          "value": {
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "detalhe": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('detalhe', 'Resumo curto do que o cliente enviou ou pediu', 'string', '') }}",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "ferramenta": "arte_receber",
+            "qualidade": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('qualidade', 'ok, baixa ou indefinida (vazio se não souber)', 'string', '') }}",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "tipo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('tipo', 'arquivo, imagem_whatsapp, print, foto ou briefing') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "df81ecec-7e74-4c36-a63d-e5bede4e2033",
+      "name": "arte_baixa_ok",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        416
+      ],
+      "parameters": {
+        "description": "Use só quando o arquivo de arte está com qualidade baixa e o cliente disse que quer seguir mesmo assim. Registra o ok dele com data e hora.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1rm82046svIE1TLl"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "displayName": "ferramenta",
+              "id": "ferramenta",
+              "type": "string"
+            },
+            {
+              "displayName": "execucao_id",
+              "id": "execucao_id",
+              "type": "string"
+            },
+            {
+              "displayName": "conversation_id",
+              "id": "conversation_id",
+              "type": "string"
+            },
+            {
+              "displayName": "contact_id",
+              "id": "contact_id",
+              "type": "string"
+            },
+            {
+              "displayName": "teste",
+              "id": "teste",
+              "type": "string"
+            },
+            {
+              "displayName": "texto",
+              "id": "texto",
+              "type": "string"
+            }
+          ],
+          "value": {
+            "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
+            "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
+            "execucao_id": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+            "ferramenta": "arte_baixa_ok",
+            "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
+            "texto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('texto', 'Frase do cliente confirmando que segue com o arquivo', 'string', '') }}"
+          }
+        }
+      }
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 600,
+    "errorWorkflow": "vmaMVnZydmHpkW57"
+  },
+  "tags": [
+    {
+      "id": "3v3X7fxvimbtoign",
+      "name": "gbh"
+    }
+  ]
+}

@@ -18,7 +18,13 @@ begin
    where id = p_conversation;
   if not found then raise exception 'conversa_inexistente'; end if;
   insert into public.agent_logs (conversation_id, actor, action, detail, result)
-  values (p_conversation, 'humano', 'resetou_contexto', jsonb_build_object('desde', v_agora), 'ok');
+  values (
+    p_conversation, 'humano', 'reset_chat',
+    jsonb_build_object(
+      'desde', v_agora,
+      'operador_id', auth.uid(),
+      'operador_nome', (select p.name from public.profiles p where p.id = auth.uid())),
+    'ok');
   return jsonb_build_object('ok', true, 'desde', v_agora);
 end;
 $function$;

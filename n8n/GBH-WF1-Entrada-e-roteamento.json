@@ -1,0 +1,2221 @@
+{
+  "connections": {
+    "Mensagem de entrada (receptor da Meta)": {
+      "main": [
+        [
+          {
+            "node": "Entrada normalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada normalizada": {
+      "main": [
+        [
+          {
+            "node": "Mensagem válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: rodar cenário": {
+      "main": [
+        [
+          {
+            "node": "Preparar cenário de teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar cenário de teste": {
+      "main": [
+        [
+          {
+            "node": "Entrada normalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem válida?": {
+      "main": [
+        [
+          {
+            "node": "Conferir se o agente deve responder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorada (sem chamar o modelo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conferir se o agente deve responder": {
+      "main": [
+        [
+          {
+            "node": "Chamar o modelo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar o modelo?": {
+      "main": [
+        [
+          {
+            "node": "Debounce (juntar mensagens seguidas)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorada (sem chamar o modelo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce (juntar mensagens seguidas)": {
+      "main": [
+        [
+          {
+            "node": "Debounce: sou a última mensagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce: sou a última mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Última do grupo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Última do grupo?": {
+      "main": [
+        [
+          {
+            "node": "Trava da conversa (uma rodada por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agrupada com a mensagem seguinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava da conversa (uma rodada por vez)": {
+      "main": [
+        [
+          {
+            "node": "Conversa livre?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversa livre?": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens do grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Esperar a rodada em andamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar mensagens do grupo": {
+      "main": [
+        [
+          {
+            "node": "Tipo da mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar a rodada em andamento": {
+      "main": [
+        [
+          {
+            "node": "Debounce de novo (depois da espera)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce de novo (depois da espera)": {
+      "main": [
+        [
+          {
+            "node": "Ainda a última?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ainda a última?": {
+      "main": [
+        [
+          {
+            "node": "Trava da conversa (segunda tentativa)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agrupada com a mensagem seguinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava da conversa (segunda tentativa)": {
+      "main": [
+        [
+          {
+            "node": "Conversa livre agora?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversa livre agora?": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens do grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar: conversa ocupada, rodada descartada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo da mensagem": {
+      "main": [
+        [
+          {
+            "node": "Áudio de teste (já transcrito)?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar imagem no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar documento no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Texto da mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Áudio de teste (já transcrito)?": {
+      "main": [
+        [
+          {
+            "node": "Texto do áudio de teste",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Baixar o áudio (Edge Function whatsapp-media)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do áudio de teste": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar as mensagens tratadas": {
+      "main": [
+        [
+          {
+            "node": "Texto único do cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixar o áudio (Edge Function whatsapp-media)": {
+      "main": [
+        [
+          {
+            "node": "Transcrever (Groq whisper-large-v3-turbo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever (Groq whisper-large-v3-turbo)": {
+      "main": [
+        [
+          {
+            "node": "Texto transcrito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto transcrito": {
+      "main": [
+        [
+          {
+            "node": "Gravar a transcrição no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar a transcrição no CRM": {
+      "main": [
+        [
+          {
+            "node": "Registrar custo da transcrição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar custo da transcrição": {
+      "main": [
+        [
+          {
+            "node": "Texto do áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do áudio": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar imagem no CRM": {
+      "main": [
+        [
+          {
+            "node": "Texto da imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto da imagem": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Registrar documento no CRM": {
+      "main": [
+        [
+          {
+            "node": "Texto do documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do documento": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Texto da mensagem": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Texto único do cliente": {
+      "main": [
+        [
+          {
+            "node": "Primeiro contato: salvar origem do anúncio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Primeiro contato: salvar origem do anúncio": {
+      "main": [
+        [
+          {
+            "node": "Contexto enxuto da conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto enxuto da conversa": {
+      "main": [
+        [
+          {
+            "node": "Escolher o modelo (regra por palavras)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escolher o modelo (regra por palavras)": {
+      "main": [
+        [
+          {
+            "node": "GBH | WF2 | Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GBH | WF2 | Agente": {
+      "main": [
+        [
+          {
+            "node": "Dividir em mensagens curtas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dividir em mensagens curtas": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar a rodada": {
+      "main": [
+        [
+          {
+            "node": "Era um cenário de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Era um cenário de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: avaliar os critérios do cenário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Precisa atualizar o resumo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: avaliar os critérios do cenário": {
+      "main": [
+        [
+          {
+            "node": "Limpar o contato de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar o contato de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: apagar o contato e os dados do cenário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa atualizar o resumo?": {
+      "main": [
+        [
+          {
+            "node": "Resumo desatualizado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo desatualizado?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar o resumo (modelo pequeno)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar o resumo (modelo pequeno)": {
+      "main": [
+        [
+          {
+            "node": "Gravar o resumo na conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo pequeno do resumo": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Atualizar o resumo (modelo pequeno)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar o resumo na conversa": {
+      "main": [
+        [
+          {
+            "node": "Registrar custo do resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atraso de digitação (1 a 6 s)": {
+      "main": [
+        [
+          {
+            "node": "Ainda pode responder? (modo humano, pagamento)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ainda pode responder? (modo humano, pagamento)": {
+      "main": [
+        [
+          {
+            "node": "Enviar esta parte?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar esta parte?": {
+      "main": [
+        [
+          {
+            "node": "Modo de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modo de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: guardar a mensagem em testes_conversa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar no WhatsApp (Edge Function agente-enviar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: guardar a mensagem em testes_conversa": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uma mensagem por vez": {
+      "main": [
+        [
+          {
+            "node": "Finalizar a rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atraso de digitação (1 a 6 s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar no WhatsApp (Edge Function agente-enviar)": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "name": "GBH | WF1 | Entrada e roteamento",
+  "nodes": [
+    {
+      "id": "498597cb-c831-4104-a379-e3bc1e186dc6",
+      "name": "Mensagem de entrada (receptor da Meta)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        1248
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gbh-wf1-entrada-7f3a9c2e41b8d605",
+        "authentication": "none",
+        "responseMode": "onReceived",
+        "options": {
+          "onlyRunIf": "={{ !!$json.headers['x-gbh-token'] && !!$json.body && !!$json.body.message_id }}",
+          "noResponseBody": true
+        }
+      },
+      "webhookId": "7a01a703-7063-474b-b79f-f16e0864eb5d"
+    },
+    {
+      "id": "62cb3898-408d-4eec-a61a-26e13e5ebed8",
+      "name": "Entrada normalizada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        1248
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst i = $input.first().json || {};\nlet caso = null;\ntry { caso = $('Teste: rodar cenário').first().json; } catch (e) { caso = null; }\nif (caso) {\n  const corpo = caso.body || {};\n  return [{ json: { message_id: String(i.ultima_mensagem || ''), teste: true, limpar: corpo.limpar !== false, caso_id: String(corpo.caso_id || ''), valido: UUID.test(String(i.ultima_mensagem || '')) } }];\n}\nconst b = i.body || {};\nconst id = String(b.message_id || i.message_id || '');\nreturn [{ json: { message_id: id, teste: false, limpar: false, caso_id: '', valido: UUID.test(id) } }];"
+      }
+    },
+    {
+      "id": "21a1d655-3789-49aa-960c-4941f102aa52",
+      "name": "Teste: rodar cenário",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1056
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gbh-wf1-teste-3d81e07a95c2b4f6",
+        "authentication": "none",
+        "responseMode": "onReceived",
+        "options": {
+          "noResponseBody": true
+        }
+      },
+      "webhookId": "c1add923-0bb9-46b4-859e-d017e70839bd"
+    },
+    {
+      "id": "8c860ef2-d7a2-4c04-8bb5-f291b59d28b6",
+      "name": "Preparar cenário de teste",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        1056
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_teste_preparar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_caso: $json.body.caso_id } }}",
+        "options": {
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "1a7c6dd0-1ca9-42ec-a0c0-bc776eb0452e",
+      "name": "Mensagem válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        1248
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valido }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "3b1068bc-45ce-4053-8a94-1e1d8b21a92f",
+      "name": "Conferir se o agente deve responder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        1104
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_entrada",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $json.message_id, p_teste: $json.teste } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "165285c2-3ce3-446e-8192-36611a46cb02",
+      "name": "Chamar o modelo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        1104
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.processar === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "7c670b0b-a18a-42f5-94df-d9677fb7041b",
+      "name": "Debounce (juntar mensagens seguidas)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        1008
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.teste ? 2 : ($json.debounce_segundos || 8) }}",
+        "unit": "seconds"
+      },
+      "webhookId": "d5a1f3db-4575-44b9-a9be-696816682e49"
+    },
+    {
+      "id": "f1b608f0-cefa-4a5b-b098-f042dca1f17b",
+      "name": "Debounce: sou a última mensagem?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        1008
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_debounce",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $(\"Entrada normalizada\").first().json.message_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "11582d32-b661-4c39-9527-9360d7f904ac",
+      "name": "Última do grupo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1792,
+        1008
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ultima === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "465705d7-2d1c-49de-b9ac-a50ad0b91e46",
+      "name": "Trava da conversa (uma rodada por vez)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2016,
+        864
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_iniciar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $(\"Entrada normalizada\").first().json.message_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "5e740a80-a0ab-4248-80fb-8a973b24b160",
+      "name": "Conversa livre?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        864
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "26acb78f-988e-49b3-8be9-5bd4cb39279e",
+      "name": "Separar mensagens do grupo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        576
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const g = $('Conferir se o agente deve responder').first().json;\nlet deb = null;\ntry { deb = $('Debounce de novo (depois da espera)').first().json; } catch (e) { deb = null; }\nif (!deb || !Array.isArray(deb.mensagens)) deb = $('Debounce: sou a última mensagem?').first().json;\nconst msgs = Array.isArray(deb.mensagens) ? deb.mensagens : [];\n\n// Se a lista estiver vazia após o debounce, emite 1 item para não interromper a execução e permitir chamar agente_finalizar\nif (msgs.length === 0) {\n  return [{ json: { ordem: 0, id: null, tipo: 'vazia', corpo: '', media_id: '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: true } }];\n}\n\nreturn msgs.map((m, k) => ({ json: { ordem: k, id: m.id, tipo: m.tipo, corpo: m.corpo || '', media_id: m.media_id || '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: false } }));"
+      }
+    },
+    {
+      "id": "ce0c1ae6-15d9-4692-ac2e-672ca3869f84",
+      "name": "Esperar a rodada em andamento",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2464,
+        864
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 25,
+        "unit": "seconds"
+      },
+      "webhookId": "1866b39f-794c-4474-a243-49b16a25151c"
+    },
+    {
+      "id": "2dcbe195-c883-416a-ac69-74696ee2b8ea",
+      "name": "Debounce de novo (depois da espera)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2688,
+        864
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_debounce",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $(\"Entrada normalizada\").first().json.message_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "748f7537-04a6-4be7-acf3-647cc674d1b6",
+      "name": "Ainda a última?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2912,
+        864
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ultima === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "1eb95e35-6c9e-4703-9819-97f3f595111b",
+      "name": "Trava da conversa (segunda tentativa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3136,
+        768
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_iniciar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $(\"Entrada normalizada\").first().json.message_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "23c5200d-92f4-475d-b27e-c86425714a89",
+      "name": "Conversa livre agora?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3360,
+        768
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "ccf343ac-c569-41b0-a260-8f4ed882b24f",
+      "name": "Registrar: conversa ocupada, rodada descartada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3584,
+        768
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_finalizar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Conferir se o agente deve responder\").first().json.execucao_id, p_status: \"ocupada\", p_motivo: \"outra rodada em andamento na mesma conversa\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6ba0d115-10e7-4876-9068-453a504c7ee6",
+      "name": "Agrupada com a mensagem seguinte",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        1008
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ab4615ce-d9d6-4812-9a3d-46339a055ddc",
+      "name": "Ignorada (sem chamar o modelo)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        1248
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "674acb4d-a13d-42c1-bc6a-4f756ff0dfe4",
+      "name": "Tipo da mensagem",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3808,
+        544
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "audio",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tipo }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "audio"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "imagem",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tipo }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "image"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "documento",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tipo }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "document"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "texto"
+        }
+      }
+    },
+    {
+      "id": "f4ba67b8-ba16-4766-ab69-25ed5753efd7",
+      "name": "Áudio de teste (já transcrito)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4032,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.media_id === \"teste\" }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "bbebe61c-5fbd-45c6-b5b9-34f3934840d4",
+      "name": "Texto do áudio de teste",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const x = $input.first().json;\nreturn [{ json: { ordem: x.ordem, texto: String(x.corpo || '').replace(/^\\[áudio\\]\\s*/, '') } }];"
+      }
+    },
+    {
+      "id": "710aacc2-3e36-4546-a8b7-60ccd79ca426",
+      "name": "Juntar as mensagens tratadas",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5600,
+        608
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 4
+      }
+    },
+    {
+      "id": "d6107e26-2e79-44e4-9b06-74273082acb5",
+      "name": "Baixar o áudio (Edge Function whatsapp-media)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4256,
+        192
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/whatsapp-media?message_id={{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "37708a5a-4bfa-4c06-8901-e5e75ab6e537",
+      "name": "Transcrever (Groq whisper-large-v3-turbo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4480,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "language",
+              "value": "pt"
+            },
+            {
+              "name": "response_format",
+              "value": "json"
+            },
+            {
+              "name": "temperature",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6053261d-5c54-4837-8694-6793b6221560",
+      "name": "Texto transcrito",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const orig = $('Separar mensagens do grupo').item.json;\nconst t = String(($input.first().json || {}).text || '').trim();\nreturn [{ json: { ordem: orig.ordem, id: orig.id, execucao_id: orig.execucao_id, ok: t.length > 0, texto: t.length > 0 ? t : '[áudio que não consegui ouvir: peça para o cliente escrever]' } }];"
+      }
+    },
+    {
+      "id": "9cd5eb48-e707-4928-b680-c8ce6a154a11",
+      "name": "Gravar a transcrição no CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4928,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_gravar_transcricao",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $json.id, p_texto: $json.ok ? $json.texto : \"\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1378f6d0-f0cc-4734-b64d-08f5e0dab30f",
+      "name": "Registrar custo da transcrição",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        5152,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Texto transcrito\").item.json.execucao_id, p_acao: \"transcricao\", p_modelo: \"whisper-large-v3-turbo\", p_custo_fixo: 0.002, p_detalhe: { estimativa: true }, p_workflow: \"GBH | WF1 | Entrada e roteamento\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f7004023-9366-4133-85ac-157f8992e10a",
+      "name": "Texto do áudio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const t = $('Texto transcrito').item.json;\nreturn [{ json: { ordem: t.ordem, texto: t.texto } }];"
+      }
+    },
+    {
+      "id": "27372f0d-afde-48e3-bab3-467b42dcabbb",
+      "name": "Registrar imagem no CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        5152,
+        384
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_registrar_midia",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $json.id } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "399d6b1f-5bdc-4c71-97ce-697b12e1e2d3",
+      "name": "Texto da imagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        384
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nreturn [{ json: { ordem: orig.ordem, texto: '[o cliente enviou uma imagem/foto. Se o pedido já estiver pago, confirme o recebimento para a equipe conferir. Se ainda estiver em fase de orçamento ou dúvidas, considere como referência visual do que ele procura e responda naturalmente.]' } }];"
+      }
+    },
+    {
+      "id": "e30ff922-84cd-47d5-babd-6d7f9d12be99",
+      "name": "Registrar documento no CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        5152,
+        576
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_registrar_midia",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_message: $json.id } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "19cf770b-8811-414f-a818-93535b9af4a1",
+      "name": "Texto do documento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        576
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nreturn [{ json: { ordem: orig.ordem, texto: '[o cliente enviou um documento PDF/arquivo. Se o pedido já estiver pago, confirme o recebimento para a equipe conferir. Se a conversa ainda estiver na fase de orçamento ou dúvidas técnicas, avalie a mensagem do cliente pois pode ser um modelo ou referência de papel/formato e responda a dúvida técnica normalmente.]' } }];"
+      }
+    },
+    {
+      "id": "ed9489ba-abc0-4720-aff2-9e0e1713271e",
+      "name": "Texto da mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        864
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map((it) => ({ json: { ordem: it.json.ordem, texto: String(it.json.corpo || '').slice(0, 1500) } }));"
+      }
+    },
+    {
+      "id": "f9238837-519a-4da8-9f55-0945b85cab1e",
+      "name": "Texto único do cliente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5824,
+        640
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const itens = $input.all().map((x) => x.json).sort((a, b) => a.ordem - b.ordem);\nconst ehVazia = itens.some(x => x.vazia === true);\nif (ehVazia) {\n  return [{ json: { texto_cliente: '[grupo_vazio]', quantidade_mensagens: 0, vazia: true } }];\n}\nconst texto = itens.map((x) => String(x.texto || '').trim()).filter(Boolean).join('\\n').slice(0, 2500);\n\n// Normalização de medidas: 50x50, 50×50, 50X50, 50*50, 50 por 50 -> 50x50\nconst normalizado = texto.replace(/(\\d+)\\s*([×X\\*]|\\bpor\\b)\\s*(\\d+)/gi, '$1x$3');\n\nreturn [{ json: { texto_cliente: normalizado || '[mensagem vazia]', quantidade_mensagens: itens.length, vazia: false } }];"
+      }
+    },
+    {
+      "id": "1bd2629a-aaa8-455b-8153-47d3a4debe08",
+      "name": "Primeiro contato: salvar origem do anúncio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        6048,
+        640
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_primeiro_contato",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "880e9cb6-500d-43a2-8af5-f1c734acb037",
+      "name": "Contexto enxuto da conversa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        6272,
+        640
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_contexto",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "id": "fc779514-8326-465a-b585-26989137156f",
+      "name": "Escolher o modelo (regra por palavras)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6496,
+        640
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const g = $('Conferir se o agente deve responder').first().json;\nconst texto = String($('Texto único do cliente').first().json.texto_cliente || '');\nconst OBJECAO = /(\\bcaro\\b|\\bcara\\b|car[ií]ssim|desconto|abatiment|abaixa|abaixar|mais barat|menos que|melhor pre[cç]o|[uú]ltimo pre[cç]o|pre[cç]o final|concorr|outro lugar|achei mais|n[aã]o compensa|reclam|absurd|negoci|puxado|vou pensar)/i;\nconst forte = OBJECAO.test(texto);\nreturn [{ json: { modelo: forte ? (g.modelo_forte || 'gemini-2.5-pro') : (g.modelo_padrao || 'gemini-2.5-flash'), modelo_forte: forte } }];"
+      }
+    },
+    {
+      "id": "348e4392-2a93-4a0b-8dac-109b44c71bdc",
+      "name": "GBH | WF2 | Agente",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        6720,
+        640
+      ],
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NKN7RgAJmRWZXRIT"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "execucao_id": "={{ $(\"Conferir se o agente deve responder\").first().json.execucao_id }}",
+            "conversation_id": "={{ $(\"Conferir se o agente deve responder\").first().json.conversation_id }}",
+            "contact_id": "={{ $(\"Conferir se o agente deve responder\").first().json.contact_id }}",
+            "texto_cliente": "={{ $(\"Texto único do cliente\").first().json.texto_cliente }}",
+            "contexto": "={{ $(\"Contexto enxuto da conversa\").first().json }}",
+            "modelo": "={{ $json.modelo }}",
+            "teste": "={{ String($(\"Entrada normalizada\").first().json.teste) }}",
+            "nome_atendente": "={{ $(\"Conferir se o agente deve responder\").first().json.nome_atendente }}"
+          },
+          "schema": [
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "texto_cliente",
+              "displayName": "texto_cliente",
+              "type": "string"
+            },
+            {
+              "id": "contexto",
+              "displayName": "contexto",
+              "type": "object"
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "nome_atendente",
+              "displayName": "nome_atendente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "77d3127f-962b-4ebf-94d2-fb8cd5eb7f76",
+      "name": "Dividir em mensagens curtas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6944,
+        640
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first() ? ($input.first().json || {}) : {};\nconst teste = $('Entrada normalizada').first().json.teste === true;\nconst texto = r.erro || r.error ? '' : String(r.texto || '').trim();\nconst partes = texto.split(/\\n\\s*\\n/).map((p) => p.trim()).filter(Boolean);\nconst curtas = [];\nfor (const p of partes) {\n  if (p.length <= 280) { curtas.push(p); continue; }\n  const frases = p.match(/[^.!?]+[.!?]*\\s*/g) || [p];\n  let atual = '';\n  for (const f of frases) {\n    if ((atual + f).length > 280 && atual) { curtas.push(atual.trim()); atual = f; } else { atual += f; }\n  }\n  if (atual.trim()) curtas.push(atual.trim());\n}\nconst finais = curtas.slice(0, 3);\nif (curtas.length > 3) finais[2] = (finais[2] + ' ' + curtas.slice(3).join(' ')).trim();\nif (!finais.length) return [{ json: { vazio: true, texto: '', atraso: 1, i: 0, erro: !!(r.erro || r.error) } }];\nreturn finais.map((t, i) => ({ json: { vazio: false, texto: t, atraso: teste ? 1 : Math.min(6, Math.max(1, Math.round(1 + t.length / 45))), i: i, erro: false } }));"
+      }
+    },
+    {
+      "id": "c1849ebb-06fd-4a63-9920-1e5ad856ee08",
+      "name": "Finalizar a rodada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        7392,
+        192
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_finalizar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Conferir se o agente deve responder\").first().json.execucao_id, p_status: $(\"Dividir em mensagens curtas\").first().json.erro ? \"erro\" : \"concluida\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5b4428e7-a33d-42e9-850c-5c941c700668",
+      "name": "Era um cenário de teste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        7616,
+        192
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Entrada normalizada\").first().json.teste === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "3cd34da7-5acf-4730-ab40-f9c495ed658e",
+      "name": "Teste: avaliar os critérios do cenário",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        7840,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_teste_avaliar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_caso: $(\"Entrada normalizada\").first().json.caso_id } }}",
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "65e07641-154b-4c79-90a8-8bd73d6b1e23",
+      "name": "Limpar o contato de teste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        8064,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Entrada normalizada\").first().json.limpar === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "e2fe2997-3084-4747-bd94-512d0e9e1b65",
+      "name": "Teste: apagar o contato e os dados do cenário",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        8352,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_teste_limpar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_caso: $(\"Entrada normalizada\").first().json.caso_id } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c6f18db3-dc95-4759-90e4-3cfa47858cb1",
+      "name": "Precisa atualizar o resumo?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        7840,
+        464
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_resumo_precisa",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4971d36b-68d7-4625-b464-931d5e71bcd8",
+      "name": "Resumo desatualizado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        8064,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.precisa === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "3d15c3b5-ebe9-44ec-9a18-c9dd988ce9cf",
+      "name": "Atualizar o resumo (modelo pequeno)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        8288,
+        352
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Atualize o resumo desta conversa de vendas de uma gráfica no WhatsApp, em português, em no máximo 5 linhas curtas: o que o cliente quer (produto, quantidade, arte, bairro), o que já foi combinado (orçamento e valor se houver), objeções e o próximo passo. Não invente nada e não inclua custos.\nResumo atual: {{ $json.resumo_atual || \"nenhum\" }}\nMensagens recentes:\n{{ ($json.mensagens || []).map((m) => m.quem + \": \" + m.texto).join(\"\\n\") }}\nResponda só com o novo resumo."
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "45e049a5-8ac5-4122-a207-4d3a2b90869c",
+      "name": "Modelo pequeno do resumo",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        8368,
+        576
+      ],
+      "parameters": {
+        "modelName": "={{ \"models/\" + ($(\"Conferir se o agente deve responder\").first().json.modelo_resumo || \"gemini-2.5-flash-lite\") }}",
+        "options": {
+          "temperature": 0.2,
+          "maxOutputTokens": 300
+        }
+      }
+    },
+    {
+      "id": "48770f72-148a-493e-adf9-c9de30d6a35b",
+      "name": "Gravar o resumo na conversa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        8640,
+        464
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_gravar_resumo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id, p_resumo: $json.text || \"\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "17649fd1-088a-4b4c-a9b8-936a78ed1be8",
+      "name": "Registrar custo do resumo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        8864,
+        464
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_log",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Conferir se o agente deve responder\").first().json.execucao_id, p_acao: \"resumo\", p_modelo: $(\"Conferir se o agente deve responder\").first().json.modelo_resumo || \"gemini-2.5-flash-lite\", p_tokens_in: 1200, p_tokens_out: 120, p_detalhe: { estimativa_de_tokens: true }, p_workflow: \"GBH | WF1 | Entrada e roteamento\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "472e46ac-dc47-4f5d-8ef0-6fc324b9de6a",
+      "name": "Atraso de digitação (1 a 6 s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7392,
+        704
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.atraso || 1 }}",
+        "unit": "seconds"
+      },
+      "webhookId": "84406774-3045-4e65-86f9-875029687239"
+    },
+    {
+      "id": "1c043096-5ad2-46f0-ba84-d3b8d8fd96ad",
+      "name": "Ainda pode responder? (modo humano, pagamento)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        7616,
+        704
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_pode_enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6ae50f2c-d34f-45b2-82b1-50a776820171",
+      "name": "Enviar esta parte?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        7840,
+        704
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.pode === true && $(\"Uma mensagem por vez\").item.json.vazio !== true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "b0614c54-dd4f-49d7-9cb4-347a3a10e903",
+      "name": "Modo de teste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        8064,
+        704
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $(\"Entrada normalizada\").first().json.teste === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "96498d33-aade-4cad-b986-75c464363312",
+      "name": "Teste: guardar a mensagem em testes_conversa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        8352,
+        784
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_teste_registrar_saida",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id, p_texto: $(\"Uma mensagem por vez\").item.json.texto } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3d6053ad-90b2-4a55-85f5-1446ab922ccc",
+      "name": "Uma mensagem por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        7168,
+        640
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "1ae2f143-0831-4243-be1e-438a3469bfc4",
+      "name": "Enviar no WhatsApp (Edge Function agente-enviar)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        8352,
+        976
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/functions/v1/agente-enviar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversation_id: $(\"Conferir se o agente deve responder\").first().json.conversation_id, text: $(\"Uma mensagem por vez\").item.json.texto } }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b1a01a45-18d3-465c-8590-c1eabef04c87",
+      "name": "Sticky Note cd2773d8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4368,
+        1248
+      ],
+      "parameters": {
+        "content": "## GBH | WF1 | Entrada e roteamento (Etapa 5)\n**Objetivo:** decidir se uma mensagem de ENTRADA do cliente merece uma chamada ao modelo e, se sim, preparar o contexto, chamar o WF2 (Agente) e enviar a resposta em mensagens curtas com atraso de digitação.\n**Gatilho:** webhook do n8n chamado pelo único receptor da Meta (Edge Function whatsapp-webhook, depois de gravar a mensagem; segredos N8N_WF1_URL e N8N_WF1_TOKEN). NÃO existe outro webhook na Meta. Segundo gatilho \"Teste: rodar cenário\" (corpo { caso_id, limpar }) roda um cenário de testes_conversa sem enviar nada ao WhatsApp.\n**Ignora, sem chamar o modelo:** IA pausada (agente_config.ia_ligada e botão do topo), fora do horário, optout, modo humano, pedido já pago, mensagem duplicada, tipo sem resposta (figurinha etc.), teto de tokens da conversa ou do dia (com alerta).\n**Debounce:** espera debounce_segundos (8 s) e só a última mensagem do grupo segue; trava por conversa (uma rodada por vez).\n**Mídia:** áudio é transcrito com Groq whisper-large-v3-turbo (o mais barato, cerca de R$ 0,002 por áudio de 1 minuto) e vira texto; imagem e documento são registrados no CRM e o agente responde natural (arte só é conferida pelo dono depois do pagamento).\n**Contexto:** data e hora (America/Sao_Paulo), contato, anúncio, etapa, resumo, últimas 6 mensagens, orçamento aberto. Resumo atualizado por modelo pequeno a cada 8 mensagens novas.\n**Modelo:** padrão (pequeno) ou forte, por regra determinística de palavras de objeção ou pedido de desconto.\n**Saída:** mensagens curtas (até 3) com atraso de 1 a 6 s pela API (Edge Function agente-enviar, que reconfere IA, modo humano e pagamento antes de cada parte).\n**Dependências:** credenciais Supabase (service role), Groq e Google Gemini; WF2 e despachante de ferramentas.\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 900,
+    "errorWorkflow": "vmaMVnZydmHpkW57"
+  },
+  "tags": [
+    {
+      "id": "3v3X7fxvimbtoign",
+      "name": "gbh"
+    }
+  ]
+}
