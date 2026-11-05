@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { ContactProfile } from '@/features/contacts/ContactProfile'
@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/sheet'
 import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/MetodoPagamentoField'
 import { useToast } from '@/components/ui/toast'
-import { useCreateOrder } from '@/hooks/orders'
+import { useCreateOrder, useOrders } from '@/hooks/orders'
+import { ArtEtapas } from '@/features/orders/ArtEtapas'
+import { PrazoCombinado } from '@/features/orders/PrazoCombinado'
 import { formatPhone } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import type { ConversationWithContact } from '@/lib/types'
@@ -19,9 +21,15 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
   const toast = useToast()
   const { profile } = useAuth()
   const create = useCreateOrder()
+  const { data: orders } = useOrders()
   const [novoPedido, setNovoPedido] = useState(false)
   const [metodoNovo, setMetodoNovo] = useState<MetodoEscolhido>({ metodo: '', parcelas: 1 })
   const { contact } = conversation
+  // pedido em aberto do contato (o mesmo critério do chat): o que não foi entregue ou, na falta, o último
+  const pedido = useMemo(() => {
+    const linked = (orders ?? []).filter((o) => o.contact_id === contact.id)
+    return linked.find((o) => !['entregue', 'recompra'].includes(o.stage)) ?? linked[0]
+  }, [orders, contact.id])
 
   const deleteContact = useMutation({
     mutationFn: async () => {
@@ -67,6 +75,14 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
           </Button>
         </div>
       </Modal>
+
+      {pedido && (
+        <section className="space-y-4 border-t pt-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Pedido #{pedido.number}</p>
+          <PrazoCombinado order={pedido} />
+          <ArtEtapas order={pedido} />
+        </section>
+      )}
 
       <ContactProfile contact={contact} lastContactAt={conversation.last_message_at} />
 
