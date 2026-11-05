@@ -582,3 +582,11 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Validador, financeiro e PDF tratam item manual; o custo vem de `order_items.unit_cost`.
 - `pedido_sincronizar_orcamento` deixa de recusar item sem SKU e cria rascunho quando o pedido não tem orçamento ativo (não cria para pedido pago, cancelado ou excluído).
 - Validado com transação revertida em pedido real: sync ok, custo gravado, financeiro e PDF com 3 itens.
+
+## Orçamento perdido no Kanban (migration 20261113000001)
+- `orcamento_registrar_perda(p_orcamento, p_motivo, p_obs)`: motivo obrigatório (preco, prazo, sumiu, decidiu_depois, abandonou_checkout, outro); observação obrigatória quando o motivo é outro; marca `status = 'perdido'`; recusa orçamento pago.
+- Novo campo `orcamentos.motivo_perda_obs` (até 500 caracteres).
+- Aba Orçamentos do pedido: botão "Marcar como perdido" com motivo e observação.
+- Kanban: coluna "Orçamento perdido" (lista com motivo, observação e valor), fora do arrastar e soltar.
+- `pedido_sincronizar_orcamento` não cria rascunho novo para pedido com orçamento perdido ou cancelado.
+- Validado com transação revertida: motivo outro sem observação recusado; motivo válido marca perdido; sincronização não recria orçamento.
