@@ -73,28 +73,19 @@ function montarConfirmacaoCliente(i: {
   persona?: string | null
   artigo?: string | null
 }): string {
-  // Checklist de arte refinado
-  let arte = ''
-  if (i.arte_status === 'aprovada') {
-    arte = 'A sua arte já está aprovada e pronta para produção!'
-  } else if (i.arte_status === 'enviada') {
-    arte = 'Já recebemos o seu arquivo e a nossa equipe está cuidando da conferência da arte.'
-  } else if (i.arte_status === 'em_criacao') {
-    arte = 'Nossa equipe de criação já está montando a arte para você aprovar.'
-  } else {
-    arte = 'Se você já tiver o arquivo da arte, é só enviar aqui na conversa! Se ainda não tiver, me avisa que a gente cria.'
-  }
-
-  const entrega =
-    i.entrega === 'uber'
-      ? 'A entrega a gente combina por aqui assim que o pedido ficar pronto.'
-      : 'Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete.'
-
-  // Persona 100% humanizada, sem 'assistente virtual'
-  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona} da Sua Gráfica BH. ` : ''
-  const textoPrevisao = i.prazo_manual ? `Previsão combinada: ${i.previsao}` : `Previsão de ficar pronto: ${i.previsao}`
-
-  return `${i.persona ? `Oi, ${i.nome}! ` : ''}${quem}${i.persona ? 'Seu pagamento foi confirmado' : `Pagamento confirmado, ${i.nome}`}! Seu pedido ${i.pedido} já entrou na fila. ${textoPrevisao}. ${arte} ${entrega}`
+  // Versão curta: confirmação, pedido, previsão, uma frase sobre a arte e uma sobre a retirada
+  const arte =
+    i.arte_status === 'aprovada'
+      ? 'Arte aprovada, seguimos para produção.'
+      : i.arte_status === 'enviada'
+        ? 'Recebemos a sua arte e estamos conferindo.'
+        : i.arte_status === 'em_criacao'
+          ? 'Estamos montando a arte para você aprovar.'
+          : 'Tem arte? É só mandar aqui.'
+  const entrega = i.entrega === 'uber' ? 'Combinamos a entrega por aqui.' : 'Aviso aqui quando estiver pronto para retirada.'
+  const previsao = i.prazo_manual ? `Prazo combinado: ${i.previsao}.` : `Previsão: ${i.previsao}.`
+  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona}. ` : ''
+  return `${i.persona ? `Oi, ${i.nome}! ` : ''}${quem}${i.persona ? 'Pagamento confirmado' : `Pagamento confirmado, ${i.nome}`}! Pedido ${i.pedido} na fila. ${previsao} ${arte} ${entrega}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
