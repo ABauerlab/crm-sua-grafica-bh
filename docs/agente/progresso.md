@@ -576,3 +576,9 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Migration `20261111000001_pedido_sincroniza_orcamento`** (aplicada em produção): `pedido_sincronizar_orcamento(p_order)` copia os itens do pedido para o orçamento ativo (rascunho, enviado ou aceito) e recalcula o desconto. Tudo ou nada: item sem SKU ou abaixo do piso duro recusa a operação inteira. Pedido sem orçamento ativo não muda nada.
 - **Drawer:** salvar item, remover item ou alterar desconto, imposto ou taxa sincroniza o orçamento e depois renova o link de pagamento. Como o hash do documento muda, o próximo "Gerar PDF" ou "Reenviar" já sai com os valores novos.
 - **Limite:** item manual (sem SKU) não entra no orçamento em PDF. A sincronização avisa o operador.
+
+## Itens sem SKU no orçamento (migration 20261111000002)
+- `orcamento_itens.sku` aceita vazio; item manual exige `custo_unitario` (check `orcamento_itens_sku_ou_custo`).
+- Validador, financeiro e PDF tratam item manual; o custo vem de `order_items.unit_cost`.
+- `pedido_sincronizar_orcamento` deixa de recusar item sem SKU e cria rascunho quando o pedido não tem orçamento ativo (não cria para pedido pago, cancelado ou excluído).
+- Validado com transação revertida em pedido real: sync ok, custo gravado, financeiro e PDF com 3 itens.
