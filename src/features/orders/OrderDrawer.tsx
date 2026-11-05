@@ -181,6 +181,18 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const toast = useToast()
   const invalidate = useInvalidateOrders()
   const update = useUpdateOrder()
+  const criarLink = useCriarLink()
+  // Pedido mudou de valor: o link antigo sai do ar e um novo é gerado com o total atual (mp-criar-link, forcar_novo)
+  const atualizarLink = () => {
+    if (!order.payment_link || order.payment_status === 'aprovado') return
+    criarLink.mutate(
+      { pedidoId: order.id, novo: true },
+      {
+        onSuccess: () => toast('ok', 'Link de pagamento atualizado com o novo valor.'),
+        onError: (e: Error) => toast('error', `Pedido salvo, mas o link de pagamento não foi atualizado: ${e.message}`),
+      },
+    )
+  }
   const addEvent = useAddOrderEvent()
   const { data: items, isLoading } = useOrderItems(order.id)
   const { data: settings } = useSettings()
@@ -233,6 +245,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
         if (data && data.ok === false && data.requer_confirmacao) throw new Error('Preço abaixo do piso: confirme e escreva o motivo para salvar.')
       }
     },
+    onSuccess: () => atualizarLink(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -242,6 +255,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       const { error } = await supabase.from('order_items').delete().eq('id', id)
       if (error) throw new Error(error.message)
     },
+    onSuccess: () => atualizarLink(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -267,6 +281,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
     guarded({ items: items ?? [], discountPct: d, taxPct: t, feePct: f }, async () => {
       await update.mutateAsync({ id: order.id, patch: { discount_pct: d, tax_pct: t, payment_fee_pct: f } })
       toast('ok', 'Desconto e percentuais salvos.')
+      atualizarLink()
     })
   }
 

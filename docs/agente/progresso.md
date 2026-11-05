@@ -564,3 +564,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Etapas da arte:** `ArtEtapas` (aba Arte e barra lateral do chat). Marcar "Arquivo recebido" grava `art_status = 'enviada'`, "Arte em montagem" grava `'em_criacao'` e "Arte aprovada" grava `'aprovada'`, e cada etapa grava a chave correspondente em `art_checklist`. "Liberado para produção" passa por `useMoveOrder`, com a trava do banco (pagamento e arte aprovada).
 - **Ponto de atenção:** o rótulo `'enviada'` no sistema é "Enviada ao cliente", mas na etapa 1 ele representa "arquivo recebido do cliente". Vale alinhar o rótulo.
 - **Edge `cliente-pago-avisar`:** o repositório não lê `prazo_manual` nem `art_status`. A v5 em produção lê. Sincronizar o código antes de qualquer novo deploy.
+
+## Pedido alterado: link de pagamento acompanha o valor (11/11/2026)
+
+- Ao salvar itens (incluindo a remoção de um item) ou os percentuais de desconto, imposto e taxa, o drawer gera um link novo com `mp-criar-link` (`forcar_novo`) quando o pedido já tem link e não está pago. O link antigo é expirado no Mercado Pago.
+- **Pendente:** o PDF do orçamento é montado a partir do orçamento (`orcamento_documento`), e não dos itens do pedido. Editar o pedido não muda o PDF. Decisão necessária sobre qual é a fonte de verdade.
