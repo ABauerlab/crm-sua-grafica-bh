@@ -25,6 +25,20 @@ export interface Orcamento {
   link_pagamento: string | null
   teste: boolean
   criado_em: string
+  motivo_perda: MotivoPerda | null
+  motivo_perda_em: string | null
+  motivo_perda_obs: string | null
+}
+
+export type MotivoPerda = 'preco' | 'prazo' | 'sumiu' | 'decidiu_depois' | 'abandonou_checkout' | 'outro'
+
+export const MOTIVO_PERDA: Record<MotivoPerda, string> = {
+  preco: 'Preço',
+  prazo: 'Prazo',
+  sumiu: 'Sumiu, não respondeu',
+  decidiu_depois: 'Vai decidir depois',
+  abandonou_checkout: 'Abandonou o pagamento',
+  outro: 'Outro',
 }
 
 export const ORCAMENTO_STATUS: Record<OrcamentoStatus, { label: string; chip: string }> = {

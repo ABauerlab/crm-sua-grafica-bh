@@ -3,12 +3,15 @@ import { ExternalLink, FileText, Send } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
-import { abrirPdfOrcamento, useGerarPdfOrcamento, useOrcamentosDoPedido } from '@/hooks/orcamentos'
+import { abrirPdfOrcamento, useGerarPdfOrcamento, useOrcamentosDoPedido, useRegistrarPerda } from '@/hooks/orcamentos'
 import { EnviarPdfDialog } from './EnviarPdfDialog'
 import { formatBRL, formatPct } from '@/lib/money'
-import { ARTE_LABEL, CONFIANCA_PRECO, ORCAMENTO_STATUS, orcamentoNumero, REGRA_PRECO } from '@/lib/orcamentos'
+import { ARTE_LABEL, CONFIANCA_PRECO, MOTIVO_PERDA, type MotivoPerda, ORCAMENTO_STATUS, orcamentoNumero, REGRA_PRECO } from '@/lib/orcamentos'
 import { metodoLabel, type OrderCard } from '@/lib/orders'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -45,6 +48,59 @@ function LucroPorMetodo({ id }: { id: string }) {
         </table>
       )}
     </details>
+  )
+}
+
+/** Marca o orçamento como perdido. Motivo é obrigatório; observação também quando o motivo é Outro. */
+function MarcarPerdido({ id, numero }: { id: string; numero: string }) {
+  const toast = useToast()
+  const [aberto, setAberto] = useState(false)
+  const [motivo, setMotivo] = useState<MotivoPerda | ''>('')
+  const [obs, setObs] = useState('')
+  const perda = useRegistrarPerda()
+
+  if (!aberto) {
+    return (
+      <Button size="sm" variant="ghost" className="mt-2" onClick={() => setAberto(true)}>
+        Marcar como perdido
+      </Button>
+    )
+  }
+
+  const precisaObs = motivo === 'outro'
+  return (
+    <div className="mt-3 space-y-2 rounded-md border border-brand-red/30 p-3">
+      <Label htmlFor={`perda-${id}`}>Motivo da perda (obrigatório)</Label>
+      <Select id={`perda-${id}`} value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoPerda | '')}>
+        <option value="">Escolha o motivo</option>
+        {(Object.keys(MOTIVO_PERDA) as MotivoPerda[]).map((m) => (
+          <option key={m} value={m}>{MOTIVO_PERDA[m]}</option>
+        ))}
+      </Select>
+      <Label htmlFor={`perda-obs-${id}`}>{precisaObs ? 'Observação (obrigatória)' : 'Observação (opcional)'}</Label>
+      <Textarea id={`perda-obs-${id}`} rows={2} maxLength={500} value={obs} onChange={(e) => setObs(e.target.value)} />
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={!motivo || (precisaObs && !obs.trim()) || perda.isPending}
+          onClick={() =>
+            perda.mutate(
+              { orcamentoId: id, motivo, obs: obs.trim() || null },
+              {
+                onSuccess: () => {
+                  toast('ok', `Orçamento ${numero} marcado como perdido.`)
+                  setAberto(false)
+                },
+                onError: (e) => toast('error', e.message),
+              },
+            )
+          }
+        >
+          {perda.isPending ? 'Salvando…' : 'Salvar motivo'}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setAberto(false)}>Cancelar</Button>
+      </div>
+    </div>
   )
 }
 
@@ -92,6 +148,10 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
               <div><dt className="text-xs text-muted-foreground" title="Só o dono vê">Confiança</dt><dd>{o.confianca_preco ? CONFIANCA_PRECO[o.confianca_preco] : 'sem dado'}</dd></div>
             </dl>
             <LucroPorMetodo id={o.id} />
+            {o.status === 'perdido' && o.motivo_perda && (
+              <p className="mt-2 text-sm"><strong>Motivo da perda:</strong> {MOTIVO_PERDA[o.motivo_perda]}{o.motivo_perda_obs ? ` · ${o.motivo_perda_obs}` : ''}</p>
+            )}
+            {!encerrado && !o.teste && <MarcarPerdido id={o.id} numero={orcamentoNumero(o.numero)} />}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {o.pdf_path ? (

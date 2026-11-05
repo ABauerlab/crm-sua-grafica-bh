@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/MetodoPagamentoField'
 import { OrderCardView, type CardActions } from '@/features/orders/OrderCardView'
+import { PerdidosColumn } from '@/features/orders/PerdidosColumn'
 import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
 import { useAddOrderEvent, useCreateOrder, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
 import { useConfirmarManual } from '@/hooks/payments'
@@ -324,6 +325,7 @@ export default function Kanban() {
               {ORDER_STAGES.map((s) => (
                 <Column key={s.value} stage={s} orders={byStage.get(s.value) ?? []} actions={actions} settings={settings} />
               ))}
+              <PerdidosColumn />
             </div>
             <DragOverlay>{active ? <OrderCardView order={active} settings={settings} actions={actions} stalled={isStalled(active, settings)} dragging draggable={false} /> : null}</DragOverlay>
           </DndContext>
@@ -343,6 +345,7 @@ export default function Kanban() {
               ))}
               {(byStage.get(mobileStage) ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido nesta etapa.</p>}
             </div>
+            <PerdidosColumn mobile />
           </div>
         </>
       )}

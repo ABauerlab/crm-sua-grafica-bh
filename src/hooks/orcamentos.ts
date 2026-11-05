@@ -4,7 +4,53 @@ import type { Orcamento } from '@/lib/orcamentos'
 import { supabase } from '@/lib/supabase'
 
 const COLUNAS =
-  'id, numero, order_id, contact_id, conversation_id, origem_id, status, subtotal, arte_modo, arte_valor, frete_modo, desconto_valor, total, validade_ate, regra_preco, confianca_preco, margem_liquida_pct, lucro_liquido, pdf_path, pdf_gerado_em, pdf_enviado_em, link_pagamento, teste, criado_em'
+  'id, numero, order_id, contact_id, conversation_id, origem_id, status, subtotal, arte_modo, arte_valor, frete_modo, desconto_valor, total, validade_ate, regra_preco, confianca_preco, margem_liquida_pct, lucro_liquido, pdf_path, pdf_gerado_em, pdf_enviado_em, link_pagamento, teste, criado_em, motivo_perda, motivo_perda_em, motivo_perda_obs'
+
+/** Orçamentos perdidos (sem teste) com o nome do contato, para a coluna Perdidos do Kanban. */
+export interface OrcamentoPerdido extends Orcamento {
+  contact: { name: string | null; phone: string | null } | null
+}
+
+export function useOrcamentosPerdidos() {
+  return useQuery({
+    queryKey: ['orcamentos-perdidos'],
+    queryFn: async (): Promise<OrcamentoPerdido[]> => {
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select(`${COLUNAS}, contact:contacts(name, phone)`)
+        .eq('status', 'perdido')
+        .eq('teste', false)
+        .order('motivo_perda_em', { ascending: false })
+        .limit(200)
+      if (error) throw error
+      return data as unknown as OrcamentoPerdido[]
+    },
+  })
+}
+
+const MENSAGEM_PERDA: Record<string, string> = {
+  motivo_invalido: 'Escolha um motivo da lista.',
+  obs_obrigatoria: 'Quando o motivo é Outro, escreva a observação.',
+  orcamento_pago: 'Orçamento pago não pode ser marcado como perdido.',
+  nao_encontrado: 'Orçamento não encontrado.',
+}
+
+export function useRegistrarPerda() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (v: { orcamentoId: string; motivo: string; obs: string | null }) => {
+      const { data, error } = await supabase.rpc('orcamento_registrar_perda', { p_orcamento: v.orcamentoId, p_motivo: v.motivo, p_obs: v.obs })
+      if (error) throw new Error(error.message)
+      const r = data as { ok: boolean; motivo?: string }
+      if (!r.ok) throw new Error(MENSAGEM_PERDA[r.motivo ?? ''] ?? 'Não foi possível marcar como perdido.')
+      return r
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orcamentos'] })
+      qc.invalidateQueries({ queryKey: ['orcamentos-perdidos'] })
+    },
+  })
+}
 
 /** Orçamentos do pedido, mais os do mesmo contato que ainda não têm pedido ligado (o pedido nasce quando o link é gerado). */
 export function useOrcamentosDoPedido(orderId: string, contactId: string) {
