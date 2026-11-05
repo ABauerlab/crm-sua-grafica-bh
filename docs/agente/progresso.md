@@ -557,3 +557,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Webhook (fila de entrada):** grava o evento em `webhook_eventos`, responde 200 e processa em segundo plano; eventos pendentes são reprocessados nas chamadas seguintes; processados são apagados após 3 dias. Não usa BullMQ/Redis (não há Redis no Supabase Edge). **Não deployado:** precisa de deploy de `whatsapp-webhook` (e `_shared`), testado com um número real antes de ir ao ar.
 - **Tela `/laura`:** KPIs (conversas, orçamentos, pedidos pagos, faturamento, conversão), latência (P50/P95), taxas de ocupadas e erros, gráfico e tabela diária, filtros hoje/7/15/30 dias.
 - **n8n:** `n8n/GBH-WF2-Agente.json` reexportado (atualizado em 04/11 às 23h00). `n8n/GBH-WF1-Entrada-e-roteamento.json` continua da exportação anterior: a instância mostra atualização de 04/11 às 22h18, então precisa de nova exportação.
+
+## Controles operacionais do pedido (11/11/2026)
+
+- **Prazo combinado:** `PrazoCombinado` (drawer, aba Entrega, e barra lateral do chat). Escolher uma data grava `due_date` e `due_date_manual = true`, e o trigger `orders_set_due_date` deixa de mexer nela. Badge "Prazo manual / combinado" e botão "Recalcular pelo sistema" (desliga a marcação; o trigger refaz a conta quando o pagamento está confirmado).
+- **Etapas da arte:** `ArtEtapas` (aba Arte e barra lateral do chat). Marcar "Arquivo recebido" grava `art_status = 'enviada'`, "Arte em montagem" grava `'em_criacao'` e "Arte aprovada" grava `'aprovada'`, e cada etapa grava a chave correspondente em `art_checklist`. "Liberado para produção" passa por `useMoveOrder`, com a trava do banco (pagamento e arte aprovada).
+- **Ponto de atenção:** o rótulo `'enviada'` no sistema é "Enviada ao cliente", mas na etapa 1 ele representa "arquivo recebido do cliente". Vale alinhar o rótulo.
+- **Edge `cliente-pago-avisar`:** o repositório não lê `prazo_manual` nem `art_status`. A v5 em produção lê. Sincronizar o código antes de qualquer novo deploy.
