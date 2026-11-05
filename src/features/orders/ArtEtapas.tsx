@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 
 /** Etapas rápidas da arte. Cada etapa grava o art_status correspondente e marca a chave em art_checklist. */
 const ETAPAS: { key: string; label: string; status: ArtStatus | null }[] = [
-  { key: 'arquivo_recebido', label: 'Arquivo recebido do cliente', status: 'enviada' },
-  { key: 'arte_montagem', label: 'Arte em montagem ou ajuste', status: 'em_criacao' },
-  { key: 'arte_aprovada', label: 'Arte finalizada e aprovada', status: 'aprovada' },
+  { key: 'arquivo_recebido', label: 'Arte recebida (do cliente)', status: 'enviada' },
+  { key: 'arte_montagem', label: 'Em ajuste / gabarito', status: 'em_criacao' },
+  { key: 'arte_aprovada', label: 'Aprovada', status: 'aprovada' },
   { key: 'producao', label: 'Liberado para produção', status: null },
 ]
 
