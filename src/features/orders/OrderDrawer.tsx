@@ -51,6 +51,7 @@ import {
 } from '@/lib/orders'
 import { ProductPicker } from '@/features/catalog/KitsTab'
 import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
+import { SituacaoOrcamento } from '@/features/orders/SituacaoOrcamento'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -190,7 +191,10 @@ function ItemsTab({ order }: { order: OrderCard }) {
       toast('error', `O PDF não foi atualizado: ${error.message}`)
       return
     }
-    if (data?.sincronizado) qc.invalidateQueries({ queryKey: ['orcamentos'] })
+    if (data?.sincronizado) {
+      qc.invalidateQueries({ queryKey: ['orcamentos'] })
+      qc.invalidateQueries({ queryKey: ['orcamento-situacao', order.id] })
+    }
   }
   // Pedido mudou de valor: o link antigo sai do ar e um novo é gerado com o total atual (mp-criar-link, forcar_novo)
   const atualizarLink = () => {
@@ -895,6 +899,8 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
       {!order ? (
         <div className="space-y-3 p-4"><Skeleton className="h-8 w-1/2" /><Skeleton className="h-48 w-full" /></div>
       ) : (
+        <>
+        <SituacaoOrcamento order={order} />
         <Tabs defaultValue="resumo" className="flex min-h-0 flex-1 flex-col">
           <TabsList>
             <TabsTrigger value="resumo">Resumo</TabsTrigger>
@@ -915,6 +921,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
           {(order.payment_status === 'aprovado' || order.payment_manual) && <TabsContent value="fabrica"><FactoryTab key={order.id} order={order} /></TabsContent>}
           <TabsContent value="historico"><HistoryTab order={order} /></TabsContent>
         </Tabs>
+        </>
       )}
     </Sheet>
   )
