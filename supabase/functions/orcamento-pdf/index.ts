@@ -189,47 +189,26 @@ Deno.serve(async (req) => {
 
   // legenda curta: o cliente recebe o PDF, não um resumo
   const legenda = (texto ?? `Orçamento ${doc.numero} em PDF. Qualquer dúvida, é só responder por aqui.`).slice(0, 1000)
-  const urlEnvio = `${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`
-  const cabecalhos = { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }
-  // deno-lint-ignore no-explicit-any
-  let result: any = {}
-  let metaCode: number | null = null
-  let enviadoComo: 'documento' | 'link' = 'documento'
-  let res: Response | null = null
+  // Envio só do PDF. Se a Meta recusar, não manda nada no lugar (sem texto com resumo ou link sem o usuário ler).
+  let res: Response
   try {
-    res = await fetch(urlEnvio, {
+    res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
-      headers: cabecalhos,
+      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'document', document: { link: signed.signedUrl, filename: nomeArquivo, caption: legenda } }),
     })
-    result = await res.json().catch(() => ({}))
-  } catch (e) {
-    console.error('Falha de rede ao enviar o PDF:', (e as Error).message)
+  } catch {
+    return json({ ...resposta, error: 'Não foi possível falar com a API do WhatsApp. Tente novamente.' }, 502)
   }
-  if (!res?.ok) {
-    // Fallback: a Meta não aceitou o arquivo. Manda o resumo dos valores e o link assinado para abrir o PDF no navegador.
-    metaCode = Number(result?.error?.code) || null
-    console.error('Meta recusou o PDF do orçamento; enviando resumo e link em texto. Código:', metaCode)
-    const corpo = `${legenda}\n\nAbra o PDF do orçamento neste link:\n${signed.signedUrl}`.slice(0, 4000)
-    let fallback: Response | null = null
-    try {
-      fallback = await fetch(urlEnvio, {
-        method: 'POST',
-        headers: cabecalhos,
-        body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: corpo, preview_url: true } }),
-      })
-      result = await fallback.json().catch(() => ({}))
-    } catch (e) {
-      console.error('Falha de rede no resumo em texto do orçamento:', (e as Error).message)
-    }
-    if (!fallback?.ok) return json({ ...resposta, error: 'A Meta recusou o envio do orçamento, inclusive o resumo em texto. Tente de novo ou chame o dono.', meta_code: metaCode }, 502)
-    enviadoComo = 'link'
+  const result = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    console.error('Erro da Meta ao enviar o orçamento:', result?.error?.code)
+    return json({ ...resposta, error: 'A Meta recusou o envio do PDF. Nada foi enviado ao cliente.', meta_code: result?.error?.code ?? null }, 502)
   }
 
   const agora = new Date().toISOString()
-  const corpoRegistro = enviadoComo === 'documento' ? `[Orçamento ${doc.numero} em PDF] ${legenda}` : `[Orçamento ${doc.numero}: resumo e link do PDF] ${legenda}`
-  await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: result?.messages?.[0]?.id ?? null, direction: 'out', type: enviadoComo === 'documento' ? 'document' : 'text', body: corpoRegistro, status: 'sent', created_at: agora })
+  await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: result?.messages?.[0]?.id ?? null, direction: 'out', type: 'document', body: `[Orçamento ${doc.numero} em PDF] ${legenda}`, status: 'sent', created_at: agora })
   await db.from('conversations').update({ last_message_at: agora, last_message_preview: `Orçamento ${doc.numero} (PDF)` }).eq('id', conv.id)
   await db.from('orcamentos').update({ pdf_enviado_em: agora }).eq('id', id)
-  return json({ ...resposta, enviado: true, enviado_como: enviadoComo, meta_code: metaCode })
+  return json({ ...resposta, enviado: true })
 })

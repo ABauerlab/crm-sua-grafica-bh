@@ -470,12 +470,24 @@ Deno.serve(async (req) => {
   const env = requireEnv('WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID')
   if (!env) return json({ error: 'Integração com o WhatsApp não configurada no servidor.' }, 500)
   if (!row.conversation_id) return json({ ...resposta, error: 'Este orçamento não tem conversa de WhatsApp ligada.' }, 422)
-  const { data: conv } = await db.from('conversations').select('id, last_inbound_at, ad_window_until, contact:contacts(wa_id)').eq('id', row.conversation_id).maybeSingle()
+  const { data: conv } = await db.from('conversations').select('id, contact_id, labels, last_inbound_at, ad_window_until, contact:contacts(wa_id)').eq('id', row.conversation_id).maybeSingle()
   // deno-lint-ignore no-explicit-any
   const waId = (conv as any)?.contact?.wa_id as string | undefined
   if (!conv || !waId) return json({ ...resposta, error: 'Conversa não encontrada.' }, 404)
   const ate = Math.max(conv.last_inbound_at ? new Date(conv.last_inbound_at).getTime() + WINDOW_MS : 0, conv.ad_window_until ? new Date(conv.ad_window_until).getTime() : 0)
-  if (ate <= Date.now()) return json({ ...resposta, error: 'A janela de atendimento está fechada. O PDF foi gerado; envie um template aprovado.', code: 'window_closed' }, 409)
+  if (ate <= Date.now()) {
+    // janela fechada: alerta de prioridade alta para o dono e tag "reabrir_janela" na conversa, para o CRM mostrar o que fazer
+    const { error: alertaErr } = await db.rpc('alerta_criar', {
+      p_tipo: 'janela_fechada_orcamento', p_gravidade: 'alta', p_contact: conv.contact_id, p_conversation: conv.id, p_order: null,
+      p_motivo: `Orçamento ${doc.numero} pronto, mas a janela de 24 h está fechada. Peça ao cliente para responder ou envie um template.`,
+      p_dados: { orcamento_id: id }, p_chave: `janela_fechada:${id}`,
+    })
+    if (alertaErr) console.error('Falha ao criar o alerta de janela fechada:', alertaErr.message)
+    const labels = Array.from(new Set([...(conv.labels ?? []), 'reabrir_janela']))
+    const { error: tagErr } = await db.from('conversations').update({ labels }).eq('id', conv.id)
+    if (tagErr) console.error('Falha ao marcar a tag reabrir_janela:', tagErr.message)
+    return json({ ...resposta, status: 'janela_fechada', tag: 'reabrir_janela', error: 'A janela de atendimento está fechada. O PDF foi gerado; a conversa foi marcada para reabrir a janela.', code: 'window_closed' }, 409)
+  }
 
   if (row.status === 'rascunho') {
     const { data: marcado, error } = await db.rpc('orcamento_marcar_enviado', { p_orcamento: id })
@@ -486,8 +498,9 @@ Deno.serve(async (req) => {
     if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
-  // legenda curta: o cliente recebe o PDF, não um resumo (o resumo fica só no CRM, se precisar)
+  // legenda curta: o cliente recebe o PDF, não um resumo
   const legenda = (texto ?? `Orçamento ${doc.numero} em PDF. Qualquer dúvida, é só responder por aqui.`).slice(0, 1000)
+  // Envio só do PDF. Se a Meta recusar, não manda nada no lugar (sem texto com resumo ou link sem o usuário ler).
   let res: Response
   try {
     res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
@@ -501,7 +514,7 @@ Deno.serve(async (req) => {
   const result = await res.json().catch(() => ({}))
   if (!res.ok) {
     console.error('Erro da Meta ao enviar o orçamento:', result?.error?.code)
-    return json({ ...resposta, error: 'A Meta recusou o envio do orçamento.', meta_code: result?.error?.code ?? null }, 502)
+    return json({ ...resposta, error: 'A Meta recusou o envio do PDF. Nada foi enviado ao cliente.', meta_code: result?.error?.code ?? null }, 502)
   }
 
   const agora = new Date().toISOString()
