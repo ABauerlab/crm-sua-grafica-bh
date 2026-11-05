@@ -159,12 +159,24 @@ Deno.serve(async (req) => {
   const env = requireEnv('WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID')
   if (!env) return json({ error: 'Integração com o WhatsApp não configurada no servidor.' }, 500)
   if (!row.conversation_id) return json({ ...resposta, error: 'Este orçamento não tem conversa de WhatsApp ligada.' }, 422)
-  const { data: conv } = await db.from('conversations').select('id, last_inbound_at, ad_window_until, contact:contacts(wa_id)').eq('id', row.conversation_id).maybeSingle()
+  const { data: conv } = await db.from('conversations').select('id, contact_id, labels, last_inbound_at, ad_window_until, contact:contacts(wa_id)').eq('id', row.conversation_id).maybeSingle()
   // deno-lint-ignore no-explicit-any
   const waId = (conv as any)?.contact?.wa_id as string | undefined
   if (!conv || !waId) return json({ ...resposta, error: 'Conversa não encontrada.' }, 404)
   const ate = Math.max(conv.last_inbound_at ? new Date(conv.last_inbound_at).getTime() + WINDOW_MS : 0, conv.ad_window_until ? new Date(conv.ad_window_until).getTime() : 0)
-  if (ate <= Date.now()) return json({ ...resposta, error: 'A janela de atendimento está fechada. O PDF foi gerado; envie um template aprovado.', code: 'window_closed' }, 409)
+  if (ate <= Date.now()) {
+    // janela fechada: alerta de prioridade alta para o dono e tag "reabrir_janela" na conversa, para o CRM mostrar o que fazer
+    const { error: alertaErr } = await db.rpc('alerta_criar', {
+      p_tipo: 'janela_fechada_orcamento', p_gravidade: 'alta', p_contact: conv.contact_id, p_conversation: conv.id, p_order: null,
+      p_motivo: `Orçamento ${doc.numero} pronto, mas a janela de 24 h está fechada. Peça ao cliente para responder ou envie um template.`,
+      p_dados: { orcamento_id: id }, p_chave: `janela_fechada:${id}`,
+    })
+    if (alertaErr) console.error('Falha ao criar o alerta de janela fechada:', alertaErr.message)
+    const labels = Array.from(new Set([...(conv.labels ?? []), 'reabrir_janela']))
+    const { error: tagErr } = await db.from('conversations').update({ labels }).eq('id', conv.id)
+    if (tagErr) console.error('Falha ao marcar a tag reabrir_janela:', tagErr.message)
+    return json({ ...resposta, status: 'janela_fechada', tag: 'reabrir_janela', error: 'A janela de atendimento está fechada. O PDF foi gerado; a conversa foi marcada para reabrir a janela.', code: 'window_closed' }, 409)
+  }
 
   if (row.status === 'rascunho') {
     const { data: marcado, error } = await db.rpc('orcamento_marcar_enviado', { p_orcamento: id })
@@ -175,27 +187,49 @@ Deno.serve(async (req) => {
     if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
-  // legenda curta: o cliente recebe o PDF, não um resumo (o resumo fica só no CRM, se precisar)
+  // legenda curta: o cliente recebe o PDF, não um resumo
   const legenda = (texto ?? `Orçamento ${doc.numero} em PDF. Qualquer dúvida, é só responder por aqui.`).slice(0, 1000)
-  let res: Response
+  const urlEnvio = `${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`
+  const cabecalhos = { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }
+  // deno-lint-ignore no-explicit-any
+  let result: any = {}
+  let metaCode: number | null = null
+  let enviadoComo: 'documento' | 'link' = 'documento'
+  let res: Response | null = null
   try {
-    res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    res = await fetch(urlEnvio, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+      headers: cabecalhos,
       body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'document', document: { link: signed.signedUrl, filename: nomeArquivo, caption: legenda } }),
     })
-  } catch {
-    return json({ ...resposta, error: 'Não foi possível falar com a API do WhatsApp. Tente novamente.' }, 502)
+    result = await res.json().catch(() => ({}))
+  } catch (e) {
+    console.error('Falha de rede ao enviar o PDF:', (e as Error).message)
   }
-  const result = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    console.error('Erro da Meta ao enviar o orçamento:', result?.error?.code)
-    return json({ ...resposta, error: 'A Meta recusou o envio do orçamento.', meta_code: result?.error?.code ?? null }, 502)
+  if (!res?.ok) {
+    // Fallback: a Meta não aceitou o arquivo. Manda o resumo dos valores e o link assinado para abrir o PDF no navegador.
+    metaCode = Number(result?.error?.code) || null
+    console.error('Meta recusou o PDF do orçamento; enviando resumo e link em texto. Código:', metaCode)
+    const corpo = `${legenda}\n\nAbra o PDF do orçamento neste link:\n${signed.signedUrl}`.slice(0, 4000)
+    let fallback: Response | null = null
+    try {
+      fallback = await fetch(urlEnvio, {
+        method: 'POST',
+        headers: cabecalhos,
+        body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: corpo, preview_url: true } }),
+      })
+      result = await fallback.json().catch(() => ({}))
+    } catch (e) {
+      console.error('Falha de rede no resumo em texto do orçamento:', (e as Error).message)
+    }
+    if (!fallback?.ok) return json({ ...resposta, error: 'A Meta recusou o envio do orçamento, inclusive o resumo em texto. Tente de novo ou chame o dono.', meta_code: metaCode }, 502)
+    enviadoComo = 'link'
   }
 
   const agora = new Date().toISOString()
-  await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: result?.messages?.[0]?.id ?? null, direction: 'out', type: 'document', body: `[Orçamento ${doc.numero} em PDF] ${legenda}`, status: 'sent', created_at: agora })
+  const corpoRegistro = enviadoComo === 'documento' ? `[Orçamento ${doc.numero} em PDF] ${legenda}` : `[Orçamento ${doc.numero}: resumo e link do PDF] ${legenda}`
+  await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: result?.messages?.[0]?.id ?? null, direction: 'out', type: enviadoComo === 'documento' ? 'document' : 'text', body: corpoRegistro, status: 'sent', created_at: agora })
   await db.from('conversations').update({ last_message_at: agora, last_message_preview: `Orçamento ${doc.numero} (PDF)` }).eq('id', conv.id)
   await db.from('orcamentos').update({ pdf_enviado_em: agora }).eq('id', id)
-  return json({ ...resposta, enviado: true })
+  return json({ ...resposta, enviado: true, enviado_como: enviadoComo, meta_code: metaCode })
 })

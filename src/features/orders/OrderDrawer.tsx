@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
 import { StatusPedido } from './StatusPedido'
 import { ExcluirPedido } from './ExcluirPedido'
+import { ArtEtapas } from './ArtEtapas'
+import { PrazoCombinado } from './PrazoCombinado'
 import { MetodoPagamentoField, type MetodoEscolhido } from './MetodoPagamentoField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,6 +51,7 @@ import {
 } from '@/lib/orders'
 import { ProductPicker } from '@/features/catalog/KitsTab'
 import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
+import { SituacaoOrcamento } from '@/features/orders/SituacaoOrcamento'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -179,6 +182,31 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const toast = useToast()
   const invalidate = useInvalidateOrders()
   const update = useUpdateOrder()
+  const criarLink = useCriarLink()
+  const qc = useQueryClient()
+  // O pedido é a fonte: copia os itens e o desconto para o orçamento ativo, para o PDF gerado depois refletir o pedido
+  const sincronizarOrcamento = async () => {
+    const { data, error } = await supabase.rpc('pedido_sincronizar_orcamento', { p_order: order.id })
+    if (error) {
+      toast('error', `O PDF não foi atualizado: ${error.message}`)
+      return
+    }
+    if (data?.sincronizado) {
+      qc.invalidateQueries({ queryKey: ['orcamentos'] })
+      qc.invalidateQueries({ queryKey: ['orcamento-situacao', order.id] })
+    }
+  }
+  // Pedido mudou de valor: o link antigo sai do ar e um novo é gerado com o total atual (mp-criar-link, forcar_novo)
+  const atualizarLink = () => {
+    if (!order.payment_link || order.payment_status === 'aprovado') return
+    criarLink.mutate(
+      { pedidoId: order.id, novo: true },
+      {
+        onSuccess: () => toast('ok', 'Link de pagamento atualizado com o novo valor.'),
+        onError: (e: Error) => toast('error', `Pedido salvo, mas o link de pagamento não foi atualizado: ${e.message}`),
+      },
+    )
+  }
   const addEvent = useAddOrderEvent()
   const { data: items, isLoading } = useOrderItems(order.id)
   const { data: settings } = useSettings()
@@ -208,12 +236,17 @@ function ItemsTab({ order }: { order: OrderCard }) {
     })
   }
 
+  const sincronizarEAtualizar = async () => {
+    await sincronizarOrcamento()
+    atualizarLink()
+  }
+
   const saveItem = useMutation({
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       if (!it.id) {
-        // item novo entra com preço 0 e o preço digitado passa pelo banco (piso duro bloqueia; se falhar, a linha é removida)
-        const { data: novo, error } = await supabase.from('order_items').insert({ ...row, unit_price: 0 }).select('id').single()
+        // item novo já entra com o preço digitado; o banco confere o piso logo depois (piso duro bloqueia; se falhar, a linha é removida)
+        const { data: novo, error } = await supabase.from('order_items').insert(row).select('id').single()
         if (error) throw new Error(error.message)
         const { data, error: erroPreco } = await supabase.rpc('definir_preco_item_pedido', { p_item: novo.id, p_preco: it.unit_price!, p_confirmar: false, p_motivo: null, p_apenas_simular: false })
         if (!erroPreco && data?.ok !== false) return
@@ -231,6 +264,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
         if (data && data.ok === false && data.requer_confirmacao) throw new Error('Preço abaixo do piso: confirme e escreva o motivo para salvar.')
       }
     },
+    onSuccess: () => void sincronizarEAtualizar(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -240,6 +274,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       const { error } = await supabase.from('order_items').delete().eq('id', id)
       if (error) throw new Error(error.message)
     },
+    onSuccess: () => void sincronizarEAtualizar(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -265,6 +300,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
     guarded({ items: items ?? [], discountPct: d, taxPct: t, feePct: f }, async () => {
       await update.mutateAsync({ id: order.id, patch: { discount_pct: d, tax_pct: t, payment_fee_pct: f } })
       toast('ok', 'Desconto e percentuais salvos.')
+      await sincronizarEAtualizar()
     })
   }
 
@@ -327,9 +363,9 @@ function ItemsTab({ order }: { order: OrderCard }) {
           <label className="col-span-2 flex items-center gap-2 text-sm sm:col-span-6"><input type="checkbox" checked={manual} onChange={(e) => setManual(e.target.checked)} /> Item fora do catálogo (manual, sem SKU)</label>
           <div className="col-span-2 flex items-center gap-2 sm:col-span-6"><span className="text-xs font-medium text-muted-foreground">SKU escolhido:</span><SkuBadge sku={draft.code || null} />{draft.origem && <span className="text-xs text-muted-foreground">{draft.origem}</span>}</div>
           <Input aria-label="Descrição" placeholder="Descrição do produto" className="col-span-2 sm:col-span-4" value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
-          <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
+          <Input aria-label="Quantidade de pacotes" type="number" min="1" inputMode="numeric" placeholder="Pacotes / Qtd" title="Quantidade de pacotes iguais a esta opção (normalmente 1)" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} />
           <Input aria-label="Prazo do fornecedor em dias úteis" type="number" min="0" inputMode="numeric" placeholder="Prazo (d.u.)" value={draft.lead} onChange={(e) => setDraft({ ...draft, lead: e.target.value })} />
-          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} readOnly={!manual} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
+          <Input aria-label="Custo unitário" inputMode="decimal" placeholder="Custo un. (R$)" className="sm:col-span-2" value={draft.cost} onChange={(e) => setDraft({ ...draft, cost: e.target.value })} />
           <Input aria-label="Preço unitário" inputMode="decimal" placeholder="Preço un. (R$)" className="sm:col-span-2" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
           <Input aria-label="Total do item" inputMode="decimal" placeholder="Total do item (R$), opcional" title="Se preenchido, vale no lugar do unitário (total ÷ quantidade)" className="sm:col-span-2" value={draft.total} onChange={(e) => setDraft({ ...draft, total: e.target.value })} />
           <Button className="col-span-2 sm:col-span-2" onClick={addItem} disabled={saveItem.isPending || (!manual && !draft.code)}><Plus className="h-4 w-4" /> Adicionar</Button>
@@ -616,6 +652,7 @@ function ArtTab({ order }: { order: OrderCard }) {
 
   return (
     <div className="space-y-5">
+      <ArtEtapas order={order} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Quem faz a arte">
           <Select value={order.art_mode ?? ''} onChange={(e) => update.mutate({ id: order.id, patch: { art_mode: (e.target.value || null) as OrderCard['art_mode'] } })}>
@@ -703,7 +740,6 @@ function DeliveryTab({ order }: { order: OrderCard }) {
   const update = useUpdateOrder()
   const [f, setF] = useState({
     supplier: order.supplier_order_no ?? '',
-    due: order.due_date ?? '',
     method: order.delivery_method ?? '',
     address: order.delivery_address ?? '',
     fee: order.delivery_fee != null ? String(order.delivery_fee) : '',
@@ -719,8 +755,6 @@ function DeliveryTab({ order }: { order: OrderCard }) {
             id: order.id,
             patch: {
               supplier_order_no: f.supplier.trim() || null,
-              due_date: f.due || null,
-              due_date_manual: !!f.due && f.due !== (order.due_date ?? '') ? true : f.due ? order.due_date_manual : false,
               delivery_method: (f.method || null) as OrderCard['delivery_method'],
               delivery_address: f.address.trim() || null,
               delivery_fee: f.fee ? parseMoney(f.fee) : null,
@@ -734,16 +768,7 @@ function DeliveryTab({ order }: { order: OrderCard }) {
       <div className="sm:col-span-2"><StatusPedido order={order} /></div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nº do pedido no fornecedor"><Input value={f.supplier} onChange={(e) => setF({ ...f, supplier: e.target.value })} /></Field>
-        <Field label="Prazo previsto">
-          <Input type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} />
-          <p className="mt-1 text-xs text-muted-foreground">
-            {order.due_date_manual
-              ? 'Data ajustada à mão. Apague o campo e salve para voltar ao cálculo automático.'
-              : order.lead_days != null
-                ? `Automático: ${order.lead_days} dia(s) úteis do fornecedor a partir do pagamento confirmado, mais a margem, sem fins de semana e feriados.`
-                : 'Calculado sozinho quando o pagamento for confirmado e algum item tiver prazo.'}
-          </p>
-        </Field>
+        <PrazoCombinado order={order} />
         <Field label="Forma de entrega">
           <Select value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })}>
             <option value="">Não definida</option>
@@ -874,6 +899,8 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
       {!order ? (
         <div className="space-y-3 p-4"><Skeleton className="h-8 w-1/2" /><Skeleton className="h-48 w-full" /></div>
       ) : (
+        <>
+        <SituacaoOrcamento order={order} />
         <Tabs defaultValue="resumo" className="flex min-h-0 flex-1 flex-col">
           <TabsList>
             <TabsTrigger value="resumo">Resumo</TabsTrigger>
@@ -894,6 +921,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
           {(order.payment_status === 'aprovado' || order.payment_manual) && <TabsContent value="fabrica"><FactoryTab key={order.id} order={order} /></TabsContent>}
           <TabsContent value="historico"><HistoryTab order={order} /></TabsContent>
         </Tabs>
+        </>
       )}
     </Sheet>
   )

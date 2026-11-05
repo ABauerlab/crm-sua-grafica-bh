@@ -14,7 +14,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
 - O SKU do fornecedor é interno.
-- O endereço de retirada só é informado depois do pagamento.
+- O endereço fabril completo e a retirada exata só são informados depois do pagamento. Antes do pagamento, o agente pode dar a localização de referência comercial (hipercentro de Belo Horizonte, próximo à Praça Sete). Nunca citar o endereço fabril nem o SKU do fornecedor.
 - Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
 
 ### Fluxo de trabalho
@@ -62,12 +62,14 @@ Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `lab
 
 Mercado Pago: `pagamentos` (links e tentativas), `eventos_pagamento` (contrato com o agente), `pagamentos_alertas`, `orders.teste`. Um só caminho para marcar pago (`private.confirmar_pagamento`, usado pelo webhook e por `confirmar_pagamento_manual`). Detalhes em `docs/pagamento-mercadopago.md`.
 
+Telemetria e fila (10/11/2026): `webhook_eventos` é a fila de entrada da Meta (evento bruto, `processado_em`, reprocessamento dos pendentes; só service role). `v_funil_vendas_ia` é a view diária da Laura (conversas, mensagens, pedidos pagos, faturamento, conversão, P50/P95 em ms das rodadas de até 10 min, ocupadas e erros). `agente_watchdog_reconciliar` alerta lead parado há mais de 90 s. Tela em `/laura` (Performance da Laura / IA).
+
 Extras além do pedido original: `conversations.last_message_preview` (prévia na lista) e a função `admin-create-agent` (admin cria atendentes, já que o cadastro público é desativado).
 
 ### Edge Functions
 | Função | JWT | O que faz |
 |---|---|---|
-| `whatsapp-webhook` | não (assinatura HMAC) | GET: verificação da Meta. POST: valida `X-Hub-Signature-256` e grava mensagens/status |
+| `whatsapp-webhook` | não (assinatura HMAC) | GET: verificação da Meta. POST: valida `X-Hub-Signature-256`, grava o evento em `webhook_eventos` e responde 200; o processamento roda em segundo plano e reprocessa pendentes |
 | `whatsapp-send` | sim + existir em `profiles` | texto (janela 24h) ou template |
 | `whatsapp-sync-templates` | sim + `profiles` | sincroniza `templates_cache` com a Meta |
 | `admin-create-agent` | sim + role admin | cria usuário Auth + profile |
@@ -164,3 +166,7 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Avaliação no Google sem qualquer benefício em troca. Marketing só para quem consentiu.
 - BauerLab (site, marca, anúncios): apresentar uma vez e passar o contato de João Victor.
 - Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.
+- Laura humana: nunca "assistente virtual", "robô" ou "IA" na conversa. Linguagem natural de BH (vc, pra, tá, show, combinado, obg).
+- Custo unitário editável no pedido (catálogo e manual). O banco continua conferindo o piso e a confirmação do responsável entre os pisos fica em `precos_manuais_log`.
+- Corte de produção às 10h30 em dias úteis (`private.inicio_contagem`).
+- Fechamento padrão: (1) PDF formal via `gerar_pdf_orcamento`; (2) aceite do cliente com "APROVADO"; (3) link do Mercado Pago com Pix via `gerar_link_pagamento`.

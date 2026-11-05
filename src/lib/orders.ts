@@ -36,9 +36,9 @@ export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
 }
 
 export const ART_LABELS: Record<ArtStatus, string> = {
-  aguardando: 'Aguardando',
-  em_criacao: 'Em criação',
-  enviada: 'Enviada ao cliente',
+  aguardando: 'Aguardando arte',
+  em_criacao: 'Em ajuste / gabarito',
+  enviada: 'Arte recebida (do cliente)',
   aprovada: 'Aprovada',
   ajuste: 'Ajuste solicitado',
 }

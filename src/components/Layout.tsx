@@ -41,6 +41,7 @@ import { useQuery } from '@tanstack/react-query'
 
 const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/painel', label: 'Painel', icon: BarChart3 },
+  { to: '/laura', label: 'Laura / IA', icon: Bot },
   { to: '/kanban', label: 'Kanban', icon: KanbanSquare },
   { to: '/pedidos', label: 'Pedidos', icon: ClipboardList },
   { to: '/arte', label: 'Fila da arte', icon: Palette },

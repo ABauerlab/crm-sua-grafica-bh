@@ -537,3 +537,48 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Relatório final: `docs/auditoria-agente.md` (seção 0 resume o estado). Branch `claude/zealous-curie-n84wpk`.
 - Feito: correções de preço (custo real no item), gatilhos de pedido, `unaccent` (WF6), `service_role` no schema `private`, `conhecimento` v11, notificações só no push (WhatsApp só para problema de pagamento e cliente esperando humano), modo piloto, card no Kanban ao enviar orçamento, `buscar_produto` com opções reais e ficha traduzida, `produto-opcoes` (opções com foto), `orcamento-pdf` v16 (resumo e APROVADO), link só depois do PDF formal, sem teto de tokens, fluxo consultivo no WF2, 25 workflows ativos com WF9.
 - Falta (Etapa 8B): teste ponta a ponta com o número de teste; ligar `encaminhar_setor`, `bauerlab` e escolha de opção; resumo automático separando pedido anterior e atual; SearXNG em rede interna; conferir credenciais nó a nó; decisões do dono (3 funções antigas do Supabase, `bkp_products_etapa2`, cupom de recompra, lembretes do pedido SG-0019 seguros em `followup_fila` com status cancelado).
+
+## Sincronização com produção (04/11/2026, branch de trabalho)
+
+- **Migration `20261104193000_ajustes_comerciais_producao.sql`:** reflete as funções já atualizadas em produção (`calcular_preco`, `montar_orcamento`, `calcular_prazo`, `private.inicio_contagem`, `public.agente_bloqueio`, `private.categoria_bate`, `public.add_business_days`). Conferido com hash normalizado (sem comentários e CR) dentro de transação revertida: as 7 funções batem com produção.
+- **Divisão de custos m² (pendente de confirmação do dono):** 22 itens (ADESIVOS 15, BACKDROP 7) com quantidade 1 e custo acima de 500 ainda estão no valor original em produção. A migration divide por 100 uma única vez, com guarda em `app_settings.migracao_custo_m2_100x`. Não foi aplicada em produção.
+- **Outros itens com custo ×100 fora dessas categorias (não alterados):** TÓTENS, LETRA CAIXA, DTF TÊXTIL, COMBOS e IMPRESSÃO SUBLIMÁTICA têm custo acima de 500 em quantidade 1. Confirmar com o dono se é o mesmo erro.
+- **Comentários com o nome do fornecedor:** `calcular_preco`, `private.inicio_contagem` (e a migration) tinham o nome do fornecedor em comentários de SQL. Trocado por "fornecedor" na migration. Lógica inalterada.
+- **Edge `orcamento-pdf`:** se a Meta recusar o PDF, manda resumo e link assinado em texto (`enviado_como: 'link'`). Com a janela de 24 h fechada, cria o alerta `janela_fechada_orcamento` (gravidade alta), marca a conversa com a tag `reabrir_janela` e responde `status: 'janela_fechada'`.
+- **Edge `agente-enviar`:** texto acima de 1.500 caracteres é quebrado automaticamente em mensagens sequenciais, até 6.000 caracteres por envio. Acima disso, responde 400 claro.
+- **Diretrizes (`AGENTS.md` e `CLAUDE.md`):** antes do pagamento, o agente pode citar a localização de referência (hipercentro de BH, próximo à Praça Sete). O endereço fabril completo continua proibido antes do pagamento. Fluxo de fechamento padrão: PDF formal, aceite "APROVADO", link do Mercado Pago com Pix.
+- **Pendências:** deploy das Edge Functions `orcamento-pdf` e `agente-enviar`; o prompt do WF2 no n8n ainda diz que o endereço só vai depois do pagamento (mudar pelo MCP do n8n); aplicar a migration de custos m² só após confirmação do dono.
+
+## Sincronização e telemetria da Laura (10/11/2026)
+
+- **Migrations versionadas (já estavam em produção):** `20261110000001_motor_vendas_producao` (montar_orcamento, agente_debounce, agente_iniciar com teto de 60 s, agente_watchdog_reconciliar, private.order_items_validar, definir_preco_item_pedido, calcular_acabamento_seguro, pg_trgm e índice). Conferido por hash do corpo das funções (diferenças só de espaço no fim de linha).
+- **Migrations novas, aplicadas em produção:** `20261110000002_v_funil_percentis` (P50/P95, rodadas de até 10 min), `20261110000003_webhook_fila_entrada` (tabela `webhook_eventos`), `20261110000004_v_funil_total_rodadas` (total de rodadas, denominador das taxas).
+- **Pendência de segurança e de código:** `calcular_acabamento_seguro` consulta `public.acabamentos`, tabela que não existe em produção. Não é chamada por `montar_orcamento` (que usa `produto_acabamentos`). Revisar ou remover.
+- **Webhook (fila de entrada):** grava o evento em `webhook_eventos`, responde 200 e processa em segundo plano; eventos pendentes são reprocessados nas chamadas seguintes; processados são apagados após 3 dias. Não usa BullMQ/Redis (não há Redis no Supabase Edge). **Não deployado:** precisa de deploy de `whatsapp-webhook` (e `_shared`), testado com um número real antes de ir ao ar.
+- **Tela `/laura`:** KPIs (conversas, orçamentos, pedidos pagos, faturamento, conversão), latência (P50/P95), taxas de ocupadas e erros, gráfico e tabela diária, filtros hoje/7/15/30 dias.
+- **n8n:** `n8n/GBH-WF2-Agente.json` reexportado (atualizado em 04/11 às 23h00). `n8n/GBH-WF1-Entrada-e-roteamento.json` continua da exportação anterior: a instância mostra atualização de 04/11 às 22h18, então precisa de nova exportação.
+
+## Controles operacionais do pedido (11/11/2026)
+
+- **Prazo combinado:** `PrazoCombinado` (drawer, aba Entrega, e barra lateral do chat). Escolher uma data grava `due_date` e `due_date_manual = true`, e o trigger `orders_set_due_date` deixa de mexer nela. Badge "Prazo manual / combinado" e botão "Recalcular pelo sistema" (desliga a marcação; o trigger refaz a conta quando o pagamento está confirmado).
+- **Etapas da arte:** `ArtEtapas` (aba Arte e barra lateral do chat). Marcar "Arquivo recebido" grava `art_status = 'enviada'`, "Arte em montagem" grava `'em_criacao'` e "Arte aprovada" grava `'aprovada'`, e cada etapa grava a chave correspondente em `art_checklist`. "Liberado para produção" passa por `useMoveOrder`, com a trava do banco (pagamento e arte aprovada).
+- **Ponto de atenção:** o rótulo `'enviada'` no sistema é "Enviada ao cliente", mas na etapa 1 ele representa "arquivo recebido do cliente". Vale alinhar o rótulo.
+- **Edge `cliente-pago-avisar`:** o repositório não lê `prazo_manual` nem `art_status`. A v5 em produção lê. Sincronizar o código antes de qualquer novo deploy.
+
+## Pedido alterado: link de pagamento acompanha o valor (11/11/2026)
+
+- Ao salvar itens (incluindo a remoção de um item) ou os percentuais de desconto, imposto e taxa, o drawer gera um link novo com `mp-criar-link` (`forcar_novo`) quando o pedido já tem link e não está pago. O link antigo é expirado no Mercado Pago.
+- **Pendente:** o PDF do orçamento é montado a partir do orçamento (`orcamento_documento`), e não dos itens do pedido. Editar o pedido não muda o PDF. Decisão necessária sobre qual é a fonte de verdade.
+
+## PDF acompanha o pedido (11/11/2026)
+
+- **Decisão do dono:** o pedido é a fonte dos itens e do desconto.
+- **Migration `20261111000001_pedido_sincroniza_orcamento`** (aplicada em produção): `pedido_sincronizar_orcamento(p_order)` copia os itens do pedido para o orçamento ativo (rascunho, enviado ou aceito) e recalcula o desconto. Tudo ou nada: item sem SKU ou abaixo do piso duro recusa a operação inteira. Pedido sem orçamento ativo não muda nada.
+- **Drawer:** salvar item, remover item ou alterar desconto, imposto ou taxa sincroniza o orçamento e depois renova o link de pagamento. Como o hash do documento muda, o próximo "Gerar PDF" ou "Reenviar" já sai com os valores novos.
+- **Limite:** item manual (sem SKU) não entra no orçamento em PDF. A sincronização avisa o operador.
+
+## Itens sem SKU no orçamento (migration 20261111000002)
+- `orcamento_itens.sku` aceita vazio; item manual exige `custo_unitario` (check `orcamento_itens_sku_ou_custo`).
+- Validador, financeiro e PDF tratam item manual; o custo vem de `order_items.unit_cost`.
+- `pedido_sincronizar_orcamento` deixa de recusar item sem SKU e cria rascunho quando o pedido não tem orçamento ativo (não cria para pedido pago, cancelado ou excluído).
+- Validado com transação revertida em pedido real: sync ok, custo gravado, financeiro e PDF com 3 itens.
