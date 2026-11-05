@@ -110,6 +110,31 @@ export function useInvalidateOrders() {
 }
 
 /** Mover etapa com atualização otimista, regras de bloqueio e reversão em caso de erro. */
+const MENSAGEM_PERDA_PEDIDO: Record<string, string> = {
+  motivo_invalido: 'Escolha um motivo da lista.',
+  obs_obrigatoria: 'Quando o motivo é Outro, escreva a observação.',
+  pedido_pago: 'Pedido pago não pode ser marcado como perdido.',
+  nao_encontrado: 'Pedido não encontrado.',
+}
+
+/** Marca o pedido como perdido com motivo (obrigatório). Pedido pago não entra. */
+export function useRegistrarPerdaPedido() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (v: { orderId: string; motivo: string; obs: string | null }) => {
+      const { data, error } = await supabase.rpc('pedido_registrar_perda', { p_order: v.orderId, p_motivo: v.motivo, p_obs: v.obs })
+      if (error) throw new Error(error.message)
+      const r = data as { ok: boolean; motivo?: string }
+      if (!r.ok) throw new Error(MENSAGEM_PERDA_PEDIDO[r.motivo ?? ''] ?? 'Não foi possível marcar como perdido.')
+      return r
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      qc.invalidateQueries({ queryKey: ['order-events'] })
+    },
+  })
+}
+
 export function useMoveOrder() {
   const qc = useQueryClient()
   return useMutation({

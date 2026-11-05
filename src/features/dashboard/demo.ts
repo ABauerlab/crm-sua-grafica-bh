@@ -102,7 +102,7 @@ export function buildDemo(now = Date.now()): { orders: OrderCard[]; contacts: Co
       delivery_fee: null,
       delivery_tracking: null,
       delivered_at: null,
-      parcelas: null, urgente_em: null, taxa_fonte: 'estimada', taxa_pagamento_real_valor: null, liquido_recebido: null, urgente: false, urgente_motivo: null, excluido_em: null, arquivado_em: null, cancelado_em: null, reembolso_pendente: false,
+      parcelas: null, urgente_em: null, taxa_fonte: 'estimada', taxa_pagamento_real_valor: null, liquido_recebido: null, urgente: false, urgente_motivo: null, excluido_em: null, arquivado_em: null, cancelado_em: null, reembolso_pendente: false, motivo_perda: null, motivo_perda_obs: null, motivo_perda_em: null,
       subestatus_pedido: null,
       subestatus_em: null,
       enviado_fabrica_em: null,

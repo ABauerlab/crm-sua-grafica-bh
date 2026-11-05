@@ -590,3 +590,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Kanban: coluna "Orçamento perdido" (lista com motivo, observação e valor), fora do arrastar e soltar.
 - `pedido_sincronizar_orcamento` não cria rascunho novo para pedido com orçamento perdido ou cancelado.
 - Validado com transação revertida: motivo outro sem observação recusado; motivo válido marca perdido; sincronização não recria orçamento.
+
+## Pedido perdido (migration 20261114000001)
+- Novo estágio `perdido` no pedido, com `motivo_perda`, `motivo_perda_obs` e `motivo_perda_em`.
+- Trava no banco (`orders_exigir_motivo_perda`): sem motivo não entra; motivo Outro exige observação; pedido pago não entra.
+- Função `pedido_registrar_perda` usada pela tela. Validada em transação revertida.
+- Kanban: arrastar para Perdido ou escolher "Mover para Perdido" no card abre a pergunta do motivo. A ficha do pedido também abre a pergunta e mostra o motivo.
+- Pedido perdido pode voltar para qualquer etapa (o motivo fica guardado no histórico).
