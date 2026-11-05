@@ -216,3 +216,21 @@ export interface AgentLog {
   result: string | null
   created_at: string
 }
+
+/** Linha diária de public.v_funil_vendas_ia (telemetria da Laura / IA). Tempos em milissegundos. */
+export interface FunilIA {
+  data: string
+  conversas_ativas: number
+  msgs_recebidas: number
+  msgs_enviadas: number
+  pedidos_totais: number
+  pedidos_pagos: number
+  faturamento_reais: number
+  taxa_conversao_pct: number
+  tempo_medio_ms: number
+  tempo_p50_ms: number
+  tempo_p95_ms: number
+  rodadas_ocupadas: number
+  rodadas_com_erro: number
+  total_rodadas_ia: number
+}
