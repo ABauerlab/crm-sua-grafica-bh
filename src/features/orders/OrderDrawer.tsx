@@ -182,6 +182,16 @@ function ItemsTab({ order }: { order: OrderCard }) {
   const invalidate = useInvalidateOrders()
   const update = useUpdateOrder()
   const criarLink = useCriarLink()
+  const qc = useQueryClient()
+  // O pedido é a fonte: copia os itens e o desconto para o orçamento ativo, para o PDF gerado depois refletir o pedido
+  const sincronizarOrcamento = async () => {
+    const { data, error } = await supabase.rpc('pedido_sincronizar_orcamento', { p_order: order.id })
+    if (error) {
+      toast('error', `O PDF não foi atualizado: ${error.message}`)
+      return
+    }
+    if (data?.sincronizado) qc.invalidateQueries({ queryKey: ['orcamentos'] })
+  }
   // Pedido mudou de valor: o link antigo sai do ar e um novo é gerado com o total atual (mp-criar-link, forcar_novo)
   const atualizarLink = () => {
     if (!order.payment_link || order.payment_status === 'aprovado') return
@@ -222,6 +232,11 @@ function ItemsTab({ order }: { order: OrderCard }) {
     })
   }
 
+  const sincronizarEAtualizar = async () => {
+    await sincronizarOrcamento()
+    atualizarLink()
+  }
+
   const saveItem = useMutation({
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
@@ -245,7 +260,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
         if (data && data.ok === false && data.requer_confirmacao) throw new Error('Preço abaixo do piso: confirme e escreva o motivo para salvar.')
       }
     },
-    onSuccess: () => atualizarLink(),
+    onSuccess: () => void sincronizarEAtualizar(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -255,7 +270,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       const { error } = await supabase.from('order_items').delete().eq('id', id)
       if (error) throw new Error(error.message)
     },
-    onSuccess: () => atualizarLink(),
+    onSuccess: () => void sincronizarEAtualizar(),
     onSettled: () => invalidate(order.id),
     onError: (e: Error) => toast('error', e.message),
   })
@@ -281,7 +296,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
     guarded({ items: items ?? [], discountPct: d, taxPct: t, feePct: f }, async () => {
       await update.mutateAsync({ id: order.id, patch: { discount_pct: d, tax_pct: t, payment_fee_pct: f } })
       toast('ok', 'Desconto e percentuais salvos.')
-      atualizarLink()
+      await sincronizarEAtualizar()
     })
   }
 
