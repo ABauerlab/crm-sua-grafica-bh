@@ -187,7 +187,8 @@ Deno.serve(async (req) => {
     if (!marcado?.ok) return json({ ...resposta, error: 'Orçamento recusado pela trava de lucro. Chame o dono.' }, 422)
   }
 
-  const legenda = (texto ?? resumoDoPedido(doc)).slice(0, 1000)
+  // legenda curta: o cliente recebe o PDF, não um resumo
+  const legenda = (texto ?? `Orçamento ${doc.numero} em PDF. Qualquer dúvida, é só responder por aqui.`).slice(0, 1000)
   const urlEnvio = `${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`
   const cabecalhos = { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }
   // deno-lint-ignore no-explicit-any
