@@ -569,3 +569,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 
 - Ao salvar itens (incluindo a remoção de um item) ou os percentuais de desconto, imposto e taxa, o drawer gera um link novo com `mp-criar-link` (`forcar_novo`) quando o pedido já tem link e não está pago. O link antigo é expirado no Mercado Pago.
 - **Pendente:** o PDF do orçamento é montado a partir do orçamento (`orcamento_documento`), e não dos itens do pedido. Editar o pedido não muda o PDF. Decisão necessária sobre qual é a fonte de verdade.
+
+## PDF acompanha o pedido (11/11/2026)
+
+- **Decisão do dono:** o pedido é a fonte dos itens e do desconto.
+- **Migration `20261111000001_pedido_sincroniza_orcamento`** (aplicada em produção): `pedido_sincronizar_orcamento(p_order)` copia os itens do pedido para o orçamento ativo (rascunho, enviado ou aceito) e recalcula o desconto. Tudo ou nada: item sem SKU ou abaixo do piso duro recusa a operação inteira. Pedido sem orçamento ativo não muda nada.
+- **Drawer:** salvar item, remover item ou alterar desconto, imposto ou taxa sincroniza o orçamento e depois renova o link de pagamento. Como o hash do documento muda, o próximo "Gerar PDF" ou "Reenviar" já sai com os valores novos.
+- **Limite:** item manual (sem SKU) não entra no orçamento em PDF. A sincronização avisa o operador.
