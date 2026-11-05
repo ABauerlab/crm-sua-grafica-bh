@@ -1,4 +1,4 @@
-export type OrderStage = 'novo' | 'cotando' | 'aguardando_pagamento' | 'pago' | 'arte' | 'prova' | 'producao' | 'entregue' | 'recompra'
+export type OrderStage = 'novo' | 'cotando' | 'aguardando_pagamento' | 'pago' | 'arte' | 'prova' | 'producao' | 'entregue' | 'recompra' | 'perdido'
 export type PaymentStatus = 'pendente' | 'aprovado' | 'recusado' | 'expirado' | 'estornado'
 export type ArtStatus = 'aguardando' | 'em_criacao' | 'enviada' | 'aprovada' | 'ajuste'
 
@@ -23,6 +23,7 @@ export const ORDER_STAGES: StageInfo[] = [
   { value: 'producao', short: 'Produção', label: 'Produção', bar: 'bg-ink', chip: 'bg-ink/10 text-ink' },
   { value: 'entregue', short: 'Entregue', label: 'Entregue', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
   { value: 'recompra', short: 'Recompra', label: 'Recompra', bar: 'bg-brand-red', chip: 'bg-brand-red/10 text-brand-red' },
+  { value: 'perdido', short: 'Perdido', label: 'Perdido', bar: 'bg-ink/60', chip: 'bg-ink/10 text-ink' },
 ]
 
 export const stageInfo = (s: OrderStage) => ORDER_STAGES.find((x) => x.value === s) ?? ORDER_STAGES[0]
@@ -57,6 +58,9 @@ export interface OrderFinancials {
 export interface Order {
   id: string
   number: number
+  motivo_perda: string | null
+  motivo_perda_obs: string | null
+  motivo_perda_em: string | null
   contact_id: string
   conversation_id: string | null
   title: string
@@ -166,11 +170,13 @@ export const DEFAULT_KANBAN: KanbanSettings = {
     producao: 72,
     entregue: 0,
     recompra: 0,
+    perdido: 0,
   },
 }
 
 /** Motivo pelo qual o pedido não pode ir para a etapa (as mesmas regras existem no banco), ou null. */
 export function blockReason(o: Pick<Order, 'payment_status' | 'payment_manual' | 'art_status'>, to: OrderStage): string | null {
+  if (to === 'perdido') return 'Para marcar como perdido, informe o motivo.'
   if (to === 'pago' && o.payment_status !== 'aprovado' && !o.payment_manual) {
     return 'O pagamento ainda não foi confirmado. Confirme o pagamento (ou marque como pago manualmente) antes de mover para Pago.'
   }

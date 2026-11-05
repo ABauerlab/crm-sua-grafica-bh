@@ -52,6 +52,8 @@ import {
 import { ProductPicker } from '@/features/catalog/KitsTab'
 import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
 import { SituacaoOrcamento } from '@/features/orders/SituacaoOrcamento'
+import { PerderPedido } from '@/features/orders/PerderPedido'
+import { MOTIVO_PERDA, type MotivoPerda } from '@/lib/orcamentos'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -108,6 +110,7 @@ function SummaryTab({ order }: { order: OrderCard }) {
   const update = useUpdateOrder()
   const move = useMoveOrder()
   const [notes, setNotes] = useState(order.notes ?? '')
+  const [perdeAberto, setPerdeAberto] = useState(false)
   const [title, setTitle] = useState(order.title)
   const info = stageInfo(order.stage)
   const hours = hoursInStage(order)
@@ -142,6 +145,7 @@ function SummaryTab({ order }: { order: OrderCard }) {
           value={order.stage}
           onChange={(e) => {
             const to = e.target.value as OrderStage
+            if (to === 'perdido') return setPerdeAberto(true)
             const reason = blockReason(order, to)
             if (reason) return toast('error', reason)
             move.mutate({ order, to }, { onError: (err) => toast('error', err.message) })
@@ -149,7 +153,13 @@ function SummaryTab({ order }: { order: OrderCard }) {
         >
           {ORDER_STAGES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </Select>
+        {order.stage === 'perdido' && order.motivo_perda && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Motivo: {MOTIVO_PERDA[order.motivo_perda as MotivoPerda] ?? order.motivo_perda}{order.motivo_perda_obs ? ` · ${order.motivo_perda_obs}` : ''}
+          </p>
+        )}
       </Field>
+      <PerderPedido order={perdeAberto ? order : null} onClose={() => setPerdeAberto(false)} />
 
       <Field label="Título do pedido">
         <Input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => title.trim() && title !== order.title && update.mutate({ id: order.id, patch: { title: title.trim() } })} />

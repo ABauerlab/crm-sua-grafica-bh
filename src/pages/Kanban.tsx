@@ -24,6 +24,7 @@ import { useToast } from '@/components/ui/toast'
 import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/MetodoPagamentoField'
 import { OrderCardView, type CardActions } from '@/features/orders/OrderCardView'
 import { PerdidosColumn } from '@/features/orders/PerdidosColumn'
+import { PerderPedido } from '@/features/orders/PerderPedido'
 import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
 import { useAddOrderEvent, useCreateOrder, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
 import { useConfirmarManual } from '@/hooks/payments'
@@ -113,6 +114,7 @@ export default function Kanban() {
     if (payConfirm) setPayMetodo({ metodo: metodoValido(payConfirm.order.payment_method) ? payConfirm.order.payment_method! : '', parcelas: payConfirm.order.parcelas ?? 1 })
   }, [payConfirm])
   const [note, setNote] = useState<{ order: OrderCard; text: string } | null>(null)
+  const [perda, setPerda] = useState<OrderCard | null>(null)
   const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number } | null>(null)
   const [viewName, setViewName] = useState('')
   const openId = params.get('pedido')
@@ -140,6 +142,8 @@ export default function Kanban() {
 
   function doMove(order: OrderCard, to: OrderStage) {
     if (order.stage === to) return
+    // Perdido exige motivo: abre a pergunta em vez de mover direto
+    if (to === 'perdido') return setPerda(order)
     move.mutate(
       { order, to },
       {
@@ -194,6 +198,7 @@ export default function Kanban() {
 
   return (
     <div className="flex h-full flex-col">
+      <PerderPedido order={perda} onClose={() => setPerda(null)} />
       <header className="space-y-3 border-b px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-black">Pedidos</h1>

@@ -265,7 +265,7 @@ export default function Orders() {
         </Select>
         <Select value={etapa} onChange={(e) => setEtapa(e.target.value)} aria-label="Etapa do kanban">
           <option value="">Todas as etapas</option>
-          {['novo', 'cotando', 'aguardando_pagamento', 'pago', 'arte', 'prova', 'producao', 'entregue'].map((s) => <option key={s} value={s}>{stageInfo(s as OrderCard['stage']).label}</option>)}
+          {['novo', 'cotando', 'aguardando_pagamento', 'pago', 'arte', 'prova', 'producao', 'entregue', 'perdido'].map((s) => <option key={s} value={s}>{stageInfo(s as OrderCard['stage']).label}</option>)}
         </Select>
         <Select value={subf} onChange={(e) => setSubf(e.target.value)} aria-label="Subestatus">
           <option value="">Qualquer subestatus</option><option value="nenhum">Sem subestatus</option>
