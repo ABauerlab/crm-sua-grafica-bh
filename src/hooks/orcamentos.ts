@@ -29,17 +29,28 @@ interface Reenvio {
   numero: string
   renovado: boolean
   enviado: boolean
+  pdf_url?: string
+  ja_enviado?: boolean
 }
 
 /** Gera o PDF de novo se algo mudou (ou reaproveita) e envia como documento no WhatsApp. Orçamento vencido vira um novo, recalculado. */
 export function useReenviarOrcamento() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (orcamentoId: string) => invokeFunction<Reenvio>('orcamento-pdf', { orcamento_id: orcamentoId, acao: 'reenviar' }),
+    /** texto: a legenda exata que o cliente vai ler (a mesma mostrada na confirmação) */
+    mutationFn: (v: { orcamentoId: string; texto: string }) =>
+      invokeFunction<Reenvio>('orcamento-pdf', { orcamento_id: v.orcamentoId, acao: 'reenviar', texto: v.texto }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['orcamentos'] })
       qc.invalidateQueries({ queryKey: ['orders'] })
     },
+  })
+}
+
+/** Gera (ou reaproveita) o PDF para conferir antes do envio. Não envia nada ao cliente. */
+export function usePreverOrcamento() {
+  return useMutation({
+    mutationFn: (orcamentoId: string) => invokeFunction<Reenvio>('orcamento-pdf', { orcamento_id: orcamentoId, acao: 'gerar' }),
   })
 }
 

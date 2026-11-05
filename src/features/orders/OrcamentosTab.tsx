@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { abrirPdfOrcamento, useGerarPdfOrcamento, useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
+import { abrirPdfOrcamento, useGerarPdfOrcamento, useOrcamentosDoPedido } from '@/hooks/orcamentos'
+import { EnviarPdfDialog } from './EnviarPdfDialog'
 import { formatBRL, formatPct } from '@/lib/money'
 import { ARTE_LABEL, CONFIANCA_PRECO, ORCAMENTO_STATUS, orcamentoNumero, REGRA_PRECO } from '@/lib/orcamentos'
 import { metodoLabel, type OrderCard } from '@/lib/orders'
@@ -50,14 +51,9 @@ function LucroPorMetodo({ id }: { id: string }) {
 export function OrcamentosTab({ order }: { order: OrderCard }) {
   const toast = useToast()
   const { data, isLoading } = useOrcamentosDoPedido(order.id, order.contact.id)
-  const reenviar = useReenviarOrcamento()
+  const [paraEnviar, setParaEnviar] = useState<{ id: string; numero: number; pdf_enviado_em: string | null } | null>(null)
   const gerar = useGerarPdfOrcamento()
 
-  const enviar = (id: string) =>
-    reenviar.mutate(id, {
-      onSuccess: (r) => toast('ok', r.renovado ? `O orçamento tinha vencido. Gerei o ${r.numero} com tudo recalculado e enviei.` : `Orçamento ${r.numero} enviado no WhatsApp.`),
-      onError: (e) => toast('error', e.message),
-    })
 
   if (isLoading) return <div className="space-y-2 p-4"><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></div>
   if (!data?.length) {
@@ -65,6 +61,7 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
   }
 
   return (
+    <>
     <ul className="space-y-3 p-4">
       {data.map((o) => {
         const st = ORCAMENTO_STATUS[o.status]
@@ -111,8 +108,8 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
                   <FileText className="h-4 w-4" aria-hidden /> {gerar.isPending ? 'Gerando…' : 'Gerar PDF (sem enviar)'}
                 </Button>
               )}
-              <Button size="sm" disabled={encerrado || !o.conversation_id || reenviar.isPending} onClick={() => enviar(o.id)} title={!o.conversation_id ? 'Orçamento sem conversa de WhatsApp' : undefined}>
-                <Send className="h-4 w-4" aria-hidden /> {reenviar.isPending ? 'Enviando…' : o.pdf_enviado_em ? 'Reenviar PDF' : 'Enviar PDF ao cliente'}
+              <Button size="sm" disabled={encerrado || !o.conversation_id} onClick={() => setParaEnviar({ id: o.id, numero: o.numero, pdf_enviado_em: o.pdf_enviado_em ?? null })} title={!o.conversation_id ? 'Orçamento sem conversa de WhatsApp' : undefined}>
+                <Send className="h-4 w-4" aria-hidden /> {o.pdf_enviado_em ? 'Reenviar PDF' : 'Enviar PDF ao cliente'}
               </Button>
               {o.link_pagamento && (
                 <a className="inline-flex items-center gap-1 text-xs font-semibold text-link underline" href={o.link_pagamento} target="_blank" rel="noopener noreferrer">
@@ -125,5 +122,12 @@ export function OrcamentosTab({ order }: { order: OrderCard }) {
         )
       })}
     </ul>
+    <EnviarPdfDialog
+      open={!!paraEnviar}
+      onOpenChange={(o) => !o && setParaEnviar(null)}
+      orcamento={paraEnviar}
+      janelaAberta
+    />
+    </>
   )
 }

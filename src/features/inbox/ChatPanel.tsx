@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { useOrders } from '@/hooks/orders'
-import { useOrcamentosDoPedido, useReenviarOrcamento } from '@/hooks/orcamentos'
+import { useOrcamentosDoPedido } from '@/hooks/orcamentos'
+import { EnviarPdfDialog } from '@/features/orders/EnviarPdfDialog'
 import { useNotes, useQuickReplies } from '@/hooks/crm'
 import { useMessages } from '@/hooks/queries'
 import { useSetting } from '@/hooks/settings'
@@ -49,7 +50,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   const openOrder = linked.find((o) => !['entregue', 'recompra'].includes(o.stage)) ?? linked[0]
   const { data: orcs } = useOrcamentosDoPedido(openOrder?.id ?? '', conversation.contact_id)
   const orcAtivo = (orcs ?? []).find((o) => ['rascunho', 'enviado', 'aceito'].includes(o.status))
-  const enviarPdf = useReenviarOrcamento()
+  const [pdfDialog, setPdfDialog] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [arquivos, setArquivos] = useState<File[]>([])
@@ -209,12 +210,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   function enviarOrcamentoPdf() {
     if (!orcAtivo) return setError('Este pedido não tem orçamento ativo para enviar em PDF.')
-    const jaEnviado = !!orcAtivo.pdf_enviado_em
-    if (!window.confirm(jaEnviado ? 'Este orçamento já foi enviado. Enviar o PDF de novo ao cliente?' : 'Enviar o PDF do orçamento ao cliente agora?')) return
-    enviarPdf.mutate(orcAtivo.id, {
-      onSuccess: (r) => toast('ok', `Orçamento ${r.numero} enviado no WhatsApp.`),
-      onError: (e) => setError(e.message),
-    })
+    setPdfDialog(true)
   }
 
   const addNote = useMutation({
@@ -312,6 +308,12 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
         </div>
       )}
       <MessageInfo m={info} onClose={() => setInfo(null)} />
+      <EnviarPdfDialog
+        open={pdfDialog}
+        onOpenChange={setPdfDialog}
+        orcamento={orcAtivo ? { id: orcAtivo.id, numero: orcAtivo.numero, pdf_enviado_em: orcAtivo.pdf_enviado_em ?? null } : null}
+        janelaAberta={win.open}
+      />
       <header className="space-y-2 border-b bg-card px-4 py-3">
         <div className="flex items-center gap-3">
           <Link to="/inbox" className="flex h-11 w-11 items-center justify-center md:hidden" aria-label="Voltar para a lista">
@@ -451,12 +453,12 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
           {mode === 'reply' && canReply && (
             <>
               <button
-                disabled={!orcAtivo || enviarPdf.isPending}
+                disabled={!orcAtivo}
                 onClick={enviarOrcamentoPdf}
                 title={orcAtivo ? 'Envia o PDF do orçamento no WhatsApp' : 'Este pedido não tem orçamento ativo. Crie ou abra o orçamento no pedido.'}
                 className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40"
               >
-                <FileText className="h-3.5 w-3.5" aria-hidden /> {enviarPdf.isPending ? 'Enviando…' : 'Enviar PDF do orçamento'}
+                <FileText className="h-3.5 w-3.5" aria-hidden /> Enviar PDF do orçamento
               </button>
               <button
                 disabled={!openOrder?.payment_link}
