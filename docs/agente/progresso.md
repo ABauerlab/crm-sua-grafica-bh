@@ -597,3 +597,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Função `pedido_registrar_perda` usada pela tela. Validada em transação revertida.
 - Kanban: arrastar para Perdido ou escolher "Mover para Perdido" no card abre a pergunta do motivo. A ficha do pedido também abre a pergunta e mostra o motivo.
 - Pedido perdido pode voltar para qualquer etapa (o motivo fica guardado no histórico).
+
+## Mensagem automática depois do pagamento mais curta
+- Texto do cliente (`montarConfirmacaoCliente`, em `cliente-pago-avisar` e `_shared/alertas.ts`): confirmação, pedido, previsão, uma frase sobre a arte e uma sobre a retirada. Sem "assistente virtual".
+- O template aprovado pela Meta (`pedido_pago_confirmacao`) não mudou. Só vale fora da janela de 24 h, e trocar o corpo exige nova aprovação.
+- Funções `cliente-pago-avisar` e `alertas-enviar` precisam de deploy para o texto novo entrar em produção.

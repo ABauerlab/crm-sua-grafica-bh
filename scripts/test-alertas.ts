@@ -48,10 +48,10 @@ assert.equal(janelaAberta(null), false)
 
 // ---- confirmação ao cliente: próximos passos, sem custo, SKU, lucro nem margem
 const c = montarConfirmacaoCliente({ nome: 'Maria', pedido: 'SG-0034', previsao: '05/11', arte_status: 'aguardando', entrega: 'retirada' })
-assert.match(c, /Pagamento confirmado, Maria!/); assert.match(c, /SG-0034/); assert.match(c, /05\/11/); assert.match(c, /enviar o arquivo/); assert.match(c, /horário de retirada/)
-assert.match(montarConfirmacaoCliente({ nome: 'Ana', pedido: 'SG-2', previsao: '06/11', persona: 'João Victor', artigo: 'o' }), /^Oi, Ana! Aqui é o João Victor, assistente virtual da Sua Gráfica BH\. Seu pagamento foi confirmado! Seu pedido SG-2/)
+assert.match(c, /Pagamento confirmado, Maria!/); assert.match(c, /SG-0034/); assert.match(c, /05\/11/); assert.match(c, /Tem arte\? É só mandar aqui/); assert.match(c, /pronto para retirada/); assert.doesNotMatch(c, /assistente virtual/)
+assert.match(montarConfirmacaoCliente({ nome: 'Ana', pedido: 'SG-2', previsao: '06/11', persona: 'João Victor', artigo: 'o' }), /^Oi, Ana! Aqui é o João Victor\. Pagamento confirmado! Pedido SG-2 na fila\. Previsão: 06\/11\./)
 assert.doesNotMatch(montarConfirmacaoCliente({ nome: 'Ana', pedido: 'SG-2', previsao: '06/11', persona: 'João Victor', artigo: 'o' }), /[—–]|custo|margem|piso|fornecedor/i)
-assert.match(montarConfirmacaoCliente({ nome: 'Ana', pedido: 'SG-1', previsao: 'a confirmar', arte_status: 'aprovada', entrega: 'uber' }), /arte já está aprovada[\s\S]*entrega a gente combina/)
+assert.match(montarConfirmacaoCliente({ nome: 'Ana', pedido: 'SG-1', previsao: 'a confirmar', arte_status: 'aprovada', entrega: 'uber' }), /Arte aprovada, seguimos para produção\.[\s\S]*Combinamos a entrega por aqui/)
 for (const proibido of [/lucro/i, /custo/i, /margem/i, /piso/i, /fornecedor/i, /\bSKU\b/i, /bicicleta|bike/i]) assert.doesNotMatch(c, proibido, `a confirmação ao cliente não pode conter ${proibido}`)
 assert.doesNotMatch(c, /R\. Rio de Janeiro/, 'o endereço só vai no aviso de pronto, com horário')
 
