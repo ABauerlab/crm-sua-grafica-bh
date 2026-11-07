@@ -170,3 +170,27 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Custo unitário editável no pedido (catálogo e manual). O banco continua conferindo o piso e a confirmação do responsável entre os pisos fica em `precos_manuais_log`.
 - Corte de produção às 10h30 em dias úteis (`private.inicio_contagem`).
 - Fechamento padrão: (1) PDF formal via `gerar_pdf_orcamento`; (2) aceite do cliente com "APROVADO"; (3) link do Mercado Pago com Pix via `gerar_link_pagamento`.
+
+
+## Diretrizes comerciais do SDR Closer (atualização 07/11/2026)
+
+- **Postura de fechamento:** atendimento consultivo orientado à conversão. Não encerrar orçamento passivamente; conduzir para aprovação formal e próximo passo.
+- **Pix prioritário:** apresentar Pix como primeira opção. Cartão em até 2x sem juros somente quando o cliente perguntar ou demonstrar objeção relacionada a parcelamento. Nunca expor taxas internas.
+- **Cobertura de orçamento:** diante de proposta concorrente mais barata ou pedido explícito para cobrir preço, solicitar comprovação e acionar `oferecer_condicao_especial` com gatilho `G2`. A condição final continua subordinada às travas comerciais do banco; nunca prometer preço ou desconto sem retorno da ferramenta.
+- **Intimidade progressiva:** iniciar tratando o cliente por “você”; após a segunda ou terceira mensagem, usar naturalmente “vc”, “pra”, “tá” e “tb”, sem exagero. Emojis com moderação.
+- **Cadastro progressivo:** usar os campos já cadastrados e faltantes informados pelo CRM. Nunca perguntar novamente dados existentes. Salvar dados novos assim que forem fornecidos, incluindo empresa, segmento, e-mail, documento, endereço, notas, solicitação de NF-e e consentimento de promoções.
+- **Nota fiscal:** quando solicitada, confirmar a emissão e coletar somente os dados ainda ausentes: CPF/CNPJ, razão social/nome completo, endereço com CEP e e-mail. Registrar `nota_fiscal = "true"` em `salvar_contato`.
+- **Separação de pedidos:** cada novo produto deve ser orçado como pedido independente. Não reutilizar quantidades, tamanhos ou valores de produtos anteriores.
+- **Autonomia com limites:** resolver dúvidas cobertas por `buscar_produto` e `buscar_conhecimento`. Acionar atendimento humano antes do pagamento quando o cliente pedir explicitamente uma pessoa; manter as demais travas de segurança, preço, aprovação e pagamento já documentadas.
+- **Toda resposta deve terminar com uma pergunta objetiva de avanço**, sem repetir perguntas já respondidas.
+
+
+### Semântica dos gatilhos de condição especial (confirmada em 07/11/2026)
+
+A função `public.calcular_condicao_especial(p_orcamento, p_gatilho)` consulta `public.politica_desconto`; a decisão e o valor pertencem ao banco, nunca ao modelo.
+
+- `G1`: Degrau 1, vantagem operacional (por exemplo, frete ou criação de arte grátis), conforme as regras vigentes e sem pedido mínimo quando a política assim permitir. Usar para objeção comum.
+- `G2`: Degrau 2, desconto financeiro percentual ou nominal calculado sobre a margem disponível acima do piso. Usar quando o cliente apresentar orçamento concorrente ou solicitar cobertura de preço. As travas de margem e o piso continuam soberanos.
+- `G3`: permanece reservado ao gatilho e às condições que estiverem efetivamente configurados em `public.politica_desconto`; não atribuir significado novo no n8n nem no prompt sem conferir a política ativa.
+
+O n8n apenas encaminha o gatilho recebido. Nunca calcula nem promete a condição antes do retorno do banco.
