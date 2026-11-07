@@ -1,0 +1,2055 @@
+{
+  "name": "GBH | FERRAMENTA | despachar",
+  "nodes": [
+    {
+      "id": "0a1a7c1b-be76-439a-b085-e4beb80da5dd",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        1248
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "ferramenta",
+              "type": "string"
+            },
+            {
+              "name": "execucao_id",
+              "type": "string"
+            },
+            {
+              "name": "conversation_id",
+              "type": "string"
+            },
+            {
+              "name": "contact_id",
+              "type": "string"
+            },
+            {
+              "name": "teste",
+              "type": "string"
+            },
+            {
+              "name": "termo",
+              "type": "string"
+            },
+            {
+              "name": "quantidade",
+              "type": "string"
+            },
+            {
+              "name": "filtros",
+              "type": "string"
+            },
+            {
+              "name": "pergunta",
+              "type": "string"
+            },
+            {
+              "name": "itens",
+              "type": "string"
+            },
+            {
+              "name": "opcoes",
+              "type": "string"
+            },
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "name": "cep_ou_bairro",
+              "type": "string"
+            },
+            {
+              "name": "nome",
+              "type": "string"
+            },
+            {
+              "name": "segmento",
+              "type": "string"
+            },
+            {
+              "name": "interesse",
+              "type": "string"
+            },
+            {
+              "name": "bairro",
+              "type": "string"
+            },
+            {
+              "name": "cep",
+              "type": "string"
+            },
+            {
+              "name": "tem_arte",
+              "type": "string"
+            },
+            {
+              "name": "tipo",
+              "type": "string"
+            },
+            {
+              "name": "quando",
+              "type": "string"
+            },
+            {
+              "name": "motivo",
+              "type": "string"
+            },
+            {
+              "name": "gravidade",
+              "type": "string"
+            },
+            {
+              "name": "quantidade_fotos",
+              "type": "string"
+            },
+            {
+              "name": "qualidade",
+              "type": "string"
+            },
+            {
+              "name": "detalhe",
+              "type": "string"
+            },
+            {
+              "name": "texto",
+              "type": "string"
+            },
+            {
+              "name": "empresa",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "documento",
+              "type": "string"
+            },
+            {
+              "name": "endereco",
+              "type": "string"
+            },
+            {
+              "name": "notas",
+              "type": "string"
+            },
+            {
+              "name": "nota_fiscal",
+              "type": "string"
+            },
+            {
+              "name": "consentimento_promocoes",
+              "type": "string"
+            },
+            {
+              "name": "gatilho",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5ac480fd-cf25-41dd-98f9-dba3c9263544",
+      "name": "Marcar início e preparar campos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        1248
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const i = $input.first().json || {};\nconst S = (v) => (v === undefined || v === null ? '' : String(v));\nlet itens = [];\nlet opcoes = {};\ntry { const t = S(i.itens).trim(); if (t) { const p = JSON.parse(t); itens = Array.isArray(p) ? p : []; } } catch (e) { itens = []; }\ntry { const t = S(i.opcoes).trim(); if (t) { const p = JSON.parse(t); opcoes = p && typeof p === 'object' && !Array.isArray(p) ? p : {}; } } catch (e) { opcoes = {}; }\nconst ARTE = ['nenhuma', 'cliente', 'paga', 'com_frete'];\nconst op = {};\nfor (const k of ['bairro', 'cep', 'metodo', 'data_evento']) { if (opcoes[k]) op[k] = S(opcoes[k]).slice(0, 80); }\nop.arte = ARTE.indexOf(opcoes.arte) >= 0 ? opcoes.arte : 'nenhuma';\nop.conversation_id = i.conversation_id;\nif (S(i.teste) === 'true') op.teste = true;\nitens = itens.slice(0, 10).map((x) => ({\n  sku: S(x && x.sku).trim(),\n  quantidade: Math.max(1, Math.round(Number(x && x.quantidade) || 1)),\n  acabamento: x && x.acabamento ? S(x.acabamento).trim() : undefined,\n  largura_mm: x && x.largura_mm ? Number(x.largura_mm) : undefined,\n  altura_mm: x && x.altura_mm ? Number(x.altura_mm) : undefined\n})).filter((x) => x.sku);\nconst q = Number(i.quantidade);\nreturn [{ json: Object.assign({}, i, { itens_arr: itens, opcoes_obj: op, quantidade_num: Number.isFinite(q) && q > 0 ? Math.round(q) : 0, fotos_num: Math.min(3, Math.max(1, Math.round(Number(i.quantidade_fotos) || 1))), inicio_ms: Date.now() }) }];"
+      }
+    },
+    {
+      "id": "d27d1bd9-1c9b-47de-b610-15d4c53b830f",
+      "name": "Guarda de loop e início do registro",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        1248
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_tool_inicio",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $json.execucao_id, p_ferramenta: $json.ferramenta } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 800,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "b364976e-e9ed-406f-8eaf-710db3fbdbfd",
+      "name": "Reunir guarda e dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        1248
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ent = $('Marcar início e preparar campos').first().json;\nreturn [{ json: Object.assign({}, ent, { guarda: $input.first().json || {} }) }];"
+      }
+    },
+    {
+      "id": "923d21af-ccdd-4c9d-8c39-51d921e6571f",
+      "name": "Pode executar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        1248
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.guarda.permitido === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "68fa0780-50a5-49c3-a2e3-d4518abe52a2",
+      "name": "Falha simulada de teste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        672
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.guarda.simular_falha === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "79fa8928-de21-46a3-966b-2df8b70a5b1d",
+      "name": "Simular falha da ferramenta (teste)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "error",
+              "value": "falha simulada em teste",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "28e45c24-a1ff-4957-88f6-a08726d7e52d",
+      "name": "Normalizar e proteger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        1152
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const ent = $('Reunir guarda e dados').first().json;\nconst it = $input.first();\nconst bruto = it && it.json ? it.json : {};\nconst ferr = String(ent.ferramenta || '');\nconst BLOQ = /^(custo|custos|cost|piso|piso_duro|margem|margem_liquida|margem_liquida_pct|lucro|lucro_liquido|fornecedor|fornecedor_ref|preco_base_custo|cabe_na_bike|entrega_sugerida|custo_entrega|custo_entrega_nosso|custo_total|lead_days|prazo_dias_uteis|endereco|endereco_retirada|bike|saidas_bike_por_dia|consulta_mercado_id|mercado_mediana|fontes_mercado|regra_preco|confianca_preco|nao_competitivo|peso_total_g|maior_lado_mm|piso_aplicado|bloqueio_motivo)$/i;\nconst DINHEIRO = /(preco|valor|total|subtotal|frete|arte|desconto|minimo|falta|parcela)/i;\nconst skus = new Set();\nconst valores = new Set();\nconst num = (n) => { if (Number.isFinite(n)) valores.add(Math.round(n * 100) / 100); };\nfunction limpo(v, chave) {\n  if (v === null || v === undefined) return v;\n  if (Array.isArray(v)) return v.map((x) => limpo(x, chave));\n  if (typeof v === 'object') {\n    const o = {};\n    for (const k of Object.keys(v)) {\n      if (BLOQ.test(k) && !(ferr === 'salvar_contato' && k === 'endereco')) continue;\n      if (/^sku$/i.test(k)) { if (v[k]) skus.add(String(v[k])); if (ferr !== 'buscar_produto') continue; }\n      o[k] = limpo(v[k], k);\n    }\n    return o;\n  }\n  if (typeof v === 'number') { if (DINHEIRO.test(chave || '')) num(v); return v; }\n  if (typeof v === 'string') {\n    if (DINHEIRO.test(chave || '') && /^\\d+([.,]\\d{1,2})?$/.test(v.trim())) num(parseFloat(v.replace(',', '.')));\n    const re = /R\\$\\s*(\\d[\\d.]*(?:,\\d{1,2})?)/g;\n    let m;\n    while ((m = re.exec(v)) !== null) num(parseFloat(m[1].replace(/\\./g, '').replace(',', '.')));\n    return v.replace(/bicicleta|bike|ciclista/gi, 'entrega');\n  }\n  return v;\n}\nconst falhou = !!(bruto.error || bruto.erro === 'indisponivel' || bruto.erro === 'ferramenta_indisponivel' || Object.keys(bruto).length === 0 || (bruto.status === 'bloqueado' && bruto.motivo === 'erro_interno'));\nlet resultado;\nif (falhou) {\n  resultado = { erro: 'ferramenta_indisponivel', orientacao: 'NUNCA invente valor, prazo ou informação. Diga ao cliente, de forma natural, que vai confirmar e já retorna. O dono já foi avisado.' };\n} else {\n  resultado = limpo(bruto, '');\n}\nconst ms = Date.now() - Number(ent.inicio_ms || Date.now());\nreturn [{ json: { falha: falhou, ferramenta: ferr, execucao_id: ent.execucao_id, conversation_id: ent.conversation_id, resultado: resultado, skus: Array.from(skus), valores: Array.from(valores), duracao_ms: ms, gravidade: (ferr === 'buscar_conhecimento' || ferr === 'enviar_foto_produto') ? 'baixa' : 'alta', resumo: falhou ? 'falhou' : Object.keys(resultado).slice(0, 8).join(',') } }];"
+      }
+    },
+    {
+      "id": "996fbb93-c55e-468a-954c-fc7240d9e835",
+      "name": "Qual ferramenta?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        1088
+      ],
+      "parameters": {
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Ferramenta desconhecida"
+        },
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "buscar_conhecimento"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "buscar_conhecimento"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "buscar_produto"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "buscar_produto"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "montar_orcamento"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "montar_orcamento"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "gerar_pdf_orcamento"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "gerar_pdf_orcamento"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "salvar_contato"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "salvar_contato"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "oferecer_condicao_especial"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "oferecer_condicao_especial"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "verificar_frete"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "verificar_frete"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "gerar_link_pagamento"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "gerar_link_pagamento"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "agendar_followup"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "agendar_followup"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "chamar_dono"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "chamar_dono"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "enviar_foto_produto"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "enviar_foto_produto"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "arte_receber"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "arte_receber"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "arte_baixa_ok"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "arte_baixa_ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4d04f329-a78b-4e58-b38e-f926e7bd1709",
+      "name": "buscar_conhecimento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        192
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "MJLl5aJkBA2t9jfS"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "pergunta": "={{ $json.pergunta }}",
+            "conversation_id": "={{ $json.conversation_id }}"
+          },
+          "schema": [
+            {
+              "id": "pergunta",
+              "displayName": "pergunta",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0da85cd2-7e1a-403e-8aab-b93451103afa",
+      "name": "buscar_produto",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        384
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "2BkgUaqxkS198jmA"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "termo": "={{ $json.termo }}",
+            "quantidade": "={{ $json.quantidade_num }}",
+            "filtros": "={{ $json.filtros }}"
+          },
+          "schema": [
+            {
+              "id": "termo",
+              "displayName": "termo",
+              "type": "string"
+            },
+            {
+              "id": "quantidade",
+              "displayName": "quantidade",
+              "type": "number"
+            },
+            {
+              "id": "filtros",
+              "displayName": "filtros",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ecaf9d38-a916-42f2-8562-eaf9e07e3783",
+      "name": "montar_orcamento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        576
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "fYgrHTafKgpEDlFi"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "contact_id": "={{ $json.contact_id }}",
+            "itens": "={{ $json.itens_arr }}",
+            "opcoes": "={{ $json.opcoes_obj }}"
+          },
+          "schema": [
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "itens",
+              "displayName": "itens",
+              "type": "array"
+            },
+            {
+              "id": "opcoes",
+              "displayName": "opcoes",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f2624662-2164-49f0-b20f-20413e76cc2f",
+      "name": "gerar_pdf_orcamento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        768
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "qdIwxubm5jAXCSc2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}",
+            "texto": "",
+            "acao": "enviar"
+          },
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "id": "texto",
+              "displayName": "texto",
+              "type": "string"
+            },
+            {
+              "id": "acao",
+              "displayName": "acao",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "615e6118-3323-4d8a-9931-0273dfd9a8cc",
+      "name": "salvar_contato",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        960
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JDjfx586IeN9YaWN"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "contact_id": "={{ $json.contact_id }}",
+            "nome": "={{ $json.nome }}",
+            "segmento": "={{ $json.segmento }}",
+            "interesse": "={{ $json.interesse }}",
+            "quantidade": "={{ $json.quantidade }}",
+            "bairro": "={{ $json.bairro }}",
+            "cep": "={{ $json.cep }}",
+            "tem_arte": "={{ $json.tem_arte }}",
+            "empresa": "={{ $json.empresa }}",
+            "email": "={{ $json.email }}",
+            "documento": "={{ $json.documento }}",
+            "endereco": "={{ $json.endereco }}",
+            "notas": "={{ $json.notas }}",
+            "nota_fiscal": "={{ $json.nota_fiscal }}",
+            "consentimento_promocoes": "={{ $json.consentimento_promocoes }}"
+          },
+          "schema": [
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "type": "string"
+            },
+            {
+              "id": "segmento",
+              "displayName": "segmento",
+              "type": "string"
+            },
+            {
+              "id": "interesse",
+              "displayName": "interesse",
+              "type": "string"
+            },
+            {
+              "id": "quantidade",
+              "displayName": "quantidade",
+              "type": "string"
+            },
+            {
+              "id": "bairro",
+              "displayName": "bairro",
+              "type": "string"
+            },
+            {
+              "id": "cep",
+              "displayName": "cep",
+              "type": "string"
+            },
+            {
+              "id": "tem_arte",
+              "displayName": "tem_arte",
+              "type": "string"
+            },
+            {
+              "id": "empresa",
+              "displayName": "empresa",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "type": "string"
+            },
+            {
+              "id": "documento",
+              "displayName": "documento",
+              "type": "string"
+            },
+            {
+              "id": "endereco",
+              "displayName": "endereco",
+              "type": "string"
+            },
+            {
+              "id": "notas",
+              "displayName": "notas",
+              "type": "string"
+            },
+            {
+              "id": "nota_fiscal",
+              "displayName": "nota_fiscal",
+              "type": "string"
+            },
+            {
+              "id": "consentimento_promocoes",
+              "displayName": "consentimento_promocoes",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "734d536a-9455-448a-bdc1-f8e312f37c27",
+      "name": "oferecer_condicao_especial",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1152
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "cxGW9NH43uhINq2h"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}",
+            "gatilho": "={{ $json.gatilho || 'G1' }}"
+          },
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            },
+            {
+              "id": "gatilho",
+              "displayName": "gatilho",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4e58ea0d-dfec-4623-b16b-3a26aecca214",
+      "name": "verificar_frete",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1344
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "JQp5BTgu2Hum8PfE"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "cep_ou_bairro": "={{ $json.cep_ou_bairro }}",
+            "itens": "={{ $json.itens }}",
+            "valor_pedido": 0
+          },
+          "schema": [
+            {
+              "id": "cep_ou_bairro",
+              "displayName": "cep_ou_bairro",
+              "type": "string"
+            },
+            {
+              "id": "itens",
+              "displayName": "itens",
+              "type": "string"
+            },
+            {
+              "id": "valor_pedido",
+              "displayName": "valor_pedido",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "30f69e54-f827-4ec0-866d-31322cad8b97",
+      "name": "gerar_link_pagamento",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1536
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "KsXAvkkMOLZtVMDF"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}"
+          },
+          "schema": [
+            {
+              "id": "orcamento_id",
+              "displayName": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e466bf1c-a65f-453d-aaff-459013d320dc",
+      "name": "agendar_followup",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1728
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "GVyk2nZPlf5QNWti"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "conversation_id": "={{ $json.conversation_id }}",
+            "tipo": "={{ $json.tipo }}",
+            "quando": "={{ $json.quando }}"
+          },
+          "schema": [
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "type": "string"
+            },
+            {
+              "id": "quando",
+              "displayName": "quando",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "784ec31d-c9d2-446b-9189-4db2d62acb4b",
+      "name": "chamar_dono",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1920
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "TwvgUc15htbWkyDu"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "value": {
+            "conversation_id": "={{ $json.conversation_id }}",
+            "motivo": "={{ $json.motivo }}",
+            "gravidade": "={{ $json.gravidade }}"
+          },
+          "schema": [
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "motivo",
+              "displayName": "motivo",
+              "type": "string"
+            },
+            {
+              "id": "gravidade",
+              "displayName": "gravidade",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1628ba2d-324c-4349-b05d-feed455e47ef",
+      "name": "enviar_foto_produto",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        2112
+      ],
+      "parameters": {
+        "mode": "each",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ybnd6LjGjUO8dgTI"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "termo_ou_sku": "={{ $json.termo }}",
+            "quantidade_fotos": "={{ $json.fotos_num }}",
+            "conversation_id": "={{ $json.conversation_id }}"
+          },
+          "schema": [
+            {
+              "id": "termo_ou_sku",
+              "displayName": "termo_ou_sku",
+              "type": "string"
+            },
+            {
+              "id": "quantidade_fotos",
+              "displayName": "quantidade_fotos",
+              "type": "number"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "bca15d29-09cc-4c71-b2f9-4a9af5aa5cbc",
+      "name": "Ferramenta desconhecida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1568,
+        2304
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "error",
+              "value": "ferramenta desconhecida",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "84f7bf9e-076b-4579-b70d-237189774565",
+      "name": "Resposta: rodada encerrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2464,
+        2480
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "resultado",
+              "value": "={{ { erro: \"limite_ferramenta\", orientacao: \"Esta ferramenta já foi usada demais nesta rodada. Encerre: responda ao cliente com o que já tem, sem inventar nada. Se faltar informação, diga que vai confirmar.\" } }}",
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e1b703dd-741d-4212-911d-b4c483af17a0",
+      "name": "Saída ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        1888
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "let r = null;\ntry { r = $('Normalizar e proteger').first().json.resultado; } catch (e) { r = null; }\nif (!r) { const x = $input.first(); r = x && x.json && x.json.resultado ? x.json.resultado : { erro: 'ferramenta_indisponivel', orientacao: 'Diga ao cliente que vai confirmar. Não invente nada.' }; }\nreturn [{ json: r }];"
+      }
+    },
+    {
+      "id": "414db499-ae54-4065-9b13-99665458f4ac",
+      "name": "A ferramenta falhou?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2016,
+        1152
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.falha }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "e1a45a0c-deca-4388-99fd-81d4f6de303f",
+      "name": "Avisar o dono da falha",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2240,
+        1088
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_chamar_dono",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_motivo: \"Falha da ferramenta \" + $json.ferramenta + \". O agente seguiu sem inventar valores e avisou o cliente que vai confirmar.\", p_gravidade: $json.gravidade, p_tipo: \"falha_ferramenta\" } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "1321acb3-c1bc-4f00-8d74-d70ee4b66f3b",
+      "name": "Registrar a ferramenta no agente_logs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2464,
+        1152
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_tool_fim",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_execucao: $(\"Normalizar e proteger\").first().json.execucao_id, p_ferramenta: $(\"Normalizar e proteger\").first().json.ferramenta, p_duracao_ms: $(\"Normalizar e proteger\").first().json.duracao_ms, p_ok: !$(\"Normalizar e proteger\").first().json.falha, p_skus: $(\"Normalizar e proteger\").first().json.skus, p_valores: $(\"Normalizar e proteger\").first().json.valores, p_resumo: $(\"Normalizar e proteger\").first().json.resumo } }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 800,
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "4382b3fc-edbc-47bb-8c63-1e0bc9fbd648",
+      "name": "Sticky Note 7b1e10a8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        2480
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | despachar (Etapa 5)\n**Objetivo:** único ponto de entrada das 11 ferramentas do agente (WF2). Cada ferramenta continua sendo um sub-workflow `GBH | FERRAMENTA | nome`; este despachante aplica as regras comuns.\n**Entradas:** ferramenta, execucao_id, conversation_id, contact_id, teste (fixos, vindos do WF2: o modelo nunca escolhe a conversa nem o contato) e os campos de cada ferramenta (termo, quantidade, filtros, pergunta, itens, opcoes, orcamento_id, cep_ou_bairro, nome, segmento, interesse, bairro, cep, tem_arte, tipo, quando, motivo, gravidade, quantidade_fotos). Todos em texto.\n**O que faz:** 1) detector de loop (mais de 3 chamadas da mesma ferramenta, ou 12 no total, encerra a rodada) e falha simulada de teste; 2) chama o sub-workflow certo; 3) remove da resposta qualquer custo, piso, margem, fornecedor, endereço, bicicleta e SKU (SKU só em buscar_produto); 4) guarda os SKUs e valores devolvidos (para a trava de saída do WF2 conferir cada R$ e cada código); 5) se a ferramenta falhar, avisa o dono (alerta alto) e manda o agente dizer que vai confirmar, sem inventar; 6) registra tudo em agente_logs.\n**Saída ao agente:** JSON mínimo da ferramenta.\n**Dependências:** credencial Supabase (service role) nos nós HTTP; os 11 sub-workflows. condicao_especial recebe sempre o gatilho G1 (o agente não escolhe).\n**Estado:** DESATIVADO até a Etapa 8.",
+        "color": 4
+      }
+    },
+    {
+      "id": "b17b092a-8018-4390-bbef-5920f230f093",
+      "name": "Ferramenta externa em teste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1400,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.teste === 'true' && ['gerar_pdf_orcamento','enviar_foto_produto','gerar_link_pagamento','arte_receber','arte_baixa_ok'].includes($json.ferramenta) }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
+        }
+      }
+    },
+    {
+      "id": "fef6025c-1ff6-46c4-bc22-6930363af3e4",
+      "name": "Resposta simulada (teste)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        100
+      ],
+      "parameters": {
+        "jsCode": "const f = $input.first().json.ferramenta;\nconst R = {\n  gerar_pdf_orcamento: { ok: true, enviado: true, simulado: true, numero: 'SG-TESTE' },\n  enviar_foto_produto: { enviadas: 2, legenda_sugerida: 'Olha como fica por aqui', simulado: true },\n  gerar_link_pagamento: { ok: true, link: 'https://exemplo.com.br/pagar/teste', valida_ate: 'amanhã', texto_curto: 'Link de pagamento pronto', simulado: true },\n  arte_receber: { ok: true, pedido: 'SG-TESTE', qualidade: 'indefinida', na_fila: true, baixa_qualidade: false, orientacao: 'Diga que recebeu e que a equipe vai conferir e mandar a arte para aprovar. Não prometa data nova nem diga que a arte está aprovada.', simulado: true },\n  arte_baixa_ok: { ok: true, registrado: true, simulado: true }\n};\nreturn [{ json: R[f] || { ok: true, simulado: true } }];",
+        "language": "javaScript",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "bf2bd061-9e83-4e3f-93a9-30954b20ec2a",
+      "name": "Primeira chamada de orçamento?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1900,
+        520
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.guarda.chamada === 1 }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
+        }
+      }
+    },
+    {
+      "id": "beadadc1-7b53-48a3-94fd-bb40f587a392",
+      "name": "Montar mensagem de espera",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        440
+      ],
+      "parameters": {
+        "jsCode": "const e = $input.first().json;\nconst V = ['Já te passo o valor certinho, só um minutinho.', 'Deixa eu conferir o valor certinho aqui e já te falo.', 'Um instante que já separo o valor pra você.', 'Já te mando o valor certinho, tá?'];\nlet h = 0;\nfor (const c of String(e.execucao_id || 'x')) { h = (h * 31 + c.charCodeAt(0)) % 997; }\nconst texto = V[h % V.length];\nconst base = 'https://bhlosshvwmlyzhbghsrc.supabase.co';\nconst teste = e.teste === 'true';\nreturn [{ json: { espera_url: teste ? base + '/rest/v1/rpc/agente_teste_registrar_saida' : base + '/functions/v1/agente-enviar', espera_body: teste ? { p_conversation: e.conversation_id, p_texto: texto } : { conversation_id: e.conversation_id, text: texto } } }];",
+        "language": "javaScript",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "5d0acc79-c670-4f6c-81aa-4d115cd32103",
+      "name": "Avisar o cliente que já passa o valor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        440
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "contentType": "json",
+        "jsonBody": "={{ $json.espera_body }}",
+        "method": "POST",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "={{ $json.espera_url }}"
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "1a0e71a7-b574-452d-af51-f30a2df318d5",
+      "name": "arte_receber",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        2496
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "contentType": "json",
+        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_tipo: $json.tipo || 'arquivo', p_qualidade: $json.qualidade || null, p_detalhe: $json.detalhe || null } }}",
+        "method": "POST",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/arte_receber"
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "id": "6e1ca7ef-e44f-4295-8400-43a6df8329de",
+      "name": "arte_baixa_ok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1568,
+        2688
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "contentType": "json",
+        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_texto: $json.texto || null } }}",
+        "method": "POST",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/arte_baixa_ok"
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Marcar início e preparar campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar início e preparar campos": {
+      "main": [
+        [
+          {
+            "node": "Guarda de loop e início do registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guarda de loop e início do registro": {
+      "main": [
+        [
+          {
+            "node": "Reunir guarda e dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reunir guarda e dados": {
+      "main": [
+        [
+          {
+            "node": "Pode executar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pode executar?": {
+      "main": [
+        [
+          {
+            "node": "Falha simulada de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: rodada encerrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Falha simulada de teste?": {
+      "main": [
+        [
+          {
+            "node": "Simular falha da ferramenta (teste)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ferramenta externa em teste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular falha da ferramenta (teste)": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar e proteger": {
+      "main": [
+        [
+          {
+            "node": "A ferramenta falhou?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qual ferramenta?": {
+      "main": [
+        [
+          {
+            "node": "buscar_conhecimento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "buscar_produto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "montar_orcamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "gerar_pdf_orcamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "salvar_contato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "oferecer_condicao_especial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "verificar_frete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "gerar_link_pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "agendar_followup",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "chamar_dono",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "enviar_foto_produto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "arte_receber",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "arte_baixa_ok",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ferramenta desconhecida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_conhecimento": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_produto": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "montar_orcamento": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_pdf_orcamento": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "salvar_contato": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "oferecer_condicao_especial": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verificar_frete": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_link_pagamento": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agendar_followup": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chamar_dono": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "enviar_foto_produto": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ferramenta desconhecida": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta: rodada encerrada": {
+      "main": [
+        [
+          {
+            "node": "Saída ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A ferramenta falhou?": {
+      "main": [
+        [
+          {
+            "node": "Avisar o dono da falha",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar a ferramenta no agente_logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o dono da falha": {
+      "main": [
+        [
+          {
+            "node": "Registrar a ferramenta no agente_logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar a ferramenta no agente_logs": {
+      "main": [
+        [
+          {
+            "node": "Saída ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ferramenta externa em teste?": {
+      "main": [
+        [
+          {
+            "node": "Resposta simulada (teste)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Qual ferramenta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta simulada (teste)": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Primeira chamada de orçamento?": {
+      "main": [
+        [
+          {
+            "node": "Montar mensagem de espera",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "montar_orcamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "montar_orcamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar mensagem de espera": {
+      "main": [
+        [
+          {
+            "node": "Avisar o cliente que já passa o valor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_receber": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_baixa_ok": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "all",
+    "executionTimeout": 300,
+    "errorWorkflow": "vmaMVnZydmHpkW57"
+  },
+  "tags": [
+    {
+      "id": "3v3X7fxvimbtoign",
+      "name": "gbh"
+    }
+  ]
+}

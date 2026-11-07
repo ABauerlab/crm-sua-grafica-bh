@@ -183,3 +183,14 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - **Separação de pedidos:** cada novo produto deve ser orçado como pedido independente. Não reutilizar quantidades, tamanhos ou valores de produtos anteriores.
 - **Autonomia com limites:** resolver dúvidas cobertas por `buscar_produto` e `buscar_conhecimento`. Acionar atendimento humano antes do pagamento quando o cliente pedir explicitamente uma pessoa; manter as demais travas de segurança, preço, aprovação e pagamento já documentadas.
 - **Toda resposta deve terminar com uma pergunta objetiva de avanço**, sem repetir perguntas já respondidas.
+
+
+### Semântica dos gatilhos de condição especial (confirmada em 07/11/2026)
+
+A função `public.calcular_condicao_especial(p_orcamento, p_gatilho)` consulta `public.politica_desconto`; a decisão e o valor pertencem ao banco, nunca ao modelo.
+
+- `G1`: Degrau 1, vantagem operacional (por exemplo, frete ou criação de arte grátis), conforme as regras vigentes e sem pedido mínimo quando a política assim permitir. Usar para objeção comum.
+- `G2`: Degrau 2, desconto financeiro percentual ou nominal calculado sobre a margem disponível acima do piso. Usar quando o cliente apresentar orçamento concorrente ou solicitar cobertura de preço. As travas de margem e o piso continuam soberanos.
+- `G3`: permanece reservado ao gatilho e às condições que estiverem efetivamente configurados em `public.politica_desconto`; não atribuir significado novo no n8n nem no prompt sem conferir a política ativa.
+
+O n8n apenas encaminha o gatilho recebido. Nunca calcula nem promete a condição antes do retorno do banco.
