@@ -1,5 +1,6 @@
 // E-commerce Fase 2: leitura da ficha técnica da origem e tradução para linguagem de balcão (Node >= 22): npm run test:loja
 import assert from 'node:assert/strict'
+import { limparJpeg } from '../supabase/functions/_shared/jpeg.ts'
 import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
 
 // marca fictícia: o teste nunca usa o nome real da origem
@@ -54,5 +55,25 @@ assert.equal(limparTitulo('ADESIVOS ADESIVO TERMOCOLANTE COM RELEVO - 4X0 - 1uni
 
 // página sem ficha não quebra
 assert.equal(lerFicha('<html><body>nada</body></html>', marcas).material, null)
+
+// JPEG: tira EXIF (APP1) e comentário sem decodificar; mantém JFIF, tamanho e dados da imagem
+{
+  const seg = (m: number, corpo: number[]) => [0xff, m, (corpo.length + 2) >> 8, (corpo.length + 2) & 255, ...corpo]
+  const sof = seg(0xc0, [8, 0x01, 0x2c, 0x03, 0xe8, 3, 1, 0x11, 0, 2, 0x11, 1, 3, 0x11, 1]) // 1000 x 300
+  const exif = seg(0xe1, [...Buffer.from('Exif\0\0origem-secreta')])
+  const com = seg(0xfe, [...Buffer.from('comentario')])
+  const jfif = seg(0xe0, [...Buffer.from('JFIF\0'), 1, 1, 0, 0, 1, 0, 1, 0, 0])
+  const dados = [0xff, 0xda, 0, 2, 9, 9, 9, 0xff, 0xd9]
+  const entrada = new Uint8Array([0xff, 0xd8, ...jfif, ...exif, ...com, ...sof, ...dados])
+  const r = limparJpeg(entrada)
+  assert.ok(r)
+  assert.equal(r.info?.largura, 1000)
+  assert.equal(r.info?.altura, 300)
+  const txt = Buffer.from(r.bytes).toString('latin1')
+  assert.ok(!txt.includes('origem-secreta') && !txt.includes('comentario'), 'metadados removidos')
+  assert.ok(txt.includes('JFIF'), 'cabeçalho JFIF mantido')
+  assert.equal(r.bytes.length, entrada.length - exif.length - com.length)
+  assert.equal(limparJpeg(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null, 'PNG não é tratado como JPEG')
+}
 
 console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')
