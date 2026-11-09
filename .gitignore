@@ -58,3 +58,5 @@ tests/e2e/resultados/
 *.xlsx
 *.xls
 Tabela_Precos*
+# Anúncios gerados para marketplaces (têm SKU interno)
+marketplace-anuncios-*.csv

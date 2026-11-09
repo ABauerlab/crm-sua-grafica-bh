@@ -1,6 +1,14 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 6 do e-commerce (estrutura fiscal do Bling e marketplaces, sem disparos). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 7 do e-commerce (Meta Pixel e Conversions API). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 6: estrutura fiscal do Bling e marketplaces (09/11/2026)
+
+- Migrations `20261119000001` e `20261119000002` (aplicadas). NCM sugerido em 20.390 SKUs (todos `ncm_revisar` até o contador confirmar a regra). Payload `bling_pedido_payload` conferido num pedido pago real: monta contato e pedido e lista as pendências (CPF, CEP, endereço, IBGE, e-mail, id da loja no Bling).
+- Edge Function `bling-webhook` publicada: recusa aviso sem assinatura (401) e grava os válidos em `bling_eventos`.
+- `catalogo_marketplace`: CFV02 sai a R$ 191,90 no Mercado Livre e R$ 194,90 na Shopee para receber os mesmos R$ 151,90 do site.
+- Nada foi enviado ao Bling. Estudo fiscal, pontos para o contador e passos de ativação em `docs/bling-fiscal.md`.
+- Incidente evitado: a primeira versão de `fiscal_aplicar_ncm` recalculava as categorias a cada linha e travou por minutos; as duas sessões foram canceladas antes de afetar a operação e a função foi refeita (CTE materializado, 20 mil linhas em segundos).
 
 ## E-commerce Fase 5: vitrine, produto, carrinho (09/11/2026)
 

@@ -73,3 +73,7 @@ verify_jwt = false
 # Checkout do site (E-commerce Fase 4): público; valida o carrinho, limite no banco e chama mp-criar-link por dentro
 [functions.loja-checkout]
 verify_jwt = false
+
+# Avisos do Bling (E-commerce Fase 6): sem JWT; a função confere a assinatura HMAC (X-Bling-Signature-256) com BLING_CLIENT_SECRET
+[functions.bling-webhook]
+verify_jwt = false
