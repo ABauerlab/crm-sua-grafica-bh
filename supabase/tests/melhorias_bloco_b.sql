@@ -19,7 +19,7 @@ begin
   insert into public.conversations (contact_id, ai_handled, modo_atendimento) values (v_ct, true, 'ia') returning id into v_cv;
 
   -- B1: 10 segundos e mensagens incompletas
-  perform pg_temp.chk((select debounce_segundos from public.agente_config where id = 1) = 10, 'B1: debounce padrão de 10 segundos');
+  perform pg_temp.chk((select debounce_segundos from public.agente_config where id = 1) = 6, 'B1: debounce padrão de 6 segundos (etapa8_parametros_sem_teto)');
   perform pg_temp.chk(private.mensagem_incompleta('audio', null), 'B1: só áudio parece incompleto');
   perform pg_temp.chk(private.mensagem_incompleta('text', 'Queria cartões e'), 'B1: termina em "e" parece incompleta');
   perform pg_temp.chk(private.mensagem_incompleta('text', 'Preciso de:'), 'B1: termina em dois pontos parece incompleta');

@@ -2,6 +2,19 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Executor SQL local volta a aplicar todas as migrations (09/11/2026, branch `claude/affectionate-newton-vc13ro`)
+- **Problema:** `npm run test:sql` parava em `20261105000001_etapa8_endurecer_funcoes.sql`, que mexe em funções que nenhuma migration cria (drift entre produção e `supabase/migrations/`).
+- **Levantamento em produção (MCP, só leitura):** além das 2 funções citadas, faltavam no repo a tabela `produto_acabamentos`, 10 colunas em `orcamento_itens` (custo, acabamento, m²), 7 em `orcamentos` e o gatilho `trg_orcamentos_atualizado_em`.
+- **Feito:**
+  - `20261104235800_drift_acabamentos_e_colunas_orcamento.sql` e `20261104235900_drift_orcamento_atualizado_em.sql`: definição atual de produção, aditivas e idempotentes (em produção não mudam nada; não precisam ser aplicadas lá).
+  - `rodar-local.sh`: stub de `public.rls_auto_enable()` (função do Supabase gerenciado) e `search_path` do role `postgres` igual ao de produção (`"$user", public, extensions`), que a migration do índice trigram precisa.
+  - `20261110000004_v_funil_total_rodadas.sql`: uma linha de comentário tinha perdido o `--` (o arquivo nunca rodaria). Só virou comentário de novo; o SQL não mudou.
+  - `melhorias_bloco_b.sql`: o teste B1 esperava debounce de 10 s; a migration `20261105000012` e produção usam 6 s.
+- **Ficou fora de propósito (sigilo):** o cache, 3 colunas de `produto_fotos_mapa` e 2 funções da integração de fotos com o fornecedor existem só em produção, porque o nome deles contém o nome do fornecedor (e uma das funções tem o domínio de origem fixo no código). Nenhuma migration do repo depende deles.
+- **Drift restante (não bloqueia o executor):** produção tem 5 sobrecargas extras de funções do agente (`agente_tool_inicio`, `agente_promessas_indevidas`, `agente_saida_base`, `buscar_conhecimento`, `agente_chamar_dono`) vindas da migration `upgrade_closer_crm_and_fix_all_agent_errors`, que não tem arquivo no repo.
+- **Falha real encontrada (não corrigida aqui):** `trava_lucro_caminhos.sql` (teste 8) e `preco_etapa3.sql` ("abaixo do piso duro é recusado até com confirmação") falham porque `20261110000001_motor_vendas_producao.sql`, cópia fiel de produção, deixa a equipe gravar preço abaixo do piso duro (`private.order_items_validar` pula a trava para `is_staff()` e `definir_preco_item_pedido` aceita `abaixo_piso_duro` com confirmação). Isso contraria a regra fixa "nunca vender abaixo do piso". Decisão do dono pendente.
+- **Como lidar com o próximo drift:** quando o executor parar, consultar a definição em produção (`pg_get_functiondef`, `information_schema.columns`) e criar migration aditiva com prefixo anterior à que falhou; objeto do Supabase gerenciado vira stub no `rodar-local.sh`.
+
 ## Auditoria do relatório de aprimoramento (04/11/2026)
 
 Conferência de cada item do relatório contra o banco de produção, os workflows exportados em `n8n/` e o código. Status: **OK** (verificado), **Parcial** (existe, mas diverge do relatório) e **Pendente** (não existe).

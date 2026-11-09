@@ -16,6 +16,8 @@ su postgres -c "$PGBIN/pg_ctl -D $DIR/data -o '-p $PORT -k /tmp' -l $DIR/log -w 
 P="psql -h /tmp -p $PORT -U postgres -v ON_ERROR_STOP=1 -q"
 $P -d postgres -c "drop database if exists gbh" -c "create database gbh"
 P="$P -d gbh"
+# igual ao Supabase: o role postgres enxerga o schema extensions sem prefixo (ex.: gin_trgm_ops)
+$P -c "alter role postgres in database gbh set search_path = \"\$user\", public, extensions"
 $P <<'SQL'
 do $$ begin
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
@@ -35,6 +37,8 @@ create function cron.unschedule(a text) returns boolean language sql as $f$ sele
 create function net.http_post(url text, headers jsonb default '{}', body jsonb default '{}') returns bigint language sql as $f$ select 1::bigint $f$;
 create table vault.decrypted_secrets (name text, decrypted_secret text);
 create publication supabase_realtime;
+-- função do Supabase gerenciado (event trigger ensure_rls em produção); stub só para as migrations que mexem nas permissões dela
+create function public.rls_auto_enable() returns event_trigger language plpgsql as $f$ begin null; end $f$;
 grant usage on schema public, extensions, auth, storage to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
