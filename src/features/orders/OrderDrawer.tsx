@@ -355,7 +355,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       <fieldset className="space-y-2 rounded-md border bg-secondary/40 p-3">
         <legend className="px-1 text-xs font-bold uppercase tracking-wide">Adicionar item</legend>
         <ProductPicker onPick={async (p) => {
-          // o preço vem de calcular_preco (mercado, histórico e trava de lucro); o custo vem do catálogo; a linha é UMA opção fechada de quantidade
+          // o preço vem de calcular_preco (planilha oficial e trava de lucro); o custo vem do catálogo; a linha é UMA opção fechada de quantidade
           const { data, error } = await supabase.rpc('calcular_preco', { p_sku: p.sku, p_quantidade: 1, p_contexto: {} })
           const r = data as { ok: boolean; preco_total?: number; regra?: string; confianca?: string; erro?: string } | null
           if (r?.erro === 'item_nao_vendavel') return toast('error', 'Este item não está disponível para venda.')

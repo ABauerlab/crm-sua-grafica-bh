@@ -8,12 +8,12 @@ JSONs exportados (sem credenciais) em `n8n/` (os 9 workflows da Etapa 5 ainda n�
 
 | Workflow | ID no n8n | Arquivo | Gatilho | Estado |
 |---|---|---|---|---|
-| `GBH \| FERRAMENTA \| pesquisar_preco_mercado` | `V1Bx2NRuPgJxj139` | `n8n/GBH-FERRAMENTA-pesquisar_preco_mercado.json` | Execute Workflow (entradas `sku`, `especificacao`) | Desativado, 34 nós (Etapa 7C: arte_receber e arte_baixa_ok chamam as funções do banco direto, com resposta simulada em teste) |
+| `GBH \| FERRAMENTA \| pesquisar_preco_mercado` | `V1Bx2NRuPgJxj139` | `n8n/GBH-FERRAMENTA-pesquisar_preco_mercado.json` | Execute Workflow (entradas `sku`, `especificacao`) | **Despublicado em 09/11/2026** (preço vem da planilha oficial), 34 nós (Etapa 7C: arte_receber e arte_baixa_ok chamam as funções do banco direto, com resposta simulada em teste) |
 | `GBH \| FERRAMENTA \| condicao_especial` | `cxGW9NH43uhINq2h` | `n8n/GBH-FERRAMENTA-condicao_especial.json` | Execute Workflow (entradas `orcamento_id`, `gatilho`) | Desativado, 13 nós |
 | `GBH \| WF4 \| Aprendizado de preços` | `qDMVB2BVqdR2qsdm` | `n8n/GBH-WF4-Aprendizado-de-precos.json` | Agenda: segunda 03:30 (America/Sao_Paulo) | Desativado, 8 nós |
 | `GBH \| WF4 \| Aquecer cache de madrugada` (opcional) | `bGjqgxT7EJuViM79` | `n8n/GBH-WF4-Aquecer-cache-de-madrugada.json` | Agenda: todo dia 03:00; só age se `parametros_comerciais.aquecer_cache_ligado = true` | Desativado, 5 nós |
 
-| `GBH \| FERRAMENTA \| montar_orcamento` | `fYgrHTafKgpEDlFi` | `n8n/GBH-FERRAMENTA-montar_orcamento.json` | Execute Workflow (`contact_id`, `itens`, `opcoes`) | Desativado, 8 nós |
+| `GBH \| FERRAMENTA \| montar_orcamento` | `fYgrHTafKgpEDlFi` | `n8n/GBH-FERRAMENTA-montar_orcamento.json` | Execute Workflow (`contact_id`, `itens`, `opcoes`) | 6 nós (pesquisa de mercado removida em 09/11/2026) |
 | `GBH \| FERRAMENTA \| gerar_pdf_orcamento` | `qdIwxubm5jAXCSc2` | `n8n/GBH-FERRAMENTA-gerar_pdf_orcamento.json` | Execute Workflow (`orcamento_id`, `texto`, `acao`) | Desativado, 6 nós |
 | `GBH \| FERRAMENTA \| gerar_link_pagamento` | `KsXAvkkMOLZtVMDF` | `n8n/GBH-FERRAMENTA-gerar_link_pagamento.json` | Execute Workflow (`orcamento_id`) | Desativado, 11 nós |
 | `GBH \| WF3 \| Orçamento PDF` | `nNh7E3H7Ckl5oV37` | `n8n/GBH-WF3-Orcamento-PDF.json` | Execute Workflow (`contact_id`, `itens`, `opcoes`, `texto`, `com_link`) | Desativado, 9 nós |
@@ -27,7 +27,7 @@ Links: `https://n8n.bauerlab.com.br/workflow/<ID>`. Os quatro workflows de orça
 
 ### Etapa 4: orçamento em PDF
 Detalhes em `docs/orcamento-pdf.md`.
-* **montar_orcamento:** para cada SKU distinto chama `pesquisar_preco_mercado` (cache de 14 dias; se falhar segue com a fórmula de custo) e depois a função `montar_orcamento` do banco. Devolve JSON mínimo, sem SKU, custo, piso nem margem.
+* **montar_orcamento:** chama direto a função `montar_orcamento` do banco; o preço vem de `calcular_preco`, que lê a planilha oficial de preços de venda (a pesquisa de mercado saiu do caminho em 09/11/2026). Devolve JSON mínimo, sem SKU, custo, piso nem margem.
 * **gerar_pdf_orcamento:** chama a Edge Function `orcamento-pdf` (Gotenberg, Storage privado, envio no WhatsApp). Devolve `{ok, orcamento_id, numero, enviado, ja_enviado, renovado}`; se o orçamento venceu, o `orcamento_id` devolvido é o do novo.
 * **gerar_link_pagamento:** `preparar_link_pagamento` (roda `validar_margem`) > `mp-criar-link` (Mercado Pago já integrado) > `orcamento_registrar_link`. Devolve `{ok, link, valida_ate, texto_curto}` ou `{ok:false, motivo, alternativa}`.
 * **WF3:** montar > gerar e enviar PDF > (opcional) link de pagamento.
@@ -67,7 +67,7 @@ Os nós HTTP foram criados sem credencial atribuída (limitação de importaçã
 | `gerar_pdf_orcamento(orcamento_id, texto)` | `GBH | FERRAMENTA | gerar_pdf_orcamento` | `{ok, orcamento_id, numero, enviado}` |
 | `gerar_link_pagamento(orcamento_id)` | `GBH | FERRAMENTA | gerar_link_pagamento` | `{ok, link, valida_ate, texto_curto}` |
 | `oferecer_condicao_especial(orcamento_id, gatilho)` | `GBH \| FERRAMENTA \| condicao_especial` | `{tipo, texto_curto, valor, valida_ate}` |
-| `pesquisar_preco_mercado` | **não é ferramenta do agente**: roda dentro da montagem do orçamento (WF3/WF4) antes de `calcular_preco` | interno |
+| `pesquisar_preco_mercado` | **desligada (09/11/2026)**: o preço vem da planilha oficial; workflow mantido só como histórico | interno |
 | `enviar_foto_produto(termo_ou_sku, quantidade_fotos, conversation_id)` | `GBH \| FERRAMENTA \| enviar_foto_produto` | `{enviadas, legenda_sugerida}` (sem URL, origem nem SKU) |
 | `aplicar_desconto` | **removida** (função e ferramenta); nada a migrar, nunca existiu dado | - |
 

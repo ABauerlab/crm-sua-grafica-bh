@@ -96,7 +96,7 @@ export function PriceHealthTab() {
 
   return (
     <div className="min-h-0 flex-1 space-y-6 overflow-auto p-4">
-      <p className="text-sm text-muted-foreground">Painel interno. A pesquisa de mercado só acontece quando há orçamento (cache de 14 dias); nenhum custo, piso ou margem aparece para o cliente.</p>
+      <p className="text-sm text-muted-foreground">Painel interno. O preço de venda vem da planilha oficial (a pesquisa de mercado foi desligada em 09/11/2026); nenhum custo, piso ou margem aparece para o cliente.</p>
 
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Card titulo="Cobertura de mercado" valor={ativos ? formatPct((cobertos / ativos) * 100, 1) : '0%'} nota={`${cobertos} de ${ativos} itens com mercado válido`} />
