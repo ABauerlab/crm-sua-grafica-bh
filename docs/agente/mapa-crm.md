@@ -64,7 +64,7 @@ Novo: `parametros_comerciais`, `politica_desconto`, `zonas_frete_gratis`, `agent
 | Preço sugerido no upload do catálogo (custo x 2,5) | Continua gravado, mas não vale para orçamento. O único preço válido é `calcular_preco`. A tela do catálogo deve rotular a coluna como "base de custo, sem pesquisa" (Etapa 3). Dados intactos |
 | Preço de kit (`kits.price`) | Mesmo tratamento: a Etapa 3 recalcula pelos SKUs do kit com a mesma fórmula |
 | Preço no cartão do kanban (`order_financials`, taxa 1,5%) | A taxa padrão de `orders.payment_fee_pct` passou de 1,5% para 4,98% (cartão de crédito, a mais alta) e `app_settings.pricing.payment_fee_pct` também. Pedidos antigos não foram reescritos (não havia pedidos). A taxa real por método entra na confirmação do pagamento na Etapa 6 (hoje `mp_registrar_pagamento` não toca na taxa) |
-| Sem trava de lucro | Triggers: `order_items` recusa preço abaixo do piso duro; `orders` recusa desconto que leva a prejuízo; `orcamento_itens` e `orcamentos` recusam piso duro e envio com prejuízo. Pagamento confirmado nunca é bloqueado (as travas olham preço e desconto, não status) |
+| Sem trava de lucro | Triggers: `order_items` recusa preço abaixo do piso duro (exceto o dono logado, decisão de 09/11/2026); `orders` recusa desconto que leva a prejuízo; `orcamento_itens` e `orcamentos` recusam piso duro e envio com prejuízo. Pagamento confirmado nunca é bloqueado (as travas olham preço e desconto, não status) |
 | Catálogo sem SKU próprio | `products.code` já é único por opção. `orcamento_itens.sku` é obrigatório e precisa existir no catálogo. Para `order_items` a exigência fica atrás de `parametros_comerciais.exigir_sku_pedidos` (desligada) porque a tela de pedido ainda aceita item digitado à mão; ligar na Etapa 2 junto com a mudança da tela |
 | Prazo de entrega sem corte das 12h e sem arte | `orders_set_due_date` passou a usar `private.prazo_data` (corte das 12h, dia de logística, marco = pagamento e arte aprovada). Antes da arte aprovada vale a estimativa pelo pagamento. `app_settings.deadline` (tela Prazos) é copiado para `parametros_comerciais.dias_logistica` por trigger |
 | `app_settings.agent` (liga/desliga e horário) x `agente_config` | `agente_config` é a configuração do agente; o botão do topo do CRM continua em `app_settings.agent` até a Etapa 5 ligar os dois. `ia_ligada` nasce falso |
@@ -115,7 +115,7 @@ Cada ponto do CRM que exibe ou grava preço, e o que fazer com ele. Regra: **o �
 | Catálogo > Saúde de preços (nova) | cobertura de mercado, margem, conversão, fator por grupo, fontes de cada preço, não competitivos, condições, resumo semanal | Interna (RLS só dono). Nenhum custo ou piso sai dela para o cliente |
 | Kits (`kits.price`) | preço do kit | **Lê `kit_preco`** (calcular_preco por SKU, nunca abaixo do piso do conjunto). Valor digitado não existe mais |
 | Pedido > Itens > adicionar item pela busca | preço sugerido | **Lê `calcular_preco`** (regra e confiança aparecem na origem do item) |
-| Pedido > Itens > editar preço à mão | `order_items.unit_price` | **Novo:** mostra o lucro líquido e a faixa; abaixo do piso duro **bloqueia** (nem o dono aprova); entre o piso duro e o piso **só com confirmação do dono e motivo**, gravados em `precos_manuais_log` e no pedido (`price_override_reason`); gatilho de banco impede reduzir abaixo do piso por qualquer outro caminho do CRM |
+| Pedido > Itens > editar preço à mão | `order_items.unit_price` | **Novo:** mostra o lucro líquido e a faixa; abaixo do piso duro mostra o prejuízo e **só grava com confirmação do dono e motivo** (decisão de 09/11/2026); entre o piso duro e o piso também **só com confirmação do dono e motivo**; ambos gravados em `precos_manuais_log` (faixa `abaixo_piso_duro` ou `entre_pisos`) e no pedido (`price_override_reason`); gatilho de banco impede reduzir abaixo do piso por qualquer outro caminho do CRM |
 | Pedido > desconto, imposto e taxa (percentuais) | `orders.discount_pct` etc. | Trava existente da Etapa 1 (desconto que leva a prejuízo é recusado). Desconto comercial ao cliente só nasce de `oferecer_condicao_especial` |
 | Cartão do kanban, painel, contatos, inbox | valor total do pedido (`order_financials`) | Só exibição do que já foi vendido; não gera preço |
 | Orçamento (`orcamentos`, `orcamento_itens`) | preço por item, regra, confiança, margem | Grava o que `calcular_preco` devolveu, mais (colunas novas) fonte do mercado, `nao_competitivo`, piso, piso duro e lucro. Triggers recusam piso duro |
@@ -220,3 +220,14 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Alerta `orcamento_valor_alto` (categoria própria em `private.alerta_categoria`, só WhatsApp, respeita o silêncio noturno).
 - `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
 - n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.
+
+## Drift de produção versionado (09/11/2026)
+Migration `20261104190000_drift_producao.sql` traz para o repositório o que só existia em produção:
+- `catalogo`: `preco_venda`, `preco_mercado_ref`, `estrategia_preco`, `preco_planilha_em`, `prazo_cliente_dias`, `peso_frete_kg`, `tipo_embalagem`, `embalagem_cm`.
+- `orcamento_itens`: `valor_total`, `sku_fornecedor`, `custo_unitario`, `custo_total`, `acabamento`, `acabamento_custo`, `acabamento_dias_adicionais`, `largura_mm`, `altura_mm`, `area_m2`.
+- `orcamentos`: `validade_horas`, `pdf_versao`, `pagamento_gerado_em`, `pagamento_expira_em`, `piso_aplicado`, `bloqueio_motivo`, `fornecedor_ref`, `data_evento`; gatilho `trg_orcamentos_atualizado_em` (`atualizar_orcamento_atualizado_em`).
+- `parametros_comerciais`: `fonte_preco` (`planilha` | `mercado`) e `lucro_bruto_minimo`.
+- `produto_fotos_mapa.scrap_atualizado_em`.
+- Tabelas: `produto_acabamentos` (acabamentos por categoria ou grupo; leitura e escrita para logados), `planilha_precos_import` (planilha de preços; só o dono lê) e `ecommerce_products` (vitrine por SKU do catálogo; leitura pública dos ativos pela policy, escrita só service role).
+- Só em produção, por sigilo: cache de scraping do fornecedor e 2 colunas de origem em `produto_fotos_mapa`.
+

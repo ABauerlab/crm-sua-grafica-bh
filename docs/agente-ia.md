@@ -115,7 +115,7 @@ Regras: a quantidade vendável é a do SKU (cada linha do catálogo é uma opç�
 
 - `orcamento_itens`: SKU obrigatório e existente; preço abaixo do piso duro do item é recusado.
 - `orcamentos`: ao enviar ou mudar o total, recusa se o total der prejuízo; total sempre igual a itens + arte + frete - desconto.
-- `order_items`: preço abaixo do piso duro é recusado; SKU obrigatório quando `exigir_sku_pedidos` estiver ligado.
+- `order_items`: preço abaixo do piso duro é recusado (exceto para o dono logado, decisão de 09/11/2026); SKU obrigatório quando `exigir_sku_pedidos` estiver ligado.
 - `orders`: desconto ou taxas editados à mão que levem a prejuízo são recusados.
 - Pagamento confirmado nunca é bloqueado.
 
@@ -146,7 +146,7 @@ Ordem: custo, piso e piso duro, alvo, trava final. Alvo = `mediana x quantidade 
 Cada orçamento entra em `precos_praticados` (especificação, quantidade, preço, margem, regra, condição usada e resultado ganho, perdido ou expirado; o orçamento atualizado conta para o original). Semanalmente `aprender_precos_semana` ajusta o fator por grupo com 8 ou mais orçamentos encerrados em 30 dias: conversão abaixo de 15% com margem acima da meta (`meta_margem_liquida_pct`, 20) baixa 0,01; acima de 45% sobe 0,01; limites 0,90 e 0,98; cada ajuste fica em `ajustes_fator_preco`.
 
 ### Edição manual de preço
-`definir_preco_item_pedido(item, preco, confirmar, motivo, apenas_simular)`: abaixo do piso duro bloqueia para todos; entre o piso duro e o piso exige confirmação do dono e grava em `precos_manuais_log`; acima é livre. Um gatilho recusa reduzir o preço abaixo do piso por qualquer outro caminho do CRM.
+`definir_preco_item_pedido(item, preco, confirmar, motivo, apenas_simular)`: só o dono logado chama; abaixo do piso (entre os pisos ou abaixo do piso duro) exige confirmação do dono e motivo e grava em `precos_manuais_log` com a faixa; acima é livre. Abaixo do piso duro foi liberado só para o dono em 09/11/2026. Um gatilho recusa reduzir o preço abaixo do piso por qualquer outro caminho do CRM.
 
 ## Etapa 5: o agente de atendimento (WF1 e WF2)
 

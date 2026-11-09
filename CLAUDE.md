@@ -9,7 +9,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 
 ### Regras fixas
 - O preço que vale é o de `calcular_preco`, com pesquisa de mercado mais trava de lucro.
-- Nunca vender abaixo do piso nem com prejuízo.
+- Nunca vender abaixo do piso nem com prejuízo. Única exceção (decisão do dono, 09/11/2026): no pedido, o dono logado pode gravar preço abaixo do piso duro, com confirmação e motivo registrados em `precos_manuais_log`. O agente, o n8n e a service role nunca.
 - O modelo de IA nunca calcula preço, prazo, frete nem desconto.
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
@@ -87,7 +87,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
-`calcular_preco` é a única autoridade do preço (mercado pesquisado na hora do orçamento, fator por grupo, âncora de vendas, travas `piso` e `piso_duro`). A pesquisa roda no n8n (`GBH | FERRAMENTA | pesquisar_preco_mercado`), grava em `precos_mercado` (cache de 14 dias) e respeita robots, termos e intervalo por domínio (`fontes_pesquisa`). Desconto só existe como condição especial (`oferecer_condicao_especial`, degraus 1 a 3, validade de 24 h, nunca abaixo do piso); `aplicar_desconto` foi removida. Edição manual de preço no pedido: abaixo do `piso_duro` bloqueia, entre o piso duro e o piso exige confirmação do dono (`precos_manuais_log`). Detalhes em `docs/agente-ia.md`, `docs/agente/etapa3-validacao.md` e `docs/n8n-mapa.md`. Testes SQL: `supabase/tests/preco_etapa3.sql`.
+`calcular_preco` é a única autoridade do preço (mercado pesquisado na hora do orçamento, fator por grupo, âncora de vendas, travas `piso` e `piso_duro`). A pesquisa roda no n8n (`GBH | FERRAMENTA | pesquisar_preco_mercado`), grava em `precos_mercado` (cache de 14 dias) e respeita robots, termos e intervalo por domínio (`fontes_pesquisa`). Desconto só existe como condição especial (`oferecer_condicao_especial`, degraus 1 a 3, validade de 24 h, nunca abaixo do piso); `aplicar_desconto` foi removida. Edição manual de preço no pedido: abaixo do piso exige confirmação do dono com motivo (`precos_manuais_log`, faixas `entre_pisos` e `abaixo_piso_duro`); abaixo do `piso_duro` só o dono logado grava (decisão de 09/11/2026), e todo caminho automático continua bloqueado. Detalhes em `docs/agente-ia.md`, `docs/agente/etapa3-validacao.md` e `docs/n8n-mapa.md`. Testes SQL: `supabase/tests/preco_etapa3.sql`.
 
 ### Orçamento em PDF (Etapa 4)
 `montar_orcamento` (banco) monta o orçamento só a partir de SKUs e quantidades, com `calcular_preco`, `calcular_prazo`, `verificar_frete` e `validar_margem`; `orcamento-pdf` gera o PDF (modelo em `supabase/functions/_shared/orcamento-html.ts`, sem custo, margem, piso, fornecedor, SKU nem endereço de retirada) e `preparar_link_pagamento` valida a margem antes do link do Mercado Pago. Detalhes em `docs/orcamento-pdf.md`. Exemplos em `docs/exemplos-orcamento/` (catálogo fictício; a exceção do `.gitignore` vale só para essa pasta). Testes SQL: `supabase/tests/orcamento_etapa4.sql`.
