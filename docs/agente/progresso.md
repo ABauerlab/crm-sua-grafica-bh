@@ -2,6 +2,16 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Drift de esquema entre produção e repositório fechado (09/11/2026, branch `claude/relaxed-allen-79zf9s`)
+
+- **Levantamento (MCP, só leitura):** `information_schema.columns`, `pg_constraint`, `pg_indexes`, `pg_policies`, grants e gatilhos de produção comparados com o banco montado só pelas migrations. Diferença real: 8 colunas em `catalogo`, 9 em `orcamento_itens`, 8 em `orcamentos`, 2 em `parametros_comerciais`, 1 em `produto_fotos_mapa`, as tabelas `produto_acabamentos`, `planilha_precos_import` e `ecommerce_products`, os índices `idx_orcamento_itens_orcamento` e `idx_orcamentos_validade_ate`, a checagem `parametros_fonte_preco_chk` e o gatilho `trg_orcamentos_atualizado_em`.
+- **Feito:** migration `20261104190000_drift_producao.sql` com a definição de produção (tipos, defaults, NOT NULL, RLS, policies e grants iguais). Aditiva e idempotente: colunas e tabelas com `if not exists`, policy, gatilho e checagem só criados se não existirem. Em produção não muda nada e NÃO foi aplicada lá (aplicar só com autorização do dono, e não é necessário).
+- **Testes:** `supabase/tests/deriva-producao.sql` removido; `rodar-local.sh` não carrega mais o remendo nem o substituto de `atualizar_orcamento_atualizado_em` (vem da migration). Ficam os substitutos de objetos do Supabase gerenciado (`rls_auto_enable`, `search_path`). Migration rodada duas vezes no banco local sem erro. Depois dela, o único diff de colunas com produção são as 2 colunas sigilosas abaixo.
+- **Fora de propósito (sigilo):** a tabela de cache de scraping do fornecedor e 2 colunas jsonb de `produto_fotos_mapa` têm o nome do fornecedor no próprio nome. Ficam só em produção; nenhuma migration depende delas.
+- **Substitui o PR #67** (mesmo drift, parcial). Depende do PR #68 (este trabalho foi empilhado nele).
+- **Resultado:** `npm run test:sql` 5 de 5 OK (11, 71, 58, 21 e 70 testes); `npm test` OK.
+- **Melhorias sugeridas (decisão do dono):** a policy `for all ... using (true)` de `produto_acabamentos` deixa qualquer usuário logado alterar acabamentos; o ideal é restringir a escrita a `private.is_staff()`. Renomear em produção o cache e as 2 colunas sigilosas para nomes neutros permitiria versionar tudo. Produção ainda tem 5 sobrecargas extras de funções do agente sem arquivo no repositório.
+
 ## Preço abaixo do piso duro liberado para o dono (09/11/2026, branch `claude/jolly-euler-r6xq4f`)
 
 - **Decisão do dono:** a liberação da migration de produção `20261110000001` (gatilho `private.order_items_validar` pula a trava de piso duro para o dono; `definir_preco_item_pedido` aceita `abaixo_piso_duro` com confirmação) é INTENCIONAL. As funções não mudaram.
@@ -10,7 +20,7 @@
 - **Testes:** `trava_lucro_caminhos.sql` (caminho automático bloqueado, dono grava), `preco_etapa3.sql` (sem confirmação não grava; com confirmação grava e registra; sem o dono logado recusa), `melhorias_bloco_b.sql` (B1 com debounce de 6 s da Etapa 8 e desempate determinístico).
 - **Ambiente local de teste:** `rodar-local.sh` ganhou substitutos de `rls_auto_enable` e `atualizar_orcamento_atualizado_em`, `search_path` com `extensions`, e `supabase/tests/deriva-producao.sql` com colunas que existem em produção sem migration no repositório. Migration `20261110000004` tinha uma linha corrompida (removida; produção já tinha a versão limpa) e `20261111000002` ganhou `add column if not exists custo_unitario`.
 - **Resultado:** `npm run test:sql` 5 de 5 OK (11, 71, 58, 21 e 70 testes); `npm test`, typecheck e build OK.
-- **Pendente:** fechar a deriva de esquema entre produção e repositório com migration própria (lista em `supabase/tests/deriva-producao.sql` e demais tabelas só de produção).
+- **Pendente:** fechado na entrada acima (migration `20261104190000_drift_producao.sql`).
 
 ## Auditoria do relatório de aprimoramento (04/11/2026)
 

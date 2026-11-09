@@ -220,3 +220,14 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Alerta `orcamento_valor_alto` (categoria própria em `private.alerta_categoria`, só WhatsApp, respeita o silêncio noturno).
 - `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
 - n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.
+
+## Drift de produção versionado (09/11/2026)
+Migration `20261104190000_drift_producao.sql` traz para o repositório o que só existia em produção:
+- `catalogo`: `preco_venda`, `preco_mercado_ref`, `estrategia_preco`, `preco_planilha_em`, `prazo_cliente_dias`, `peso_frete_kg`, `tipo_embalagem`, `embalagem_cm`.
+- `orcamento_itens`: `valor_total`, `sku_fornecedor`, `custo_unitario`, `custo_total`, `acabamento`, `acabamento_custo`, `acabamento_dias_adicionais`, `largura_mm`, `altura_mm`, `area_m2`.
+- `orcamentos`: `validade_horas`, `pdf_versao`, `pagamento_gerado_em`, `pagamento_expira_em`, `piso_aplicado`, `bloqueio_motivo`, `fornecedor_ref`, `data_evento`; gatilho `trg_orcamentos_atualizado_em` (`atualizar_orcamento_atualizado_em`).
+- `parametros_comerciais`: `fonte_preco` (`planilha` | `mercado`) e `lucro_bruto_minimo`.
+- `produto_fotos_mapa.scrap_atualizado_em`.
+- Tabelas: `produto_acabamentos` (acabamentos por categoria ou grupo; leitura e escrita para logados), `planilha_precos_import` (planilha de preços; só o dono lê) e `ecommerce_products` (vitrine por SKU do catálogo; leitura pública dos ativos pela policy, escrita só service role).
+- Só em produção, por sigilo: cache de scraping do fornecedor e 2 colunas de origem em `produto_fotos_mapa`.
+
