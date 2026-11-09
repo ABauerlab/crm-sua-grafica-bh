@@ -10,6 +10,7 @@ import { parsePdfPages, type PdfItem } from '../src/lib/catalog-pdf.ts'
 import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts'
+import { conferirLinhas, linhasDaPlanilha } from '../src/lib/planilha-precos.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
 
@@ -209,7 +210,7 @@ assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((
 const sep = '[._\\-*]{0,2}'
 const forbidden = new RegExp(['z', sep, '[a4@]', sep, 'p'].join('') + '(?!pier)', 'i')
 const root = new URL('..', import.meta.url).pathname
-const skip = new Set(['node_modules', '.git', 'dist', 'package-lock.json'])
+const skip = new Set(['node_modules', '.git', 'dist', '.next', 'package-lock.json'])
 const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt|csv|yml|yaml|xml|sh|webmanifest)$/
 const leaks: string[] = []
 const walk = (dir: string) => {
@@ -249,5 +250,23 @@ assert.equal(metodoLabel('dinheiro'), 'Dinheiro')
 // A trava de lucro de todos os caminhos tem teste SQL próprio (npm run test:sql) e ele cobre cada caminho exigido
 const trava = readFileSync(new URL('../supabase/tests/trava_lucro_caminhos.sql', import.meta.url), 'utf8')
 for (const caminho of ['preço unitário', 'orçamento:', 'condição especial', 'link:', 'pedido manual', 'importação do catálogo']) assert.ok(trava.includes(caminho), `trava_lucro_caminhos.sql precisa cobrir: ${caminho}`)
+
+// Planilha oficial de preços de venda: cabeçalho achado abaixo de títulos, colunas de fórmula ignoradas, travas conferidas
+{
+  const cab = ['Código (SKU)', 'Categoria', 'Descrição do Serviço', 'Cores', 'Formato / Tamanho', 'Quantidade', 'Prazo Fábrica (dias)', 'Prazo Cliente (+1 dia)', 'Peso Total (g)', 'Peso Frete (kg)', 'Tipo Embalagem', 'Embalagem (C x L x A cm)', 'Preço de Custo Total (R$)', 'Custo Unitário (R$)', 'Preço de Mercado Estimado (R$)', 'Preço de Venda Sugerido Total (R$)', 'Preço de Venda Unitário (R$)', 'Lucro Bruto (R$)', 'Margem Bruta (%)', 'Markup Multiplicador', 'Estratégia de Preço']
+  const linha = (sku: string, custo: number, venda: number) => [sku, 'CARTÕES DE VISITA', 'COUCHE 300g', '4x4', '91 x 51', 1000, 2, 3, 1392, '=ROUND(I2/1000, 2)', 'Pacote / Caixa', '16 x 11 x 17', custo, '=M2/F2', 164.9, venda, '=P2/F2', '=P2-M2', '=1', '=1', 'Volume B2B']
+  const t = linhasDaPlanilha([['Título da planilha'], [], cab, linha('cfv02', 75.99, 151.9), linha('X1', 100, 140.9), linha('X2', 10, 70.5), ['', '', '']])
+  assert.equal(t.length, 3, 'linha sem SKU é ignorada')
+  assert.equal(t[0].sku, 'CFV02')
+  assert.equal(t[0].cores, '4X4')
+  assert.equal(t[0].preco_venda, 151.9)
+  assert.equal(t[0].prazo_cliente_dias, 3)
+  const r = conferirLinhas([...t, t[0]])
+  assert.equal(r.resumo.duplicados, 1)
+  assert.equal(r.resumo.abaixo_do_piso, 1, 'X1 está abaixo de custo x 1,5')
+  assert.equal(r.resumo.lucro_bruto_abaixo_do_minimo, 2, 'X1 e X2 têm lucro bruto menor que R$ 65')
+  assert.equal(r.resumo.sem_terminacao_90, 1, 'X2 não termina em ,90')
+  assert.throws(() => linhasDaPlanilha([['sem cabeçalho']]), /Código/)
+}
 
 console.log('OK: regras de preço, transições do kanban, pedidos parados, login, campanhas, importação de planilha e sigilo do fornecedor')

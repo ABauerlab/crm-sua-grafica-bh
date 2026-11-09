@@ -220,3 +220,11 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Alerta `orcamento_valor_alto` (categoria própria em `private.alerta_categoria`, só WhatsApp, respeita o silêncio noturno).
 - `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
 - n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.
+
+## E-commerce Fases 1 e 3 (09/11/2026)
+- **Preço:** `calcular_preco` lê `catalogo.preco_venda` (planilha oficial). Fórmula antiga em `private.calcular_preco_mercado`, usada só para SKU sem preço ou com `parametros_comerciais.fonte_preco = 'mercado'`. Novos parâmetros: `fonte_preco`, `lucro_bruto_minimo`.
+- **Carga:** `planilha_precos_import` (staging privada), `importar_precos_planilha`, `aplicar_planilha_precos_lote`, `aplicar_planilha_precos`, `planilha_precos_relatorio`, `private.sku_planilha`, `private.pode_importar_precos` (dono, service role ou token de 2 h em `app_segredos`).
+- **Vitrine:** `ecommerce_products` (leitura pública, sem a coluna `sku`), `ecommerce_sincronizar`, `private.ecommerce_sincronizar_interno`, `private.ecommerce_sincronizar_skus`, tradutores `private.cores_rotulo`, `private.formato_rotulo`, `private.titulo_vitrine`, `private.slugify`.
+- **Front do CRM:** `src/features/catalog/PlanilhaPrecosImport.tsx`, `src/lib/planilha-precos.ts`.
+- **Loja:** `ecommerce/` (Next.js). Ver `docs/ecommerce.md`.
+- **n8n:** `montar_orcamento` sem pesquisa de mercado; `pesquisar_preco_mercado` despublicado.

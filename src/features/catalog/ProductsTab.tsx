@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast'
 import { SkuBadge } from '@/components/SkuBadge'
 import { extractGrammage, readCatalogFile, type CatalogFile } from '@/lib/spreadsheet'
 import { ImportDialog } from './ImportDialog'
+import { PlanilhaPrecosImport } from './PlanilhaPrecosImport'
 import { formatBRL, formatNumber, parseMoney } from '@/lib/money'
 import { supabase } from '@/lib/supabase'
 import { STATUS_VENDA_LABELS, type Product, type StatusVenda } from '@/lib/types'
@@ -58,7 +59,7 @@ function useCategories() {
   })
 }
 
-/** Preço de venda de cada linha da página, calculado pelo banco (calcular_preco): pesquisa de mercado, histórico e trava de lucro. */
+/** Preço de venda de cada linha da página, calculado pelo banco (calcular_preco): planilha oficial e trava de lucro. */
 function usePrecosPagina(skus: string[]) {
   return useQuery({
     queryKey: ['catalogo-precos', skus.join(',')],
@@ -185,13 +186,14 @@ export function ProductsTab() {
           <Button variant="outline" size="sm" onClick={() => file.current?.click()} disabled={reading}>
             <FileUp className="h-4 w-4" /> {reading ? 'Lendo…' : 'Importar tabela'}
           </Button>
+          <PlanilhaPrecosImport />
           <Button variant="outline" size="sm" onClick={() => recalcular.mutate()} disabled={recalcular.isPending} title="Use depois de mudar parâmetros de preço ou a regra da bicicleta">
             {recalcular.isPending ? 'Recalculando…' : 'Recalcular pisos'}
           </Button>
           <Button size="sm" onClick={() => setForm({ sku: '', description: '', category: '', colors: '', weight: '', qty: '', size: '', lead: '', cost: '' })}><Plus className="h-4 w-4" /> Novo produto</Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Cada linha é uma opção fechada de quantidade: o SKU identifica o item exato. O custo é privado (só o dono vê). O <b>preço de venda</b> vem de <code>calcular_preco</code> (mercado, histórico e trava de lucro); a <b>base de custo</b> é só referência, sem pesquisa, e nunca vale para orçamento, PDF ou link.
+          Cada linha é uma opção fechada de quantidade: o SKU identifica o item exato. O custo é privado (só o dono vê). O <b>preço de venda</b> vem da <b>planilha oficial de preços</b> (botão "Importar planilha de preços"), aplicado por <code>calcular_preco</code> com as travas de lucro; a <b>base de custo</b> só vale para SKU sem preço de planilha.
         </p>
       </div>
 

@@ -53,3 +53,8 @@ rejeitadas*.csv
 dump-catalogo*
 *.catalogo.sql
 tests/e2e/resultados/
+
+# Planilha oficial de preços de venda: tem custo do fornecedor, PRIVADA (a carga é feita por scripts/importar-planilha-precos.ts ou pela tela do CRM)
+*.xlsx
+*.xls
+Tabela_Precos*

@@ -11,7 +11,7 @@
         -320
       ],
       "parameters": {
-        "content": "## GBH | FERRAMENTA | montar_orcamento (Etapa 4)\n**Objetivo:** montar o orçamento de forma determinística. Preço, prazo, frete, arte e upsell vêm das funções do banco; o modelo de IA não calcula nada.\n**Entradas:** contact_id (uuid), itens [{sku, quantidade}] (1 a 10, SKU, nunca texto livre), opcoes {conversation_id, bairro ou cep, arte: nenhuma|cliente|paga|com_frete, metodo, teste}.\n**Saída mínima:** status ok com numero (SG-0001), orcamento_id, itens, subtotal, arte, opcoes_arte, frete, total, data_prevista, prazo, validade_ate, upsell, avisos. Sem SKU, custo, piso, margem nem fornecedor. Bloqueado: status bloqueado, motivo e alternativa.\n**Passos:** 1) pesquisar_preco_mercado por SKU (cache de 14 dias; falha segue com a fórmula de custo); 2) rpc montar_orcamento (calcular_preco, calcular_prazo, verificar_frete, validar_margem); validade de 48 h por parametros_comerciais.\n**Dependências:** credencial GBH Supabase (service role); GBH | FERRAMENTA | pesquisar_preco_mercado; migration 20261029000009. Desativado até a Etapa 8.",
+        "content": "## GBH | FERRAMENTA | montar_orcamento (Etapa 4)\n**Objetivo:** montar o orçamento de forma determinística. Preço, prazo, frete, arte e upsell vêm das funções do banco; o modelo de IA não calcula nada.\n**Entradas:** contact_id (uuid), itens [{sku, quantidade}] (1 a 10, SKU, nunca texto livre), opcoes {conversation_id, bairro ou cep, arte: nenhuma|cliente|paga|com_frete, metodo, teste}.\n**Saída mínima:** status ok com numero (SG-0001), orcamento_id, itens, subtotal, arte, opcoes_arte, frete, total, data_prevista, prazo, validade_ate, upsell, avisos. Sem SKU, custo, piso, margem nem fornecedor. Bloqueado: status bloqueado, motivo e alternativa.\n**Passos:** rpc montar_orcamento (calcular_preco com o preço da planilha oficial, calcular_prazo, verificar_frete, validar_margem). A pesquisa de mercado foi desligada em 09/11/2026.\n**Dependências:** credencial Supabase (service role); migrations 20261029000009 e 20261115000001.",
         "color": 4,
         "width": 720,
         "height": 300
@@ -112,81 +112,13 @@
       }
     },
     {
-      "id": "f82b0f22-e255-505f-b267-462498c5d557",
-      "name": "Separar SKUs distintos",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        496,
-        320
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "language": "javaScript",
-        "jsCode": "const itens = $input.first().json.itens || [];\nconst vistos = {};\nconst saida = [];\nfor (const it of itens) {\n  const sku = String((it && it.sku) || '').trim();\n  if (!sku || vistos[sku]) continue;\n  vistos[sku] = true;\n  saida.push({ json: { sku, especificacao: {} } });\n}\nreturn saida;"
-      }
-    },
-    {
-      "id": "cf9841fa-ddb6-5917-980c-f9a7c33cce00",
-      "name": "Pesquisar preço de mercado (se o cache venceu)",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.4,
-      "position": [
-        720,
-        320
-      ],
-      "parameters": {
-        "mode": "each",
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "V1Bx2NRuPgJxj139"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "sku": "={{ $json.sku }}",
-            "especificacao": "={{ $json.especificacao }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "sku",
-              "displayName": "sku",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string"
-            },
-            {
-              "id": "especificacao",
-              "displayName": "especificacao",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "object"
-            }
-          ],
-          "attemptToConvertTypes": false
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "onError": "continueRegularOutput",
-      "alwaysOutputData": true
-    },
-    {
       "id": "c5cfc46a-f982-5b79-b4f1-a6bc3bfa65b4",
       "name": "Montar orçamento no banco",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        944,
-        320
+        496,
+        96
       ],
       "parameters": {
         "method": "POST",
@@ -210,8 +142,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1168,
-        320
+        720,
+        96
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -236,7 +168,7 @@
       "main": [
         [
           {
-            "node": "Separar SKUs distintos",
+            "node": "Montar orçamento no banco",
             "type": "main",
             "index": 0
           }
@@ -244,28 +176,6 @@
         [
           {
             "node": "Resposta: entrada inválida",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Separar SKUs distintos": {
-      "main": [
-        [
-          {
-            "node": "Pesquisar preço de mercado (se o cache venceu)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Pesquisar preço de mercado (se o cache venceu)": {
-      "main": [
-        [
-          {
-            "node": "Montar orçamento no banco",
             "type": "main",
             "index": 0
           }

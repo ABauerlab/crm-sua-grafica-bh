@@ -228,7 +228,7 @@ export function ImportDialog({
               ))}
             </div>
             <p className="rounded-md border bg-secondary/40 p-3 text-xs text-muted-foreground">
-              Cada linha é uma opção fechada de quantidade e o código identifica o item exato (CFV02 = 1.000 cartões, CFV02D = 2.000). O prazo é guardado BRUTO, em dias úteis; o dia extra de logística só entra no cálculo da data. O preço de venda não vem desta tabela: ele é calculado pelo sistema (pesquisa de mercado e trava de lucro). Linhas sem código entram como "sem código" e não são vendáveis.
+              Cada linha é uma opção fechada de quantidade e o código identifica o item exato (CFV02 = 1.000 cartões, CFV02D = 2.000). O prazo é guardado BRUTO, em dias úteis; o dia extra de logística só entra no cálculo da data. O preço de venda não vem desta tabela: ele vem da planilha oficial de preços (botão "Importar planilha de preços"), com as travas de lucro. Linhas sem código entram como "sem código" e não são vendáveis.
             </p>
             <div>
               <h3 className="mb-1 text-xs font-bold uppercase tracking-wide">Prévia (primeiras 5 linhas)</h3>
