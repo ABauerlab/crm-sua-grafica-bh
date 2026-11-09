@@ -220,3 +220,9 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Alerta `orcamento_valor_alto` (categoria própria em `private.alerta_categoria`, só WhatsApp, respeita o silêncio noturno).
 - `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
 - n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.
+
+## Drift de produção e executor local (09/11/2026)
+- `20261104235800_drift_acabamentos_e_colunas_orcamento.sql`: `produto_acabamentos` (RLS ligada, leitura e escrita para `authenticated` e `service_role`, igual à produção), colunas de custo, acabamento e medidas em `orcamento_itens`, colunas de validade, PDF, pagamento, piso e evento em `orcamentos`.
+- `20261104235900_drift_orcamento_atualizado_em.sql`: `public.atualizar_orcamento_atualizado_em()` e o gatilho `trg_orcamentos_atualizado_em` em `orcamentos`.
+- `supabase/tests/rodar-local.sh` simula também `public.rls_auto_enable()` (Supabase gerenciado) e o `search_path` do role `postgres` de produção.
+- Objetos da integração de fotos com o fornecedor ficam só em produção (sigilo do nome).
