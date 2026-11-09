@@ -3,8 +3,8 @@
 //
 // Conferir sem enviar nada:
 //   node scripts/importar-planilha-precos.ts /caminho/planilha.xlsx --conferir
-// Enviar (token temporário de 2 h em app_segredos, chave 'importar_precos_token'):
-//   SUPABASE_URL=... SUPABASE_ANON_KEY=... IMPORT_TOKEN=... node scripts/importar-planilha-precos.ts /caminho/planilha.xlsx
+// Enviar com a service role (nunca grave a chave em arquivo; só na variável de ambiente da sessão):
+//   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/importar-planilha-precos.ts /caminho/planilha.xlsx
 // No dia a dia o dono importa pela tela Catálogo > Produtos > "Importar planilha de preços".
 import { readFileSync } from 'node:fs'
 import * as XLSX from 'xlsx'
@@ -25,10 +25,10 @@ if (r.problemas.length) console.log('Exemplos de problemas:', r.problemas.slice(
 if (process.argv.includes('--conferir')) process.exit(0)
 
 const url = process.env.SUPABASE_URL
-const key = process.env.SUPABASE_ANON_KEY
-const token = process.env.IMPORT_TOKEN
-if (!url || !key || !token) {
-  console.error('Defina SUPABASE_URL, SUPABASE_ANON_KEY e IMPORT_TOKEN.')
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+const token = null
+if (!url || !key) {
+  console.error('Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.')
   process.exit(1)
 }
 const rpc = async (fn: string, body: unknown) => {

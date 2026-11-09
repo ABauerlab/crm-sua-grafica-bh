@@ -3,14 +3,13 @@
 Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`.
 
 ## Regras fixas
-- O preço que vale é o de `calcular_preco`, com pesquisa de mercado mais trava de lucro.
+- O preço que vale é o da **planilha oficial de preços de venda**, aplicado por `calcular_preco` com as travas de lucro (custo x 1,5, lucro bruto mínimo de R$ 65 por pedido e nunca prejuízo). A pesquisa de mercado foi desligada em 09/11/2026 (decisão do dono).
 - Nunca vender abaixo do piso nem com prejuízo.
 - O modelo de IA nunca calcula preço, prazo, frete nem desconto.
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
 - O SKU do fornecedor é interno.
-- O endereço fabril completo e a retirada exata só são informados depois do pagamento.
-- Antes do pagamento, o agente pode dar a localização de referência comercial para ganhar confiança: hipercentro de Belo Horizonte, próximo à Praça Sete. Nunca citar o endereço fabril nem o SKU do fornecedor.
+- O endereço da fábrica do fornecedor nunca é citado. O endereço do balcão de retirada (Rua Rio de Janeiro, 462, sala 2217, Edifício Helena Passig, Praça Sete) é PÚBLICO desde 09/11/2026 (decisão do dono): aparece no site e pode ser informado ao cliente, sempre como ponto de retirada agendada de materiais prontos (não é loja). Nunca citar o SKU do fornecedor.
 - Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
 
 ## Fluxo de fechamento (padrão)

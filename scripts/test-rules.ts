@@ -210,7 +210,7 @@ assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((
 const sep = '[._\\-*]{0,2}'
 const forbidden = new RegExp(['z', sep, '[a4@]', sep, 'p'].join('') + '(?!pier)', 'i')
 const root = new URL('..', import.meta.url).pathname
-const skip = new Set(['node_modules', '.git', 'dist', 'package-lock.json'])
+const skip = new Set(['node_modules', '.git', 'dist', '.next', 'package-lock.json'])
 const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt|csv|yml|yaml|xml|sh|webmanifest)$/
 const leaks: string[] = []
 const walk = (dir: string) => {

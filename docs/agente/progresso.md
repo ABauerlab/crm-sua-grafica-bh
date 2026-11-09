@@ -1,20 +1,30 @@
 # Progresso do agente de IA
 
-**Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
+**Próximo passo:** revisar o PR das Fases 1 e 3 do e-commerce; depois a Fase 2 (ficha técnica, acabamentos, gabaritos e fotos). Ver `docs/ecommerce.md`.
 
-## Em andamento: e-commerce Fase 1 + Fase 3 (branch `claude/funny-ride-s51uyy`, 09/11/2026)
+## E-commerce Fases 1 e 3: base da loja e preço pela planilha (branch `claude/funny-ride-s51uyy`, 09/11/2026, pronto para revisão)
 
-Decisões do dono: a planilha oficial de preços de venda substitui a pesquisa de mercado; endereço do balcão passa a ser público no site; e-commerce em Next.js na Hostinger (`ecommerce/`); um PR por fase.
+Decisões do dono: a planilha oficial de preços de venda substitui a pesquisa de mercado; endereço do balcão passa a ser público; loja em Next.js na Hostinger (`ecommerce/`); um PR por fase. Roteiro completo em `docs/ecommerce.md`.
 
-Feito:
-- Planilha conferida localmente (não versionada): 20.381 SKUs, 0 duplicados, todos terminam em ,90, todos >= custo x 1,5, lucro bruto >= R$ 65 em todos e nenhum com prejuízo (nem no cartão 2x). Com impostos e taxas, 5.841 (Pix) a 7.596 (cartão 2x) ficam com lucro LÍQUIDO abaixo de R$ 65: por isso a trava do modo planilha usa o lucro bruto, como a própria planilha.
-- Migration `supabase/migrations/20261115000001_preco_planilha_e_vitrine.sql` escrita (ainda NÃO aplicada: o MCP do Supabase pediu confirmação e ninguém respondeu): colunas de planilha em `catalogo`, `fonte_preco` e `lucro_bruto_minimo` em `parametros_comerciais`, staging `planilha_precos_import`, `importar_precos_planilha`/`aplicar_planilha_precos`, vitrine `ecommerce_products` (sem SKU, custo nem piso para o público), fórmula antiga preservada em `private.calcular_preco_mercado`, `calcular_preco` lendo a planilha, `montar_opcoes` e `validar_margem` ajustados.
+### O que foi feito
+- **Planilha conferida** (não versionada): 20.381 SKUs, 140 categorias, 0 duplicados, todos terminam em ,90, todos >= custo x 1,5, lucro bruto >= R$ 65 e nenhum com prejuízo. Com imposto e taxas, 5.841 (Pix) a 7.596 (cartão 2x) ficam com lucro LÍQUIDO abaixo de R$ 65: por isso a trava do modo planilha usa o lucro bruto, como a própria planilha.
+- **Banco (aplicado em produção):** migrations `20261115000001` a `20261115000004`. `calcular_preco` lê `catalogo.preco_venda` (mesmo formato de retorno, `regra = planilha`); fórmula antiga em `private.calcular_preco_mercado` para SKU sem preço; `validar_margem` e `montar_opcoes` com lucro bruto mínimo no modo planilha; `lucro_liquido_minimo` 60 -> 65; horário do balcão 08:00. Staging, carga em lotes e relatório. Vitrine `ecommerce_products` (pública, sem SKU, custo nem piso).
+- **Carga feita:** 20.381 SKUs com preço da planilha, 0 barrados, 0 custos alterados; 5 SKUs numéricos (planilha "0001", catálogo "1") casados por `private.sku_planilha`. 9 SKUs do catálogo não estão na planilha e seguem a fórmula antiga: CORD20MM, ETIQ-BAG, SQZ-500, CAM-DRY, BONE-AR, CART-A5, CV-LONA100-OP, SOB-CRED-100X148, SOB-CORD-825X20. Vitrine com 20.381 itens, 3.462 produtos e 140 categorias. Token temporário apagado.
+- **n8n:** `GBH | FERRAMENTA | montar_orcamento` sem o nó de pesquisa (publicado); `GBH | FERRAMENTA | pesquisar_preco_mercado` despublicado. JSONs em `n8n/` atualizados.
+- **CRM:** botão "Importar planilha de preços" em Catálogo > Produtos (confere no navegador, envia e aplica em lotes de 2.000 para caber no limite de 8 s). Textos de preço atualizados.
+- **Loja (`ecommerce/`):** Next.js isolado; home, /categorias e /ajuda iniciais com dados reais da vitrine; cabeçalho, rodapé com crédito Bauerlab, botão do WhatsApp por contexto, selos, JSON-LD da empresa, robots e sitemap.
+- **Testes:** `npm run typecheck`, `npm test`, `npm run build` e `npm run build:ecommerce` verdes; teste novo do leitor da planilha em `scripts/test-rules.ts`.
 
-Falta:
-1. Aplicar a migration (compatível: sem preço carregado tudo segue pela fórmula antiga).
-2. Carregar a planilha (token temporário em `app_segredos`, lotes de 2.000) e rodar `aplicar_planilha_precos`.
-3. n8n: tirar o nó "Pesquisar preço de mercado" do `GBH | FERRAMENTA | montar_orcamento` e despublicar `pesquisar_preco_mercado`; exportar JSONs.
-4. Tela de importação da planilha no CRM (Catálogo), esqueleto `ecommerce/` em Next.js, docs e testes.
+### O que NÃO foi feito (honestidade)
+- `npm run test:sql` não roda: o executor local falha em funções que só existem em produção (drift anterior a esta etapa). Os testes SQL foram feitos direto em produção com conferência de resultado.
+- Prompt da Laura ainda não cita o endereço do balcão (fica para a Fase 5).
+- Títulos da vitrine ainda vêm da descrição do catálogo ("Couche Brilho - 300g"); a tradução de balcão completa e a ficha técnica entram na Fase 2. `traduzir_especificacao` chama de "papel fino" itens que não são papel (ex.: chaveiro UV 10g): revisar na Fase 2.
+- Condição especial G2 continua calculando a "gordura" pelo piso líquido; em itens de margem apertada ela pode não oferecer desconto. Decidir se passa a usar o piso bruto.
+
+### Como testar
+1. CRM > Catálogo > Produtos: o preço de venda de CFV02 deve ser R$ 151,90.
+2. Pedir um orçamento de cartão pelo WhatsApp de teste: o valor deve bater com a planilha.
+3. `npm run dev:ecommerce` com `ecommerce/.env.local` (chave publicável) e abrir http://localhost:3001.
 
 ## Auditoria do relatório de aprimoramento (04/11/2026)
 
