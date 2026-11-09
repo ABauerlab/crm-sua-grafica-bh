@@ -90,6 +90,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `bling-webhook` | não (assinatura HMAC `X-Bling-Signature-256`) | Fase 6: grava os avisos do Bling em `bling_eventos`; processamento desligado (`app_settings.bling.webhook_processar`). Estudo fiscal e ativação em `docs/bling-fiscal.md` |
 | `meta-conversions-api` | não (dono, service role ou `x-cron-secret`) | Fase 7: envia a fila `meta_eventos` para a Conversions API (deduplicada com o Pixel pelo `event_id`); sem `META_PIXEL_ID` e `META_CAPI_TOKEN` não consome a fila. Purchase nasce no banco quando o pedido é pago (gatilho que nunca bloqueia o pagamento) |
 | `blog-pautas` | não (dono, service role ou `x-cron-secret`) | Fase 8: lê feeds do setor (NewsAPI opcional, `NEWSAPI_KEY`), filtra o assunto, pede ao Gemini um texto próprio, confere (crédito à fonte, sem cópia, sem preço, links só internos) e publica até 3 posts por dia em `blog_posts`. Detalhes em `docs/blog.md` |
+| `loja-frete` | não (público) | Fase 9: CEP -> bairro (ViaCEP, cache `cep_bairros`), frete grátis só nos 7 bairros centrais e cotação de envio no SuperFrete (`SUPERFRETE_TOKEN`; sem ele nada é inventado) |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -108,7 +109,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 O CRM é um PWA instalável (manifest, `sw.js`, ícones). `alertas` é a única fila de avisos ao dono: `alerta_criar` aplica a regra de 30 minutos, gravidade (alta sai na hora, baixa vira resumo de 2 h), preferências por tipo e silêncio (`app_settings.notificacoes`); `alertas-enviar` entrega por popup e WhatsApp. O WF5 do n8n processa `pagamento_confirmado` (modo humano, follow-ups cancelados, mensagem única ao cliente, alerta ao dono). Chaves VAPID em segredos ou em `app_segredos`, nunca no repositório. Detalhes em `docs/pwa-e-notificacoes.md`. Testes: `npm run test:alertas` e `supabase/tests/alertas_etapa6.sql`.
 
 ### E-commerce (suagraficabh.com.br)
-Pasta isolada `ecommerce/` (Next.js 15, App Router, Tailwind v3), com `package.json` e build próprios: `npm run build:ecommerce` / `npm run dev:ecommerce` na raiz. Na Hostinger: app Node.js com Base Directory `ecommerce/`, `npm run build` e `npm start`. Lê só a vitrine pública `ecommerce_products` com a chave publicável (sem SKU, custo, margem nem piso; o público vê o `ref`). A vitrine é recriada a partir do catálogo por `ecommerce_sincronizar` (e a cada carga da planilha). Roteiro das fases em `docs/ecommerce.md`. API pública `/api/v1` (busca, cotação, cálculo e checkout) em `docs/api-v1.md`: funções `loja_buscar`, `loja_cotar`, `loja_calcular` (anon, sem dado interno) e `loja_checkout_preparar` (só service role, via `loja-checkout`). Páginas da Fase 5 usam `loja_categorias`, `loja_produto` e `loja_slugs`.
+Pasta isolada `ecommerce/` (Next.js 15, App Router, Tailwind v3), com `package.json` e build próprios: `npm run build:ecommerce` / `npm run dev:ecommerce` na raiz. Na Hostinger: app Node.js com Base Directory `ecommerce/`, `npm run build`, `npm start` e Output Directory `.next` (obrigatório). Lê só a vitrine pública `ecommerce_products` com a chave publicável (sem SKU, custo, margem nem piso; o público vê o `ref`). A vitrine é recriada a partir do catálogo por `ecommerce_sincronizar` (e a cada carga da planilha). Roteiro das fases em `docs/ecommerce.md`. API pública `/api/v1` (busca, cotação, cálculo e checkout) em `docs/api-v1.md`: funções `loja_buscar`, `loja_cotar`, `loja_calcular` (anon, sem dado interno) e `loja_checkout_preparar` (só service role, via `loja-checkout`). Páginas da Fase 5 usam `loja_categorias`, `loja_produto` e `loja_slugs`.
 
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco` (planilha oficial). Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
@@ -128,6 +129,7 @@ Agente (Etapa 5): `N8N_WF1_URL` e `N8N_WF1_TOKEN` (o `whatsapp-webhook` avisa o 
 Fotos de produto e blog: `GEMINI_API_KEY` (verificação de marca nas imagens e texto dos posts do blog; sem ela nada é aprovado sozinho e nenhum post é escrito). Blog (opcional): `NEWSAPI_KEY`.
 Alertas (Etapa 6, opcionais): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (sem eles a função gera e guarda o par em `app_segredos`).
 Meta Pixel e Conversions API (Fase 7): `META_PIXEL_ID`, `META_CAPI_TOKEN` (segredos das Edge Functions) e `NEXT_PUBLIC_META_PIXEL_ID` (variável da loja na Hostinger).
+Envio nacional (Fase 9): `SUPERFRETE_TOKEN` (opcionais `SUPERFRETE_USER_AGENT`, `SUPERFRETE_CEP_ORIGEM`).
 Bling (Fase 6, preparado; nada é enviado ainda): `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET`.
 Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
@@ -166,6 +168,7 @@ supabase functions deploy loja-checkout --no-verify-jwt
 supabase functions deploy bling-webhook --no-verify-jwt
 supabase functions deploy meta-conversions-api --no-verify-jwt
 supabase functions deploy blog-pautas --no-verify-jwt
+supabase functions deploy loja-frete --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.
