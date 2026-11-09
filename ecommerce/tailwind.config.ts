@@ -7,9 +7,9 @@ export default {
     extend: {
       colors: {
         tinta: '#0b0b0f',
-        magenta: { DEFAULT: '#e6007e', escuro: '#b80064' },
-        amarelo: { DEFAULT: '#ffd400', escuro: '#e6be00' },
-        ciano: { DEFAULT: '#00a3e0' },
+        magenta: { DEFAULT: '#E6007E', escuro: '#B80064' },
+        amarelo: { DEFAULT: '#FFD500', escuro: '#E6BF00' },
+        ciano: { DEFAULT: '#00A6D6' },
         papel: '#f6f6f4',
       },
       fontFamily: { sans: ['var(--fonte)', 'system-ui', 'sans-serif'] },

@@ -15,7 +15,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 | 3 | Planilha como fonte do preço (`calcular_preco`), carga em lotes, tela de importação no CRM, vitrine `ecommerce_products`, pesquisa de mercado desligada no n8n | **feito** (20.381 SKUs carregados) |
 | 2 | Ficha técnica, acabamento padrão, texto e foto de cada produto a partir da página pública da origem interna (fila `loja_fichas`, função `loja-fichas`, uma página a cada 2 s, robots liberado), em linguagem de balcão e sem citar a origem | **feito** (fila rodando em produção) |
 | 4 | API `/api/v1` (busca, cotação, cálculo com frete, checkout com link do Mercado Pago), route handlers chamando funções do banco e a Edge Function `loja-checkout`. Contratos em `docs/api-v1.md` | **feito** |
-| 5 | Vitrine, página de produto com configurador, serviços de arte (R$ 14,90 / R$ 39,90), "Cobrimos qualquer orçamento" via condição especial G2, prompt da Laura com o endereço público | pendente |
+| 5 | Vitrine (home com mais vendidos e banners, categorias, busca), página de produto com configurador (quantidade, arte, CEP, prazo, Pix e 2x), 4 abas, variações, carrinho com fechamento pelo checkout da Fase 4, modal de WhatsApp antes de comprar, banner "Cobrimos qualquer orçamento" (proposta pelo WhatsApp; a Laura usa a condição G2), logo oficial do brandkit | **feito** |
 | 6 | Bling: colunas fiscais (NCM, CFOP, bling_*), `preco_marketplace`, `bling-webhook` (sem disparos) | pendente |
 | 7 | Meta Pixel + `meta-conversions-api` com deduplicação por `event_id` | pendente |
 | 8 | Blog (NewsAPI só como pauta, texto próprio com link da fonte) e Central de Ajuda completa | pendente |
@@ -44,3 +44,10 @@ npm run build:ecommerce
 - **Sigilo:** frases com a marca da origem são descartadas e a ficha é conferida de novo antes de sair (`_shared/ficha-origem.ts`, testado em `npm run test:loja` com marca fictícia). O código do item da origem não vai para a ficha pública.
 - **Fotos:** a foto leve (até 300 KB) só tem os metadados removidos, sem decodificar (`_shared/jpeg.ts`); a pesada é recomprimida, no máximo 2 por execução, porque decodificar imagem estourava o limite de CPU da função (erro 546). As que sobram voltam por `loja_fotos_pegar`; o agendamento continua rodando enquanto houver foto pendente (cerca de 120 fotos grandes por hora depois que as fichas acabarem). A verificação de marca por IA está desligada, como nas fotos do WhatsApp (decisão do dono: as fotos da origem não têm logo); dá para ligar com `verificar_marca = true` e o segredo `GEMINI_API_KEY`.
 - **Não disponível na página pública:** acabamentos opcionais com preço e links de gabarito exigem login na origem. Tiragens e prazos já vêm da planilha. Se o dono quiser os opcionais e os gabaritos, a alternativa é ele exportar ou enviar os gabaritos por categoria, que entram no bucket `loja-produtos` e em `ecommerce_products.gabaritos`.
+
+## Fase 5: vitrine e compra
+- Páginas: `/` (mais vendidos, banners de campanha com fotos dos produtos), `/categorias`, `/categoria/[slug]` (filtro), `/busca`, `/produto/[slug]` (configurador, abas Descrição, Ficha técnica, Arquivo e arte, Prazo e entrega, outras opções, JSON-LD de produto), `/carrinho` (arte, entrega, dados, total e "Ir para o pagamento").
+- Banco: `loja_categorias`, `loja_produto` (opções e variações), `loja_slugs` (sitemap com todas as categorias e produtos).
+- Carrinho e cliente ficam no navegador (`localStorage`); o preço é sempre recalculado no servidor. O modal de WhatsApp aparece no primeiro "Comprar" ou "Adicionar". A gravação do carrinho abandonado (follow-up de 15 min) entra na Fase 9.
+- Marca: símbolo oficial do brandkit (`ecommerce/public/marca/simbolo.svg`, cores #00A6D6, #E6007E, #FFD500); o nome é texto em Montserrat.
+- A Laura já informa o endereço do balcão (prompt do WF2) e a trava de saída já o libera; nada mudou no n8n.
