@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { ArrowRight, BadgePercent, Clock, CreditCard, MapPin, Truck } from 'lucide-react'
 import { CategoriaCard } from '@/components/CategoriaCard'
+import { CobrimosBanner } from '@/components/CobrimosBanner'
+import { ProdutoCard } from '@/components/ProdutoCard'
 import { SITE, linkWhatsApp } from '@/lib/site'
-import { categorias } from '@/lib/vitrine'
+import { buscar, categorias, fotoUrl, type CategoriaResumo, type ProdutoResumo } from '@/lib/vitrine'
 
 export const revalidate = 3600
 
@@ -13,9 +15,24 @@ const VANTAGENS = [
   { icone: BadgePercent, titulo: 'Cobrimos orçamento', texto: 'Tem proposta menor de outra gráfica para o mesmo produto? Mande que a gente avalia.' },
 ]
 
+// Mais vendidos: um produto por termo (prioriza quem já tem foto)
+const MAIS_VENDIDOS = ['cartao de visita', 'panfleto', 'adesivo', 'banner', 'sacola', 'caneca', 'etiqueta', 'cardapio']
+
+async function maisVendidos(): Promise<ProdutoResumo[]> {
+  const r = await Promise.all(MAIS_VENDIDOS.map((t) => buscar(t, null, 8)))
+  return r.map((x) => x.produtos.find((p) => p.foto) ?? x.produtos[0]).filter((p): p is ProdutoResumo => !!p)
+}
+
+const BANNERS = [
+  { slug: 'cartoes-de-visita', titulo: 'Papelaria corporativa', texto: 'Cartões, timbrados e envelopes com acabamento de alto padrão.', cor: 'bg-tinta text-white', botao: 'bg-amarelo text-tinta' },
+  { slug: 'caneca-copos-e-tacas', titulo: 'Personalize do seu jeito', texto: 'Canecas, copos, garrafas e brindes com a sua marca.', cor: 'bg-amarelo text-tinta', botao: 'bg-tinta text-white' },
+  { slug: 'banners-faixas-lonas-e-tecidos', titulo: 'Grandes formatos', texto: 'Banners, lonas, faixas e placas com visibilidade de verdade.', cor: 'bg-magenta text-white', botao: 'bg-white text-tinta' },
+]
+
 export default async function Home() {
-  const cats = await categorias()
-  const destaque = cats.slice(0, 12)
+  const [cats, vendidos] = await Promise.all([categorias(), maisVendidos()])
+  const destaque = cats.filter((c) => c.foto).slice(0, 12)
+  const fotoDe = (slug: string) => fotoUrl(cats.find((c: CategoriaResumo) => c.slug === slug)?.foto)
   return (
     <>
       <section className="relative overflow-hidden bg-tinta text-white">
@@ -54,6 +71,34 @@ export default async function Home() {
           <p className="rounded-xl2 bg-white p-6 text-sm text-black/60">Catálogo em atualização. Fale com a gente pelo WhatsApp {SITE.telefone}.</p>
         )}
       </section>
+
+      {vendidos.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-14">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div><h2 className="text-2xl font-black md:text-3xl">Mais vendidos</h2><p className="text-sm text-black/60">Os produtos mais pedidos pelos nossos clientes.</p></div>
+            <Link href="/categorias" className="text-sm font-semibold text-magenta hover:underline">Ver todos</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{vendidos.map((p) => <ProdutoCard key={p.produto_slug} p={p} />)}</div>
+        </section>
+      )}
+
+      <section className="mx-auto grid max-w-7xl gap-3 px-4 pt-14 md:grid-cols-3">
+        {BANNERS.map((b) => {
+          const f = fotoDe(b.slug)
+          return (
+            <Link key={b.slug} href={`/categoria/${b.slug}`} className={`group relative flex min-h-56 flex-col justify-end overflow-hidden rounded-xl2 p-6 ${b.cor}`}>
+              {f && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={f} alt="" loading="lazy" className="absolute -right-8 -top-6 h-48 w-48 rotate-6 rounded-2xl object-cover opacity-90 shadow-xl transition group-hover:rotate-3" />
+              )}
+              <h3 className="relative max-w-[60%] text-2xl font-black leading-tight">{b.titulo}</h3>
+              <p className="relative mt-1 max-w-[70%] text-sm opacity-85">{b.texto}</p>
+              <span className={`relative mt-4 inline-flex w-fit items-center gap-1 rounded-lg px-3 py-2 text-sm font-bold ${b.botao}`}>Ver produtos <ArrowRight className="h-4 w-4" aria-hidden /></span>
+            </Link>)
+        })}
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pt-10"><CobrimosBanner /></section>
 
       <section className="mx-auto max-w-7xl px-4 pt-14">
         <div className="grid overflow-hidden rounded-xl2 bg-white shadow-sm md:grid-cols-2">

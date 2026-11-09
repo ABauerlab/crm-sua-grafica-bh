@@ -1,6 +1,12 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 5 do e-commerce (vitrine, página de produto com configurador, carrinho). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 6 do e-commerce (estrutura fiscal do Bling e marketplaces, sem disparos). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 5: vitrine, produto, carrinho (09/11/2026)
+
+- Loja navegável de ponta a ponta: home, categorias, busca, produto com configurador e carrinho que fecha o pedido pelo checkout da Fase 4. Migration `20261118000001` (aplicada): `loja_categorias`, `loja_produto`, `loja_slugs`.
+- Conferido com prints (desktop e celular, sem rolagem lateral): configurador recalcula preço, arte, prazo e frete; "Comprar agora" pede o WhatsApp e leva ao carrinho.
+- **Não feito:** carrinho abandonado no banco e follow-up (Fase 9); títulos de produtos ainda sem ficha seguem crus até a fila da Fase 2 terminar.
 
 ## E-commerce Fase 4: API `/api/v1` (09/11/2026)
 

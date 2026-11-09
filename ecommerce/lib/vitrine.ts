@@ -1,34 +1,31 @@
-// Leitura da vitrine pública (public.ecommerce_products): só a chave publicável, sem SKU, custo, margem nem piso.
-export interface ItemVitrine {
-  ref: string
-  produto_slug: string
-  categoria: string
-  categoria_slug: string
-  titulo: string
-  cores_rotulo: string | null
-  formato_rotulo: string | null
-  quantidade: number | null
-  preco: number
-  parcela_2x: number
-  prazo_dias_uteis: number | null
-}
-
-const MINUSCULAS = new Set(['e', 'de', 'da', 'do', 'das', 'dos', 'em', 'com', 'para', 'a', 'o'])
-/** "PANFLETOS, FLYERS E FOLHETOS" -> "Panfletos, Flyers e Folhetos" */
-export function nomeBonito(s: string) {
-  return s.toLowerCase().split(' ').map((p, i) => (i > 0 && MINUSCULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(' ')
-}
-
-export interface CategoriaResumo { slug: string; nome: string; aPartirDe: number; produtos: number }
-
+// Leitura da vitrine pública pelo banco (funções loja_*), só com a chave publicável. Sem SKU, custo, margem nem piso.
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL
 const CHAVE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-async function rest<T>(caminho: string, revalidar = 3600): Promise<T | null> {
+export interface Opcao { ref: string; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null }
+export interface ProdutoResumo {
+  produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
+  foto: string | null; a_partir_de: number; parcela_2x_a_partir_de: number; prazo_dias_uteis: number | null; opcoes: Opcao[]
+}
+export interface Ficha {
+  titulo?: string; material?: string | null; espessura?: string | null; impressao?: string | null; tamanho_final?: string | null
+  arte_com_sangria?: string | null; acabamento?: string | null; observacoes?: string[]
+}
+export interface Produto {
+  produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
+  especificacao: string | null; descricao: string | null; ficha: Ficha | null; acabamentos: string[] | null; fotos: string[]
+  prazo_dias_uteis: number | null; a_partir_de: number; ate: number; opcoes: Opcao[]; atualizado_em: string
+  variacoes: { produto_slug: string; titulo: string; impressao: string | null; formato: string | null; a_partir_de: number; foto: string | null }[]
+}
+export interface CategoriaResumo { slug: string; nome: string; produtos: number; a_partir_de: number; foto: string | null }
+
+async function rpc<T>(fn: string, args: Record<string, unknown> = {}, revalidar = 3600): Promise<T | null> {
   if (!URL_SUPABASE || !CHAVE) return null
   try {
-    const res = await fetch(`${URL_SUPABASE}/rest/v1/${caminho}`, {
-      headers: { apikey: CHAVE, Authorization: `Bearer ${CHAVE}` },
+    const res = await fetch(`${URL_SUPABASE}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: CHAVE, Authorization: `Bearer ${CHAVE}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
       next: { revalidate: revalidar },
     })
     if (!res.ok) return null
@@ -38,22 +35,32 @@ async function rest<T>(caminho: string, revalidar = 3600): Promise<T | null> {
   }
 }
 
-/** Categorias com o menor preço ("a partir de"). Lê só colunas leves e agrupa no servidor do site. */
+const MINUSCULAS = new Set(['e', 'de', 'da', 'do', 'das', 'dos', 'em', 'com', 'para', 'a', 'o'])
+/** "PANFLETOS, FLYERS E FOLHETOS" -> "Panfletos, Flyers e Folhetos" */
+export function nomeBonito(s: string) {
+  return s.toLowerCase().split(' ').map((p, i) => (i > 0 && MINUSCULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(' ')
+}
+
+/** Caminho do Storage público -> URL. */
+export function fotoUrl(caminho: string | null | undefined): string | null {
+  return caminho && URL_SUPABASE ? `${URL_SUPABASE}/storage/v1/object/public/${caminho}` : null
+}
+
 export async function categorias(): Promise<CategoriaResumo[]> {
-  const mapa = new Map<string, CategoriaResumo & { slugs: Set<string> }>()
-  for (let pagina = 0; pagina < 25; pagina++) {
-    const de = pagina * 1000
-    const linhas = await rest<Pick<ItemVitrine, 'categoria' | 'categoria_slug' | 'produto_slug' | 'preco'>[]>(
-      `ecommerce_products?select=categoria,categoria_slug,produto_slug,preco&ativo=is.true&order=categoria_slug&offset=${de}&limit=1000`)
-    if (!linhas?.length) break
-    for (const l of linhas) {
-      const c = mapa.get(l.categoria_slug) ?? { slug: l.categoria_slug, nome: nomeBonito(l.categoria), aPartirDe: Infinity, produtos: 0, slugs: new Set<string>() }
-      c.aPartirDe = Math.min(c.aPartirDe, Number(l.preco))
-      c.slugs.add(l.produto_slug)
-      c.produtos = c.slugs.size
-      mapa.set(l.categoria_slug, c)
-    }
-    if (linhas.length < 1000) break
-  }
-  return [...mapa.values()].map(({ slugs: _s, ...c }) => c).sort((a, b) => b.produtos - a.produtos)
+  const r = await rpc<CategoriaResumo[]>('loja_categorias')
+  return (r ?? []).map((c) => ({ ...c, nome: nomeBonito(c.nome), a_partir_de: Number(c.a_partir_de) }))
+}
+
+export async function buscar(termo: string | null, categoria: string | null = null, limite = 24) {
+  const r = await rpc<{ total: number; produtos: ProdutoResumo[] }>('loja_buscar', { p_termo: termo, p_limite: limite, p_categoria: categoria }, 900)
+  return { total: r?.total ?? 0, produtos: (r?.produtos ?? []).map((p) => ({ ...p, categoria: nomeBonito(p.categoria) })) }
+}
+
+export async function produto(slug: string): Promise<Produto | null> {
+  const p = await rpc<Produto | null>('loja_produto', { p_slug: slug }, 900)
+  return p ? { ...p, categoria: nomeBonito(p.categoria) } : null
+}
+
+export async function slugs() {
+  return (await rpc<{ produtos: { s: string; u: string }[]; categorias: string[] }>('loja_slugs', {}, 3600)) ?? { produtos: [], categorias: [] }
 }
