@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.blog-pautas]
 verify_jwt = false
+
+[functions.loja-frete]
+verify_jwt = false

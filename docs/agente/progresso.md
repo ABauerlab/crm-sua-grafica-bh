@@ -1,6 +1,15 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 9 do e-commerce (checkout em 3 passos, carrinho abandonado, frete grátis nos 7 bairros, SuperFrete, Pix copia e cola). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 10 do e-commerce (JSON-LD de produto, sitemap dinâmico, varredura de segurança) e, antes, apontar o DNS de `suagraficabh.com.br` para a Hostinger (ver Fase 9 abaixo). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 9: checkout, frete, Pix e site no ar (09/11/2026)
+
+- Migrations `20261122000001` e `20261122000002` (aplicadas): `cep_bairros`, `verificar_frete` por bairro, `loja_frete_base`, `carrinhos_abandonados` + `loja_carrinho_salvar/fechar` + `v_carrinhos_recuperar`, `loja_pedido_status`, método de entrega `correios`. Edge Functions `loja-frete` (nova) e `loja-checkout` (Pix, envio, troca de pagamento) publicadas.
+- Loja: `/checkout` em 3 passos, carrinho enxuto, rotas `/api/v1/frete`, `/carrinho`, `/checkout/pay`, `/pedido/status`.
+- **Site publicado na Hostinger** (`suagraficabh.com.br`, site novo criado na conta). A publicação só funcionou com Output Directory `.next`. **Falta o DNS**: o domínio usa o DNS do Registro.br e a raiz não tem registro A; o MX e o SPF da Hostinger já existem e devem ser mantidos.
+- Validado: regra dos 7 bairros no banco (Savassi e Centro de BH grátis, Santo Antônio e "Centro" de São Paulo não), `loja-frete` ao vivo (CEP de BH e de SP), recusas do checkout, `npm test`, build, prints desktop e celular sem rolagem lateral.
+- **Não testado ponta a ponta**: geração real do Pix e do link pelo site (evitei pedido real em produção; conferir o primeiro pedido no Kanban, título "Site SG-..."); SuperFrete sem token.
+- **Pendências do dono**: DNS no Registro.br; `SUPERFRETE_TOKEN`; `GEMINI_API_KEY`; Pixel da Meta. **Decisões**: ligar o follow-up de carrinho abandonado (template de utilidade na Meta e consentimento); a Laura passar a usar `loja-frete` para o frete grátis.
 
 ## E-commerce Fase 8: blog e central de ajuda (09/11/2026)
 

@@ -1,5 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // A pasta ecommerce/ vive dentro do repositório do CRM (que tem outro package-lock): fixa a raiz do rastreio aqui.
+  outputFileTracingRoot: path.dirname(fileURLToPath(import.meta.url)),
   // Hostinger (Node.js): `npm run build` e `npm start` com Base Directory = ecommerce/
   poweredByHeader: false,
   images: {

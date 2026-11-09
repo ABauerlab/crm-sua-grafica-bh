@@ -22,7 +22,7 @@ Preço da opção, arte (pronta R$ 0, conferência técnica R$ 14,90, criação 
 ```
 `quantidade` é o número de lotes da opção (2 x 50 un = 100 un). Devolve itens, subtotal, arte, total, pagamento, o prazo mais longo e o frete.
 
-Frete público: sempre retirada grátis no balcão da Praça Sete; na região central, entrega grátis (com pedido mínimo); no resto da Grande BH, entrega por aplicativo com valor confirmado no WhatsApp; fora da Grande BH, envio para todo o Brasil com frete calculado no checkout (SuperFrete entra na Fase 9).
+Frete público: sempre retirada grátis no balcão da Praça Sete; na região central, entrega grátis (com pedido mínimo); no resto da Grande BH, entrega por aplicativo com valor confirmado no WhatsApp; fora da Grande BH, envio para todo o Brasil com frete calculado no checkout (SuperFrete, Fase 9).
 
 ## POST `/api/v1/checkout/create-preference`
 ```json
@@ -34,7 +34,17 @@ Cria ou completa o contato pelo WhatsApp (nunca sobrescreve o cadastro), monta o
 ```json
 { "ok": true, "numero": 230, "total": 166.8, "prazo": "...", "data_prevista": "2026-11-13", "link_pagamento": "https://..." }
 ```
-Pix copia e cola direto na tela entra na Fase 9.
+
+Fase 9: `opcoes` aceita também `entrega: "envio"` (com `cep` e `frete_servico: "pac"|"sedex"|"mini"`), `pagamento: "pix"` (padrão, exige `cliente.email`) ou `"cartao"` e `sessao` (id anônimo do carrinho). A resposta traz `pedido_id`, `metodo` e, no Pix, `pix: { copia_e_cola, qr_base64, expira_em }`; no cartão, `link_pagamento`.
+
+## POST `/api/v1/frete`
+`{ cep, itens: [{ ref, quantidade }], arte }` -> endereço do CEP, `frete_gratis`, `grande_bh`, `falta_para_frete_gratis` e `envio: { disponivel, motivo, opcoes: [{ servico, nome, valor, prazo_dias }] }`.
+
+## POST `/api/v1/checkout/pay`
+`{ pedido_id, metodo: "pix"|"cartao", email? }` troca a forma de pagamento de um pedido já criado.
+
+## POST `/api/v1/carrinho`
+Grava o carrinho para o follow-up de abandono. `GET /api/v1/pedido/status?id=<pedido_id>` devolve `{ ok, numero, pago }`.
 
 ## Para o n8n e a Laura
 A Laura continua usando as mesmas funções do banco pelas ferramentas que já existem; os números batem com o site porque a fonte é a mesma. Se um fluxo externo precisar cotar por HTTP, use as rotas acima.
