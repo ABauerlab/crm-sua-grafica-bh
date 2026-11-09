@@ -6,6 +6,11 @@ import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shar
 import { fichaBalcao, lerFicha, marcasDaOrigem } from '../_shared/ficha-origem.ts'
 import { nomeArquivoNeutro, processarImagem, sha256Hex } from '../_shared/fotos.ts'
 import { conferirMarca } from '../_shared/marca.ts'
+import { limparJpeg } from '../_shared/jpeg.ts'
+
+// Decodificar imagem gasta muita CPU: no máximo 2 recompressões por execução; o resto da foto grande fica para a próxima.
+const MAX_RECOMPRIMIR = 2
+const TETO_SEM_RECOMPRIMIR = 300 * 1024
 
 const UA = 'Mozilla/5.0 (compatible; SuaGraficaBH-catalogo/1.0)'
 const decode = { decode: (d: Uint8Array) => Image.decode(d) }
@@ -44,6 +49,29 @@ Deno.serve(async (req) => {
   const intervalo = Math.max(1500, cfg.intervalo_ms ?? 2000)
   const gemini = cfg.verificar_marca === false ? undefined : Deno.env.get('GEMINI_API_KEY')
 
+  let recomprimidas = 0
+  /** Foto JPEG leve: só limpa os metadados (sem decodificar). Pesada: recomprime, se ainda houver cota nesta execução. */
+  async function prepararFoto(url: string): Promise<{ foto: string; marcaOk: boolean | null } | null> {
+    const img = await baixar(url, true)
+    if (!img.ok) return null
+    const bruto = new Uint8Array(await img.arrayBuffer())
+    const limpo = limparJpeg(bruto)
+    let bytes: Uint8Array | null = null
+    if (limpo && limpo.bytes.length <= TETO_SEM_RECOMPRIMIR && (limpo.info?.largura ?? 0) >= 300) {
+      bytes = limpo.bytes
+    } else if (recomprimidas < MAX_RECOMPRIMIR) {
+      recomprimidas++
+      const p = await processarImagem(bruto, decode)
+      if ('bytes' in p) bytes = p.bytes
+    }
+    if (!bytes) return null
+    const v = await conferirMarca(bytes, gemini)
+    if (v.limpa === false) return null
+    const nome = nomeArquivoNeutro(await sha256Hex(bytes))
+    const up = await db.storage.from('loja-produtos').upload(nome, bytes, { contentType: 'image/jpeg', upsert: true, cacheControl: '31536000' })
+    return up.error ? null : { foto: nome, marcaOk: v.limpa }
+  }
+
   const { data: lote, error } = await db.rpc('loja_fichas_pegar', { p_n: Math.min(cfg.por_execucao ?? 20, 30) })
   if (error) return json({ error: 'Não foi possível pegar o lote.' }, 500)
   const itens = (lote ?? []) as { chave: string; caminho: string; imagem_origem: string | null }[]
@@ -66,19 +94,8 @@ Deno.serve(async (req) => {
       let foto: string | null = null
       let marcaOk: boolean | null = null
       if (it.imagem_origem) {
-        const img = await baixar(it.imagem_origem, true)
-        if (img.ok) {
-          const p = await processarImagem(new Uint8Array(await img.arrayBuffer()), decode)
-          if ('bytes' in p) {
-            const v = await conferirMarca(p.bytes, gemini)
-            marcaOk = v.limpa
-            if (v.limpa !== false) {
-              const nome = nomeArquivoNeutro(await sha256Hex(p.bytes))
-              const up = await db.storage.from('loja-produtos').upload(nome, p.bytes, { contentType: 'image/jpeg', upsert: true, cacheControl: '31536000' })
-              if (!up.error) foto = nome
-            }
-          }
-        }
+        const r = await prepararFoto(it.imagem_origem)
+        if (r) { foto = r.foto; marcaOk = r.marcaOk }
       }
       await db.rpc('loja_ficha_gravar', { p_chave: it.chave, p_ficha: fichaSemTexto, p_balcao: balcao, p_foto: foto, p_marca_ok: marcaOk, p_erro: null })
       ok++
@@ -87,6 +104,20 @@ Deno.serve(async (req) => {
       await db.rpc('loja_ficha_gravar', { p_chave: it.chave, p_ficha: null, p_balcao: null, p_foto: null, p_marca_ok: null, p_erro: e instanceof Error ? e.message : 'erro' })
     }
   }
-  console.log(`loja-fichas: ${ok} ok, ${falhas} com erro, ${itens.length} no lote`)
-  return json({ ok: true, processados: ok, erros: falhas, lote: itens.length })
+  // fotos que ficaram para depois (pesadas): usa a cota de recompressão que sobrou
+  let fotos = 0
+  if (recomprimidas < MAX_RECOMPRIMIR && Date.now() - inicio < 90_000) {
+    const { data: semFoto } = await db.rpc('loja_fotos_pegar', { p_n: MAX_RECOMPRIMIR - recomprimidas })
+    for (const f of (semFoto ?? []) as { chave: string; imagem_origem: string }[]) {
+      try {
+        const r = await prepararFoto(f.imagem_origem)
+        await db.rpc('loja_foto_gravar', { p_chave: f.chave, p_foto: r?.foto ?? null })
+        if (r) fotos++
+      } catch {
+        await db.rpc('loja_foto_gravar', { p_chave: f.chave, p_foto: null })
+      }
+    }
+  }
+  console.log(`loja-fichas: ${ok} ok, ${falhas} com erro, ${itens.length} no lote, ${fotos} fotos pendentes resolvidas`)
+  return json({ ok: true, processados: ok, erros: falhas, lote: itens.length, fotos })
 })

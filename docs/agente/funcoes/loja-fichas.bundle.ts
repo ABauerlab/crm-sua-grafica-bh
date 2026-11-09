@@ -473,9 +473,44 @@ async function conferirMarca(jpeg: Uint8Array, chave: string | undefined): Promi
   }
 }
 
+// Limpeza de JPEG sem decodificar (barato em CPU): remove metadados (EXIF, XMP, IPTC, comentários) e mantém a imagem.
+// Usado pela loja-fichas para não estourar o limite de CPU da Edge Function decodificando cada foto.
+
+interface InfoJpeg { largura: number; altura: number }
+
+/** Remove os segmentos APP1..APP15 e COM. Devolve null se não for um JPEG válido. */
+function limparJpeg(bytes: Uint8Array): { bytes: Uint8Array; info: InfoJpeg | null } | null {
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null
+  const partes: Uint8Array[] = [bytes.subarray(0, 2)]
+  let info: InfoJpeg | null = null
+  let i = 2
+  while (i + 4 <= bytes.length) {
+    if (bytes[i] !== 0xff) return null
+    const marcador = bytes[i + 1]
+    if (marcador === 0xda) { partes.push(bytes.subarray(i)); break } // início dos dados da imagem: o resto vai inteiro
+    const tam = (bytes[i + 2] << 8) | bytes[i + 3]
+    if (tam < 2 || i + 2 + tam > bytes.length) return null
+    if (marcador >= 0xc0 && marcador <= 0xcf && marcador !== 0xc4 && marcador !== 0xc8 && marcador !== 0xcc) {
+      info = { altura: (bytes[i + 5] << 8) | bytes[i + 6], largura: (bytes[i + 7] << 8) | bytes[i + 8] }
+    }
+    const descartar = (marcador >= 0xe1 && marcador <= 0xef) || marcador === 0xfe
+    if (!descartar) partes.push(bytes.subarray(i, i + 2 + tam))
+    i += 2 + tam
+  }
+  const total = partes.reduce((s, p) => s + p.length, 0)
+  const out = new Uint8Array(total)
+  let o = 0
+  for (const p of partes) { out.set(p, o); o += p.length }
+  return { bytes: out, info }
+}
+
 // E-commerce Fase 2: lê a ficha técnica pública de cada produto na origem interna, traduz para linguagem de balcão,
 // guarda a foto (JPEG leve, nome neutro, bucket público loja-produtos) e aplica na vitrine (loja_ficha_gravar).
 // Chamada pelo agendamento (x-cron-secret) ou pelo dono/service role. Uma página a cada 2 s; nada de log com conteúdo ou origem.
+// Decodificar imagem gasta muita CPU: no máximo 2 recompressões por execução; o resto da foto grande fica para a próxima.
+const MAX_RECOMPRIMIR = 2
+const TETO_SEM_RECOMPRIMIR = 300 * 1024
+
 const UA = 'Mozilla/5.0 (compatible; SuaGraficaBH-catalogo/1.0)'
 const decode = { decode: (d: Uint8Array) => Image.decode(d) }
 const espera = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -513,6 +548,29 @@ Deno.serve(async (req) => {
   const intervalo = Math.max(1500, cfg.intervalo_ms ?? 2000)
   const gemini = cfg.verificar_marca === false ? undefined : Deno.env.get('GEMINI_API_KEY')
 
+  let recomprimidas = 0
+  /** Foto JPEG leve: só limpa os metadados (sem decodificar). Pesada: recomprime, se ainda houver cota nesta execução. */
+  async function prepararFoto(url: string): Promise<{ foto: string; marcaOk: boolean | null } | null> {
+    const img = await baixar(url, true)
+    if (!img.ok) return null
+    const bruto = new Uint8Array(await img.arrayBuffer())
+    const limpo = limparJpeg(bruto)
+    let bytes: Uint8Array | null = null
+    if (limpo && limpo.bytes.length <= TETO_SEM_RECOMPRIMIR && (limpo.info?.largura ?? 0) >= 300) {
+      bytes = limpo.bytes
+    } else if (recomprimidas < MAX_RECOMPRIMIR) {
+      recomprimidas++
+      const p = await processarImagem(bruto, decode)
+      if ('bytes' in p) bytes = p.bytes
+    }
+    if (!bytes) return null
+    const v = await conferirMarca(bytes, gemini)
+    if (v.limpa === false) return null
+    const nome = nomeArquivoNeutro(await sha256Hex(bytes))
+    const up = await db.storage.from('loja-produtos').upload(nome, bytes, { contentType: 'image/jpeg', upsert: true, cacheControl: '31536000' })
+    return up.error ? null : { foto: nome, marcaOk: v.limpa }
+  }
+
   const { data: lote, error } = await db.rpc('loja_fichas_pegar', { p_n: Math.min(cfg.por_execucao ?? 20, 30) })
   if (error) return json({ error: 'Não foi possível pegar o lote.' }, 500)
   const itens = (lote ?? []) as { chave: string; caminho: string; imagem_origem: string | null }[]
@@ -535,19 +593,8 @@ Deno.serve(async (req) => {
       let foto: string | null = null
       let marcaOk: boolean | null = null
       if (it.imagem_origem) {
-        const img = await baixar(it.imagem_origem, true)
-        if (img.ok) {
-          const p = await processarImagem(new Uint8Array(await img.arrayBuffer()), decode)
-          if ('bytes' in p) {
-            const v = await conferirMarca(p.bytes, gemini)
-            marcaOk = v.limpa
-            if (v.limpa !== false) {
-              const nome = nomeArquivoNeutro(await sha256Hex(p.bytes))
-              const up = await db.storage.from('loja-produtos').upload(nome, p.bytes, { contentType: 'image/jpeg', upsert: true, cacheControl: '31536000' })
-              if (!up.error) foto = nome
-            }
-          }
-        }
+        const r = await prepararFoto(it.imagem_origem)
+        if (r) { foto = r.foto; marcaOk = r.marcaOk }
       }
       await db.rpc('loja_ficha_gravar', { p_chave: it.chave, p_ficha: fichaSemTexto, p_balcao: balcao, p_foto: foto, p_marca_ok: marcaOk, p_erro: null })
       ok++
@@ -556,6 +603,20 @@ Deno.serve(async (req) => {
       await db.rpc('loja_ficha_gravar', { p_chave: it.chave, p_ficha: null, p_balcao: null, p_foto: null, p_marca_ok: null, p_erro: e instanceof Error ? e.message : 'erro' })
     }
   }
-  console.log(`loja-fichas: ${ok} ok, ${falhas} com erro, ${itens.length} no lote`)
-  return json({ ok: true, processados: ok, erros: falhas, lote: itens.length })
+  // fotos que ficaram para depois (pesadas): usa a cota de recompressão que sobrou
+  let fotos = 0
+  if (recomprimidas < MAX_RECOMPRIMIR && Date.now() - inicio < 90_000) {
+    const { data: semFoto } = await db.rpc('loja_fotos_pegar', { p_n: MAX_RECOMPRIMIR - recomprimidas })
+    for (const f of (semFoto ?? []) as { chave: string; imagem_origem: string }[]) {
+      try {
+        const r = await prepararFoto(f.imagem_origem)
+        await db.rpc('loja_foto_gravar', { p_chave: f.chave, p_foto: r?.foto ?? null })
+        if (r) fotos++
+      } catch {
+        await db.rpc('loja_foto_gravar', { p_chave: f.chave, p_foto: null })
+      }
+    }
+  }
+  console.log(`loja-fichas: ${ok} ok, ${falhas} com erro, ${itens.length} no lote, ${fotos} fotos pendentes resolvidas`)
+  return json({ ok: true, processados: ok, erros: falhas, lote: itens.length, fotos })
 })
