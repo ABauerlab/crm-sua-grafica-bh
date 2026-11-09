@@ -1,7 +1,7 @@
 -- Telemetria da Laura: a view v_funil_vendas_ia ganha total_rodadas_ia (denominador das taxas de ocupadas e erros).
 -- Recriada a partir da migration 20261110000002. Colunas antigas iguais; a nova entra no fim.
 
-create or replace view aceita isso).
+-- (create or replace view aceita isso).
 
 create or replace view public.v_funil_vendas_ia as
  WITH diario AS (
