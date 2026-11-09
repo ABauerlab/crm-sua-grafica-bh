@@ -3,6 +3,8 @@
 -- Pedido sem orçamento ativo ganha um rascunho automaticamente ao sincronizar (assim o PDF existe para pedido novo).
 -- Aditiva e idempotente: solta NOT NULL do sku, cria a regra "sku ou custo" e recria as funções.
 
+-- A coluna já existia em produção (criada fora do repositório); if not exists deixa o banco local igual.
+alter table public.orcamento_itens add column if not exists custo_unitario numeric;
 alter table public.orcamento_itens alter column sku drop not null;
 
 alter table public.orcamento_itens drop constraint if exists orcamento_itens_sku_ou_custo;

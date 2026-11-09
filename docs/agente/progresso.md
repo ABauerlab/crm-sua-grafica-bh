@@ -2,6 +2,16 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Preço abaixo do piso duro liberado para o dono (09/11/2026, branch `claude/jolly-euler-r6xq4f`)
+
+- **Decisão do dono:** a liberação da migration de produção `20261110000001` (gatilho `private.order_items_validar` pula a trava de piso duro para o dono; `definir_preco_item_pedido` aceita `abaixo_piso_duro` com confirmação) é INTENCIONAL. As funções não mudaram.
+- **Bug corrigido:** a restrição `precos_manuais_log_faixa_check` só aceitava `ok` e `entre_pisos`; confirmar abaixo do piso duro falhava ao gravar o log e desfazia tudo. Migration aditiva `20261115000001_precos_manuais_log_abaixo_piso_duro.sql`, **aplicada em produção pelo MCP em 09/11/2026** (restrição conferida; advisors de segurança sem aviso novo).
+- **Tela do pedido:** abaixo do piso duro deixa de dizer "ninguém aprova"; mostra o prejuízo e pede motivo e confirmação, como entre os pisos.
+- **Testes:** `trava_lucro_caminhos.sql` (caminho automático bloqueado, dono grava), `preco_etapa3.sql` (sem confirmação não grava; com confirmação grava e registra; sem o dono logado recusa), `melhorias_bloco_b.sql` (B1 com debounce de 6 s da Etapa 8 e desempate determinístico).
+- **Ambiente local de teste:** `rodar-local.sh` ganhou substitutos de `rls_auto_enable` e `atualizar_orcamento_atualizado_em`, `search_path` com `extensions`, e `supabase/tests/deriva-producao.sql` com colunas que existem em produção sem migration no repositório. Migration `20261110000004` tinha uma linha corrompida (removida; produção já tinha a versão limpa) e `20261111000002` ganhou `add column if not exists custo_unitario`.
+- **Resultado:** `npm run test:sql` 5 de 5 OK (11, 71, 58, 21 e 70 testes); `npm test`, typecheck e build OK.
+- **Pendente:** fechar a deriva de esquema entre produção e repositório com migration própria (lista em `supabase/tests/deriva-producao.sql` e demais tabelas só de produção).
+
 ## Auditoria do relatório de aprimoramento (04/11/2026)
 
 Conferência de cada item do relatório contra o banco de produção, os workflows exportados em `n8n/` e o código. Status: **OK** (verificado), **Parcial** (existe, mas diverge do relatório) e **Pendente** (não existe).

@@ -255,7 +255,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
     mutationFn: async (it: Partial<OrderItem> & { id?: string; confirmar?: boolean; motivo?: string }) => {
       const row = { order_id: order.id, code: it.code || null, fora_catalogo: !!it.fora_catalogo, description: it.description!, qty: it.qty!, unit_cost: it.unit_cost!, unit_price: it.unit_price!, lead_days: it.lead_days ?? null }
       if (!it.id) {
-        // item novo já entra com o preço digitado; o banco confere o piso logo depois (piso duro bloqueia; se falhar, a linha é removida)
+        // item novo já entra com o preço digitado; o banco confere o piso logo depois (abaixo do piso pede confirmação; se não passar, a linha é removida e o preço é ajustado na própria linha)
         const { data: novo, error } = await supabase.from('order_items').insert(row).select('id').single()
         if (error) throw new Error(error.message)
         const { data, error: erroPreco } = await supabase.rpc('definir_preco_item_pedido', { p_item: novo.id, p_preco: it.unit_price!, p_confirmar: false, p_motivo: null, p_apenas_simular: false })
@@ -263,7 +263,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
         await supabase.from('order_items').delete().eq('id', novo.id)
         throw new Error(erroPreco?.message ?? 'Preço abaixo do piso: o item não foi adicionado. Use um valor igual ou acima do piso.')
       }
-      // O preço editado à mão passa por definir_preco_item_pedido: bloqueia abaixo do piso duro, pede confirmação do dono entre o piso duro e o piso e registra o motivo.
+      // O preço editado à mão passa por definir_preco_item_pedido: abaixo do piso (inclusive do piso duro, decisão do dono) só grava com confirmação do dono e motivo, registrados em precos_manuais_log.
       const { unit_price: novoPreco, ...resto } = row
       const { error } = await supabase.from('order_items').update(resto).eq('id', it.id)
       if (error) throw new Error(error.message)
@@ -341,7 +341,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
           {(items ?? []).map((it) => (
             <ItemRow key={it.id} item={it} below={belowFloor(it)} floor={unitFloor(it.unit_cost, rules)} onRemove={() => removeItem.mutate(it.id)}
               onSave={(patch) => {
-                // confirmação do dono entre o piso duro e o piso já tem motivo e registro próprios (definir_preco_item_pedido)
+                // confirmação do dono abaixo do piso (ou do piso duro) já tem motivo e registro próprios (definir_preco_item_pedido)
                 if (patch.confirmar) return void saveItem.mutate({ ...it, ...patch })
                 const nextItems = (items ?? []).map((x) => (x.id === it.id ? { ...x, ...patch } : x))
                 guarded({ items: nextItems, discountPct: order.discount_pct, taxPct: order.tax_pct, feePct: order.payment_fee_pct }, async () => { await saveItem.mutateAsync({ ...it, ...patch }) })
@@ -426,7 +426,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
   const preco = parseMoney(v.price)
   const mudouPreco = Math.abs(preco - item.unit_price) > 0.0001
   const dirty = v.description !== item.description || Number(v.qty) !== item.qty || parseMoney(v.cost) !== item.unit_cost || mudouPreco
-  // lucro líquido e faixa do preço digitado, calculados pelo banco (piso duro bloqueia; entre o piso duro e o piso pede confirmação do dono)
+  // lucro líquido e faixa do preço digitado, calculados pelo banco (abaixo do piso ou do piso duro pede confirmação do dono e motivo)
   const simulacao = useQuery({
     queryKey: ['preco-item', item.id, preco],
     enabled: mudouPreco && preco > 0,
@@ -438,11 +438,11 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
     },
   })
   const sim = mudouPreco ? simulacao.data : undefined
-  const bloqueado = sim?.faixa === 'abaixo_piso_duro'
-  const precisaConfirmar = sim?.faixa === 'entre_pisos'
-  const podeSalvar = !bloqueado && (!precisaConfirmar || (confirma && motivo.trim().length >= 3))
+  const prejuizo = sim?.faixa === 'abaixo_piso_duro'
+  const precisaConfirmar = sim?.faixa === 'entre_pisos' || prejuizo
+  const podeSalvar = !precisaConfirmar || (confirma && motivo.trim().length >= 3)
   return (
-    <li className={cn('rounded-md border p-2.5', (below || bloqueado) && 'border-brand-red')}>
+    <li className={cn('rounded-md border p-2.5', (below || prejuizo) && 'border-brand-red')}>
       <div className="mb-2 flex items-center gap-2">{item.fora_catalogo ? <span className="text-xs font-bold text-muted-foreground">Item manual (fora do catálogo)</span> : <SkuBadge sku={item.code} />}{!item.code && !item.fora_catalogo && <span className="text-xs text-brand-red">Informe o SKU antes de mandar para Produção.</span>}</div>
       <div className="grid grid-cols-6 gap-2">
         <label className="col-span-4 space-y-1 text-xs font-medium text-muted-foreground">
@@ -459,7 +459,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
         </label>
         <label className="col-span-3 space-y-1 text-xs font-medium text-muted-foreground">
           Preço unitário (R$)
-          <Input inputMode="decimal" className={cn('text-foreground', (below || bloqueado) && 'border-brand-red')} value={v.price} onChange={(e) => { setV({ ...v, price: e.target.value }); setConfirma(false) }} />
+          <Input inputMode="decimal" className={cn('text-foreground', (below || prejuizo) && 'border-brand-red')} value={v.price} onChange={(e) => { setV({ ...v, price: e.target.value }); setConfirma(false) }} />
         </label>
       </div>
       {mudouPreco && (
@@ -470,12 +470,15 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
               Lucro líquido neste preço: <strong>{formatBRL(sim.lucro_liquido)}</strong> · piso {formatBRL(sim.piso)} · piso duro {formatBRL(sim.piso_duro)} (por unidade)
             </p>
           )}
-          {bloqueado && <p className="font-bold text-brand-red">Bloqueado: abaixo do piso duro este item daria prejuízo. Ninguém aprova esse preço.</p>}
-          {precisaConfirmar && (
+          {precisaConfirmar && sim && (
             <div className="space-y-1.5">
-              <p className="font-bold text-brand-red">Abaixo do piso, acima do piso duro. Só o dono confirma, e fica registrado.</p>
+              <p className="font-bold text-brand-red">
+                {prejuizo
+                  ? `Abaixo do piso duro: este item dá prejuízo de ${formatBRL(Math.abs(sim.lucro_liquido))}. Só o dono confirma, e fica registrado.`
+                  : 'Abaixo do piso, acima do piso duro. Só o dono confirma, e fica registrado.'}
+              </p>
               <Input aria-label="Motivo da exceção de preço" placeholder="Motivo (obrigatório)" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
-              <label className="flex items-center gap-2"><input type="checkbox" checked={confirma} onChange={(e) => setConfirma(e.target.checked)} /> Confirmo este preço abaixo do piso</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={confirma} onChange={(e) => setConfirma(e.target.checked)} /> {prejuizo ? 'Confirmo este preço com prejuízo' : 'Confirmo este preço abaixo do piso'}</label>
             </div>
           )}
         </div>

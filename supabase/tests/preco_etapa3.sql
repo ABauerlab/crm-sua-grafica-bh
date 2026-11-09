@@ -260,8 +260,9 @@ begin
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   select (public.calcular_preco(v_sku) ->> 'piso')::numeric, (public.calcular_preco(v_sku) ->> 'piso_duro')::numeric into v_piso, v_duro;
   j := public.definir_preco_item_pedido(v_item, v_duro - 1, false, null, true);
-  perform pg_temp.ck('preço manual: abaixo do piso duro aparece bloqueado com o lucro negativo', j ->> 'faixa' = 'abaixo_piso_duro' and not (j ->> 'ok')::boolean and (j ->> 'lucro_liquido')::numeric < 0, j::text);
-  perform pg_temp.ck('preço manual: abaixo do piso duro é recusado até com confirmação', pg_temp.erro(format('select public.definir_preco_item_pedido(%L, %s, true, ''x'')', v_item, v_duro - 1)) like 'Preço bloqueado%');
+  perform pg_temp.ck('preço manual: abaixo do piso duro aparece sem aprovação, pedindo confirmação, com o lucro negativo', j ->> 'faixa' = 'abaixo_piso_duro' and not (j ->> 'ok')::boolean and (j ->> 'requer_confirmacao')::boolean and (j ->> 'lucro_liquido')::numeric < 0, j::text);
+  j := public.definir_preco_item_pedido(v_item, v_duro - 1, false);
+  perform pg_temp.ck('preço manual: abaixo do piso duro sem confirmação do dono não grava', not (j ->> 'ok')::boolean and (select unit_price from public.order_items where id = v_item) = v_piso + 300, j::text);
   j := public.definir_preco_item_pedido(v_item, (v_duro + v_piso) / 2, false);
   perform pg_temp.ck('preço manual: entre o piso duro e o piso pede confirmação e não grava', (j ->> 'requer_confirmacao')::boolean and (select unit_price from public.order_items where id = v_item) = v_piso + 300, j::text);
   perform pg_temp.ck('preço manual: trava de banco impede reduzir abaixo do piso pelo CRM sem a função',
@@ -271,6 +272,16 @@ begin
     and exists (select 1 from public.precos_manuais_log where order_item_id = v_item and faixa = 'entre_pisos' and motivo = 'cliente antigo'), j::text);
   j := public.definir_preco_item_pedido(v_item, v_piso + 50, false);
   perform pg_temp.ck('preço manual: acima do piso é livre e mostra o lucro líquido', j ->> 'faixa' = 'ok' and (j ->> 'lucro_liquido')::numeric > 0, j::text);
+  -- decisão do dono (09/11/2026): abaixo do piso duro só o dono grava, com confirmação e motivo, e fica registrado
+  j := public.definir_preco_item_pedido(v_item, v_duro - 1, true, 'decisão do dono');
+  perform pg_temp.ck('preço manual: abaixo do piso duro o dono confirma, grava e registra no log e no pedido', (j ->> 'ok')::boolean and (select unit_price from public.order_items where id = v_item) = v_duro - 1
+    and exists (select 1 from public.precos_manuais_log where order_item_id = v_item and faixa = 'abaixo_piso_duro' and motivo = 'decisão do dono')
+    and (select price_override_reason from public.orders where id = v_ord) = 'decisão do dono', j::text);
+  perform set_config('request.jwt.claim.sub', '', true);
+  perform set_config('gbh.preco_aprovado', '', true);  -- a aprovação anterior vale até o fim da transação do teste
+  perform pg_temp.ck('preço manual: sem o dono logado (agente, n8n, service role) a função recusa', pg_temp.erro(format('select public.definir_preco_item_pedido(%L, %s, true, ''x'')', v_item, v_duro - 2)) = 'Sem permissão.');
+  perform pg_temp.ck('preço manual: sem o dono logado, gravar abaixo do piso duro direto no item é recusado', pg_temp.erro(format('update public.order_items set unit_price = %s where id = %L', v_duro - 2, v_item)) like '%piso%');
+  perform set_config('request.jwt.claim.sub', v_staff::text, true);
 
   -- ============================== 11. segurança
   perform pg_temp.ck('segurança: anon não acessa as novas tabelas nem executa as novas funções',
