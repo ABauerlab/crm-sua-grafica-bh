@@ -87,6 +87,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `produto-opcoes` | não (dono ou service role) | uma mensagem por opção com foto e ficha traduzida (legenda montada no servidor), chamada por `enviar_foto_produto` com `opcoes: produto; quantidade` |
 | `loja-fichas` | não (dono, service role ou `x-cron-secret`) | E-commerce Fase 2: lê a ficha técnica pública de cada produto na origem interna (uma página a cada 2 s), traduz para linguagem de balcão, guarda a foto no bucket público `loja-produtos` e aplica na vitrine. Fila em `loja_fichas`, agendamento `loja-fichas` a cada minuto enquanto houver pendente |
 | `loja-checkout` | não (público, limite no banco) | E-commerce Fase 4: valida o carrinho do site, monta orçamento e pedido pelo banco (`loja_checkout_preparar`, mesma trava de lucro) e devolve o link do Mercado Pago (`mp-criar-link` chamado por dentro). Contratos em `docs/api-v1.md` |
+| `bling-webhook` | não (assinatura HMAC `X-Bling-Signature-256`) | Fase 6: grava os avisos do Bling em `bling_eventos`; processamento desligado (`app_settings.bling.webhook_processar`). Estudo fiscal e ativação em `docs/bling-fiscal.md` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -124,6 +125,7 @@ Orçamento em PDF: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`.
 Agente (Etapa 5): `N8N_WF1_URL` e `N8N_WF1_TOKEN` (o `whatsapp-webhook` avisa o WF1 do n8n; sem eles o agente fica fora do caminho).
 Fotos de produto: `GEMINI_API_KEY` (verificação de marca nas imagens; sem ela nada é aprovado sozinho).
 Alertas (Etapa 6, opcionais): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (sem eles a função gera e guarda o par em `app_segredos`).
+Bling (Fase 6, preparado; nada é enviado ainda): `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET`.
 Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
@@ -158,6 +160,7 @@ supabase functions deploy alertas-enviar --no-verify-jwt
 supabase functions deploy cliente-pago-avisar --no-verify-jwt
 supabase functions deploy loja-fichas --no-verify-jwt
 supabase functions deploy loja-checkout --no-verify-jwt
+supabase functions deploy bling-webhook --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

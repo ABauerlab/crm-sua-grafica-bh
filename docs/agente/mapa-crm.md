@@ -240,3 +240,9 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## E-commerce Fase 5 (09/11/2026)
 - Funções públicas: `loja_categorias`, `loja_produto`, `loja_slugs`. Páginas e componentes em `ecommerce/app` e `ecommerce/components` (Configurador, ModalWhatsApp, CarrinhoIcone, CobrimosBanner, ProdutoCard). Carrinho em `ecommerce/lib/carrinho.ts`.
+
+## E-commerce Fase 6 (09/11/2026)
+- `catalogo`: `ncm`, `ncm_revisar`, `unidade`, `origem_mercadoria`. `fiscal_ncm_regras` + `fiscal_aplicar_ncm`.
+- `contacts`: `tipo_pessoa`, `ie_indicador`, `inscricao_estadual`, `logradouro`, `numero`, `complemento`, `municipio`, `uf`, `codigo_ibge`, `bling_contact_id`.
+- `orders`: `canal` (gatilho `orders_canal_site`), `marketplace_pedido_id`, `bling_pedido_id`, `bling_enviado_em`, `bling_erro`.
+- `bling_pedido_payload`, `bling_eventos`, view `catalogo_marketplace` (`private.preco_marketplace`), `app_settings.bling` e `app_settings.marketplaces`. Edge Function `bling-webhook`. Script `scripts/enrich-marketplace-ads.ts`.
