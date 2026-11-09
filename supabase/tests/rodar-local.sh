@@ -37,7 +37,6 @@ create table vault.decrypted_secrets (name text, decrypted_secret text);
 create publication supabase_realtime;
 -- função que o Supabase cria em produção (a migration 20261105000001 só revoga o EXECUTE dela)
 create function public.rls_auto_enable() returns void language sql as $f$ select $f$;
-create function public.atualizar_orcamento_atualizado_em() returns trigger language plpgsql as $f$ begin new.atualizado_em := now(); return new; end $f$;
 grant usage on schema public, extensions, auth, storage to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
@@ -55,6 +54,5 @@ for f in supabase/migrations/*.sql; do
          -e 's/extensions\.vector\([0-9]+\)/float4[]/g' -e 's/extensions\.vector\b/float4[]/g' \
          -e '/using hnsw/d' "$f" | $P >/dev/null 2>"$DIR/err.txt" || { echo "FALHOU: $f"; cat "$DIR/err.txt"; exit 1; }
 done
-[ -f supabase/tests/deriva-producao.sql ] && $P -f supabase/tests/deriva-producao.sql >/dev/null
 echo "migrations aplicadas"
 for f in "$@"; do echo "== $f"; $P -f "$f" 2>&1 | tail -5 || true; done
