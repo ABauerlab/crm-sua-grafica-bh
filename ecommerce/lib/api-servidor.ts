@@ -34,10 +34,13 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
 }
 
 /** Repassa o checkout para a Edge Function loja-checkout (a service role fica só no Supabase). */
-export async function checkout(body: unknown): Promise<{ status: number; data: unknown }> {
+export const checkout = (body: unknown) => urlFuncao('loja-checkout', body)
+
+/** Chama uma Edge Function pública da loja com a chave publicável. */
+export async function urlFuncao(nome: 'loja-checkout' | 'loja-frete', body: unknown): Promise<{ status: number; data: unknown }> {
   if (!URL_SUPABASE || !CHAVE) return { status: 503, data: { error: 'Loja em manutenção.' } }
   try {
-    const res = await fetch(`${URL_SUPABASE}/functions/v1/loja-checkout`, {
+    const res = await fetch(`${URL_SUPABASE}/functions/v1/${nome}`, {
       method: 'POST',
       headers: { apikey: CHAVE, Authorization: `Bearer ${CHAVE}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

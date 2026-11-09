@@ -1,6 +1,8 @@
 // E-commerce Fase 2: leitura da ficha técnica da origem e tradução para linguagem de balcão (Node >= 22): npm run test:loja
 import assert from 'node:assert/strict'
 import { limparJpeg } from '../supabase/functions/_shared/jpeg.ts'
+import { cepLimpo, corpoSuperFrete, juntarPacotes, lerEnderecoCep, opcoesEnvio, pacoteValido } from '../supabase/functions/_shared/loja-frete.ts'
+import { corpoPix, lerPix } from '../supabase/functions/_shared/mp-pix.ts'
 import { cnpjValido, cpfValido, mensagemErro, normalizarWhatsapp, validarPedido } from '../supabase/functions/_shared/loja-validar.ts'
 import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
 
@@ -103,6 +105,67 @@ assert.equal(cnpjValido('58.481.181/0001-04'), false)
   }
   assert.equal(mensagemErro('muitas_tentativas').status, 429)
   assert.ok(!/custo|piso|margem|sku|fornecedor/i.test(JSON.stringify(['orcamento_bloqueado', 'produto_nao_encontrado', 'x'].map(mensagemErro))), 'mensagens ao cliente sem dado interno')
+}
+
+// Fase 9: checkout em 3 passos (envio, Pix, sessão)
+{
+  const cli = { whatsapp: '(31) 97561-8243', nome: 'Maria da Silva', email: 'maria@exemplo.com', documento: '' }
+  const itens = [{ ref: 'a1b2c3d4e5f6', quantidade: 1 }]
+  const envio = validarPedido({ cliente: cli, itens, opcoes: { arte: 'pronta', entrega: 'envio', cep: '01310-100', frete_servico: 'pac', pagamento: 'pix', sessao: 'abcdefgh-1234-5678-abcd' } })
+  assert.ok(envio.ok)
+  if (envio.ok) { assert.equal(envio.pedido.opcoes.frete_servico, 'pac'); assert.equal(envio.pedido.opcoes.cep, '01310100'); assert.equal(envio.pedido.opcoes.sessao, 'abcdefgh-1234-5678-abcd') }
+  const semServico = validarPedido({ cliente: cli, itens, opcoes: { arte: 'pronta', entrega: 'envio', cep: '01310100' } })
+  assert.ok(!semServico.ok && semServico.erros.includes('Escolha o serviço de envio.'))
+  const pixSemEmail = validarPedido({ cliente: { ...cli, email: '' }, itens, opcoes: { arte: 'pronta', entrega: 'retirada' } })
+  assert.ok(!pixSemEmail.ok && pixSemEmail.erros.includes('Informe um e-mail para gerar o Pix.'), 'Pix é o padrão e precisa de e-mail')
+  const cartaoSemEmail = validarPedido({ cliente: { ...cli, email: '' }, itens, opcoes: { arte: 'pronta', entrega: 'retirada', pagamento: 'cartao' } })
+  assert.ok(cartaoSemEmail.ok, 'cartão não exige e-mail')
+  const semCep = validarPedido({ cliente: cli, itens, opcoes: { arte: 'pronta', entrega: 'entrega' } })
+  assert.ok(!semCep.ok && semCep.erros.includes('Informe o CEP para a entrega.'))
+  const sessaoRuim = validarPedido({ cliente: cli, itens, opcoes: { arte: 'pronta', entrega: 'retirada', sessao: '<script>' } })
+  assert.ok(sessaoRuim.ok && sessaoRuim.pedido.opcoes.sessao === null, 'sessão inválida é descartada')
+  assert.equal(mensagemErro('frete_indisponivel').status, 409)
+}
+
+// CEP e SuperFrete
+assert.equal(cepLimpo('30160-040'), '30160040')
+assert.equal(cepLimpo('123'), null)
+assert.equal(lerEnderecoCep('30160040', { erro: true }), null, 'ViaCEP responde erro:true para CEP inexistente')
+assert.deepEqual(lerEnderecoCep('30130010', { logradouro: 'Avenida Afonso Pena', bairro: 'Centro', localidade: 'Belo Horizonte', uf: 'MG' }),
+  { cep: '30130010', logradouro: 'Avenida Afonso Pena', bairro: 'Centro', cidade: 'Belo Horizonte', uf: 'MG' })
+assert.equal(lerEnderecoCep('30130010', { street: 'Rua A', neighborhood: 'Savassi', city: 'Belo Horizonte', state: 'mg' })?.bairro, 'Savassi', 'formato da BrasilAPI')
+{
+  const junto = juntarPacotes([{ peso_kg: 1, altura_cm: 5, largura_cm: 11, comprimento_cm: 16 }, { peso_kg: 2, altura_cm: 7, largura_cm: 20, comprimento_cm: 30 }])
+  assert.deepEqual(junto, { peso_kg: 3, altura_cm: 12, largura_cm: 20, comprimento_cm: 30 })
+  assert.equal(juntarPacotes([{ peso_kg: 0.01, altura_cm: 1, largura_cm: 1, comprimento_cm: 1 }]).comprimento_cm, 16, 'respeita o mínimo dos Correios')
+  assert.equal(pacoteValido(junto), true)
+  assert.equal(pacoteValido({ peso_kg: 31, altura_cm: 10, largura_cm: 10, comprimento_cm: 10 }), false, 'acima de 30 kg')
+  assert.equal(pacoteValido({ peso_kg: 5, altura_cm: 90, largura_cm: 90, comprimento_cm: 90 }), false, 'soma das medidas acima de 200 cm')
+  const c = corpoSuperFrete('30160040', '01310100', { peso_kg: 0.278, altura_cm: 4.2, largura_cm: 11, comprimento_cm: 16 })
+  assert.equal(c.package.height, 5); assert.equal(c.package.weight, 0.278); assert.equal(c.services, '1,2,17')
+  const ops = opcoesEnvio([
+    { id: 2, name: 'SEDEX', price: 41.9, delivery_range: { min: 1, max: 2 } },
+    { id: 1, name: 'PAC', price: 23.5, delivery_range: { min: 3, max: 6 } },
+    { id: 17, name: 'Mini', error: 'fora do peso' }, { id: 99, price: 5 }, { id: 1, price: 0 },
+  ])
+  assert.deepEqual(ops.map((o) => [o.servico, o.valor, o.prazo_dias]), [['pac', 23.5, 6], ['sedex', 41.9, 2]], 'ordenado por preço, sem serviço com erro')
+  assert.deepEqual(opcoesEnvio(null), [])
+}
+
+// Pix direto
+{
+  const corpo = corpoPix({ valor: 166.8, referencia: 'SG-0230', descricao: 'Pedido SG-0230', notificationUrl: 'https://x.test/mp-webhook', expiraEm: new Date('2026-11-10T12:00:00Z'),
+    pagador: { email: 'maria@exemplo.com', nome: 'Maria da Silva Santos', documento: '529.982.247-25' } })
+  assert.equal(corpo.payment_method_id, 'pix'); assert.equal(corpo.transaction_amount, 166.8); assert.equal(corpo.external_reference, 'SG-0230')
+  assert.equal(corpo.payer.first_name, 'Maria'); assert.equal(corpo.payer.last_name, 'da Silva Santos')
+  assert.deepEqual(corpo.payer.identification, { type: 'CPF', number: '52998224725' })
+  assert.equal(corpo.date_of_expiration, '2026-11-10T12:00:00.000+00:00')
+  assert.equal(corpoPix({ valor: 1, referencia: 'SG-1', descricao: 'x', notificationUrl: 'u', expiraEm: new Date(), pagador: { email: 'a@b.co', nome: 'Ana', documento: null } }).payer.last_name, 'Ana')
+  assert.ok(!('identification' in corpoPix({ valor: 1, referencia: 'SG-1', descricao: 'x', notificationUrl: 'u', expiraEm: new Date(), pagador: { email: 'a@b.co', nome: 'Ana', documento: '123' } }).payer))
+  const pix = lerPix({ id: 123456, date_of_expiration: '2026-11-10T09:00:00.000-03:00', point_of_interaction: { transaction_data: { qr_code: '00020126...', qr_code_base64: 'iVBOR...' } } })
+  assert.deepEqual(pix, { pagamento_id: '123456', copia_e_cola: '00020126...', qr_base64: 'iVBOR...', expira_em: '2026-11-10T09:00:00.000-03:00' })
+  assert.equal(lerPix({ id: 1, point_of_interaction: {} }), null, 'sem copia e cola não há Pix para mostrar')
+  assert.equal(lerPix(null), null)
 }
 
 console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')

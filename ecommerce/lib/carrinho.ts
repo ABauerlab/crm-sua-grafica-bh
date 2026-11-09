@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react'
 
 export interface ItemCarrinho { ref: string; quantidade: number; titulo: string; unidades: number | null; preco: number; foto: string | null; slug: string }
 export interface ClienteLocal { whatsapp: string; nome: string }
+export interface DadosCheckout { whatsapp: string; nome: string; email: string; documento: string }
 export type Arte = 'pronta' | 'conferencia' | 'criacao'
 
 const CHAVE = 'sgbh:carrinho:v1'
 const CHAVE_CLIENTE = 'sgbh:cliente:v1'
 const CHAVE_ARTE = 'sgbh:arte:v1'
+const CHAVE_DADOS = 'sgbh:dados:v1'
+const CHAVE_SESSAO = 'sgbh:sessao:v1'
 const EVENTO = 'sgbh:carrinho'
 
 function ler<T>(k: string, padrao: T): T {
@@ -37,7 +40,27 @@ export const carrinho = {
   salvarCliente(c: ClienteLocal) { gravar(CHAVE_CLIENTE, c) },
   arte: (): Arte => ler<Arte>(CHAVE_ARTE, 'pronta'),
   salvarArte(a: Arte) { gravar(CHAVE_ARTE, a) },
+  dados: (): DadosCheckout => ler<DadosCheckout>(CHAVE_DADOS, { whatsapp: '', nome: '', email: '', documento: '' }),
+  salvarDados(d: DadosCheckout) { gravar(CHAVE_DADOS, d) },
+  /** Identificador anônimo do carrinho neste navegador (para o carrinho abandonado). */
+  sessao(): string {
+    const atual = ler<string>(CHAVE_SESSAO, '')
+    if (/^[a-zA-Z0-9-]{16,64}$/.test(atual)) return atual
+    const nova = (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-sgbh`).slice(0, 64)
+    gravar(CHAVE_SESSAO, nova)
+    return nova
+  },
 }
+
+/** Avisa o servidor do estado do carrinho (carrinho abandonado). Falha em silêncio: nunca atrapalha a compra. */
+export function salvarCarrinhoNoServidor(itens: ItemCarrinho[], d: { whatsapp?: string; nome?: string; email?: string }, opcoes: { arte: Arte; entrega: string; cep?: string | null }) {
+  if (!itens.length) return
+  fetch('/api/v1/carrinho', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+    body: JSON.stringify({ sessao: carrinho.sessao(), cliente: d, itens: itens.map((i) => ({ ref: i.ref, quantidade: i.quantidade })), opcoes }),
+  }).catch(() => {})
+}
+
 
 /** Estado reativo do carrinho (atualiza em todas as abas e componentes). */
 export function useCarrinho() {
