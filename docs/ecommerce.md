@@ -14,7 +14,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 | 1 | Pasta `ecommerce/` isolada, layout, rodapé com crédito Bauerlab, botão do WhatsApp por contexto, selos, JSON-LD da empresa, robots e sitemap inicial | **feito** |
 | 3 | Planilha como fonte do preço (`calcular_preco`), carga em lotes, tela de importação no CRM, vitrine `ecommerce_products`, pesquisa de mercado desligada no n8n | **feito** (20.381 SKUs carregados) |
 | 2 | Ficha técnica, acabamento padrão, texto e foto de cada produto a partir da página pública da origem interna (fila `loja_fichas`, função `loja-fichas`, uma página a cada 2 s, robots liberado), em linguagem de balcão e sem citar a origem | **feito** (fila rodando em produção) |
-| 4 | API `/api/v1` (busca, cotação, cálculo com frete, preferência do Mercado Pago) como route handlers chamando RPCs | pendente |
+| 4 | API `/api/v1` (busca, cotação, cálculo com frete, checkout com link do Mercado Pago), route handlers chamando funções do banco e a Edge Function `loja-checkout`. Contratos em `docs/api-v1.md` | **feito** |
 | 5 | Vitrine, página de produto com configurador, serviços de arte (R$ 14,90 / R$ 39,90), "Cobrimos qualquer orçamento" via condição especial G2, prompt da Laura com o endereço público | pendente |
 | 6 | Bling: colunas fiscais (NCM, CFOP, bling_*), `preco_marketplace`, `bling-webhook` (sem disparos) | pendente |
 | 7 | Meta Pixel + `meta-conversions-api` com deduplicação por `event_id` | pendente |

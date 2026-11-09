@@ -1,6 +1,7 @@
 // E-commerce Fase 2: leitura da ficha técnica da origem e tradução para linguagem de balcão (Node >= 22): npm run test:loja
 import assert from 'node:assert/strict'
 import { limparJpeg } from '../supabase/functions/_shared/jpeg.ts'
+import { cnpjValido, cpfValido, mensagemErro, normalizarWhatsapp, validarPedido } from '../supabase/functions/_shared/loja-validar.ts'
 import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
 
 // marca fictícia: o teste nunca usa o nome real da origem
@@ -74,6 +75,34 @@ assert.equal(lerFicha('<html><body>nada</body></html>', marcas).material, null)
   assert.ok(txt.includes('JFIF'), 'cabeçalho JFIF mantido')
   assert.equal(r.bytes.length, entrada.length - exif.length - com.length)
   assert.equal(limparJpeg(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), null, 'PNG não é tratado como JPEG')
+}
+
+// Checkout do site (Fase 4): validação do pedido
+assert.equal(normalizarWhatsapp('(31) 97561-8243'), '5531975618243')
+assert.equal(normalizarWhatsapp('+55 31 97561-8243'), '5531975618243')
+assert.equal(normalizarWhatsapp('3133334444'), '553133334444')
+assert.equal(normalizarWhatsapp('97561-8243'), null, 'sem DDD não vale')
+assert.equal(cpfValido('529.982.247-25'), true)
+assert.equal(cpfValido('111.111.111-11'), false)
+assert.equal(cnpjValido('58.481.181/0001-03'), true, 'CNPJ da Sua Gráfica BH')
+assert.equal(cnpjValido('58.481.181/0001-04'), false)
+{
+  const base = { cliente: { whatsapp: '(31) 97561-8243', nome: 'Maria da Silva', email: 'MARIA@exemplo.com', documento: '529.982.247-25' },
+    itens: [{ ref: 'a1b2c3d4e5f6', quantidade: 2 }], opcoes: { arte: 'conferencia', entrega: 'retirada' } }
+  const ok = validarPedido(base)
+  assert.ok(ok.ok)
+  if (ok.ok) {
+    assert.equal(ok.pedido.cliente.email, 'maria@exemplo.com')
+    assert.equal(ok.pedido.cliente.documento, '52998224725')
+    assert.equal(ok.pedido.opcoes.cep, null)
+  }
+  const ruim = validarPedido({ ...base, cliente: { ...base.cliente, documento: '123' }, itens: [{ ref: 'CFV02', quantidade: 0 }], opcoes: { arte: 'gratis', entrega: 'entrega' } })
+  assert.ok(!ruim.ok)
+  if (!ruim.ok) {
+    for (const m of ['CPF ou CNPJ inválido.', 'Produto inválido no carrinho.', 'Quantidade inválida no carrinho.', 'Escolha uma opção de arte.', 'Informe o CEP para a entrega.']) assert.ok(ruim.erros.includes(m), m)
+  }
+  assert.equal(mensagemErro('muitas_tentativas').status, 429)
+  assert.ok(!/custo|piso|margem|sku|fornecedor/i.test(JSON.stringify(['orcamento_bloqueado', 'produto_nao_encontrado', 'x'].map(mensagemErro))), 'mensagens ao cliente sem dado interno')
 }
 
 console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')

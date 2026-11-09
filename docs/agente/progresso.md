@@ -1,6 +1,14 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 4 do e-commerce (API `/api/v1`). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 5 do e-commerce (vitrine, página de produto com configurador, carrinho). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 4: API `/api/v1` (09/11/2026)
+
+- Migrations `20261117000001` a `20261117000004` (aplicadas): `arte_conferencia_valor` (R$ 14,90), `loja_buscar` (com coluna `busca` pré-calculada e índice trigrama; responde em ~40 ms no banco), `loja_cotar`, `loja_calcular`, `loja_checkout_preparar`, filtros privados de frete e prazo.
+- Edge Function `loja-checkout` publicada; rotas Next em `ecommerce/app/api/v1/` com limite por IP.
+- Testado: busca, cotação (pronta, conferência e criação), cálculo com CEP central, Grande BH e fora de MG; checkout validado no banco dentro de transação desfeita (pedido origem `site`, item "Conferência e ajuste técnico do arquivo", total R$ 166,80 para CFV02 + conferência); recusas da função publicada (400 e 409).
+- **Não testado ponta a ponta:** a geração real do link do Mercado Pago pelo site (evitei criar pedido de verdade em produção). O caminho é o mesmo `mp-criar-link` que já funciona no CRM. Primeiro pedido real pelo site: conferir no Kanban (título "Site SG-...").
+- Contratos em `docs/api-v1.md`.
 
 ## E-commerce Fase 2: fichas técnicas e fotos (09/11/2026)
 

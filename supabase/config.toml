@@ -69,3 +69,7 @@ verify_jwt = false
 # Fichas da loja (E-commerce Fase 2): agendamento (x-cron-secret), dono logado ou service role; a função confere
 [functions.loja-fichas]
 verify_jwt = false
+
+# Checkout do site (E-commerce Fase 4): público; valida o carrinho, limite no banco e chama mp-criar-link por dentro
+[functions.loja-checkout]
+verify_jwt = false
