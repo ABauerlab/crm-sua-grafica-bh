@@ -81,3 +81,6 @@ verify_jwt = false
 # Conversions API da Meta (E-commerce Fase 7): agendamento (x-cron-secret), dono ou service role
 [functions.meta-conversions-api]
 verify_jwt = false
+
+[functions.blog-pautas]
+verify_jwt = false

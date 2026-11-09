@@ -19,7 +19,7 @@ export interface Produto {
 }
 export interface CategoriaResumo { slug: string; nome: string; produtos: number; a_partir_de: number; foto: string | null }
 
-async function rpc<T>(fn: string, args: Record<string, unknown> = {}, revalidar = 3600): Promise<T | null> {
+export async function rpc<T>(fn: string, args: Record<string, unknown> = {}, revalidar = 3600): Promise<T | null> {
   if (!URL_SUPABASE || !CHAVE) return null
   try {
     const res = await fetch(`${URL_SUPABASE}/rest/v1/rpc/${fn}`, {

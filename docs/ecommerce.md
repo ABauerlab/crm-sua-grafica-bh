@@ -18,7 +18,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 | 5 | Vitrine (home com mais vendidos e banners, categorias, busca), página de produto com configurador (quantidade, arte, CEP, prazo, Pix e 2x), 4 abas, variações, carrinho com fechamento pelo checkout da Fase 4, modal de WhatsApp antes de comprar, banner "Cobrimos qualquer orçamento" (proposta pelo WhatsApp; a Laura usa a condição G2), logo oficial do brandkit | **feito** |
 | 6 | Bling: colunas fiscais (NCM sugerido por categoria, CFOP 5102/6102/6108), payload de pedido com pendências, `bling-webhook` (só grava), preço e prazo por marketplace, gerador de anúncios. Nada é enviado. Detalhes em `docs/bling-fiscal.md` | **feito** |
 | 7 | Meta Pixel + Conversions API com deduplicação por `event_id`, aviso de cookies (LGPD), Purchase no servidor quando o pagamento é aprovado | **feito** (falta criar o Pixel e o token na Meta) |
-| 8 | Blog (NewsAPI só como pauta, texto próprio com link da fonte) e Central de Ajuda completa | pendente |
+| 8 | Blog automático (feeds do setor como pauta, texto próprio com crédito e link da fonte; NewsAPI opcional) e Central de Ajuda completa | feito |
 | 9 | Checkout em 3 passos, `carrinhos_abandonados`, frete grátis só nos 7 bairros centrais, SuperFrete, Pix copia e cola | pendente |
 | 10 | JSON-LD de produto, sitemap dinâmico, varredura de segurança e PR final | pendente |
 
@@ -59,3 +59,8 @@ npm run build:ecommerce
 - **Privacidade (LGPD):** o Pixel e os eventos do navegador só ligam depois do "Aceitar" no aviso de cookies. Telefone, e-mail e id do cliente vão sempre em SHA-256. O Purchase é enviado pelo servidor, também em hash; isso deve constar na política de privacidade.
 - **Teste de eventos:** colocar o código de teste do Gerenciador de Eventos em `app_settings.meta_capi.test_event_code`; tirar depois.
 - **Ativar:** criar o Pixel (conjunto de dados) no Gerenciador de Eventos do Business "Sua Gráfica BH", gerar o token da Conversions API e cadastrar `META_PIXEL_ID` e `META_CAPI_TOKEN` nos segredos do Supabase e `NEXT_PUBLIC_META_PIXEL_ID` nas variáveis da loja na Hostinger.
+
+## Fase 8: Blog e Central de Ajuda
+- **Blog:** detalhes em `docs/blog.md`. Edge Function `blog-pautas`, tabelas `blog_fontes`, `blog_pautas`, `blog_posts`, agendamento `blog-pautas` (07h, 12h e 17h). Publica sozinho até 3 posts por dia, só depois de passar no filtro de assunto e na conferência do texto.
+- **Central de Ajuda (`/ajuda`):** 6 categorias (arquivos, prazos, entrega e retirada, pagamentos, cobrimos qualquer orçamento, garantia e pós-venda), busca no navegador sem acento, JSON-LD `FAQPage`, orçamento personalizado (`#orcamento`), balcão e mapa. Conteúdo em `ecommerce/lib/ajuda.ts`.
+- Menu de topo e rodapé com link para o Blog; sitemap com `/blog` e os posts.
