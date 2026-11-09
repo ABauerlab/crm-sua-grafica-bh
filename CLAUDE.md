@@ -86,6 +86,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `cliente-pago-avisar` | não (só service role) | WF5: UMA mensagem ao cliente depois do pagamento confirmado (livre na janela, senão `pedido_pago_confirmacao`), reserva atômica e 3 tentativas |
 | `produto-opcoes` | não (dono ou service role) | uma mensagem por opção com foto e ficha traduzida (legenda montada no servidor), chamada por `enviar_foto_produto` com `opcoes: produto; quantidade` |
 | `loja-fichas` | não (dono, service role ou `x-cron-secret`) | E-commerce Fase 2: lê a ficha técnica pública de cada produto na origem interna (uma página a cada 2 s), traduz para linguagem de balcão, guarda a foto no bucket público `loja-produtos` e aplica na vitrine. Fila em `loja_fichas`, agendamento `loja-fichas` a cada minuto enquanto houver pendente |
+| `loja-checkout` | não (público, limite no banco) | E-commerce Fase 4: valida o carrinho do site, monta orçamento e pedido pelo banco (`loja_checkout_preparar`, mesma trava de lucro) e devolve o link do Mercado Pago (`mp-criar-link` chamado por dentro). Contratos em `docs/api-v1.md` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -104,7 +105,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 O CRM é um PWA instalável (manifest, `sw.js`, ícones). `alertas` é a única fila de avisos ao dono: `alerta_criar` aplica a regra de 30 minutos, gravidade (alta sai na hora, baixa vira resumo de 2 h), preferências por tipo e silêncio (`app_settings.notificacoes`); `alertas-enviar` entrega por popup e WhatsApp. O WF5 do n8n processa `pagamento_confirmado` (modo humano, follow-ups cancelados, mensagem única ao cliente, alerta ao dono). Chaves VAPID em segredos ou em `app_segredos`, nunca no repositório. Detalhes em `docs/pwa-e-notificacoes.md`. Testes: `npm run test:alertas` e `supabase/tests/alertas_etapa6.sql`.
 
 ### E-commerce (suagraficabh.com.br)
-Pasta isolada `ecommerce/` (Next.js 15, App Router, Tailwind v3), com `package.json` e build próprios: `npm run build:ecommerce` / `npm run dev:ecommerce` na raiz. Na Hostinger: app Node.js com Base Directory `ecommerce/`, `npm run build` e `npm start`. Lê só a vitrine pública `ecommerce_products` com a chave publicável (sem SKU, custo, margem nem piso; o público vê o `ref`). A vitrine é recriada a partir do catálogo por `ecommerce_sincronizar` (e a cada carga da planilha). Roteiro das fases em `docs/ecommerce.md`.
+Pasta isolada `ecommerce/` (Next.js 15, App Router, Tailwind v3), com `package.json` e build próprios: `npm run build:ecommerce` / `npm run dev:ecommerce` na raiz. Na Hostinger: app Node.js com Base Directory `ecommerce/`, `npm run build` e `npm start`. Lê só a vitrine pública `ecommerce_products` com a chave publicável (sem SKU, custo, margem nem piso; o público vê o `ref`). A vitrine é recriada a partir do catálogo por `ecommerce_sincronizar` (e a cada carga da planilha). Roteiro das fases em `docs/ecommerce.md`. API pública `/api/v1` (busca, cotação, cálculo e checkout) em `docs/api-v1.md`: funções `loja_buscar`, `loja_cotar`, `loja_calcular` (anon, sem dado interno) e `loja_checkout_preparar` (só service role, via `loja-checkout`).
 
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco` (planilha oficial). Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
@@ -156,6 +157,7 @@ supabase functions deploy agente-enviar --no-verify-jwt
 supabase functions deploy alertas-enviar --no-verify-jwt
 supabase functions deploy cliente-pago-avisar --no-verify-jwt
 supabase functions deploy loja-fichas --no-verify-jwt
+supabase functions deploy loja-checkout --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

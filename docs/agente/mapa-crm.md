@@ -232,3 +232,8 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 ## E-commerce Fase 2 (09/11/2026)
 - `loja_fichas` (fila por produto, privada), `loja_fichas_pegar`, `loja_ficha_gravar` (só service role), `loja_fichas_resumo`, `private.loja_chave`, gatilho `ecommerce_titulo_da_ficha` em `ecommerce_products`, bucket público `loja-produtos`, agendamento `loja-fichas`, configuração `app_settings.loja_fichas`.
 - Edge Function `loja-fichas` com `_shared/ficha-origem.ts` e `_shared/marca.ts`.
+
+## E-commerce Fase 4 (09/11/2026)
+- Funções públicas (anon): `loja_buscar`, `loja_cotar`, `loja_calcular`. Só service role: `loja_checkout_preparar`. Privadas: `loja_sku`, `loja_arte`, `loja_prazo`, `loja_frete_publico`, `loja_cep_grande_bh`, `loja_palavras_busca`, `loja_tamanho_papel`.
+- `ecommerce_products.busca` (gatilho `ecommerce_busca_texto`, índice trigrama). `parametros_comerciais.arte_conferencia_valor`.
+- Edge Function `loja-checkout`; validação em `_shared/loja-validar.ts`. Pedidos do site: `orders.origin_label = 'site'`.
