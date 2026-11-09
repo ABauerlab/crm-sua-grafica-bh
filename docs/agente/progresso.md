@@ -1,6 +1,14 @@
 # Progresso do agente de IA
 
-**Próximo passo:** revisar o PR das Fases 1 e 3 do e-commerce; depois a Fase 2 (ficha técnica, acabamentos, gabaritos e fotos). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 4 do e-commerce (API `/api/v1`). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 2: fichas técnicas e fotos (09/11/2026)
+
+- Função `loja-fichas` e fila `loja_fichas` (migrations `20261116000001` e `20261116000002`, aplicadas). Lote de teste com 3 produtos: ficha, título de balcão e foto aplicados na vitrine. A fila completa (3.829 produtos) roda sozinha a cada minuto, cerca de 3 h.
+- Leitor e glossário de balcão em `supabase/functions/_shared/ficha-origem.ts`; testes em `scripts/test-loja.ts` (`npm run test:loja`, dentro do `npm test`).
+- **Não feito:** acabamentos opcionais com preço e gabaritos (exigem login na origem). Verificação de marca por IA desligada, como nas fotos do WhatsApp.
+- **Como conferir:** `select loja_fichas_resumo()` logado como dono; abrir uma foto em `/storage/v1/object/public/loja-produtos/<caminho>`.
+- Dono autorizou mesclar os PRs com testes verdes (registrado em `CLAUDE.md` e `AGENTS.md`).
 
 ## E-commerce Fases 1 e 3: base da loja e preço pela planilha (branch `claude/funny-ride-s51uyy`, 09/11/2026, pronto para revisão)
 

@@ -1,0 +1,58 @@
+// E-commerce Fase 2: leitura da ficha técnica da origem e tradução para linguagem de balcão (Node >= 22): npm run test:loja
+import assert from 'node:assert/strict'
+import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
+
+// marca fictícia: o teste nunca usa o nome real da origem
+const marcas = marcasDaOrigem('https://www.fulanografica.com.br')
+assert.ok(marcas.includes('fulanografica') && marcas.includes('fulano gráfica') && marcas.includes('fulano'))
+assert.equal(citaMarca('Só a Fulano Gráfica entrega rápido.', marcas), true)
+assert.equal(citaMarca('Papel firme e bonito.', marcas), false)
+
+const html = `<html><head><title>X | Fulano Gráfica</title><script>var a = 'Descrição técnica';</script></head><body>
+<h1>CARTÕES DE VISITA COUCHÊ 300G VERNIZ UV  VERNIZ UV TOTAL FRENTE E VERSO - 4X4 - 1000unid - CFV02</h1>
+<h2>Sobre o produto</h2>
+<p>Conheça os Mandamentos da Arte da Fulano Gráfica - CLIQUE AQUI!</p>
+<b>TIPO DE IMPRESSÃO:</b><span>OFSET</span>
+<b>SOBRE O CARTÃO DE VISITA:</b>
+<p>O cartão da Fulano Gráfica é produzido com alta qualidade. O cartão couchê 300g é excelente para quem procura requinte. Rapidez só na Fulanografica.</p>
+<h3>Descrição técnica</h3>
+<dl><dt>Ref.:</dt><dd>CFV02</dd><dt>Papel/Material:</dt><dd>COUCHE BRILHO</dd><dt>Gramatura:</dt><dd>300g</dd><dt>Cores:</dt><dd>4X4</dd>
+<dt>Peso:</dt><dd>1392g</dd><dt>Tam. da arte c/ sangria:</dt><dd>91x51mm</dd><dt>Tam. final do material:</dt><dd>88x48mm</dd>
+<dt>Acabamento(s) padrão(ões):</dt><dd>VERNIZ TOTAL BRILHO FRENTE E VERSO</dd></dl><button>Comprar</button></body></html>`
+
+const f = lerFicha(html, marcas)
+assert.equal(f.titulo, 'Cartões de Visita Couchê 300g Verniz UV Total Frente e Verso')
+assert.equal(f.material, 'COUCHE BRILHO')
+assert.equal(f.gramatura_g, 300)
+assert.equal(f.peso_g, 1392)
+assert.equal(f.tamanho_final_mm, '88x48mm')
+assert.equal(f.tipo_impressao, 'OFSET')
+assert.deepEqual(f.sobre, ['O cartão couchê 300g é excelente para quem procura requinte.'], 'frases com a marca da origem saem')
+
+const b = fichaBalcao(f, marcas)
+assert.equal(b.titulo, 'Cartões de Visita Couchê 300g Verniz Brilhante na Frente e no Verso')
+assert.equal(b.impressao, 'Colorido Frente e Verso')
+assert.equal(b.espessura, 'Papel Extra Firme (300g)')
+assert.equal(b.tamanho_final, '88 x 48 mm (8,8 x 4,8 cm)')
+assert.equal(b.arte_com_sangria, '91 x 51 mm (9,1 x 5,1 cm)')
+assert.equal(b.acabamento, 'Verniz Brilhante na Frente e no Verso')
+const saida = JSON.stringify(b)
+assert.ok(!citaMarca(saida, marcas), 'a ficha de balcão não cita a origem')
+assert.ok(!/CFV02|4X4|ofset/i.test(saida), 'sem SKU, código de cor nem jargão de impressão')
+
+// glossário de balcão pedido pelo dono
+assert.equal(traduzirCores('4x0'), 'Colorido Apenas na Frente')
+assert.equal(traduzirCores('1X1'), 'Preto e Branco Frente e Verso')
+assert.equal(traduzirAcabamento('BOPP BRILHO TOTAL'), 'Película Protetora com Brilho Total')
+assert.equal(traduzirAcabamento('FACA ESPECIAL'), 'Corte com Formato Personalizado')
+assert.equal(traduzirAcabamento('REFILE'), 'Corte Reto Tradicional')
+assert.equal(traduzirAcabamento('4 CANTOS ARREDONDADOS'), 'Bordas Arredondadas Elegantes')
+assert.equal(traduzirAcabamento('LAMINAÇÃO FOSCA + VERNIZ LOCALIZADO'), 'Película com Toque Aveludado e Brilho Especial nos Detalhes')
+assert.equal(espessura(10, 'ABRIDORES - IMPRESSÃO UV'), null, 'gramatura de brinde não vira "papel fino"')
+assert.equal(espessura(250, 'COUCHE FOSCO'), 'Papel Firme (250g)')
+assert.equal(limparTitulo('ADESIVOS ADESIVO TERMOCOLANTE COM RELEVO - 4X0 - 1unid - X1'), 'Adesivo Termocolante com Relevo')
+
+// página sem ficha não quebra
+assert.equal(lerFicha('<html><body>nada</body></html>', marcas).material, null)
+
+console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')

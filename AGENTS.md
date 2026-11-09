@@ -19,6 +19,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 
 ## Fluxo de trabalho
 - Uma branch e um PR por etapa. Nunca faça commit direto na `main`, porque cada merge publica o CRM em produção.
+- **Autorização do dono (09/11/2026):** com typecheck, testes e build verdes, o agente pode mesclar o próprio PR sem pedir de novo.
 - Migrations devem ser aditivas e idempotentes.
 - Rode os testes antes do PR.
 - Ao terminar, atualize `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`.
