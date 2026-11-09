@@ -2,6 +2,20 @@
 
 **Próximo passo:** ativar o modelo de IA no WF2 (feito pelo dono direto no n8n). Tudo o mais do MVP está pronto (ver abaixo).
 
+## Em andamento: e-commerce Fase 1 + Fase 3 (branch `claude/funny-ride-s51uyy`, 09/11/2026)
+
+Decisões do dono: a planilha oficial de preços de venda substitui a pesquisa de mercado; endereço do balcão passa a ser público no site; e-commerce em Next.js na Hostinger (`ecommerce/`); um PR por fase.
+
+Feito:
+- Planilha conferida localmente (não versionada): 20.381 SKUs, 0 duplicados, todos terminam em ,90, todos >= custo x 1,5, lucro bruto >= R$ 65 em todos e nenhum com prejuízo (nem no cartão 2x). Com impostos e taxas, 5.841 (Pix) a 7.596 (cartão 2x) ficam com lucro LÍQUIDO abaixo de R$ 65: por isso a trava do modo planilha usa o lucro bruto, como a própria planilha.
+- Migration `supabase/migrations/20261115000001_preco_planilha_e_vitrine.sql` escrita (ainda NÃO aplicada: o MCP do Supabase pediu confirmação e ninguém respondeu): colunas de planilha em `catalogo`, `fonte_preco` e `lucro_bruto_minimo` em `parametros_comerciais`, staging `planilha_precos_import`, `importar_precos_planilha`/`aplicar_planilha_precos`, vitrine `ecommerce_products` (sem SKU, custo nem piso para o público), fórmula antiga preservada em `private.calcular_preco_mercado`, `calcular_preco` lendo a planilha, `montar_opcoes` e `validar_margem` ajustados.
+
+Falta:
+1. Aplicar a migration (compatível: sem preço carregado tudo segue pela fórmula antiga).
+2. Carregar a planilha (token temporário em `app_segredos`, lotes de 2.000) e rodar `aplicar_planilha_precos`.
+3. n8n: tirar o nó "Pesquisar preço de mercado" do `GBH | FERRAMENTA | montar_orcamento` e despublicar `pesquisar_preco_mercado`; exportar JSONs.
+4. Tela de importação da planilha no CRM (Catálogo), esqueleto `ecommerce/` em Next.js, docs e testes.
+
 ## Auditoria do relatório de aprimoramento (04/11/2026)
 
 Conferência de cada item do relatório contra o banco de produção, os workflows exportados em `n8n/` e o código. Status: **OK** (verificado), **Parcial** (existe, mas diverge do relatório) e **Pendente** (não existe).
