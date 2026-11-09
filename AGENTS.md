@@ -4,7 +4,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 
 ## Regras fixas
 - O preço que vale é o de `calcular_preco`, com pesquisa de mercado mais trava de lucro.
-- Nunca vender abaixo do piso nem com prejuízo.
+- Nunca vender abaixo do piso nem com prejuízo. Única exceção (decisão do dono, 09/11/2026): no pedido, o dono logado pode gravar preço abaixo do piso duro, com confirmação e motivo registrados em `precos_manuais_log`. O agente, o n8n e a service role nunca.
 - O modelo de IA nunca calcula preço, prazo, frete nem desconto.
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.

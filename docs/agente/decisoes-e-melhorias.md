@@ -19,6 +19,7 @@ Documento vivo. A seção 1 vale como regra. A seção 2 é pendência do dono, 
 - Dados do cliente: pedir só o que falta, nunca repetir o que já foi dito; usar os campos que o CRM já tem (nome, empresa, segmento, e-mail, CPF ou CNPJ, endereço, notas, consentimento de promoções). Pedir CPF ou CNPJ e endereço apenas quando o cliente quiser nota fiscal ou entrega. Consentimento de promoções é pedido separado e NUNCA presumido.
 - Tom: humano, vendedor nato. Emoji com moderação, abreviações naturais como "vc" sem erro de português, "kkkk" ou "rsrs" só quando o cliente abrir espaço; em reclamação ou assunto sério, tom profissional.
 - Agrupamento de mensagens: o agente espera 10 segundos; se chegar outra mensagem, reinicia a contagem; responde uma vez só com todo o contexto.
+- Preço abaixo do piso duro (09/11/2026): liberação INTENCIONAL só para o dono logado, no pedido, com confirmação e motivo registrados em `precos_manuais_log` (faixa `abaixo_piso_duro`). Agente, n8n e service role continuam bloqueados. Migration `20261115000001` ajusta a restrição do log.
 - Avaliação no Google (ver Bloco B, item 8): link https://g.page/r/CZ6eNNGjdgO4EBM/review.
 
 ## 2. Pendências que dependem do dono (não tratar como regra)

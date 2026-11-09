@@ -131,7 +131,7 @@ Escada (valores em `politica_desconto`, editáveis):
 * Aprendizado: registrar degrau, valor e conversão. Relatório semanal: conversão por degrau, margem média depois do desconto, receita incremental e alerta se o desconto médio consumir mais de 40% da margem.
 * O agente NUNCA propõe valor, percentual nem brinde por conta própria: chama a ferramenta, recebe `{tipo, texto_curto, valor, valida_ate}` e comunica.
 
-Travas em todas as camadas (defesa em profundidade): função `validar_margem` em cada geração de orçamento e link de pagamento, gatilhos (triggers) e restrições no banco que recusam orçamento ou item de pedido abaixo do piso, validação na criação do link, e no CRM qualquer edição manual de preço mostra o lucro líquido e bloqueia abaixo do `piso_duro`. O dono pode, com confirmação e registro, aprovar um preço entre o `piso_duro` e o piso normal; abaixo do `piso_duro` ninguém aprova.
+Travas em todas as camadas (defesa em profundidade): função `validar_margem` em cada geração de orçamento e link de pagamento, gatilhos (triggers) e restrições no banco que recusam orçamento ou item de pedido abaixo do piso, validação na criação do link, e no CRM qualquer edição manual de preço mostra o lucro líquido e bloqueia abaixo do `piso_duro`. O dono pode, com confirmação e registro, aprovar um preço entre o `piso_duro` e o piso normal. Abaixo do `piso_duro` (prejuízo), só o dono logado, no pedido, com confirmação e motivo em `precos_manuais_log` (decisão do dono de 09/11/2026); o agente, o n8n e a service role nunca.
 
 ## 8. Prazos (sempre com data de calendário)
 
