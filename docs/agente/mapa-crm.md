@@ -249,3 +249,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## E-commerce Fase 7 (09/11/2026)
 - `meta_eventos` (fila), `meta_evento_registrar` (anon), `meta_eventos_lote` e `meta_eventos_resultado` (service role), `private.sha256`, gatilho `meta_purchase_do_pedido` em `orders`, `app_settings.meta_capi`, agendamento `meta-conversions`. Edge Function `meta-conversions-api`. Loja: `lib/meta.ts`, `components/MetaPixel.tsx`, `Consentimento.tsx`, `ViewContent.tsx`, rota `/api/v1/eventos`.
+
+## E-commerce Fase 8 (09/11/2026)
+- `blog_fontes`, `blog_pautas`, `blog_posts` (RLS dono), `loja_blog_lista`, `loja_blog_post`, `loja_blog_slugs` (anon, só publicados), `app_settings.blog`, agendamento `blog-pautas`. Edge Function `blog-pautas` (+ `_shared/blog.ts`). CRM: `src/features/catalog/BlogTab.tsx` (Catálogo > Blog do site). Loja: `lib/blog.ts`, `lib/ajuda.ts`, `components/PostCorpo.tsx`, `components/AjudaCentral.tsx`, páginas `/blog`, `/blog/[slug]`, `/ajuda`. Detalhes em `docs/blog.md`.

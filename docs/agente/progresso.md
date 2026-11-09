@@ -1,6 +1,13 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 8 do e-commerce (blog e central de ajuda). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 9 do e-commerce (checkout em 3 passos, carrinho abandonado, frete grátis nos 7 bairros, SuperFrete, Pix copia e cola). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 8: blog e central de ajuda (09/11/2026)
+
+- Migrations `20261121000001` e `20261121000002` (aplicadas): `blog_fontes` (7 feeds do setor + NewsAPI desligada), `blog_pautas`, `blog_posts`, funções públicas `loja_blog_*`, `app_settings.blog`, agendamento `blog-pautas`. Edge Function `blog-pautas` publicada.
+- Primeira rodada real: 8 fontes lidas sem erro, 60 notícias, 46 barradas pelo filtro de assunto, 14 na fila.
+- **Pendente do dono:** o segredo `GEMINI_API_KEY` não existe nas Edge Functions (as fotos também rodavam sem ele). Sem ele as pautas ficam guardadas e nenhum post é escrito. NewsAPI: o plano gratuito não permite produção; fica desligada (ver `docs/blog.md`).
+- Loja: `/blog`, `/blog/[slug]`, `/ajuda` nova (6 categorias com busca e FAQPage). CRM: Catálogo > Blog do site.
 
 ## E-commerce Fase 7: Meta Pixel e Conversions API (09/11/2026)
 

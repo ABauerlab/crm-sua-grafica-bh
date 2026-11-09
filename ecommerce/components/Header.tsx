@@ -21,7 +21,7 @@ export function Header() {
       <div className="hidden border-b border-white/10 text-xs text-white/70 md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5">
           <span>Produção rápida e entrega em BH · Pix ou até 2x sem juros</span>
-          <span className="flex gap-4"><Link href="/ajuda">Dúvidas frequentes</Link><a href={linkWhatsApp(MENSAGENS_WHATSAPP.home)}>Acompanhe seu pedido</a></span>
+          <span className="flex gap-4"><Link href="/blog">Blog</Link><Link href="/ajuda">Dúvidas frequentes</Link><a href={linkWhatsApp(MENSAGENS_WHATSAPP.home)}>Acompanhe seu pedido</a></span>
         </div>
       </div>
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">

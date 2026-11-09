@@ -32,6 +32,7 @@ export function Footer() {
           <ul className="space-y-1">
             <li><Link href="/ajuda" className="hover:text-amarelo">Central de ajuda</Link></li>
             <li><Link href="/categorias" className="hover:text-amarelo">Todos os produtos</Link></li>
+            <li><Link href="/blog" className="hover:text-amarelo">Blog</Link></li>
             <li><a href="https://crm.suagraficabh.com.br/privacidade" className="hover:text-amarelo">Privacidade</a></li>
             <li><a href="https://crm.suagraficabh.com.br/termos" className="hover:text-amarelo">Termos de uso</a></li>
           </ul>

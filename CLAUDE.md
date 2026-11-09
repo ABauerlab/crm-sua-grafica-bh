@@ -89,6 +89,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `loja-checkout` | não (público, limite no banco) | E-commerce Fase 4: valida o carrinho do site, monta orçamento e pedido pelo banco (`loja_checkout_preparar`, mesma trava de lucro) e devolve o link do Mercado Pago (`mp-criar-link` chamado por dentro). Contratos em `docs/api-v1.md` |
 | `bling-webhook` | não (assinatura HMAC `X-Bling-Signature-256`) | Fase 6: grava os avisos do Bling em `bling_eventos`; processamento desligado (`app_settings.bling.webhook_processar`). Estudo fiscal e ativação em `docs/bling-fiscal.md` |
 | `meta-conversions-api` | não (dono, service role ou `x-cron-secret`) | Fase 7: envia a fila `meta_eventos` para a Conversions API (deduplicada com o Pixel pelo `event_id`); sem `META_PIXEL_ID` e `META_CAPI_TOKEN` não consome a fila. Purchase nasce no banco quando o pedido é pago (gatilho que nunca bloqueia o pagamento) |
+| `blog-pautas` | não (dono, service role ou `x-cron-secret`) | Fase 8: lê feeds do setor (NewsAPI opcional, `NEWSAPI_KEY`), filtra o assunto, pede ao Gemini um texto próprio, confere (crédito à fonte, sem cópia, sem preço, links só internos) e publica até 3 posts por dia em `blog_posts`. Detalhes em `docs/blog.md` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -124,7 +125,7 @@ A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram n
 Edge Functions (painel Supabase › Edge Functions › Secrets): `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_WABA_ID`, `META_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`; para campanhas: `META_ADS_TOKEN` (token com permissão `ads_read`) e `META_AD_ACCOUNT_ID` (1783199576217713, conta CA SUA GRÁFICA BH).
 Orçamento em PDF: `GOTENBERG_URL`, `GOTENBERG_USER`, `GOTENBERG_PASSWORD`.
 Agente (Etapa 5): `N8N_WF1_URL` e `N8N_WF1_TOKEN` (o `whatsapp-webhook` avisa o WF1 do n8n; sem eles o agente fica fora do caminho).
-Fotos de produto: `GEMINI_API_KEY` (verificação de marca nas imagens; sem ela nada é aprovado sozinho).
+Fotos de produto e blog: `GEMINI_API_KEY` (verificação de marca nas imagens e texto dos posts do blog; sem ela nada é aprovado sozinho e nenhum post é escrito). Blog (opcional): `NEWSAPI_KEY`.
 Alertas (Etapa 6, opcionais): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (sem eles a função gera e guarda o par em `app_segredos`).
 Meta Pixel e Conversions API (Fase 7): `META_PIXEL_ID`, `META_CAPI_TOKEN` (segredos das Edge Functions) e `NEXT_PUBLIC_META_PIXEL_ID` (variável da loja na Hostinger).
 Bling (Fase 6, preparado; nada é enviado ainda): `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET`.
@@ -164,6 +165,7 @@ supabase functions deploy loja-fichas --no-verify-jwt
 supabase functions deploy loja-checkout --no-verify-jwt
 supabase functions deploy bling-webhook --no-verify-jwt
 supabase functions deploy meta-conversions-api --no-verify-jwt
+supabase functions deploy blog-pautas --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.
