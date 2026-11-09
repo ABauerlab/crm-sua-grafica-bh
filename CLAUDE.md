@@ -19,6 +19,7 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 
 ### Fluxo de trabalho
 - Uma branch e um PR por etapa. Nunca faça commit direto na `main`, porque cada merge publica o CRM em produção.
+- **Autorização do dono (09/11/2026):** com typecheck, testes e build verdes, o agente pode mesclar o próprio PR sem pedir de novo.
 - Migrations devem ser aditivas e idempotentes.
 - Rode os testes antes do PR.
 - Ao terminar, atualize `docs/agente/progresso.md` e `docs/agente/mapa-crm.md`.
@@ -84,6 +85,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `alertas-enviar` | não (service role para `processar`; dono logado para `teste` e `chave_publica`) | entrega os alertas ao dono: popup (Web Push, VAPID) e WhatsApp (texto livre na janela de 24 h, senão template); tentativas, resumo e aviso pelo outro canal |
 | `cliente-pago-avisar` | não (só service role) | WF5: UMA mensagem ao cliente depois do pagamento confirmado (livre na janela, senão `pedido_pago_confirmacao`), reserva atômica e 3 tentativas |
 | `produto-opcoes` | não (dono ou service role) | uma mensagem por opção com foto e ficha traduzida (legenda montada no servidor), chamada por `enviar_foto_produto` com `opcoes: produto; quantidade` |
+| `loja-fichas` | não (dono, service role ou `x-cron-secret`) | E-commerce Fase 2: lê a ficha técnica pública de cada produto na origem interna (uma página a cada 2 s), traduz para linguagem de balcão, guarda a foto no bucket público `loja-produtos` e aplica na vitrine. Fila em `loja_fichas`, agendamento `loja-fichas` a cada minuto enquanto houver pendente |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -153,6 +155,7 @@ supabase functions deploy produto-opcoes --no-verify-jwt
 supabase functions deploy agente-enviar --no-verify-jwt
 supabase functions deploy alertas-enviar --no-verify-jwt
 supabase functions deploy cliente-pago-avisar --no-verify-jwt
+supabase functions deploy loja-fichas --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

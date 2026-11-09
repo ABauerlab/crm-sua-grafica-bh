@@ -228,3 +228,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - **Front do CRM:** `src/features/catalog/PlanilhaPrecosImport.tsx`, `src/lib/planilha-precos.ts`.
 - **Loja:** `ecommerce/` (Next.js). Ver `docs/ecommerce.md`.
 - **n8n:** `montar_orcamento` sem pesquisa de mercado; `pesquisar_preco_mercado` despublicado.
+
+## E-commerce Fase 2 (09/11/2026)
+- `loja_fichas` (fila por produto, privada), `loja_fichas_pegar`, `loja_ficha_gravar` (só service role), `loja_fichas_resumo`, `private.loja_chave`, gatilho `ecommerce_titulo_da_ficha` em `ecommerce_products`, bucket público `loja-produtos`, agendamento `loja-fichas`, configuração `app_settings.loja_fichas`.
+- Edge Function `loja-fichas` com `_shared/ficha-origem.ts` e `_shared/marca.ts`.

@@ -13,7 +13,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 |---|---|---|
 | 1 | Pasta `ecommerce/` isolada, layout, rodapé com crédito Bauerlab, botão do WhatsApp por contexto, selos, JSON-LD da empresa, robots e sitemap inicial | **feito** |
 | 3 | Planilha como fonte do preço (`calcular_preco`), carga em lotes, tela de importação no CRM, vitrine `ecommerce_products`, pesquisa de mercado desligada no n8n | **feito** (20.381 SKUs carregados) |
-| 2 | Ficha técnica, acabamentos, gabaritos e fotos de cada produto a partir da origem interna (`produto_fotos_mapa`, com a tabela de cache de raspagem que já existe no banco), com robots e limite de taxa; nunca citar a origem | próxima |
+| 2 | Ficha técnica, acabamento padrão, texto e foto de cada produto a partir da página pública da origem interna (fila `loja_fichas`, função `loja-fichas`, uma página a cada 2 s, robots liberado), em linguagem de balcão e sem citar a origem | **feito** (fila rodando em produção) |
 | 4 | API `/api/v1` (busca, cotação, cálculo com frete, preferência do Mercado Pago) como route handlers chamando RPCs | pendente |
 | 5 | Vitrine, página de produto com configurador, serviços de arte (R$ 14,90 / R$ 39,90), "Cobrimos qualquer orçamento" via condição especial G2, prompt da Laura com o endereço público | pendente |
 | 6 | Bling: colunas fiscais (NCM, CFOP, bling_*), `preco_marketplace`, `bling-webhook` (sem disparos) | pendente |
@@ -36,3 +36,11 @@ cp ecommerce/.env.example ecommerce/.env.local   # chave publicável
 npm run dev:ecommerce                            # http://localhost:3001
 npm run build:ecommerce
 ```
+
+## Fase 2: fichas e fotos
+- **Fonte:** a página pública de cada produto na origem interna (endereço só em `app_settings.fotos.origem_base`). Uma página por produto (caminho sem o último segmento, que é o SKU): 3.829 produtos para 18.995 SKUs.
+- **Fila:** `loja_fichas` (`pendente`, `processando`, `ok`, `erro`; até 3 tentativas). Agendamento `loja-fichas` a cada minuto, 20 produtos por vez, uma página a cada 2 s (cerca de 3 h para tudo). Configuração em `app_settings.loja_fichas` (`ligado`, `por_execucao`, `intervalo_ms`, `verificar_marca`). Resumo: `select loja_fichas_resumo()` logado como dono.
+- **O que entra na vitrine:** `ecommerce_products.ficha` (título, material, espessura, impressão, tamanho final, arte com sangria, acabamento e até 4 observações), `acabamentos` (o acabamento padrão) e `fotos` (caminho no bucket público `loja-produtos`, nome por hash). O título da ficha passa a ser o título da vitrine (gatilho `ecommerce_titulo_da_ficha`).
+- **Sigilo:** frases com a marca da origem são descartadas e a ficha é conferida de novo antes de sair (`_shared/ficha-origem.ts`, testado em `npm run test:loja` com marca fictícia). O código do item da origem não vai para a ficha pública.
+- **Fotos:** JPEG de até 150 KB (teto 300 KB), sem metadados. A verificação de marca por IA está desligada, como nas fotos do WhatsApp (decisão do dono: as fotos da origem não têm logo); dá para ligar com `verificar_marca = true` e o segredo `GEMINI_API_KEY`.
+- **Não disponível na página pública:** acabamentos opcionais com preço e links de gabarito exigem login na origem. Tiragens e prazos já vêm da planilha. Se o dono quiser os opcionais e os gabaritos, a alternativa é ele exportar ou enviar os gabaritos por categoria, que entram no bucket `loja-produtos` e em `ecommerce_products.gabaritos`.

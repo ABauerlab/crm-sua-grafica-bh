@@ -65,3 +65,7 @@ verify_jwt = false
 
 [functions.produto-opcoes]
 verify_jwt = false
+
+# Fichas da loja (E-commerce Fase 2): agendamento (x-cron-secret), dono logado ou service role; a função confere
+[functions.loja-fichas]
+verify_jwt = false
