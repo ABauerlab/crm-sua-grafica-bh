@@ -1,4 +1,5 @@
 -- Etapa 7B, A7: NENHUM caminho gera preço abaixo do piso nem lucro líquido negativo, em nenhum método de pagamento nem parcelamento.
+-- Exceção decidida pelo dono (09/11/2026): no pedido, só o dono logado pode gravar preço abaixo do piso duro. Agente, n8n e service role continuam bloqueados.
 -- Caminhos: preço unitário, orçamento, condição especial, link de pagamento, pedido manual, importação do catálogo (custo novo).
 -- Rode depois das migrations: supabase/tests/rodar-local.sh supabase/tests/trava_lucro_caminhos.sql   (desfaz tudo no fim)
 begin;
@@ -62,10 +63,16 @@ begin
     perform pg_temp.chk((select net_profit from public.order_financials where order_id = v_ord) >= 0, 'link: lucro do pedido gerado pelo orçamento não é negativo');
   end if;
 
-  -- 6. pedido manual: item do catálogo abaixo do piso duro é recusado; método nunca baixa a trava
+  -- 6. pedido manual: abaixo do piso duro é recusado em todo caminho automático (agente, n8n, service role), mesmo com Pix;
+  --    só o dono logado grava (decisão do dono de 09/11/2026)
   insert into public.orders (contact_id, title, payment_method) values (v_ct, 'manual trava', 'pix') returning id into v_ord;
   select sku into v_sku from public.catalogo where vendavel and active and custo > 0 order by md5(sku) limit 1;
-  perform pg_temp.chk(pg_temp.erro(format($f$insert into public.order_items (order_id, code, description, qty, unit_cost, unit_price) select %L, %L, 'x', 1, custo, 0.01 from public.catalogo where sku = %L$f$, v_ord, v_sku, v_sku)) like '%piso duro%', 'pedido manual: item do catálogo abaixo do piso duro é recusado mesmo escolhendo Pix');
+  perform set_config('request.jwt.claim.sub', '', true);
+  perform pg_temp.chk(pg_temp.erro(format($f$insert into public.order_items (order_id, code, description, qty, unit_cost, unit_price) select %L, %L, 'x', 1, custo, 0.01 from public.catalogo where sku = %L$f$, v_ord, v_sku, v_sku)) like '%piso duro%', 'pedido manual: sem o dono logado (agente, n8n, service role), item abaixo do piso duro é recusado mesmo escolhendo Pix');
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claim.sub', v_staff::text, true);
+  perform pg_temp.chk(pg_temp.erro(format($f$insert into public.order_items (order_id, code, description, qty, unit_cost, unit_price) select %L, %L, 'x', 1, custo, 0.01 from public.catalogo where sku = %L$f$, v_ord, v_sku, v_sku)) is null, 'pedido manual: o dono logado pode gravar item abaixo do piso duro (decisão do dono)');
+  perform set_config('request.jwt.claim.role', 'service_role', true);
   perform pg_temp.chk(pg_temp.erro(format('update public.orders set discount_pct = 60 where id = %L', v_ord)) is null or true, 'pedido manual: desconto é tratado pela trava de desconto');
 
   -- 7. importação do catálogo: custo novo recalcula o piso; o preço sobe junto e nunca fica com prejuízo
