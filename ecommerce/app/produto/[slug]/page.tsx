@@ -6,6 +6,7 @@ import { Abas } from '@/components/Abas'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { Configurador } from '@/components/Configurador'
 import { SelosSeguranca } from '@/components/SelosSeguranca'
+import { ViewContent } from '@/components/ViewContent'
 import { SITE, brl } from '@/lib/site'
 import { fotoUrl, produto } from '@/lib/vitrine'
 
@@ -117,6 +118,7 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
           </div>
         </section>
       )}
+      <ViewContent nome={p.titulo} categoria={p.categoria} valor={Number(p.a_partir_de)} produtoRef={p.opcoes[0]?.ref ?? ''} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>
   )

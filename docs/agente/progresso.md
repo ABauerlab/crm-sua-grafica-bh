@@ -1,6 +1,13 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 7 do e-commerce (Meta Pixel e Conversions API). Ver `docs/ecommerce.md`.
+**Próximo passo:** Fase 8 do e-commerce (blog e central de ajuda). Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 7: Meta Pixel e Conversions API (09/11/2026)
+
+- Migrations `20261120000001` e `20261120000002` (aplicadas): fila `meta_eventos`, `meta_evento_registrar`, gatilho de Purchase, lote e resultado para a função, agendamento `meta-conversions`. Edge Function `meta-conversions-api` publicada.
+- Loja: Pixel (só com consentimento), aviso de cookies, eventos com `event_id` compartilhado e rota `/api/v1/eventos`.
+- **Não existe Pixel na conta nem no Business da Sua Gráfica BH** (conferido pela API da Meta) e as ferramentas daqui não criam um: a fila guarda os eventos até `META_PIXEL_ID` e `META_CAPI_TOKEN` existirem.
+- **Incidente corrigido na hora:** a primeira versão do gatilho de Purchase tinha um erro (faltava um valor no insert) que faria a confirmação de pagamento falhar. O teste pegou antes de qualquer pagamento (conferido: nenhum aviso do Mercado Pago no intervalo, conferência de 10 min normal). A correção também faz o gatilho nunca bloquear o pagamento por causa da medição.
 
 ## E-commerce Fase 6: estrutura fiscal do Bling e marketplaces (09/11/2026)
 

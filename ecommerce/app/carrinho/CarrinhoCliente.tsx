@@ -6,6 +6,7 @@ import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { SelosSeguranca } from '@/components/SelosSeguranca'
 import { brl, carrinho, mascaraWhatsapp, useCarrinho, whatsappValido, type Arte } from '@/lib/carrinho'
 import { fotoUrl } from '@/lib/vitrine'
+import { rastrear } from '@/lib/meta'
 
 interface Calculo {
   ok: boolean; subtotal: number; total: number; arte: { tipo: Arte; valor: number; texto: string }
@@ -46,6 +47,7 @@ export function CarrinhoCliente() {
     if (dados.nome.trim().length < 3) return setErro('Informe seu nome completo.')
     if (entrega === 'entrega' && cep.replace(/\D/g, '').length !== 8) return setErro('Informe o CEP para a entrega.')
     setEnviando(true)
+    await rastrear('InitiateCheckout', { content_ids: itens.map((i) => i.ref), num_items: itens.length, value: Number(calc?.total ?? 0), currency: 'BRL' })
     carrinho.salvarCliente({ whatsapp: dados.whatsapp.replace(/\D/g, ''), nome: dados.nome.trim() })
     try {
       const r = await fetch('/api/v1/checkout/create-preference', {

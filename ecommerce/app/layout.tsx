@@ -3,6 +3,9 @@ import { Montserrat } from 'next/font/google'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 import { WhatsAppButton } from '@/components/WhatsAppButton'
+import { Suspense } from 'react'
+import { Consentimento } from '@/components/Consentimento'
+import { MetaPixel } from '@/components/MetaPixel'
 import { SITE } from '@/lib/site'
 import './globals.css'
 
@@ -44,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="conteudo">{children}</main>
         <Footer />
         <WhatsAppButton />
+        <Consentimento />
+        <Suspense fallback={null}><MetaPixel /></Suspense>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>
     </html>

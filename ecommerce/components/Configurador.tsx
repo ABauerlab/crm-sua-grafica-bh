@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CalendarCheck, Check, Loader2, MapPin, ShoppingCart, Rocket } from 'lucide-react'
 import { brl, carrinho, type Arte } from '@/lib/carrinho'
+import { rastrear } from '@/lib/meta'
 import { ModalWhatsApp } from './ModalWhatsApp'
 import type { Opcao } from '@/lib/vitrine'
 
@@ -47,6 +48,7 @@ export function Configurador({ slug, titulo, foto, opcoes }: { slug: string; tit
     carrinho.salvarArte(arte)
     carrinho.adicionar({ ref: opcao.ref, quantidade: 1, titulo, unidades: opcao.quantidade, preco: Number(opcao.preco), foto, slug })
     setAdicionado(true)
+    void rastrear('AddToCart', { content_ids: [opcao.ref], content_name: titulo, content_type: 'product', value: Number(cot?.total ?? opcao.preco), currency: 'BRL' })
     if (destino === 'comprar') router.push('/carrinho')
   }
   function acao(destino: 'carrinho' | 'comprar') {
