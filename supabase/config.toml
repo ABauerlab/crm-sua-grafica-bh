@@ -77,3 +77,7 @@ verify_jwt = false
 # Avisos do Bling (E-commerce Fase 6): sem JWT; a função confere a assinatura HMAC (X-Bling-Signature-256) com BLING_CLIENT_SECRET
 [functions.bling-webhook]
 verify_jwt = false
+
+# Conversions API da Meta (E-commerce Fase 7): agendamento (x-cron-secret), dono ou service role
+[functions.meta-conversions-api]
+verify_jwt = false

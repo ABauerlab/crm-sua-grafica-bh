@@ -17,7 +17,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 | 4 | API `/api/v1` (busca, cotação, cálculo com frete, checkout com link do Mercado Pago), route handlers chamando funções do banco e a Edge Function `loja-checkout`. Contratos em `docs/api-v1.md` | **feito** |
 | 5 | Vitrine (home com mais vendidos e banners, categorias, busca), página de produto com configurador (quantidade, arte, CEP, prazo, Pix e 2x), 4 abas, variações, carrinho com fechamento pelo checkout da Fase 4, modal de WhatsApp antes de comprar, banner "Cobrimos qualquer orçamento" (proposta pelo WhatsApp; a Laura usa a condição G2), logo oficial do brandkit | **feito** |
 | 6 | Bling: colunas fiscais (NCM sugerido por categoria, CFOP 5102/6102/6108), payload de pedido com pendências, `bling-webhook` (só grava), preço e prazo por marketplace, gerador de anúncios. Nada é enviado. Detalhes em `docs/bling-fiscal.md` | **feito** |
-| 7 | Meta Pixel + `meta-conversions-api` com deduplicação por `event_id` | pendente |
+| 7 | Meta Pixel + Conversions API com deduplicação por `event_id`, aviso de cookies (LGPD), Purchase no servidor quando o pagamento é aprovado | **feito** (falta criar o Pixel e o token na Meta) |
 | 8 | Blog (NewsAPI só como pauta, texto próprio com link da fonte) e Central de Ajuda completa | pendente |
 | 9 | Checkout em 3 passos, `carrinhos_abandonados`, frete grátis só nos 7 bairros centrais, SuperFrete, Pix copia e cola | pendente |
 | 10 | JSON-LD de produto, sitemap dinâmico, varredura de segurança e PR final | pendente |
@@ -51,3 +51,11 @@ npm run build:ecommerce
 - Carrinho e cliente ficam no navegador (`localStorage`); o preço é sempre recalculado no servidor. O modal de WhatsApp aparece no primeiro "Comprar" ou "Adicionar". A gravação do carrinho abandonado (follow-up de 15 min) entra na Fase 9.
 - Marca: símbolo oficial do brandkit (`ecommerce/public/marca/simbolo.svg`, cores #00A6D6, #E6007E, #FFD500); o nome é texto em Montserrat.
 - A Laura já informa o endereço do balcão (prompt do WF2) e a trava de saída já o libera; nada mudou no n8n.
+
+## Fase 7: Meta Pixel e Conversions API
+- **Eventos:** PageView (toda página), ViewContent (produto), AddToCart (configurador), InitiateCheckout (carrinho), Lead (qualquer clique para o WhatsApp) e Purchase (no banco, quando o pedido vira pago; pedidos de teste não contam).
+- **Deduplicação:** cada evento do navegador vai ao Pixel e ao servidor com o MESMO `event_id`; o Purchase usa `purchase-<pedido>` (um por pedido).
+- **Caminho:** loja `POST /api/v1/eventos` -> `meta_evento_registrar` (só aceita os nomes previstos e dados pessoais já em SHA-256) -> fila `meta_eventos` -> Edge Function `meta-conversions-api` (a cada minuto, enquanto houver pendente; eventos com mais de 7 dias são descartados, limite da Meta).
+- **Privacidade (LGPD):** o Pixel e os eventos do navegador só ligam depois do "Aceitar" no aviso de cookies. Telefone, e-mail e id do cliente vão sempre em SHA-256. O Purchase é enviado pelo servidor, também em hash; isso deve constar na política de privacidade.
+- **Teste de eventos:** colocar o código de teste do Gerenciador de Eventos em `app_settings.meta_capi.test_event_code`; tirar depois.
+- **Ativar:** criar o Pixel (conjunto de dados) no Gerenciador de Eventos do Business "Sua Gráfica BH", gerar o token da Conversions API e cadastrar `META_PIXEL_ID` e `META_CAPI_TOKEN` nos segredos do Supabase e `NEXT_PUBLIC_META_PIXEL_ID` nas variáveis da loja na Hostinger.

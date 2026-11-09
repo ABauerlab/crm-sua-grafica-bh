@@ -246,3 +246,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - `contacts`: `tipo_pessoa`, `ie_indicador`, `inscricao_estadual`, `logradouro`, `numero`, `complemento`, `municipio`, `uf`, `codigo_ibge`, `bling_contact_id`.
 - `orders`: `canal` (gatilho `orders_canal_site`), `marketplace_pedido_id`, `bling_pedido_id`, `bling_enviado_em`, `bling_erro`.
 - `bling_pedido_payload`, `bling_eventos`, view `catalogo_marketplace` (`private.preco_marketplace`), `app_settings.bling` e `app_settings.marketplaces`. Edge Function `bling-webhook`. Script `scripts/enrich-marketplace-ads.ts`.
+
+## E-commerce Fase 7 (09/11/2026)
+- `meta_eventos` (fila), `meta_evento_registrar` (anon), `meta_eventos_lote` e `meta_eventos_resultado` (service role), `private.sha256`, gatilho `meta_purchase_do_pedido` em `orders`, `app_settings.meta_capi`, agendamento `meta-conversions`. Edge Function `meta-conversions-api`. Loja: `lib/meta.ts`, `components/MetaPixel.tsx`, `Consentimento.tsx`, `ViewContent.tsx`, rota `/api/v1/eventos`.
