@@ -19,7 +19,7 @@ begin
   insert into public.conversations (contact_id, ai_handled, modo_atendimento) values (v_ct, true, 'ia') returning id into v_cv;
 
   -- B1: 10 segundos e mensagens incompletas
-  perform pg_temp.chk((select debounce_segundos from public.agente_config where id = 1) = 10, 'B1: debounce padrão de 10 segundos');
+  perform pg_temp.chk((select debounce_segundos from public.agente_config where id = 1) = 6, 'B1: debounce de 6 segundos (valor da Etapa 8, migration 20261105000012)');
   perform pg_temp.chk(private.mensagem_incompleta('audio', null), 'B1: só áudio parece incompleto');
   perform pg_temp.chk(private.mensagem_incompleta('text', 'Queria cartões e'), 'B1: termina em "e" parece incompleta');
   perform pg_temp.chk(private.mensagem_incompleta('text', 'Preciso de:'), 'B1: termina em dois pontos parece incompleta');
@@ -29,7 +29,8 @@ begin
   insert into public.agente_execucoes (conversation_id, contact_id, message_id, teste) values (v_cv, v_ct, v_m1, true);
   r := public.agente_debounce(v_m1, false);
   perform pg_temp.chk((r ->> 'ultima')::boolean, 'B1: última mensagem do grupo segue');
-  insert into public.messages (conversation_id, direction, type, body, wa_message_id, status) values (v_cv, 'in', 'text', 'e também 1000 panfletos', 'wamid.b2', null) returning id into v_m2;
+  -- 1 s depois: na mesma transação o now() é igual e o desempate por id (uuid aleatório) deixaria o teste instável
+  insert into public.messages (conversation_id, direction, type, body, wa_message_id, status, created_at) values (v_cv, 'in', 'text', 'e também 1000 panfletos', 'wamid.b2', null, now() + interval '1 second') returning id into v_m2;
   r := public.agente_debounce(v_m1, false);
   perform pg_temp.chk(not (r ->> 'ultima')::boolean, 'B1: nova mensagem reinicia a contagem (a anterior é agrupada)');
 
