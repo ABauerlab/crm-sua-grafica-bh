@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bot, FileText, Link2, Lock, Mic, Paperclip, Send, Square, StickyNote, User, X } from 'lucide-react'
+import { ArrowLeft, Bot, FileText, Info, Link2, Lock, Mic, MoreVertical, Paperclip, Send, Square, StickyNote, User, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/toast'
 import { useOrders } from '@/hooks/orders'
@@ -272,6 +273,15 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
     }
   }
 
+  // campo de mensagem cresce com o texto (até 140 px) e volta ao normal depois de enviar
+  const taRef = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    const t = taRef.current
+    if (!t) return
+    t.style.height = 'auto'
+    t.style.height = `${Math.min(t.scrollHeight, 140)}px`
+  }, [text, mode])
+
   const timeline = useMemo(() => {
     const items = [
       ...(messages ?? []).filter((m) => m.type !== 'reaction').map((m) => ({ kind: 'msg' as const, at: m.created_at, m })),
@@ -315,16 +325,17 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
         orcamento={orcAtivo ? { id: orcAtivo.id, numero: orcAtivo.numero, pdf_enviado_em: orcAtivo.pdf_enviado_em ?? null } : null}
         janelaAberta={win.open}
       />
-      <header className="space-y-2 border-b bg-card px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Link to="/inbox" className="flex h-11 w-11 items-center justify-center md:hidden" aria-label="Voltar para a lista">
+      <header className="border-b bg-card">
+        <div className="flex items-center gap-1 px-2 py-1.5 md:gap-3 md:px-4 md:py-3">
+          <Link to="/inbox" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-secondary md:hidden" aria-label="Voltar para a lista">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-black">{contactLabel(conversation.contact)}</p>
-            <p className="text-xs text-muted-foreground">{formatPhone(conversation.contact.wa_id)}</p>
+          <div className="min-w-0 flex-1 md:flex-none">
+            <p className="truncate text-base font-black leading-tight md:text-sm">{contactLabel(conversation.contact)}</p>
+            <p className="truncate text-xs text-muted-foreground">{formatPhone(conversation.contact.wa_id)}</p>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          {/* Desktop: todas as ações à vista */}
+          <div className="ml-auto hidden items-center gap-2 md:flex">
             <span className={cn('flex items-center gap-1 rounded-sm px-2 py-1 text-xs font-bold', ai ? 'bg-brand-blue text-white' : 'bg-ink/10 text-ink')}>
               {ai ? <Bot className="h-3.5 w-3.5" aria-hidden /> : <User className="h-3.5 w-3.5" aria-hidden />}
               {ai ? 'IA atendendo' : 'Humano atendendo'}
@@ -340,17 +351,59 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
               </Button>
             )}
           </div>
+          {/* Celular: só o essencial; o resto vai no menu (divulgação progressiva) */}
+          <div className="flex shrink-0 items-center md:hidden">
+            <span
+              className={cn('mr-1 flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-bold', ai ? 'bg-brand-blue text-white' : 'bg-ink/10 text-ink')}
+              role="status"
+            >
+              {ai ? <Bot className="h-3.5 w-3.5" aria-hidden /> : <User className="h-3.5 w-3.5" aria-hidden />}
+              {ai ? 'IA' : 'Você'}
+            </span>
+            {onDetails && (
+              <button onClick={onDetails} aria-label="Detalhes do cliente" className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-secondary">
+                <Info className="h-5 w-5" />
+              </button>
+            )}
+            <Menu>
+              <MenuTrigger aria-label="Mais ações" className="flex h-11 w-11 items-center justify-center rounded-md hover:bg-secondary">
+                <MoreVertical className="h-5 w-5" />
+              </MenuTrigger>
+              <MenuContent align="end">
+                <MenuItem onSelect={ai ? takeOver : giveBack} disabled={updateConv.isPending}>
+                  {ai ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />} {ai ? 'Assumir conversa' : 'Devolver para a IA'}
+                </MenuItem>
+                <MenuItem onSelect={() => updateConv.mutate({ needs_human: !conversation.needs_human })}>
+                  {conversation.needs_human ? 'Tirar marca de atenção' : 'Marcar: precisa de atenção'}
+                </MenuItem>
+                {openOrder && (
+                  <>
+                    <MenuSeparator />
+                    <MenuItem asChild>
+                      <Link to={`/kanban?pedido=${openOrder.id}`}>Abrir pedido #{openOrder.number}</Link>
+                    </MenuItem>
+                  </>
+                )}
+              </MenuContent>
+            </Menu>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Etiquetas: uma linha só, com rolagem lateral no celular (nada de 3 linhas de botões) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto px-3 pb-2 [scrollbar-width:none] md:flex-wrap md:px-4 md:pb-3 [&>*]:shrink-0 md:[&>*]:shrink">
+          {openOrder && (
+            <Link to={`/kanban?pedido=${openOrder.id}`} className="order-first inline-flex min-h-9 items-center gap-1 rounded-full border bg-background px-3 text-xs font-semibold text-link underline md:order-last md:ml-auto md:rounded-sm md:px-2">
+              Pedido #{openOrder.number}
+            </Link>
+          )}
           <button
             onClick={() => updateConv.mutate({ needs_human: !conversation.needs_human })}
             aria-pressed={!!conversation.needs_human}
             className={cn(
-              'min-h-9 rounded-sm border px-2 text-xs font-semibold',
-              conversation.needs_human ? 'border-brand-red bg-brand-red text-white' : 'bg-background text-muted-foreground hover:bg-secondary',
+              'min-h-9 whitespace-nowrap rounded-full border px-3 text-xs font-semibold md:rounded-sm md:px-2',
+              conversation.needs_human ? 'border-brand-red bg-brand-red text-white' : 'hidden bg-background text-muted-foreground hover:bg-secondary md:block',
             )}
           >
-            {conversation.needs_human ? 'Precisa de atenção humana' : 'Marcar: precisa de atenção'}
+            {conversation.needs_human ? 'Precisa de atenção' : 'Marcar: precisa de atenção'}
           </button>
           {(labelsList ?? []).map((l) => {
             const on = conversation.labels?.includes(l)
@@ -359,17 +412,12 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 key={l}
                 aria-pressed={!!on}
                 onClick={() => updateConv.mutate({ labels: on ? (conversation.labels ?? []).filter((x) => x !== l) : [...(conversation.labels ?? []), l] })}
-                className={cn('min-h-9 rounded-sm border px-2 text-xs font-medium', on ? 'border-brand-cyan bg-brand-cyan/20 font-bold text-ink' : 'bg-background text-muted-foreground hover:bg-secondary')}
+                className={cn('min-h-9 whitespace-nowrap rounded-full border px-3 text-xs font-medium md:rounded-sm md:px-2', on ? 'border-brand-cyan bg-brand-cyan/20 font-bold text-ink' : 'bg-background text-muted-foreground hover:bg-secondary')}
               >
                 {l}
               </button>
             )
           })}
-          {openOrder && (
-            <Link to={`/kanban?pedido=${openOrder.id}`} className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-sm border bg-background px-2 text-xs font-semibold text-link underline">
-              Pedido #{openOrder.number}
-            </Link>
-          )}
         </div>
       </header>
 
@@ -437,19 +485,19 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
         <div ref={bottomRef} />
       </div>
 
-      <footer className="border-t bg-card p-3">
+      <footer className="border-t bg-card px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-3">
         {error && (
           <p role="alert" className="mb-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm">
             {error}
           </p>
         )}
 
-        <div className="mb-2 flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Tipo de envio">
-          <button role="tab" aria-selected={mode === 'reply'} onClick={() => setMode('reply')} className={cn('min-h-9 rounded-sm px-2.5 text-xs font-bold', mode === 'reply' ? 'bg-ink text-white' : 'bg-secondary')}>
+        <div className="mb-2 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] md:flex-wrap [&>*]:shrink-0" role="tablist" aria-label="Tipo de envio">
+          <button role="tab" aria-selected={mode === 'reply'} onClick={() => setMode('reply')} className={cn('min-h-11 rounded-full px-3.5 text-sm font-bold md:min-h-9 md:rounded-sm md:px-2.5 md:text-xs', mode === 'reply' ? 'bg-ink text-white' : 'bg-secondary')}>
             Responder
           </button>
-          <button role="tab" aria-selected={mode === 'note'} onClick={() => setMode('note')} className={cn('inline-flex min-h-9 items-center gap-1 rounded-sm px-2.5 text-xs font-bold', mode === 'note' ? 'bg-brand-yellow text-ink' : 'bg-secondary')}>
-            <StickyNote className="h-3.5 w-3.5" aria-hidden /> Nota interna
+          <button role="tab" aria-selected={mode === 'note'} onClick={() => setMode('note')} className={cn('inline-flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-bold md:min-h-9 md:rounded-sm md:px-2.5 md:text-xs', mode === 'note' ? 'bg-brand-yellow text-ink' : 'bg-secondary')}>
+            <StickyNote className="h-3.5 w-3.5" aria-hidden /> <span className="md:hidden">Nota</span><span className="hidden md:inline">Nota interna</span>
           </button>
           {mode === 'reply' && canReply && (
             <>
@@ -457,17 +505,17 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 disabled={!orcAtivo}
                 onClick={enviarOrcamentoPdf}
                 title={orcAtivo ? 'Envia o PDF do orçamento no WhatsApp' : 'Este pedido não tem orçamento ativo. Crie ou abra o orçamento no pedido.'}
-                className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm font-semibold disabled:opacity-40 md:min-h-9 md:rounded-sm md:px-2.5 md:text-xs"
               >
-                <FileText className="h-3.5 w-3.5" aria-hidden /> Enviar PDF do orçamento
+                <FileText className="h-4 w-4 md:h-3.5 md:w-3.5" aria-hidden /> <span className="md:hidden">PDF</span><span className="hidden md:inline">Enviar PDF do orçamento</span>
               </button>
               <button
                 disabled={!openOrder?.payment_link}
                 title={openOrder?.payment_link ? undefined : 'O pedido ainda não tem link de pagamento'}
                 onClick={() => openOrder?.payment_link && setText(`Segue o link para pagamento (${formatBRL(openOrder.fin.total)}): ${openOrder.payment_link}`)}
-                className="inline-flex min-h-9 items-center gap-1 rounded-sm border px-2.5 text-xs font-semibold disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm font-semibold disabled:opacity-40 md:min-h-9 md:rounded-sm md:px-2.5 md:text-xs"
               >
-                <Link2 className="h-3.5 w-3.5" aria-hidden /> Link de pagamento
+                <Link2 className="h-4 w-4 md:h-3.5 md:w-3.5" aria-hidden /> <span className="md:hidden">Link</span><span className="hidden md:inline">Link de pagamento</span>
               </button>
             </>
           )}
@@ -530,6 +578,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 </>
               )}
               <Textarea
+                ref={taRef}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={onKeyDown}
@@ -540,10 +589,10 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                     adicionarArquivos(imgs)
                   }
                 }}
-                rows={mode === 'reply' && text.includes('\n') ? 5 : 2}
+                rows={text.includes('\n') ? 5 : 1}
+                className={cn('min-h-11 resize-none py-2.5 md:min-h-[60px] md:py-2', mode === 'note' && 'border-brand-yellow bg-brand-yellow/10')}
                 placeholder={mode === 'note' ? 'Nota só para você (o cliente não recebe)' : 'Digite uma mensagem ou / para respostas rápidas'}
                 aria-label={mode === 'note' ? 'Nota interna' : 'Mensagem'}
-                className={cn('resize-none', mode === 'note' && 'border-brand-yellow bg-brand-yellow/10')}
               />
               <Button onClick={submit} disabled={(!text.trim() && !(mode === 'reply' && arquivos.length)) || send.isPending || sendFile.isPending || addNote.isPending} size="icon" aria-label={mode === 'note' ? 'Salvar nota' : 'Enviar'}>
                 <Send className="h-4 w-4" />

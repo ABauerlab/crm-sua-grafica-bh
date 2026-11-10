@@ -17,6 +17,7 @@ import {
   LogOut,
   Megaphone,
   Menu as MenuIcon,
+  Ellipsis,
   MessageSquare,
   Package,
   Search,
@@ -235,6 +236,33 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
   )
 }
 
+/** Navegação inferior do celular (até 5 itens, alvo de 44 px+). Some quando uma conversa está aberta, como no WhatsApp. */
+function BottomNav({ onMore }: { onMore: () => void }) {
+  const { data: convs } = useConversations()
+  const unread = (convs ?? []).reduce((n, c) => n + c.unread_count, 0)
+  const itens: { to: string; label: string; icon: LucideIcon; badge?: number }[] = [
+    { to: '/inbox', label: 'Conversas', icon: MessageSquare, badge: unread },
+    { to: '/kanban', label: 'Kanban', icon: KanbanSquare },
+    { to: '/pedidos', label: 'Pedidos', icon: ClipboardList },
+    { to: '/contatos', label: 'Contatos', icon: Users },
+  ]
+  return (
+    <nav aria-label="Navegação rápida" className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden">
+      {itens.map(({ to, label, icon: Icon, badge }) => (
+        <NavLink key={to} to={to} className={({ isActive }) => cn('relative flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold', isActive ? 'text-brand-magenta' : 'text-muted-foreground')}>
+          <Icon className="h-5 w-5" aria-hidden />
+          {label}
+          {!!badge && <span className="absolute right-[calc(50%-1.5rem)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-magenta px-1 text-[10px] font-bold text-white tabular">{badge > 99 ? '99+' : badge}</span>}
+        </NavLink>
+      ))}
+      <button onClick={onMore} className="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-muted-foreground">
+        <Ellipsis className="h-5 w-5" aria-hidden />
+        Mais
+      </button>
+    </nav>
+  )
+}
+
 export default function Layout() {
   useRealtimeSync()
   const { data: alerts } = useQualityAlerts()
@@ -273,6 +301,8 @@ export default function Layout() {
     }
   })
   const [mobileOpen, setMobileOpen] = useState(false)
+  // conversa aberta no celular ocupa a tela toda (o compositor fica no rodapé), então a barra inferior some
+  const mostrarBarra = !/^\/inbox\/[^/]+/.test(location.pathname)
 
   useEffect(() => {
     try {
@@ -325,9 +355,10 @@ export default function Layout() {
             </p>
           </div>
         ))}
-        <main key={location.pathname.split('/')[1]} className="min-h-0 flex-1">
+        <main key={location.pathname.split('/')[1]} className={cn('min-h-0 flex-1', mostrarBarra && 'pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0')}>
           <Outlet />
         </main>
+        {mostrarBarra && <BottomNav onMore={() => setMobileOpen(true)} />}
       </div>
     </div>
   )

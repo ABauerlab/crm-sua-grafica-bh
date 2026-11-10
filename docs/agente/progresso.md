@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## CRM no celular: usabilidade (10/11/2026)
+- **Zoom ao tocar nos campos**: o iPhone dá zoom em campo com fonte menor que 16 px. Agora todo campo tem 16 px no celular (`src/index.css`) e o `Textarea` usa `text-base`.
+- **Conversa**: cabeçalho em uma linha (voltar, nome, status IA/Você, Detalhes e menu ⋯ com assumir/devolver, atenção e abrir pedido); etiquetas em uma fileira que rola; compositor com abas Responder/Nota, atalhos PDF e Link, campo que cresce com o texto e respeita a área segura do iPhone.
+- **Navegação**: barra inferior (Conversas com contador, Kanban, Pedidos, Contatos, Mais); some com a conversa aberta, como no WhatsApp.
+- **Kanban**: indicadores em uma fileira com rolagem lateral (antes ocupavam metade da tela).
+- Telas conferidas com o simulador (`docs/telas/conversa-celular.png`, `kanban-celular.png`). Próximos candidatos: lista de conversas, Contatos e gaveta do pedido.
+
 ## Fase 11: vitrine em modelos, CRM e cérebro da Laura (10/11/2026, branch `claude/funny-ride-s51uyy`)
 
 - **Banco (aplicado)**: migrations `20261124000001` (`loja_modelos`, SKU em `loja_buscar` e `loja_produto`, `irmaos`, `acabamentos_extras`, `loja_acabamentos`) e `20261124000002` (cérebro da Laura). Conferido: `loja_modelos` devolve 45 modelos de cartões, `anon` executa as funções novas e não lê a tabela de acabamentos.
