@@ -1,5 +1,15 @@
 # Progresso do agente de IA
 
+## Fase 11: vitrine em modelos, CRM e cérebro da Laura (10/11/2026, branch `claude/funny-ride-s51uyy`)
+
+- **Banco (aplicado)**: migrations `20261124000001` (`loja_modelos`, SKU em `loja_buscar` e `loja_produto`, `irmaos`, `acabamentos_extras`, `loja_acabamentos`) e `20261124000002` (cérebro da Laura). Conferido: `loja_modelos` devolve 45 modelos de cartões, `anon` executa as funções novas e não lê a tabela de acabamentos.
+- **Loja**: menu lateral, cards de modelo com SKU, home com vitrines por departamento, hero rotativo, configurador com tiragem e impressão, "Compre junto", Open Graph. Sem rolagem lateral em desktop e celular. **Falta publicar na Hostinger**: o deploy sai do merge na `main` (auto-deploy).
+- **CRM**: coluna Pronto (aviso ao cliente em um clique: texto livre na janela, senão template `aviso_operacional_pedido`), botão para reabrir a janela de 24 h no chat, gaveta inferior de detalhes no celular, pedido manual com nome, WhatsApp, e-mail, CPF/CNPJ e endereço.
+- **Laura (WF2 publicado)**: tom sem "vc" repetitivo, regra de lista de itens (um orçamento com todos), frete só nos 7 bairros por `verificar_frete` (a mesma regra do site) e bloco CÉREBRO. O cérebro é recalculado no banco a cada mensagem, sem modelo.
+- **Decisões que mudei e preciso que confirme**: SKU público na loja (regras em `CLAUDE.md` e `AGENTS.md` atualizadas); a Laura continua sem citar SKU.
+- **Não feito**: extração logada rodou só como código (precisa do login e do CAPTCHA do dono); acabamentos extras no carrinho; foto de perfil do WhatsApp (a API não fornece); testes com o modelo real da Laura (só validei a sintaxe da expressão do prompt).
+- **Observado, não corrigido**: `agente_salvar_contato` grava `marketing_consent` como booleano, mas a coluna é texto (`none`/`opted_in`/`opted_out`); quando o cliente responde sobre promoções a gravação pode falhar. Vale um teste.
+
 **Próximo passo:** teste real de pagamento pelo site (Pix de valor baixo, só com autorização do dono) e as pendências do dono listadas na Fase 10. O roteiro do e-commerce (Fases 1 a 10) está concluído. Ver `docs/ecommerce.md`.
 
 ## E-commerce Fase 10: loja no ar e varredura de segurança (10/11/2026)
