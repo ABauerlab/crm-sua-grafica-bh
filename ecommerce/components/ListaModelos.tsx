@@ -18,7 +18,7 @@ export function ListaModelos({ modelos }: { modelos: Modelo[] }) {
   }, [n, modelos.length])
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{modelos.slice(0, n).map((m) => <ModeloCard key={(m.familia ?? '') + m.produto_slug} m={m} />)}</div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">{modelos.slice(0, n).map((m) => <ModeloCard key={(m.familia ?? '') + m.produto_slug} m={m} />)}</div>
       {n < modelos.length && (
         <div ref={fim} className="mt-6 flex justify-center">
           <button type="button" onClick={() => setN((x) => Math.min(x + LOTE, modelos.length))} className="min-h-11 rounded-lg border border-black/15 bg-white px-5 text-sm font-semibold hover:border-magenta">Mostrar mais ({modelos.length - n} restantes)</button>

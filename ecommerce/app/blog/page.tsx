@@ -19,7 +19,7 @@ export default async function Blog({ searchParams }: { searchParams: Promise<{ p
   const { total, posts } = await listaBlog(pagina)
   const paginas = Math.max(1, Math.ceil(total / POR_PAGINA))
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
+    <div className="mx-auto max-w-[1440px] px-4 py-10">
       <h1 className="flex items-center gap-3 text-3xl font-black"><Newspaper className="h-8 w-8 text-magenta" aria-hidden />Blog da Sua Gráfica BH</h1>
       <p className="mt-2 max-w-2xl text-black/65">Novidades do mercado de impressão, embalagens, design e comunicação visual, explicadas de um jeito simples e com ideias para aplicar no seu negócio.</p>
       {posts.length === 0 ? (

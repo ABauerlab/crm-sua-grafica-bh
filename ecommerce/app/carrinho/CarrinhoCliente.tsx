@@ -46,7 +46,7 @@ export function CarrinhoCliente() {
 
   const precoDe = (ref: string, padrao: number) => calc?.itens.find((x) => x.ref === ref)?.preco ?? padrao
   return (
-    <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[1fr_400px]">
+    <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-8 lg:grid-cols-[1fr_400px]">
       <div className="space-y-6">
         <h1 className="text-2xl font-black">Carrinho</h1>
         <ul className="divide-y divide-black/5 rounded-xl2 bg-white shadow-sm">

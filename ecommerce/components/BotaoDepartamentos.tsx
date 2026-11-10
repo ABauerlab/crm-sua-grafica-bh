@@ -10,7 +10,7 @@ export function BotaoDepartamentos({ verticais }: { verticais: Vertical[] }) {
   return (
     <>
       <button type="button" onClick={() => ref.current?.showModal()} aria-haspopup="dialog"
-        className="flex min-h-11 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-bold text-white hover:bg-white/20"><Menu className="h-4 w-4" aria-hidden />Departamentos</button>
+        className="flex min-h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-bold text-white hover:bg-white/20"><Menu className="h-4 w-4" aria-hidden />Departamentos</button>
       <dialog ref={ref} onClick={(e) => { if (e.target === ref.current) ref.current?.close() }} aria-label="Departamentos"
         className="m-0 h-full max-h-full w-[min(24rem,92vw)] max-w-none overflow-hidden bg-white p-0 text-tinta backdrop:bg-black/50">
         <div className="flex h-full flex-col">
