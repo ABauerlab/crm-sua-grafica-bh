@@ -180,6 +180,7 @@ assert.equal(lerEnderecoCep('30130010', { street: 'Rua A', neighborhood: 'Savass
   assert.equal(hrefFiltros('/categoria/x', f, { q: 'cartao' }, { faceta: 'acab', valor: 'uv' }), '/categoria/x?q=cartao&sub=couche-250g&acab=soft-touch&gram=encorpado&preco=ate-50drop')
   assert.equal(hrefFiltros('/categoria/x', f, {}, { limpar: true }), '/categoria/x')
   assert.equal(hrefFiltros('/categoria/x', {}, { ordem: 'maior_preco' }, { faceta: 'sub', valor: 'a' }), '/categoria/x?ordem=maior_preco&sub=a')
+  assert.equal(hrefFiltros('/categorias?vertical=visual', {}, {}, { faceta: 'acab', valor: 'uv' }), '/categorias?vertical=visual&acab=uv', 'mantém a vertical na URL')
 }
 
 console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')

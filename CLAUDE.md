@@ -91,6 +91,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `meta-conversions-api` | não (dono, service role ou `x-cron-secret`) | Fase 7: envia a fila `meta_eventos` para a Conversions API (deduplicada com o Pixel pelo `event_id`); sem `META_PIXEL_ID` e `META_CAPI_TOKEN` não consome a fila. Purchase nasce no banco quando o pedido é pago (gatilho que nunca bloqueia o pagamento) |
 | `blog-pautas` | não (dono, service role ou `x-cron-secret`) | Fase 8: lê feeds do setor (NewsAPI opcional, `NEWSAPI_KEY`), filtra o assunto, pede ao Gemini um texto próprio, confere (crédito à fonte, sem cópia, sem preço, links só internos) e publica até 3 posts por dia em `blog_posts`. Detalhes em `docs/blog.md` |
 | `loja-frete` | não (público) | Fase 9: CEP -> bairro (ViaCEP, cache `cep_bairros`), frete grátis só nos 7 bairros centrais e cotação de envio no SuperFrete (`SUPERFRETE_TOKEN`; sem ele nada é inventado) |
+| `loja-arquivo` | não (público; confere o pedido do site e a assinatura do PDF) | Recebe o PDF da arte no checkout (só PDF, até 50 MB), guarda em `order-files` e registra em `order_files` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -190,7 +191,7 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Tom humano de vendedor, sem travessão, emoji com moderação; reclamação chama o dono.
 - Laura humana: nunca "assistente virtual", "robô" ou "IA" na conversa. Linguagem natural de BH (vc, pra, tá, show, combinado, obg).
 - Custo unitário editável no pedido (catálogo e manual). O banco continua conferindo o piso e a confirmação do responsável entre os pisos fica em `precos_manuais_log`.
-- Corte de produção às 10h30 em dias úteis (`private.inicio_contagem`).
+- Pedidos pagos até 10h30 em dias úteis começam a ser produzidos no mesmo dia (`private.inicio_contagem`).
 - Fechamento padrão: (1) PDF formal via `gerar_pdf_orcamento`; (2) aceite do cliente com "APROVADO"; (3) link do Mercado Pago com Pix via `gerar_link_pagamento`.
 
 

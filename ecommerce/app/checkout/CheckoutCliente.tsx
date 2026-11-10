@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Check, CheckCircle2, Copy, CreditCard, Loader2, Lock, MapPin, QrCode, Store, Truck } from 'lucide-react'
+import { Check, CheckCircle2, Copy, CreditCard, Loader2, Lock, MapPin, QrCode, Store, Truck, Upload } from 'lucide-react'
 import { SelosSeguranca } from '@/components/SelosSeguranca'
 import { brl, carrinho, mascaraWhatsapp, salvarCarrinhoNoServidor, useCarrinho, whatsappValido, type Arte, type DadosCheckout } from '@/lib/carrinho'
 import { rastrear } from '@/lib/meta'
@@ -26,6 +26,8 @@ export function CheckoutCliente() {
   const { itens } = useCarrinho()
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [arte, setArte] = useState<Arte>('pronta')
+  const [arquivo, setArquivo] = useState<File | null>(null)
+  const [arquivoOk, setArquivoOk] = useState(false)
   const [dados, setDados] = useState<DadosCheckout>({ whatsapp: '', nome: '', email: '', documento: '' })
   const [entrega, setEntrega] = useState<'retirada' | 'entrega'>('retirada')
   const [cep, setCep] = useState('')
@@ -114,8 +116,37 @@ export function CheckoutCliente() {
     setEtapa(3)
   }
 
+  const precisaArquivo = arte !== 'criacao'
+
+  async function escolherArquivo(f: File | null) {
+    setErro('')
+    if (!f) { setArquivo(null); return }
+    if (f.size > 50 * 1024 * 1024) return setErro('O PDF passa de 50 MB. Reduza o tamanho sem perder qualidade.')
+    const inicio = new TextDecoder('latin1').decode(new Uint8Array(await f.slice(0, 5).arrayBuffer()))
+    if (inicio !== '%PDF-') return setErro('Só aceitamos arquivo PDF em alta qualidade. Exporte a arte em PDF e envie de novo.')
+    setArquivo(f)
+  }
+
+  async function enviarArquivo(pedidoId: string): Promise<boolean> {
+    if (!arquivo) { setErro('Anexe o PDF da arte para continuar.'); return false }
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL, chave = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    try {
+      const r = await fetch(`${base}/functions/v1/loja-arquivo`, {
+        method: 'POST', body: arquivo,
+        headers: { apikey: chave ?? '', Authorization: `Bearer ${chave}`, 'Content-Type': 'application/pdf', 'x-pedido': pedidoId, 'x-nome': encodeURIComponent(arquivo.name) },
+      })
+      const d = await r.json().catch(() => ({})) as { error?: string }
+      if (!r.ok) { setErro(d.error ?? 'Não foi possível enviar o PDF. Tente de novo.'); return false }
+      setArquivoOk(true); return true
+    } catch {
+      setErro('Sem conexão para enviar o PDF. Tente de novo.'); return false
+    }
+  }
+
   async function pagar() {
-    setErro(''); setEnviando(true)
+    setErro('')
+    if (precisaArquivo && !arquivoOk && !arquivo) return setErro('Anexe o PDF da arte em alta qualidade para continuar.')
+    setEnviando(true)
     try {
       // pedido já criado (troca de forma de pagamento ou nova tentativa): não cria outro
       const r = pedido
@@ -130,6 +161,10 @@ export function CheckoutCliente() {
       const d = await r.json() as { ok?: boolean; error?: string; pedido_id?: string; numero?: number; total?: number; link_pagamento?: string; pix?: Pix }
       if (d.pedido_id && d.numero && !pedido) setPedido({ id: d.pedido_id, numero: d.numero })
       if (!r.ok) { setErro(d.error ?? 'Não foi possível concluir. Tente de novo.'); setEnviando(false); return }
+      if (precisaArquivo && !arquivoOk) {
+        const ok = await enviarArquivo(d.pedido_id ?? pedido?.id ?? '')
+        if (!ok) { setEnviando(false); return }
+      }
       if (d.total) setTotalFinal(d.total)
       if (metodo === 'cartao' && d.link_pagamento) { carrinho.limpar(); window.location.href = d.link_pagamento; return }
       if (metodo === 'pix' && d.pix) {
@@ -290,6 +325,17 @@ export function CheckoutCliente() {
               <input type="radio" name="metodo" checked={metodo === 'cartao'} onChange={() => setMetodo('cartao')} className="mt-1 accent-magenta" />
               <span className="text-sm"><b className="flex items-center gap-1"><CreditCard className="h-4 w-4" aria-hidden />Cartão · 2x de {total != null ? brl(total / 2) : '...'} sem juros</b>Pagamento seguro pelo Mercado Pago, com opção de mais parcelas com juros.</span>
             </label>
+            {precisaArquivo && (
+              <div className="rounded-lg border-2 border-dashed border-black/20 p-4">
+                <p className="text-sm font-black">Anexe o arquivo da arte (somente PDF)</p>
+                <p className="mt-1 text-xs text-black/60">{arte === 'conferencia' ? 'Nossa equipe confere sangria, margens, cores e resolução antes de imprimir.' : 'PDF em alta qualidade: 300 dpi, com sangria de 3 mm, textos convertidos em curva e cores em CMYK.'} Até 50 MB.</p>
+                <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-papel px-3 text-sm font-semibold hover:bg-black/5">
+                  <Upload className="h-4 w-4" aria-hidden />{arquivoOk ? 'PDF enviado' : arquivo ? 'Trocar arquivo' : 'Escolher PDF'}
+                  <input type="file" accept="application/pdf,.pdf" disabled={arquivoOk} onChange={(e) => void escolherArquivo(e.target.files?.[0] ?? null)} className="sr-only" />
+                </label>
+                {arquivo && <p className="mt-2 text-xs text-black/70" aria-live="polite">{arquivo.name} ({(arquivo.size / 1024 / 1024).toFixed(1)} MB){arquivoOk ? ' · enviado com sucesso' : ''}</p>}
+              </div>
+            )}
             {erro && <p role="alert" className="rounded-lg bg-magenta/10 p-2 text-sm">{erro}</p>}
             <div className="flex gap-3">
               <button onClick={() => { setErro(''); setEtapa(2) }} disabled={enviando || !!pedido} className="h-12 rounded-lg border border-black/20 px-5 font-semibold disabled:opacity-50">Voltar</button>
@@ -309,7 +355,7 @@ export function CheckoutCliente() {
           <div className="flex justify-between text-sm"><span>Arte</span><span>{calc ? (calc.arte.valor ? brl(calc.arte.valor) : 'grátis') : '...'}</span></div>
           <div className="flex justify-between text-sm"><span>Entrega</span><span>{tipoEntrega === 'retirada' ? 'retirada grátis' : tipoEntrega === 'envio' ? (opcaoEnvio ? brl(opcaoEnvio.valor) : 'escolha o envio') : frete?.frete_gratis ? 'grátis' : frete ? 'combinada no WhatsApp' : 'informe o CEP'}</span></div>
           <div className="flex items-end justify-between border-t border-white/15 pt-3"><span className="text-sm">Total no Pix</span><span className="text-3xl font-black">{total != null ? brl(total) : '...'}</span></div>
-          {calc?.prazo && <p className="text-xs text-white/80">Fica pronto <b>{calc.prazo.data_pronto_texto}</b> se pagar e liberar a arte até 10h30 de hoje (dia útil).</p>}
+          {calc?.prazo && <p className="text-xs text-white/80">Fica pronto <b>{calc.prazo.data_pronto_texto}</b> se o pagamento for confirmado até 10h30 de hoje (dia útil).</p>}
         </div>
         <SelosSeguranca escuro={false} />
         <Link href="/carrinho" className="block text-center text-sm underline underline-offset-2">Voltar ao carrinho</Link>

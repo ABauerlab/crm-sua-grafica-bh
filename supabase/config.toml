@@ -87,3 +87,7 @@ verify_jwt = false
 
 [functions.loja-frete]
 verify_jwt = false
+
+# Upload do PDF da arte no checkout do site: público; valida a assinatura do PDF e o pedido do site
+[functions.loja-arquivo]
+verify_jwt = false

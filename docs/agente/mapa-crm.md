@@ -271,3 +271,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 ## Fase 12 (10/11/2026)
 - Tabelas (só servidor): `loja_verticais`, `loja_taxonomia`, `loja_subcategorias`, `loja_facetas_def`, `loja_sinonimos`; `private.loja_atributos` (tabela, atualizada por `private.loja_atributos_atualizar`, cron `loja-atributos` a cada 15 min) e `private.loja_atributos_v` (view de origem).
 - Funções públicas: `loja_arvore`, `loja_facetas`, `loja_modelos_f`, `loja_interpretar_busca`. Rotas da loja: `/api/v1/taxonomia`, `/api/v1/facetas`, `/api/v1/modelos`. Componentes: `Filtros.tsx`, `MenuLateral.tsx` (por verticais), `Header.tsx` (mega menu). `lib/departamentos.ts` foi removido.
+
+## Fase 13 (10/11/2026)
+- Banco: `loja_desagrupar` (+ gatilho `zz_loja_desagrupar` em `ecommerce_products`), `private.loja_familias` (+ view `_v`), `private.loja_facetas_cache`; funções `loja_familia`, `loja_facetas_home`; `loja_modelos_f`, `loja_facetas` e `loja_arvore` reescritas. Crons `loja-atributos` e `loja-facetas-home`.
+- Edge Function `loja-arquivo` (PDF da arte no checkout; grava em `order-files` e `order_files`, art_status `enviada`). Loja: `/opcao/[familia]`, `BarraLateral`, `ListaModelos`; `lib/departamentos.ts` e a paginação saíram.

@@ -63,7 +63,7 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
               : <div className="flex aspect-square items-center justify-center text-black/25"><ImageOff className="h-16 w-16" aria-hidden /></div>}
           </div>
           <ul className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-            {[[Clock, 'Corte às 10h30 em dia útil'], [Truck, 'Entrega em BH e no Brasil'], [Palette, 'Arte pronta, conferida ou criada'], [ShieldCheck, 'Pagamento pelo Mercado Pago']].map(([I, t]) => {
+            {[[Clock, 'Pago até 10h30, produz no mesmo dia'], [Truck, 'Entrega em BH e no Brasil'], [Palette, 'Arte pronta, conferida ou criada'], [ShieldCheck, 'Pagamento pelo Mercado Pago']].map(([I, t]) => {
               const Icone = I as typeof Clock
               return <li key={t as string} className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-sm"><Icone className="h-5 w-5 shrink-0 text-magenta" aria-hidden />{t as string}</li>
             })}
@@ -95,14 +95,14 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
             </dl>) },
           { id: 'arquivo', titulo: 'Arquivo e arte', conteudo: (
             <div className="space-y-2">
-              <p>Formatos aceitos: PDF (de preferência PDF/X-1a), CDR, AI, PNG ou JPG em alta resolução (300 DPI), cores em CMYK.</p>
+              <p>Aceitamos somente PDF em alta qualidade (de preferência PDF/X-1a): 300 DPI, sangria de 3 mm, textos em curva e cores em CMYK. Você anexa o arquivo no checkout.</p>
               {f.arte_com_sangria && <p>Monte a arte em <b>{f.arte_com_sangria}</b> (com 3 mm de sangria) para o tamanho final de <b>{f.tamanho_final ?? p.formato}</b>, e mantenha textos a pelo menos 3 mm da borda.</p>}
               <p>Não tem certeza se está tudo certo? Escolha a <b>Conferência e ajuste técnico (R$ 14,90)</b>. Sem arte? A <b>Criação completa (R$ 39,90)</b> resolve.</p>
               <p>A arte é enviada depois do pagamento, pelo WhatsApp, e você aprova a prova antes da produção.</p>
             </div>) },
           { id: 'entrega', titulo: 'Prazo e entrega', conteudo: (
             <div className="space-y-2">
-              <p>Pagando e liberando a arte até <b>10h30 de dia útil</b>, a produção começa no mesmo dia. Depois disso, entra na fila do próximo dia útil.</p>
+              <p>Pedidos pagos até <b>10h30 de dia útil</b> começam a ser produzidos no mesmo dia. Depois disso, entram na fila do próximo dia útil.</p>
               <p>Retirada grátis e agendada no balcão da Praça Sete ({SITE.endereco.rua}). Entrega grátis na região central de BH e envio para todo o Brasil.</p>
             </div>) },
         ]} />

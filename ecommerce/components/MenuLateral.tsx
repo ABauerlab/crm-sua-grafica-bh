@@ -3,8 +3,8 @@ import { ChevronDown } from 'lucide-react'
 import type { Vertical } from '@/lib/vitrine'
 
 /** Menu lateral por vertical > categoria > subcategoria (abre com <details>, sem JavaScript). No celular vira uma barra que expande. */
-export function MenuLateral({ verticais, atual, subAtual }: { verticais: Vertical[]; atual?: string; subAtual?: string }) {
-  const lista = (
+export function ListaMenu({ verticais, atual, subAtual }: { verticais: Vertical[]; atual?: string; subAtual?: string }) {
+  return (
     <ul className="space-y-1">
       {verticais.map((v) => {
         const aberto = v.categorias.some((c) => c.slug === atual)
@@ -35,6 +35,10 @@ export function MenuLateral({ verticais, atual, subAtual }: { verticais: Vertica
       })}
     </ul>
   )
+}
+
+export function MenuLateral({ verticais, atual, subAtual }: { verticais: Vertical[]; atual?: string; subAtual?: string }) {
+  const lista = <ListaMenu verticais={verticais} atual={atual} subAtual={subAtual} />
   return (
     <>
       <aside className="hidden w-64 shrink-0 lg:block" aria-label="Departamentos">

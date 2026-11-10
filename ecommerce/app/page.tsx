@@ -1,16 +1,17 @@
 import Link from 'next/link'
 import { ArrowRight, BadgePercent, Clock, CreditCard, MapPin, Truck } from 'lucide-react'
 import { HeroSlider, type Slide } from '@/components/HeroSlider'
+import { BarraLateral } from '@/components/BarraLateral'
 import { ModeloCard } from '@/components/ModeloCard'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { ProdutoCard } from '@/components/ProdutoCard'
 import { SITE, linkWhatsApp } from '@/lib/site'
-import { buscar, fotoUrl, modelos, type ProdutoResumo } from '@/lib/vitrine'
+import { arvore, buscar, facetasHome, fotoUrl, modelos, type ProdutoResumo } from '@/lib/vitrine'
 
 export const revalidate = 3600
 
 const VANTAGENS = [
-  { icone: Clock, titulo: 'Produção rápida', texto: 'Pedido pago e arte liberada até 10h30 entra na produção no mesmo dia útil.' },
+  { icone: Clock, titulo: 'Produção rápida', texto: 'Pedidos pagos até 10h30 (dia útil) começam a ser produzidos no mesmo dia.' },
   { icone: CreditCard, titulo: 'Pix ou 2x sem juros', texto: 'Pix com liberação imediata ou cartão em até 2x sem juros pelo Mercado Pago.' },
   { icone: Truck, titulo: 'Entrega em BH e no Brasil', texto: 'Frete grátis na região central de BH e envio para todo o país.' },
   { icone: BadgePercent, titulo: 'Cobrimos orçamento', texto: 'Tem proposta menor de outra gráfica para o mesmo produto? Mande que a gente avalia.' },
@@ -35,47 +36,51 @@ const DEPARTAMENTOS = [
 ]
 
 export default async function Home() {
-  const [vendidos, ...vitrines] = await Promise.all([maisVendidos(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 4 }))])
+  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 4 }))])
   const foto = (i: number) => fotoUrl(vitrines[i]?.modelos.find((m) => m.foto)?.foto)
   const slides: Slide[] = [
-    { titulo: 'Impressos rápidos com corte às 10h30 e frete grátis na região central de BH', texto: 'Pagou e liberou a arte até 10h30 em dia útil? A produção começa no mesmo dia.', href: '/categoria/cartoes-de-visita', botao: 'Ver cartões de visita', foto: foto(0), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
+    { titulo: 'Pedidos pagos até 10h30 começam a ser produzidos no mesmo dia', texto: 'Pagamento confirmado até 10h30 em dia útil e a produção começa hoje. Frete grátis na região central de BH.', href: '/categoria/cartoes-de-visita', botao: 'Ver cartões de visita', foto: foto(0), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
     { titulo: 'Kits comerciais para lojas com parcelamento em até 2x sem juros', texto: 'Cartões, sacolas, etiquetas e adesivos para a sua loja. Pix na hora ou 2x sem juros no cartão.', href: '/categoria/sacolas-e-sacos', botao: 'Montar o kit da minha loja', foto: foto(4), fundo: 'bg-magenta', destaque: 'bg-white text-tinta hover:bg-papel' },
     { titulo: 'Cobrimos qualquer orçamento comprovado da concorrência', texto: 'Achou mais barato em outra gráfica para o mesmo produto? Mande o orçamento e a gente avalia.', href: '/ajuda#orcamento', botao: 'Enviar orçamento para cobrir', foto: foto(2), fundo: 'bg-ciano', destaque: 'bg-tinta text-white hover:bg-black' },
     { titulo: 'Retirada física agendada no Edifício Helena Passig, na Praça Sete', texto: 'Retire seus materiais prontos no centro de BH, com hora marcada. Sem pagar frete.', href: '/categorias', botao: 'Escolher meus produtos', foto: foto(1), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
   ]
   return (
     <>
-      <HeroSlider slides={slides} />
 
-      <section aria-label="Vantagens" className="relative z-10 mx-auto -mt-8 max-w-7xl px-4">
-        <ul className="grid gap-3 rounded-xl2 bg-white p-4 shadow-lg sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4 pt-6 lg:flex lg:gap-6">
+      <BarraLateral verticais={verticais} facetas={f.facetas} filtros={{}} base="/categorias" ordem="relevancia" />
+      <div className="min-w-0 flex-1">
+      <HeroSlider slides={slides} compacto />
+      <section aria-label="Vantagens" className="mt-4">
+        <ul className="grid gap-3 rounded-xl2 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
           {VANTAGENS.map(({ icone: I, titulo, texto }) => (
             <li key={titulo} className="flex gap-3 p-2"><I className="mt-0.5 h-6 w-6 shrink-0 text-magenta" aria-hidden /><span><b className="block text-sm">{titulo}</b><span className="text-xs text-black/60">{texto}</span></span></li>
           ))}
         </ul>
       </section>
-
       {DEPARTAMENTOS.map((d, i) => vitrines[i].modelos.length > 0 && (
-        <section key={d.slug} className="mx-auto max-w-7xl px-4 pt-12">
+        <section key={d.slug} className="pb-2 pt-4">
           <div className="mb-4 flex items-end justify-between gap-4">
             <h2 className="text-2xl font-black md:text-3xl">{d.titulo}</h2>
             <Link href={`/categoria/${d.slug}`} className="text-sm font-semibold text-magenta hover:underline">Ver todos os modelos</Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{vitrines[i].modelos.map((m) => <ModeloCard key={m.produto_slug} m={m} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{vitrines[i].modelos.map((m) => <ModeloCard key={m.produto_slug} m={m} />)}</div>
         </section>
       ))}
 
       {vendidos.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pt-14">
+        <section className="pt-10">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div><h2 className="text-2xl font-black md:text-3xl">Mais vendidos</h2><p className="text-sm text-black/60">Os produtos mais pedidos pelos nossos clientes.</p></div>
             <Link href="/categorias" className="text-sm font-semibold text-magenta hover:underline">Ver todos</Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{vendidos.map((p) => <ProdutoCard key={p.produto_slug} p={p} />)}</div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{vendidos.map((p) => <ProdutoCard key={p.produto_slug} p={p} />)}</div>
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 pt-10"><CobrimosBanner /></section>
+      <section className="pt-10"><CobrimosBanner /></section>
+      </div>
+      </div>
 
       <section className="mx-auto max-w-7xl px-4 pt-14">
         <div className="grid overflow-hidden rounded-xl2 bg-white shadow-sm md:grid-cols-2">

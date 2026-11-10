@@ -92,7 +92,7 @@ export function CarrinhoCliente() {
           <div className="flex justify-between text-sm"><span>Entrega</span><span className="text-white/70">no próximo passo</span></div>
           <div className="flex items-end justify-between border-t border-white/15 pt-3"><span className="text-sm">Total no Pix</span><span className="text-3xl font-black">{calc ? brl(Number(calc.total)) : '...'}</span></div>
           {calc && <p className="text-right text-xs text-white/70">ou 2x de {brl(Number(calc.pagamento.parcela_sem_juros))} sem juros no cartão</p>}
-          {calc?.prazo && <p className="text-xs text-white/80">Fica pronto <b>{calc.prazo.data_pronto_texto}</b> se pagar e liberar a arte até 10h30 de hoje (dia útil).</p>}
+          {calc?.prazo && <p className="text-xs text-white/80">Fica pronto <b>{calc.prazo.data_pronto_texto}</b> se o pagamento for confirmado até 10h30 de hoje (dia útil).</p>}
           <Link href="/checkout" aria-disabled={!calc} className={`flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-amarelo font-bold text-tinta hover:bg-amarelo-escuro ${calc ? '' : 'pointer-events-none opacity-60'}`}>
             <Lock className="h-4 w-4" aria-hidden />Continuar para a finalização
           </Link>

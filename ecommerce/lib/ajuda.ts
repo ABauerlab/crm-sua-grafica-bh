@@ -10,7 +10,7 @@ export const AJUDA: CategoriaAjuda[] = [
   {
     id: 'arquivos', titulo: 'Envio e preparação de arquivos', resumo: 'Formatos, gabaritos, conferência e criação de arte.',
     perguntas: [
-      { p: 'Quais formatos de arquivo vocês aceitam?', r: 'O ideal é PDF em alta resolução (PDF/X-1a, se o seu programa tiver essa opção). Também aceitamos AI, CDR, PSD, JPG e PNG, desde que em 300 dpi e no tamanho final da peça.' },
+      { p: 'Quais formatos de arquivo vocês aceitam?', r: 'Aceitamos somente PDF em alta qualidade (PDF/X-1a, se o seu programa tiver essa opção): 300 dpi, no tamanho final da peça, com sangria de 3 mm, textos em curva e cores em CMYK. Você anexa o PDF no checkout, antes do pagamento.' },
       { p: 'Como preparar a arte para impressão?', r: 'Use cores em CMYK, resolução de 300 dpi, sangria de 3 mm em cada lado, margem de segurança de 3 a 5 mm para textos e logos e fontes convertidas em curvas. Assim nada fica cortado e as cores saem como o esperado.' },
       { p: 'Vocês têm gabarito dos produtos?', r: 'Sim. Peça o gabarito do produto e da medida escolhida pelo WhatsApp que a gente envia na hora, com as áreas de sangria, corte e segurança marcadas.' },
       { p: 'O que é a conferência e ajuste técnico de R$ 14,90?', r: 'Nossa equipe confere sangria, margem de segurança, cores para impressão, resolução e fontes, faz os ajustes técnicos necessários e te manda para aprovar antes de imprimir. Não muda o seu design.' },
@@ -19,9 +19,9 @@ export const AJUDA: CategoriaAjuda[] = [
     ],
   },
   {
-    id: 'prazos', titulo: 'Prazos de produção', resumo: 'Corte das 10h30, contagem em dias úteis e criação de arte.',
+    id: 'prazos', titulo: 'Prazos de produção', resumo: 'Pago até 10h30 produz no mesmo dia, contagem em dias úteis e criação de arte.',
     perguntas: [
-      { p: 'Quando o prazo começa a contar?', r: 'O prazo de produção começa quando o pagamento está confirmado e a arte está aprovada. Pedido pago e com arte liberada até 10h30 de um dia útil entra na produção no mesmo dia; depois disso, entra no próximo dia útil.' },
+      { p: 'Quando o prazo começa a contar?', r: 'O prazo de produção começa quando o pagamento está confirmado. Pedidos pagos até 10h30 de um dia útil começam a ser produzidos no mesmo dia; depois disso, entram no próximo dia útil.' },
       { p: 'O prazo conta sábado, domingo e feriado?', r: 'Não. Todos os prazos são em dias úteis (segunda a sexta, fora feriados).' },
       { p: 'O prazo inclui a entrega?', r: 'O prazo mostrado no produto é de produção. Para entrega em BH, considere mais 1 dia útil de logística. Para outras cidades, o prazo da transportadora aparece no pedido.' },
       { p: 'Preciso com urgência. Dá para adiantar?', r: 'Chama a gente no WhatsApp antes de fechar o pedido. Vemos a fila de produção e te falamos com sinceridade o que dá para fazer.' },
