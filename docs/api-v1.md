@@ -74,3 +74,6 @@ Organização para consulta: **vertical > categoria > subcategoria** (as subcate
 
 ## Para o n8n e a Laura
 A Laura continua usando as mesmas funções do banco pelas ferramentas que já existem; os números batem com o site porque a fonte é a mesma. Se um fluxo externo precisar cotar por HTTP, use as rotas acima.
+
+## Famílias e tamanhos (Fase 13)
+`/api/v1/modelos` devolve uma OPÇÃO por item (`familia`, `titulo`, `tags`, `tamanhos`, `quantidade`, `a_partir_de`), não um item por tamanho. Banco: `loja_familia(p_familia)` devolve `{ titulo, categoria, subcategoria, tags, tamanhos: [{ produto_slug, tamanho, impressao, a_partir_de, quantidade, prazo_dias_uteis, ref }] }`; cada tamanho aponta para `/api/v1/products/{ref}` e `/produto/[slug]`. `loja_arvore` traz foto e contagem de opções por subcategoria. `loja_facetas_home()` é a versão pré-calculada das facetas da loja inteira.

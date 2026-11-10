@@ -4,9 +4,10 @@ import { FACETAS, ORDENS, hrefFiltros } from '@/lib/filtros'
 import type { Facetas, Filtros } from '@/lib/vitrine'
 
 /** Barra de filtros facetados com contadores e chips dos filtros ativos. Links simples (sem JavaScript); no celular vira gaveta. */
-export function FiltrosLaterais({ base, facetas, filtros, q, ordem }: { base: string; facetas: Facetas; filtros: Filtros; q?: string; ordem: string }) {
-  const ativos = FACETAS.flatMap((f) => (filtros[f.id] ?? []).map((v) => ({ faceta: f.id, valor: v, rotulo: facetas[f.id]?.find((i) => i.valor === v)?.rotulo ?? v })))
-  const painel = (
+type PropsF = { base: string; facetas: Facetas; filtros: Filtros; q?: string; ordem: string }
+
+export function PainelFiltros({ base, facetas, filtros, q, ordem }: PropsF) {
+  return (
     <div className="space-y-1">
       {FACETAS.map((f) => {
         const itens = facetas[f.id] ?? []
@@ -36,6 +37,11 @@ export function FiltrosLaterais({ base, facetas, filtros, q, ordem }: { base: st
       })}
     </div>
   )
+}
+
+export function FiltrosLaterais({ base, facetas, filtros, q, ordem }: PropsF) {
+  const ativos = FACETAS.flatMap((f) => (filtros[f.id] ?? []).map((v) => ({ faceta: f.id, valor: v })))
+  const painel = <PainelFiltros base={base} facetas={facetas} filtros={filtros} q={q} ordem={ordem} />
   return (
     <>
       <details className="mb-4 rounded-xl2 bg-white shadow-sm lg:hidden">

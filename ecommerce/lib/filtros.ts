@@ -37,10 +37,11 @@ export function hrefFiltros(base: string, f: Filtros, extra: { q?: string; ordem
     novo[mudar.faceta] = atual.includes(mudar.valor) ? atual.filter((x) => x !== mudar.valor) : unica ? [mudar.valor] : [...atual, mudar.valor]
     if (!novo[mudar.faceta]!.length) delete novo[mudar.faceta]
   }
-  const q = new URLSearchParams()
+  const [caminho, fixo] = base.split('?')
+  const q = new URLSearchParams(fixo ?? '')
   if (extra.q) q.set('q', extra.q)
   if (extra.ordem && extra.ordem !== 'relevancia') q.set('ordem', extra.ordem)
   for (const [k, v] of Object.entries(novo)) if (v?.length) q.set(k, v.join(','))
   const s = q.toString()
-  return s ? `${base}?${s}` : base
+  return s ? `${caminho}?${s}` : caminho
 }

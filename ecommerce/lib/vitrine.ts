@@ -6,7 +6,8 @@ export interface Opcao { ref: string; sku?: string | null; quantidade: number | 
 export interface Modelo {
   titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
   parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number
-  subcategoria?: string | null; prazo_dias_uteis?: number | null; acab?: string[] | null
+  subcategoria?: string | null; sub?: string | null; prazo_dias_uteis?: number | null; acab?: string[] | null
+  familia?: string; tags?: string[] | null; tamanhos?: number
 }
 export interface ProdutoResumo {
   produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
@@ -73,15 +74,11 @@ export async function slugs() {
 
 /** Modelos comerciais (papel/acabamento) com foto real, SKU e preço "a partir de". Substitui os antigos cartões de contagem. */
 export async function modelos(categoriasSlug: string[] | null, opts: { termo?: string | null; limite?: number; pagina?: number } = {}) {
-  const limite = opts.limite ?? 24
-  const r = await rpc<{ total: number; modelos: Modelo[] }>('loja_modelos', {
-    p_categorias: categoriasSlug, p_termo: opts.termo ?? null, p_limite: limite, p_offset: ((opts.pagina ?? 1) - 1) * limite,
-  }, 900)
-  return { total: r?.total ?? 0, modelos: (r?.modelos ?? []).map((m) => ({ ...m, categoria: nomeBonito(m.categoria), a_partir_de: Number(m.a_partir_de), parcela_2x_a_partir_de: Number(m.parcela_2x_a_partir_de) })) }
+  return modelosFiltrados(categoriasSlug, opts)
 }
 
 // ---- Fase 12: taxonomia, filtros facetados e busca por sinônimos ----
-export interface Subcategoria { slug: string; nome: string; modelos: number }
+export interface Subcategoria { slug: string; nome: string; modelos: number; foto?: string | null }
 export interface CategoriaArvore { slug: string; nome: string; produtos: number; modelos: number; a_partir_de: number; foto: string | null; subcategorias: Subcategoria[] }
 export interface Vertical { id: string; nome: string; descricao: string | null; modelos: number; categorias: CategoriaArvore[] }
 export type Filtros = Partial<Record<'sub' | 'tipo' | 'material' | 'gram' | 'acab' | 'formato' | 'prazo' | 'preco', string[]>>
@@ -105,6 +102,12 @@ export async function facetas(categoriasSlug: string[] | null, termo: string | n
   return { total: r?.total ?? 0, facetas: r?.facetas ?? {} }
 }
 
+/** Facetas da loja inteira (pré-calculadas no banco; usadas na home). */
+export async function facetasHome() {
+  const r = await rpc<{ total: number; facetas: Facetas }>('loja_facetas_home', {}, 900)
+  return { total: r?.total ?? 0, facetas: r?.facetas ?? {} }
+}
+
 export async function modelosFiltrados(categoriasSlug: string[] | null, opts: { termo?: string | null; filtros?: Filtros; ordem?: string; limite?: number; pagina?: number } = {}) {
   const limite = opts.limite ?? 24
   const r = await rpc<{ total: number; modelos: Modelo[] }>('loja_modelos_f', {
@@ -119,3 +122,16 @@ export async function interpretarBusca(termo: string): Promise<{ termo: string |
   const r = await rpc<{ termo: string | null; filtros: Filtros }>('loja_interpretar_busca', { p_termo: termo }, 3600)
   return r ?? { termo, filtros: {} }
 }
+
+export interface FamiliaTamanho { produto_slug: string; tamanho: string; impressao: string | null; a_partir_de: number; quantidade: number | null; prazo_dias_uteis: number | null; ref: string }
+export interface Familia { familia: string; titulo: string; categoria: string; categoria_slug: string; subcategoria: string | null; sub: string | null; foto: string | null; tags: string[] | null; tamanhos: FamiliaTamanho[] }
+
+/** Uma opção (ex.: "Banners Front Light 240g") com a lista de tamanhos disponíveis. */
+export async function familia(id: string): Promise<Familia | null> {
+  if (!/^[a-f0-9]{32}$/.test(id)) return null
+  const r = await rpc<Familia | null>('loja_familia', { p_familia: id }, 900)
+  return r ? { ...r, categoria: nomeBonito(r.categoria), tamanhos: r.tamanhos.map((t) => ({ ...t, a_partir_de: Number(t.a_partir_de) })).sort((a, b) => Number(/metro/i.test(a.tamanho)) - Number(/metro/i.test(b.tamanho))) } : null
+}
+
+/** Texto do card sem espaços duplos nem pontas soltas. */
+export const limparTitulo = (t: string) => t.replace(/\s+/g, ' ').replace(/^[\s,.-]+|[\s,.-]+$/g, '')

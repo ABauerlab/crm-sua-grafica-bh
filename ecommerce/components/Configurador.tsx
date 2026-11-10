@@ -16,8 +16,8 @@ interface Cotacao {
 }
 
 const ARTES: { id: Arte; titulo: string; texto: string; valor: string }[] = [
-  { id: 'pronta', titulo: 'Já tenho a arte pronta', texto: 'Você envia o arquivo (PDF, CDR, AI, PNG ou JPG) depois do pagamento.', valor: 'Grátis' },
-  { id: 'conferencia', titulo: 'Conferência e ajuste técnico', texto: 'Conferimos sangria de 3 mm, margem de segurança, cores para impressão, resolução e fechamos o PDF certinho.', valor: '+ R$ 14,90' },
+  { id: 'pronta', titulo: 'Já tenho a arte pronta', texto: 'Você anexa o PDF em alta qualidade no checkout. Só aceitamos PDF.', valor: 'Grátis' },
+  { id: 'conferencia', titulo: 'Conferência e ajuste técnico', texto: 'Você anexa o PDF no checkout e a gente confere sangria de 3 mm, margem de segurança, cores e resolução antes de imprimir.', valor: '+ R$ 14,90' },
   { id: 'criacao', titulo: 'Criação completa da arte', texto: 'Nossa equipe cria do zero com as suas informações. Acrescenta 1 dia útil ao prazo.', valor: '+ R$ 39,90' },
 ]
 
@@ -137,7 +137,7 @@ export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato 
         </div>
         {cot?.prazo?.ok && (
           <p className="mt-3 flex items-start gap-2 text-sm text-white/85"><CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-amarelo" aria-hidden />
-            <span>Fica pronto <b>{cot.prazo.data_pronto_texto}</b> se pagar e liberar a arte até 10h30 de hoje (dia útil).</span></p>
+            <span>Fica pronto <b>{cot.prazo.data_pronto_texto}</b> se o pagamento for confirmado até 10h30 de hoje (dia útil).</span></p>
         )}
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <button type="button" onClick={() => acao('comprar')} className="flex h-12 items-center justify-center gap-2 rounded-lg bg-amarelo font-bold text-tinta hover:bg-amarelo-escuro">
