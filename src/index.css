@@ -59,6 +59,10 @@
   h1, h2, h3 { letter-spacing: -0.01em; }
   .tabular { font-variant-numeric: tabular-nums; }
   :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+  /* iPhone dá zoom ao focar campo com fonte menor que 16px: no celular todo campo fica com 16px */
+  @media (max-width: 767px) {
+    input:not([type='checkbox']):not([type='radio']), select, textarea { font-size: 16px !important; }
+  }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }

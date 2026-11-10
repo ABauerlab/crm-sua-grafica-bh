@@ -217,7 +217,7 @@ export default function Kanban() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-5">
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-5 md:gap-x-4 md:gap-y-3 md:px-0 [&>*]:shrink-0 [&>*]:basis-40 md:[&>*]:basis-auto">
           <Kpi label="Faturamento" value={formatBRL(revenue)} hint={`${paid.length} pedido(s) pago(s)`} />
           <Kpi label="Lucro líquido" value={formatBRL(profit)} hint={revenue > 0 ? `${formatPct((profit / revenue) * 100)} de margem` : undefined} />
           <Kpi label="Ticket médio" value={formatBRL(paid.length ? revenue / paid.length : 0)} />
