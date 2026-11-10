@@ -6,6 +6,7 @@ export interface Opcao { ref: string; sku?: string | null; quantidade: number | 
 export interface Modelo {
   titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
   parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number
+  subcategoria?: string | null; prazo_dias_uteis?: number | null; acab?: string[] | null
 }
 export interface ProdutoResumo {
   produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
@@ -77,4 +78,44 @@ export async function modelos(categoriasSlug: string[] | null, opts: { termo?: s
     p_categorias: categoriasSlug, p_termo: opts.termo ?? null, p_limite: limite, p_offset: ((opts.pagina ?? 1) - 1) * limite,
   }, 900)
   return { total: r?.total ?? 0, modelos: (r?.modelos ?? []).map((m) => ({ ...m, categoria: nomeBonito(m.categoria), a_partir_de: Number(m.a_partir_de), parcela_2x_a_partir_de: Number(m.parcela_2x_a_partir_de) })) }
+}
+
+// ---- Fase 12: taxonomia, filtros facetados e busca por sinônimos ----
+export interface Subcategoria { slug: string; nome: string; modelos: number }
+export interface CategoriaArvore { slug: string; nome: string; produtos: number; modelos: number; a_partir_de: number; foto: string | null; subcategorias: Subcategoria[] }
+export interface Vertical { id: string; nome: string; descricao: string | null; modelos: number; categorias: CategoriaArvore[] }
+export type Filtros = Partial<Record<'sub' | 'tipo' | 'material' | 'gram' | 'acab' | 'formato' | 'prazo' | 'preco', string[]>>
+export interface ItemFaceta { valor: string; rotulo: string; n: number }
+export type Facetas = Partial<Record<keyof Filtros, ItemFaceta[]>>
+
+export async function arvore(): Promise<Vertical[]> {
+  const r = await rpc<{ verticais: Vertical[] }>('loja_arvore', {}, 3600)
+  return (r?.verticais ?? []).map((v) => ({ ...v, categorias: v.categorias.map((c) => ({ ...c, nome: nomeBonito(c.nome), a_partir_de: Number(c.a_partir_de) })) }))
+}
+
+/** O banco espera {"sub": "slug", ...listas}; "sub" é um valor só. */
+function paraBanco(f: Filtros) {
+  const o: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(f)) if (v?.length) o[k] = k === 'sub' ? v[0] : v
+  return o
+}
+
+export async function facetas(categoriasSlug: string[] | null, termo: string | null, f: Filtros = {}) {
+  const r = await rpc<{ total: number; facetas: Facetas }>('loja_facetas', { p_categorias: categoriasSlug, p_termo: termo, p_filtros: paraBanco(f) }, 900)
+  return { total: r?.total ?? 0, facetas: r?.facetas ?? {} }
+}
+
+export async function modelosFiltrados(categoriasSlug: string[] | null, opts: { termo?: string | null; filtros?: Filtros; ordem?: string; limite?: number; pagina?: number } = {}) {
+  const limite = opts.limite ?? 24
+  const r = await rpc<{ total: number; modelos: Modelo[] }>('loja_modelos_f', {
+    p_categorias: categoriasSlug, p_termo: opts.termo ?? null, p_filtros: paraBanco(opts.filtros ?? {}), p_ordem: opts.ordem ?? 'relevancia',
+    p_limite: limite, p_offset: ((opts.pagina ?? 1) - 1) * limite,
+  }, 900)
+  return { total: r?.total ?? 0, modelos: (r?.modelos ?? []).map((m) => ({ ...m, categoria: nomeBonito(m.categoria), a_partir_de: Number(m.a_partir_de), parcela_2x_a_partir_de: Number(m.parcela_2x_a_partir_de) })) }
+}
+
+/** "papel grosso aveludado" -> { termo: null, filtros: { gram: ['encorpado'], acab: ['soft-touch'] } } */
+export async function interpretarBusca(termo: string): Promise<{ termo: string | null; filtros: Filtros }> {
+  const r = await rpc<{ termo: string | null; filtros: Filtros }>('loja_interpretar_busca', { p_termo: termo }, 3600)
+  return r ?? { termo, filtros: {} }
 }

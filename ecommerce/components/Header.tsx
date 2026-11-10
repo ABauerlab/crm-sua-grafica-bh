@@ -3,19 +3,13 @@ import { FileText, MessageCircle, Search } from 'lucide-react'
 import { Logo } from './Logo'
 import { CarrinhoIcone } from './CarrinhoIcone'
 import { MENSAGENS_WHATSAPP, linkWhatsApp, SITE } from '@/lib/site'
+import { arvore } from '@/lib/vitrine'
 
-const MENU = [
-  ['Cartões de Visita', '/categoria/cartoes-de-visita'],
-  ['Panfletos', '/categoria/panfletos-flyers-e-folhetos'],
-  ['Adesivos', '/categoria/adesivos'],
-  ['Banners e Lonas', '/categoria/banners-faixas-lonas-e-tecidos'],
-  ['Embalagens', '/categoria/caixas-e-embalagens'],
-  ['Sacolas', '/categoria/sacolas-e-sacos'],
-  ['Canecas', '/categoria/caneca-copos-e-tacas'],
-  ['Placas', '/categoria/placas'],
-] as const
+const CURTO: Record<string, string> = { papelaria: 'Papelaria', embalagens: 'Embalagens', rotulos: 'Rótulos e Tags', editorial: 'Editorial', visual: 'Comunicação Visual', brindes: 'Brindes', festas: 'Festas e Delivery' }
 
-export function Header() {
+export async function Header() {
+  const verticais = (await arvore()).filter((v) => v.id !== 'mostruario')
+  const mostruario = (await arvore()).find((v) => v.id === 'mostruario')?.categorias[0]
   return (
     <header className="sticky top-0 z-40 bg-tinta text-white">
       <div className="hidden border-b border-white/10 text-xs text-white/70 md:block">
@@ -43,10 +37,23 @@ export function Header() {
       <form action="/busca" className="px-4 pb-3 md:hidden" role="search">
         <input name="q" placeholder="O que você quer imprimir hoje?" aria-label="Buscar produto" className="h-10 w-full rounded-lg bg-white px-3 text-sm text-tinta outline-none ring-amarelo focus:ring-2" />
       </form>
-      <nav aria-label="Categorias" className="border-t border-white/10">
-        <ul className="mx-auto flex max-w-7xl gap-5 overflow-x-auto px-4 py-2 text-sm text-white/85 [scrollbar-width:none]">
-          <li className="whitespace-nowrap"><Link href="/categorias" className="font-semibold text-white">Todos os produtos</Link></li>
-          {MENU.map(([nome, href]) => <li key={nome} className="whitespace-nowrap"><Link href={href} className="hover:text-amarelo">{nome}</Link></li>)}
+      <nav aria-label="Departamentos" className="border-t border-white/10">
+        <ul className="relative mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 text-sm text-white/85 [scrollbar-width:none] lg:overflow-visible">
+          <li className="whitespace-nowrap"><Link href="/categorias" className="flex min-h-11 items-center px-2 font-semibold text-white">Todos os produtos</Link></li>
+          {verticais.map((v) => (
+            <li key={v.id} className="group whitespace-nowrap">
+              <Link href={`/categorias?vertical=${v.id}`} className="flex min-h-11 items-center px-2 hover:text-amarelo">{CURTO[v.id] ?? v.nome}</Link>
+              <div className="invisible absolute left-4 top-full z-50 w-[min(44rem,90vw)] rounded-b-xl2 bg-white p-4 text-tinta opacity-0 shadow-xl transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100 max-lg:hidden">
+                <p className="text-sm font-black">{v.nome}</p><p className="mb-3 text-xs text-black/55">{v.descricao}</p>
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-0.5 whitespace-normal">
+                  {v.categorias.slice(0, 16).map((c) => <li key={c.slug}><Link href={`/categoria/${c.slug}`} className="flex min-h-9 items-center justify-between rounded px-2 text-sm hover:bg-papel hover:text-magenta">{c.nome}<span className="text-xs text-black/40">{c.modelos}</span></Link></li>)}
+                </ul>
+                <Link href={`/categorias?vertical=${v.id}`} className="mt-3 inline-block text-xs font-bold text-magenta underline">Ver tudo em {CURTO[v.id] ?? v.nome}</Link>
+              </div>
+            </li>
+          ))}
+          {mostruario && <li className="whitespace-nowrap"><Link href={`/categoria/${mostruario.slug}`} className="flex min-h-11 items-center rounded px-2 font-semibold text-amarelo">Kit de Mostruário</Link></li>}
+          <li className="whitespace-nowrap"><a href={linkWhatsApp('Olá! Quero um projeto sob medida / atendimento consultivo.')} target="_blank" rel="noopener" className="flex min-h-11 items-center px-2 hover:text-amarelo">Projetos sob medida</a></li>
         </ul>
       </nav>
     </header>

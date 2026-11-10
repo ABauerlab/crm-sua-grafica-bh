@@ -1,10 +1,11 @@
 # Progresso do agente de IA
 
-## Em andamento: E-commerce Fase 12, taxonomia e filtros (10/11/2026, branch `claude/funny-ride-s51uyy`)
-- **Feito e aplicado no banco**: `20261125000001` (verticais, categorias por vertical, 572 subcategorias do fornecedor lidas do menu, `loja_norm`), `20261125000002` (definições de facetas, sinônimos, view `private.loja_atributos`) e `20261125000003` (`loja_facetas`, `loja_modelos_f`, `loja_arvore`, `loja_interpretar_busca`). Os arquivos do repositório são equivalentes ao aplicado (não idênticos byte a byte).
-- **Pendente de confirmação do dono**: `20261125000004_loja_atributos_tabela` (a view completa leva 6 s; a migration materializa em tabela e agenda atualização a cada 15 min). O Supabase pediu confirmação e não houve resposta. Conferir se foi aplicada (`select to_regclass('private.loja_atributos_meta')`); se não, aplicar e rodar `select private.loja_atributos_atualizar(true)`.
-- **Falta**: front (menu por verticais, barra de filtros com chips, busca com sinônimos), rotas `/api/v1/taxonomia` e `/api/v1/facetas`, docs (`api-v1.md`, `ecommerce.md`), testes, PR e merge. Laura: conferir o que a Fase 11 já cobre antes de alterar o WF2.
-- **Observado**: cerca de 3 mil opções com título cru (sem subcategoria); filtro Express vazio (menor prazo é 2 dias úteis).
+## E-commerce Fase 12: taxonomia e filtros (10/11/2026, branch `claude/funny-ride-s51uyy`)
+- **Banco (aplicado)**: migrations `20261125000001` a `20261125000005` (verticais, 572 subcategorias do fornecedor, atributos materializados com atualização a cada 15 min, `loja_facetas`, `loja_modelos_f`, `loja_arvore`, `loja_interpretar_busca`). Conferido: 8 verticais, 17.231 de 20.381 opções com subcategoria, filtro combinado responde rápido. A migration 4 foi aplicada pelo dono no SQL Editor (a confirmação do conector expirava).
+- **Loja**: menu por verticais com mega menu, filtros facetados com contadores e chips, busca com sinônimos, selos de acabamento nos cards, rotas `/api/v1/taxonomia`, `/facetas` e `/modelos`. Sem rolagem lateral em desktop e celular (prints conferidos). `npm run test:loja` cobre a leitura dos filtros da URL.
+- **Detalhes e o que fica**: `docs/ecommerce.md` (Fase 12) e `docs/api-v1.md`.
+- **Laura (NÃO alterado no n8n)**: o WF2 publicado já tem cérebro, lista de itens, frete dos 7 bairros e tom sem "vc" repetitivo (nó do agente). Faltam dois ajustes, em `docs/agente/laura-ajustes-fase12.md`: a frase exata de cobertura de preço quando o cliente pede desconto, acha caro ou diz que vai pesquisar, e remover do nó `Montar prompt` a linha que manda usar "vc" (conflita com o agente). Exigem reescrever o workflow pelo SDK do n8n e testar com o modelo real; deixei fora desta fase para não arriscar o atendimento em produção.
+- **Observado**: ~3 mil opções com título cru (sem subcategoria); filtro Express vazio (menor prazo é 2 dias úteis).
 
 ## CRM no celular: usabilidade (10/11/2026)
 - **Zoom ao tocar nos campos**: o iPhone dá zoom em campo com fonte menor que 16 px. Agora todo campo tem 16 px no celular (`src/index.css`) e o `Textarea` usa `text-base`.

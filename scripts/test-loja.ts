@@ -4,6 +4,7 @@ import { limparJpeg } from '../supabase/functions/_shared/jpeg.ts'
 import { cepLimpo, corpoSuperFrete, juntarPacotes, lerEnderecoCep, opcoesEnvio, pacoteValido } from '../supabase/functions/_shared/loja-frete.ts'
 import { corpoPix, lerPix } from '../supabase/functions/_shared/mp-pix.ts'
 import { cnpjValido, cpfValido, mensagemErro, normalizarWhatsapp, validarPedido } from '../supabase/functions/_shared/loja-validar.ts'
+import { hrefFiltros, lerFiltros, lerOrdem } from '../ecommerce/lib/filtros.ts'
 import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
 
 // marca fictícia: o teste nunca usa o nome real da origem
@@ -166,6 +167,19 @@ assert.equal(lerEnderecoCep('30130010', { street: 'Rua A', neighborhood: 'Savass
   assert.deepEqual(pix, { pagamento_id: '123456', copia_e_cola: '00020126...', qr_base64: 'iVBOR...', expira_em: '2026-11-10T09:00:00.000-03:00' })
   assert.equal(lerPix({ id: 1, point_of_interaction: {} }), null, 'sem copia e cola não há Pix para mostrar')
   assert.equal(lerPix(null), null)
+}
+
+{
+  // Fase 12: filtros facetados na URL
+  const f = lerFiltros({ sub: 'couche-250g,outro', acab: 'soft-touch,uv', gram: 'encorpado', x: 'ignorado', preco: "ate-50'; drop" })
+  assert.deepEqual(f.sub, ['couche-250g'], 'sub é uma só')
+  assert.deepEqual(f.acab, ['soft-touch', 'uv'])
+  assert.deepEqual(f.preco, ['ate-50drop'].map((x) => x.replace(/[^a-z0-9-]/g, '')), 'valores são limpos')
+  assert.equal(lerOrdem({ ordem: 'menor_preco' }), 'menor_preco')
+  assert.equal(lerOrdem({ ordem: 'hack' }), 'relevancia')
+  assert.equal(hrefFiltros('/categoria/x', f, { q: 'cartao' }, { faceta: 'acab', valor: 'uv' }), '/categoria/x?q=cartao&sub=couche-250g&acab=soft-touch&gram=encorpado&preco=ate-50drop')
+  assert.equal(hrefFiltros('/categoria/x', f, {}, { limpar: true }), '/categoria/x')
+  assert.equal(hrefFiltros('/categoria/x', {}, { ordem: 'maior_preco' }, { faceta: 'sub', valor: 'a' }), '/categoria/x?ordem=maior_preco&sub=a')
 }
 
 console.log('OK: ficha técnica da loja (leitura, sigilo da origem e linguagem de balcão)')
