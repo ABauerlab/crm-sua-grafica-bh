@@ -46,5 +46,31 @@ Fase 9: `opcoes` aceita também `entrega: "envio"` (com `cep` e `frete_servico: 
 ## POST `/api/v1/carrinho`
 Grava o carrinho para o follow-up de abandono. `GET /api/v1/pedido/status?id=<pedido_id>` devolve `{ ok, numero, pago }`.
 
+## Taxonomia e filtros (Fase 12)
+Organização para consulta: **vertical > categoria > subcategoria** (as subcategorias são as do menu do fornecedor, com nome de balcão, por exemplo "Couchê 250g"). Nenhuma rota devolve custo, piso ou margem.
+
+### GET `/api/v1/taxonomia`
+`{ verticais: [{ id, nome, descricao, modelos, categorias: [{ slug, nome, produtos, modelos, a_partir_de, foto, subcategorias: [{ slug, nome, modelos }] }] }] }`. Verticais: `papelaria`, `embalagens`, `rotulos`, `editorial`, `visual`, `brindes`, `festas` e `mostruario` (Kit de Mostruário).
+
+### GET `/api/v1/facetas?categoria=cartoes-de-visita&q=&acab=soft-touch,uv&gram=encorpado`
+`{ total, facetas: { sub, acab, tipo, material, gram, formato, prazo, preco: [{ valor, rotulo, n }] } }`. `n` conta MODELOS (um card por modelo, nunca por tamanho). Padrão de faceta: OU dentro da mesma faceta, E entre facetas; os contadores de uma faceta ignoram o filtro dela mesma. `categoria` aceita várias, separadas por vírgula.
+
+| Faceta | Valores |
+|---|---|
+| `sub` | slug da subcategoria (um só) |
+| `acab` | `hot-stamping`, `relevo`, `uv`, `soft-touch`, `fosca`, `brilho`, `holografica`, `padrao` |
+| `tipo` | `liso`, `rustico`, `nobre`, `sintetico` |
+| `material` | `couche`, `offset`, `duplex`, `kraft`, `reciclato`, `apergaminhado`, `supremo`, `pvc`, `bopp`, `acrilico`, `polionda`, `psai`, `neoplex`, `mdf`, `acm`, `vinil`, `tecido`, `lona` |
+| `gram` | `leve` (menos de 150g), `medio` (150g a 250g), `encorpado` (251g a 350g), `extra` (acima de 350g) |
+| `formato` | `retangular`, `quadrado`, `arredondado`, `faca-especial` |
+| `prazo` | `express` (até 1 dia útil), `padrao` (2 a 4), `especial` (5 ou mais) |
+| `preco` | `ate-50`, `50-150`, `150-500`, `500-mais` (preço "a partir de" da opção) |
+
+### GET `/api/v1/modelos?categoria=&q=&acab=&ordem=menor_preco|maior_preco|relevancia&limite=24&pagina=1`
+`{ total, modelos: [{ titulo, categoria, subcategoria, produto_slug, foto, a_partir_de, parcela_2x_a_partir_de, ref, sku, quantidade, variacoes, prazo_dias_uteis, acab }] }`.
+
+### Banco
+`loja_arvore()`, `loja_facetas(p_categorias, p_termo, p_filtros)`, `loja_modelos_f(...)` e `loja_interpretar_busca(termo)` (sinônimos: "papel grosso" vira `gram=encorpado`, "aveludado" vira `acab=soft-touch`, "metalizado/dourado" vira `acab=hot-stamping`, "papel marrom" vira `material=kraft`). Dados em `loja_verticais`, `loja_taxonomia`, `loja_subcategorias`, `loja_facetas_def` e `loja_sinonimos` (só o servidor lê). Os atributos de cada opção ficam em `private.loja_atributos`, recalculados a cada 15 min só quando a vitrine muda (`private.loja_atributos_atualizar(true)` força).
+
 ## Para o n8n e a Laura
 A Laura continua usando as mesmas funções do banco pelas ferramentas que já existem; os números batem com o site porque a fonte é a mesma. Se um fluxo externo precisar cotar por HTTP, use as rotas acima.

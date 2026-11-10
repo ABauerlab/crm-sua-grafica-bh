@@ -267,3 +267,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - `orders.stage` ganhou `pronto` (entre `producao` e `entregue`); `ORDER_STAGES` e limite de 48 h no Kanban.
 - Novos: `loja_modelos`, `loja_acabamentos`, `acabamentos_extras`; `loja_buscar` e `loja_produto` devolvem `sku`; `loja_produto` devolve `irmaos`.
 - CRM: `AvisoCliente` (Kanban), `ReabrirJanela` (ChatPanel), gaveta inferior em `Inbox`, `salvarCliente` em `hooks/orders.ts`.
+
+## Fase 12 (10/11/2026)
+- Tabelas (só servidor): `loja_verticais`, `loja_taxonomia`, `loja_subcategorias`, `loja_facetas_def`, `loja_sinonimos`; `private.loja_atributos` (tabela, atualizada por `private.loja_atributos_atualizar`, cron `loja-atributos` a cada 15 min) e `private.loja_atributos_v` (view de origem).
+- Funções públicas: `loja_arvore`, `loja_facetas`, `loja_modelos_f`, `loja_interpretar_busca`. Rotas da loja: `/api/v1/taxonomia`, `/api/v1/facetas`, `/api/v1/modelos`. Componentes: `Filtros.tsx`, `MenuLateral.tsx` (por verticais), `Header.tsx` (mega menu). `lib/departamentos.ts` foi removido.

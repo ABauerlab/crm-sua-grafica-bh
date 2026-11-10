@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## E-commerce Fase 12: taxonomia e filtros (10/11/2026, branch `claude/funny-ride-s51uyy`)
+- **Banco (aplicado)**: migrations `20261125000001` a `20261125000005` (verticais, 572 subcategorias do fornecedor, atributos materializados com atualização a cada 15 min, `loja_facetas`, `loja_modelos_f`, `loja_arvore`, `loja_interpretar_busca`). Conferido: 8 verticais, 17.231 de 20.381 opções com subcategoria, filtro combinado responde rápido. A migration 4 foi aplicada pelo dono no SQL Editor (a confirmação do conector expirava).
+- **Loja**: menu por verticais com mega menu, filtros facetados com contadores e chips, busca com sinônimos, selos de acabamento nos cards, rotas `/api/v1/taxonomia`, `/facetas` e `/modelos`. Sem rolagem lateral em desktop e celular (prints conferidos). `npm run test:loja` cobre a leitura dos filtros da URL.
+- **Detalhes e o que fica**: `docs/ecommerce.md` (Fase 12) e `docs/api-v1.md`.
+- **Laura (NÃO alterado no n8n)**: o WF2 publicado já tem cérebro, lista de itens, frete dos 7 bairros e tom sem "vc" repetitivo (nó do agente). Faltam dois ajustes, em `docs/agente/laura-ajustes-fase12.md`: a frase exata de cobertura de preço quando o cliente pede desconto, acha caro ou diz que vai pesquisar, e remover do nó `Montar prompt` a linha que manda usar "vc" (conflita com o agente). Exigem reescrever o workflow pelo SDK do n8n e testar com o modelo real; deixei fora desta fase para não arriscar o atendimento em produção.
+- **Observado**: ~3 mil opções com título cru (sem subcategoria); filtro Express vazio (menor prazo é 2 dias úteis).
+
 ## CRM no celular: usabilidade (10/11/2026)
 - **Zoom ao tocar nos campos**: o iPhone dá zoom em campo com fonte menor que 16 px. Agora todo campo tem 16 px no celular (`src/index.css`) e o `Textarea` usa `text-base`.
 - **Conversa**: cabeçalho em uma linha (voltar, nome, status IA/Você, Detalhes e menu ⋯ com assumir/devolver, atenção e abrir pedido); etiquetas em uma fileira que rola; compositor com abas Responder/Nota, atalhos PDF e Link, campo que cresce com o texto e respeita a área segura do iPhone.
