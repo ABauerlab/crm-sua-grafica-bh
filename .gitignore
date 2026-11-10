@@ -60,3 +60,8 @@ tests/e2e/resultados/
 Tabela_Precos*
 # Anúncios gerados para marketplaces (têm SKU interno)
 marketplace-anuncios-*.csv
+
+# Sessão e rastros da extração logada (nunca versionar)
+storageState.json
+scrape-progresso.json
+scrape-debug/
