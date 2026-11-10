@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## Em andamento: E-commerce Fase 12, taxonomia e filtros (10/11/2026, branch `claude/funny-ride-s51uyy`)
+- **Feito e aplicado no banco**: `20261125000001` (verticais, categorias por vertical, 572 subcategorias do fornecedor lidas do menu, `loja_norm`), `20261125000002` (definições de facetas, sinônimos, view `private.loja_atributos`) e `20261125000003` (`loja_facetas`, `loja_modelos_f`, `loja_arvore`, `loja_interpretar_busca`). Os arquivos do repositório são equivalentes ao aplicado (não idênticos byte a byte).
+- **Pendente de confirmação do dono**: `20261125000004_loja_atributos_tabela` (a view completa leva 6 s; a migration materializa em tabela e agenda atualização a cada 15 min). O Supabase pediu confirmação e não houve resposta. Conferir se foi aplicada (`select to_regclass('private.loja_atributos_meta')`); se não, aplicar e rodar `select private.loja_atributos_atualizar(true)`.
+- **Falta**: front (menu por verticais, barra de filtros com chips, busca com sinônimos), rotas `/api/v1/taxonomia` e `/api/v1/facetas`, docs (`api-v1.md`, `ecommerce.md`), testes, PR e merge. Laura: conferir o que a Fase 11 já cobre antes de alterar o WF2.
+- **Observado**: cerca de 3 mil opções com título cru (sem subcategoria); filtro Express vazio (menor prazo é 2 dias úteis).
+
 ## CRM no celular: usabilidade (10/11/2026)
 - **Zoom ao tocar nos campos**: o iPhone dá zoom em campo com fonte menor que 16 px. Agora todo campo tem 16 px no celular (`src/index.css`) e o `Textarea` usa `text-base`.
 - **Conversa**: cabeçalho em uma linha (voltar, nome, status IA/Você, Detalhes e menu ⋯ com assumir/devolver, atenção e abrir pedido); etiquetas em uma fileira que rola; compositor com abas Responder/Nota, atalhos PDF e Link, campo que cresce com o texto e respeita a área segura do iPhone.
