@@ -257,3 +257,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Tabelas: `cep_bairros` (cache CEP -> bairro, só service role), `carrinhos_abandonados` (RLS equipe) e a view `v_carrinhos_recuperar`. Funções: `verificar_frete` (CEP em cache vale pelo bairro e cidade BH; sem cache, faixa antiga), `loja_frete_base` (service role), `loja_carrinho_salvar` (anon), `loja_carrinho_fechar` (service role), `loja_pedido_status` (anon, por UUID). `orders.delivery_method` aceita `correios`.
 - Edge Functions: `loja-frete` (nova), `loja-checkout` (Pix direto, envio, `acao: "pagar"`); módulos `_shared/loja-frete.ts` e `_shared/mp-pix.ts` (testados em `npm run test:loja`).
 - Loja: `/checkout` (`CheckoutCliente.tsx`), carrinho enxuto, rotas `/api/v1/frete`, `/carrinho`, `/checkout/pay`, `/pedido/status`. Site na Hostinger: ver `docs/ecommerce.md` (Output Directory `.next`).
+
+## E-commerce Fase 10 (10/11/2026)
+- Segurança: `calcular_acabamento_seguro` só para `service_role` (migration `20261123000001`); `ecommerce/package.json` com `overrides.postcss`. Sem tabela, função ou rota nova.

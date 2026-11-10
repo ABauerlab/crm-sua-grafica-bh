@@ -1,6 +1,15 @@
 # Progresso do agente de IA
 
-**Próximo passo:** Fase 10 do e-commerce (JSON-LD de produto, sitemap dinâmico, varredura de segurança) e, antes, apontar o DNS de `suagraficabh.com.br` para a Hostinger (ver Fase 9 abaixo). Ver `docs/ecommerce.md`.
+**Próximo passo:** teste real de pagamento pelo site (Pix de valor baixo, só com autorização do dono) e as pendências do dono listadas na Fase 10. O roteiro do e-commerce (Fases 1 a 10) está concluído. Ver `docs/ecommerce.md`.
+
+## E-commerce Fase 10: loja no ar e varredura de segurança (10/11/2026)
+
+- DNS propagado e site `suagraficabh.com.br` no ar com HTTPS (certificado vitalício, redirecionamento ligado). Conferido no domínio real: 8 rotas e um produto em desktop e celular, sem rolagem lateral, JSON-LD presente, tempo de resposta cerca de 0,7 s.
+- Migration `20261123000001` (aplicada): `calcular_acabamento_seguro` fechada para `anon` e `authenticated` (vazava custo de acabamento). `npm audit` da loja: 0 vulnerabilidades (`overrides.postcss`).
+- Detalhes, avisos que ficam e o que sobra para o dono em `docs/ecommerce.md` (Fase 10).
+- **Visto uma vez e não reproduzido**: erro de hidratação do React (#418) numa rota no celular, em uma passada de teste; em duas voltas completas seguintes não voltou. Se aparecer no console de um cliente, investigar a página.
+- **Pendente do dono**: `SUPERFRETE_TOKEN`, `GEMINI_API_KEY`, Pixel e token da Meta, "Leaked password protection" no Supabase, Search Console, imagem Open Graph. **Decisões**: follow-up de carrinho abandonado e a Laura usar `loja-frete`.
+- **Não feito**: teste real de Pix e de cartão pelo site (cobrança real exige autorização).
 
 ## E-commerce Fase 9: checkout, frete, Pix e site no ar (09/11/2026)
 
