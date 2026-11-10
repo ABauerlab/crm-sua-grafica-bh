@@ -182,15 +182,48 @@ export function useAddOrderEvent() {
   })
 }
 
+export interface ClienteManual { name: string; whatsapp: string; email: string; document: string; address: string }
+export const CLIENTE_VAZIO: ClienteManual = { name: '', whatsapp: '', email: '', document: '', address: '' }
+
+/** Pedido manual: cria o cliente (WhatsApp novo) ou atualiza os dados informados (só os campos preenchidos). Devolve o id do contato. */
+async function salvarCliente(contactId: string, c?: ClienteManual): Promise<string> {
+  const campos = {
+    ...(c?.name.trim() ? { name: c.name.trim() } : {}),
+    ...(c?.email.trim() ? { email: c.email.trim().toLowerCase() } : {}),
+    ...(c?.document.trim() ? { document: c.document.replace(/\D/g, '') } : {}),
+    ...(c?.address.trim() ? { address: c.address.trim() } : {}),
+  }
+  if (contactId) {
+    if (Object.keys(campos).length) {
+      const { error } = await supabase.from('contacts').update(campos).eq('id', contactId)
+      if (error) throw new Error('Não foi possível atualizar os dados do cliente.')
+    }
+    return contactId
+  }
+  const digits = (c?.whatsapp ?? '').replace(/\D/g, '')
+  if (digits.length < 10) throw new Error('Informe o WhatsApp com DDD ou escolha um contato existente.')
+  const wa_id = digits.length <= 11 ? `55${digits}` : digits
+  const { data, error } = await supabase.from('contacts').insert({ wa_id, ...campos }).select('id').single()
+  if (!error && data) return data.id as string
+  if (error?.code === '23505') {
+    const { data: ex, error: e2 } = await supabase.from('contacts').select('id').eq('wa_id', wa_id).single()
+    if (e2 || !ex) throw new Error('Já existe um contato com esse WhatsApp, mas não foi possível abri-lo.')
+    if (Object.keys(campos).length) await supabase.from('contacts').update(campos).eq('id', ex.id)
+    return ex.id as string
+  }
+  throw new Error('Não foi possível criar o cliente.')
+}
+
 export function useCreateOrder() {
   const invalidate = useInvalidateOrders()
   return useMutation({
-    mutationFn: async (input: { contactId: string; title: string; metodo: string; parcelas?: number | null }) => {
+    mutationFn: async (input: { contactId: string; title: string; metodo: string; parcelas?: number | null; cliente?: ClienteManual }) => {
       if (!input.metodo) throw new Error('Escolha o método de pagamento.')
+      const contactId = await salvarCliente(input.contactId, input.cliente)
       const { data: contact, error: cErr } = await supabase
         .from('contacts')
         .select('id, first_referral, conversations(id)')
-        .eq('id', input.contactId)
+        .eq('id', contactId)
         .single()
       if (cErr) throw new Error(cErr.message)
       const ref = (contact as { first_referral: Record<string, string> | null }).first_referral
@@ -199,7 +232,7 @@ export function useCreateOrder() {
       const { data, error } = await supabase
         .from('orders')
         .insert({
-          contact_id: input.contactId,
+          contact_id: contactId,
           conversation_id: convId ?? null,
           title: input.title.trim() || 'Novo pedido',
           payment_method: input.metodo,
