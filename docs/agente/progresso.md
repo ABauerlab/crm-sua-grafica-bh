@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## E-commerce Fase 15: menu fixo, filtros na barra, ordem e cards compactos (10/11/2026, branch `claude/funny-ride-s51uyy`)
+- Menu lateral fixo com rolagem própria, filtros em barra acima da lista (acompanha a rolagem), ordem por quantidade e impressão (4x0, 4x1, 4x4), cards e cabeçalho mais compactos. Migration `20261128000001` (aplicada). Detalhes em `docs/ecommerce.md` (Fase 15). Conferido em 390, 820, 1366 e 1920 px, sem rolagem lateral.
+
 ## E-commerce Fase 14: menu em etapas e departamentos completos (10/11/2026, branch `claude/funny-ride-s51uyy`)
 - Menu e filtros agora abrem fechados e o cliente vai destrinchando; busca de categorias e tipos no menu e sugestões no cabeçalho; página `/departamentos` com tudo; gaveta "Departamentos" no cabeçalho; meta do Google Search Console. Detalhes em `docs/ecommerce.md` (Fase 14). Conferido em 390, 768 e 1366 px, sem rolagem lateral.
 - Chaves: o dono já cadastrou `SUPERFRETE_TOKEN` e `GEMINI_API_KEY` no Supabase. Falta só o Pixel da Meta (`META_PIXEL_ID`, `META_CAPI_TOKEN` e `NEXT_PUBLIC_META_PIXEL_ID`). Falta testar o envio nacional (SuperFrete) com um CEP de fora de BH.

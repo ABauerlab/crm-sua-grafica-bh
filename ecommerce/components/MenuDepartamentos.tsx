@@ -18,7 +18,7 @@ export function MenuDepartamentos({ verticais, atual, subAtual, aoNavegar }: { v
     <nav aria-label="Departamentos">
       <div className="relative mb-2 px-1">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40" aria-hidden />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Achar categoria ou tipo" aria-label="Achar categoria ou tipo de produto"
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Achar categoria" aria-label="Achar categoria ou tipo de produto"
           className="h-11 w-full rounded-lg border border-black/15 bg-white pl-9 pr-3 text-base outline-none focus:border-magenta" />
       </div>
 

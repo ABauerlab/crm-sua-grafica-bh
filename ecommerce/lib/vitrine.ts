@@ -63,9 +63,18 @@ export async function buscar(termo: string | null, categoria: string | null = nu
   return { total: r?.total ?? 0, produtos: (r?.produtos ?? []).map((p) => ({ ...p, categoria: nomeBonito(p.categoria) })) }
 }
 
+/** Ordem das impressões: colorido frente (4x0), colorido + preto no verso (4x1), colorido frente e verso (4x4), depois preto e branco. */
+export function ordemImpressao(i: string | null | undefined) {
+  const t = (i ?? '').toLowerCase()
+  return t === 'colorido apenas na frente' ? 1 : t === 'colorido na frente e preto e branco no verso' ? 2 : t === 'colorido frente e verso' ? 3 : t === 'preto e branco apenas na frente' ? 4 : t === 'preto e branco frente e verso' ? 5 : 9
+}
+
 export async function produto(slug: string): Promise<Produto | null> {
   const p = await rpc<Produto | null>('loja_produto', { p_slug: slug }, 900)
-  return p ? { ...p, categoria: nomeBonito(p.categoria) } : null
+  if (!p) return null
+  const irmaos = [...(p.irmaos ?? [])].sort((a, b) => ordemImpressao(a.impressao) - ordemImpressao(b.impressao) || (a.formato ?? '').localeCompare(b.formato ?? '') || a.a_partir_de - b.a_partir_de)
+  const opcoes = [...(p.opcoes ?? [])].sort((a, b) => (a.quantidade ?? 0) - (b.quantidade ?? 0) || a.preco - b.preco)
+  return { ...p, categoria: nomeBonito(p.categoria), irmaos, opcoes }
 }
 
 export async function slugs() {
@@ -134,4 +143,4 @@ export async function familia(id: string): Promise<Familia | null> {
 }
 
 /** Texto do card sem espaços duplos nem pontas soltas. */
-export const limparTitulo = (t: string) => t.replace(/\s+/g, ' ').replace(/^[\s,.-]+|[\s,.-]+$/g, '')
+export const limparTitulo = (t: string) => t.replace(/\(\s*\)/g, '').replace(/\s+/g, ' ').replace(/^[\s,.-]+|[\s,.-]+$/g, '')

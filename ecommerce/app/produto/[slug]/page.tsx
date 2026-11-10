@@ -48,7 +48,7 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
       availability: 'https://schema.org/InStock', seller: { '@type': 'Organization', name: SITE.nome } },
   }
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="mx-auto max-w-[1440px] px-4 py-6">
       <nav aria-label="Caminho" className="mb-4 flex flex-wrap items-center gap-1 text-xs text-black/55">
         <Link href="/" className="hover:text-magenta">Início</Link><ChevronRight className="h-3 w-3" aria-hidden />
         <Link href={`/categoria/${p.categoria_slug}`} className="hover:text-magenta">{p.categoria}</Link><ChevronRight className="h-3 w-3" aria-hidden />

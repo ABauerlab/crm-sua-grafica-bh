@@ -20,15 +20,15 @@ export function HeroSlider({ slides, compacto = false }: { slides: Slide[]; comp
     <section aria-roledescription="carrossel" aria-label="Destaques" className={`relative overflow-hidden text-white ${compacto ? 'rounded-xl2' : ''}`} onMouseEnter={() => setPausa(true)} onMouseLeave={() => setPausa(false)}>
       {slides.map((s, n) => (
         <div key={s.titulo} aria-hidden={n !== i} className={`${n === i ? 'relative opacity-100' : 'pointer-events-none absolute inset-0 opacity-0'} transition-opacity duration-500 ${s.fundo}`}>
-          <div className={`mx-auto grid max-w-7xl items-center gap-6 px-4 md:grid-cols-[1.2fr_1fr] ${compacto ? 'min-h-[17rem] px-6 pb-14 pt-8 md:min-h-[20rem]' : 'min-h-[22rem] pb-16 pt-10 md:min-h-[28rem] md:pb-20 md:pt-14'}`}>
+          <div className={`mx-auto grid max-w-[1440px] items-center gap-6 px-4 md:grid-cols-[1.2fr_1fr] ${compacto ? 'min-h-[12rem] px-5 pb-12 pt-6 md:min-h-[14rem]' : 'min-h-[22rem] pb-16 pt-10 md:min-h-[28rem] md:pb-20 md:pt-14'}`}>
             <div>
-              <h2 className={`font-black leading-[1.05] ${compacto ? 'text-2xl md:text-4xl' : 'text-3xl md:text-5xl'}`}>{s.titulo}</h2>
+              <h2 className={`font-black leading-[1.05] ${compacto ? 'text-xl md:text-3xl' : 'text-3xl md:text-5xl'}`}>{s.titulo}</h2>
               <p className="mt-4 max-w-lg text-base text-white/90 md:text-lg">{s.texto}</p>
               <Link href={s.href} tabIndex={n === i ? 0 : -1} className={`mt-6 inline-flex items-center gap-2 rounded-lg px-5 py-3 font-bold ${s.destaque}`}>{s.botao}<ArrowRight className="h-4 w-4" aria-hidden /></Link>
             </div>
             {s.foto && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={s.foto} alt="" loading={n === 0 ? 'eager' : 'lazy'} className={`mx-auto hidden aspect-square rotate-3 rounded-2xl object-cover shadow-2xl md:block ${compacto ? 'w-52' : 'w-72 lg:w-80'}`} />
+              <img src={s.foto} alt="" loading={n === 0 ? 'eager' : 'lazy'} className={`mx-auto hidden aspect-square rotate-3 rounded-2xl object-cover shadow-2xl md:block ${compacto ? 'w-36' : 'w-72 lg:w-80'}`} />
             )}
           </div>
         </div>

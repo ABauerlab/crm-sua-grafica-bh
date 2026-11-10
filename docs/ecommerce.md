@@ -119,3 +119,9 @@ npm run build:ecommerce
 - **Achar sem navegar**: campo "Achar categoria ou tipo" no menu e sugestões no campo de busca do cabeçalho (categorias e tipos de qualquer departamento, sem acento).
 - **Todos os departamentos** (`/departamentos`): índice de leitura com os 7 departamentos, todas as categorias, quantas opções e exemplos de tipos de cada uma. Botão "Departamentos" no cabeçalho abre a gaveta com o menu completo (celular, tablet e computador).
 - **Search Console**: meta de verificação do Google no `<head>` da home (`metadata.verification.google`).
+
+## Fase 15: menu fixo, filtros na barra, ordem e cards compactos (10/11/2026)
+- **Menu fixo**: a lista de departamentos fica presa na lateral (rolagem própria, sem acompanhar a página) e o cabeçalho encolheu: só a faixa de busca e os departamentos acompanham a rolagem (a faixa de avisos some). No celular o cabeçalho rola junto e o menu fica na gaveta "Departamentos". O menu abre tudo fechado e fecha ao navegar.
+- **Filtros na barra** (`FiltrosBarra`): um botão por filtro logo acima da lista (computador) ou "Filtros" em gaveta (celular), ordenação, total de opções e filtros ativos com remoção. A barra acompanha a rolagem; os filtros saíram da lateral.
+- **Tudo em ordem**: opções por subcategoria na ordem do fornecedor, depois nome e gramatura; tamanhos por medida e depois impressão (colorido na frente 4x0, colorido + preto no verso 4x1, colorido frente e verso 4x4, depois preto e branco); quantidades da menor para a maior; impressões "irmãs" na mesma ordem. Função `private.loja_ordem_impressao`.
+- **Mais leve**: cards compactos (foto menor, texto menor, 5 a 6 por linha no computador), cabeçalho, hero e vantagens menores, container mais largo (1440 px).

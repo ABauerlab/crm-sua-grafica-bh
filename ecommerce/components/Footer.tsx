@@ -7,7 +7,7 @@ export function Footer() {
   const e = SITE.endereco
   return (
     <footer className="mt-16 bg-tinta text-white/80">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-4">
+      <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-12 md:grid-cols-4">
         <div className="space-y-4">
           <Logo />
           <p className="text-sm">{SITE.descricao}</p>
@@ -40,7 +40,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between">
           <SelosSeguranca />
           <p className="text-xs text-white/60">
             © {new Date().getFullYear()} {SITE.nome} · CNPJ {SITE.cnpj} · Desenvolvido por{' '}

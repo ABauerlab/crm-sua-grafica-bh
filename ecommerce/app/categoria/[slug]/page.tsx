@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { ChevronRight, ImageOff } from 'lucide-react'
 import { BarraLateral } from '@/components/BarraLateral'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
-import { FiltrosChips } from '@/components/Filtros'
+import { FiltrosBarra } from '@/components/FiltrosBarra'
 import { ListaModelos } from '@/components/ListaModelos'
 import { lerFiltros, lerOrdem, type ParamsUrl } from '@/lib/filtros'
 import { arvore, facetas, fotoUrl, modelosFiltrados } from '@/lib/vitrine'
@@ -47,8 +47,8 @@ export default async function PaginaCategoria({ params, searchParams }: { params
   ])
   const subAtiva = c.subcategorias.find((s) => s.slug === filtros.sub?.[0])
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 lg:flex lg:gap-6">
-      <BarraLateral verticais={verticais} facetas={f?.facetas ?? {}} filtros={filtros} base={base} q={q || undefined} ordem={ordem} atual={slug} subAtual={filtros.sub?.[0]} />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 lg:flex lg:gap-5">
+      <BarraLateral verticais={verticais} atual={slug} subAtual={filtros.sub?.[0]} />
       <div className="min-w-0 flex-1">
         <nav aria-label="Caminho" className="mb-4 flex flex-wrap items-center gap-1 text-xs text-black/55">
           <Link href="/" className="hover:text-magenta">Início</Link><ChevronRight className="h-3 w-3" aria-hidden />
@@ -57,7 +57,7 @@ export default async function PaginaCategoria({ params, searchParams }: { params
         </nav>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black">{subAtiva ? `${c.nome}: ${subAtiva.nome}` : c.nome}</h1>
+            <h1 className="text-2xl font-black md:text-3xl">{subAtiva ? `${c.nome}: ${subAtiva.nome}` : c.nome}</h1>
             <p className="mt-1 text-sm text-black/60">
               {mostrarSubs ? `Escolha o tipo de ${c.nome.toLowerCase()}. ${c.modelos} opções no total.` : `${r?.total ?? 0} ${(r?.total ?? 0) === 1 ? 'opção' : 'opções'}${q ? ` para "${q}"` : ''}. Escolha a opção, depois o tamanho e a quantidade.`}
             </p>
@@ -70,19 +70,19 @@ export default async function PaginaCategoria({ params, searchParams }: { params
 
         {mostrarSubs ? (
           <>
-            <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">
               {c.subcategorias.map((s) => {
                 const foto = fotoUrl(s.foto)
                 return (
                   <li key={s.slug}>
-                    <Link href={`${base}?sub=${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-xl2 border border-black/5 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta">
-                      <div className="aspect-[4/3] bg-papel">
+                    <Link href={`${base}?sub=${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta">
+                      <div className="aspect-[3/2] bg-papel">
                         {foto
                           // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={foto} alt="" width={400} height={300} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-[1.03]" />
                           : <div className="flex h-full items-center justify-center text-black/25"><ImageOff className="h-8 w-8" aria-hidden /></div>}
                       </div>
-                      <div className="p-3"><b className="block text-sm leading-snug">{s.nome}</b><span className="text-xs text-black/55">{s.modelos} {s.modelos === 1 ? 'opção' : 'opções'}</span></div>
+                      <div className="p-2.5"><b className="block text-[13px] leading-snug">{s.nome}</b><span className="text-xs text-black/55">{s.modelos} {s.modelos === 1 ? 'opção' : 'opções'}</span></div>
                     </Link>
                   </li>
                 )
@@ -92,7 +92,7 @@ export default async function PaginaCategoria({ params, searchParams }: { params
           </>
         ) : (
           <>
-            <div className="mt-4"><FiltrosChips base={base} facetas={f!.facetas} filtros={filtros} q={q || undefined} ordem={ordem} /></div>
+            <FiltrosBarra base={base} facetas={f!.facetas} filtros={filtros} q={q || undefined} ordem={ordem} total={r!.total} />
             {r!.total === 0
               ? <p className="mt-8 rounded-xl2 bg-white p-6 text-sm">Nenhuma opção com essa combinação. Remova algum filtro acima ou fale com a gente: fazemos sob medida.</p>
               : <ListaModelos modelos={r!.modelos} />}

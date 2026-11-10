@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function Departamentos() {
   const verticais = await arvore()
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-[1440px] px-4 py-8">
       <h1 className="text-3xl font-black">Todos os departamentos</h1>
       <p className="mt-1 max-w-2xl text-sm text-black/60">Escolha o departamento, depois a categoria. Em cada categoria você escolhe o tipo, a opção, o tamanho e a quantidade.</p>
       <nav aria-label="Ir para o departamento" className="mt-4 flex flex-wrap gap-2">

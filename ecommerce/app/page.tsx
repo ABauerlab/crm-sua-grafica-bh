@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight, BadgePercent, Clock, CreditCard, MapPin, Truck } from 'lucide-react'
 import { HeroSlider, type Slide } from '@/components/HeroSlider'
 import { BarraLateral } from '@/components/BarraLateral'
+import { FiltrosBarra } from '@/components/FiltrosBarra'
 import { ModeloCard } from '@/components/ModeloCard'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { ProdutoCard } from '@/components/ProdutoCard'
@@ -47,24 +48,25 @@ export default async function Home() {
   return (
     <>
 
-      <div className="mx-auto max-w-7xl px-4 pt-6 lg:flex lg:gap-6">
-      <BarraLateral verticais={verticais} facetas={f.facetas} filtros={{}} base="/categorias" ordem="relevancia" />
+      <div className="mx-auto max-w-[1440px] px-4 pt-6 lg:flex lg:gap-5">
+      <BarraLateral verticais={verticais} />
       <div className="min-w-0 flex-1">
       <HeroSlider slides={slides} compacto />
+      <FiltrosBarra base="/categorias" facetas={f.facetas} filtros={{}} ordem="relevancia" />
       <section aria-label="Vantagens" className="mt-4">
-        <ul className="grid gap-3 rounded-xl2 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-2 rounded-xl2 bg-white p-3 shadow-sm xl:grid-cols-4">
           {VANTAGENS.map(({ icone: I, titulo, texto }) => (
-            <li key={titulo} className="flex gap-3 p-2"><I className="mt-0.5 h-6 w-6 shrink-0 text-magenta" aria-hidden /><span><b className="block text-sm">{titulo}</b><span className="text-xs text-black/60">{texto}</span></span></li>
+            <li key={titulo} className="flex gap-2 p-1.5"><I className="mt-0.5 h-5 w-5 shrink-0 text-magenta" aria-hidden /><span><b className="block text-[13px]">{titulo}</b><span className="hidden text-xs text-black/60 sm:block">{texto}</span></span></li>
           ))}
         </ul>
       </section>
       {DEPARTAMENTOS.map((d, i) => vitrines[i].modelos.length > 0 && (
         <section key={d.slug} className="pb-2 pt-4">
           <div className="mb-4 flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-black md:text-3xl">{d.titulo}</h2>
+            <h2 className="text-xl font-black md:text-2xl">{d.titulo}</h2>
             <Link href={`/categoria/${d.slug}`} className="text-sm font-semibold text-magenta hover:underline">Ver todos os modelos</Link>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">{vitrines[i].modelos.map((m) => <ModeloCard key={m.produto_slug} m={m} />)}</div>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">{vitrines[i].modelos.map((m) => <ModeloCard key={m.produto_slug} m={m} />)}</div>
         </section>
       ))}
 
@@ -82,7 +84,7 @@ export default async function Home() {
       </div>
       </div>
 
-      <section className="mx-auto max-w-7xl px-4 pt-14">
+      <section className="mx-auto max-w-[1440px] px-4 pt-14">
         <div className="grid overflow-hidden rounded-xl2 bg-white shadow-sm md:grid-cols-2">
           <div className="p-6 md:p-10">
             <h2 className="flex items-center gap-2 text-2xl font-black"><MapPin className="h-6 w-6 text-magenta" aria-hidden />Retirada grátis na Praça Sete</h2>
