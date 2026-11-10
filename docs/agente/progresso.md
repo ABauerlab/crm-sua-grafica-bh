@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## E-commerce Fase 13b: duplicidade, títulos e PDF no servidor (10/11/2026)
+- **Wind Banner repetido**: causa e correção em `docs/ecommerce.md` (Fase 13b). 0 opções ativas repetidas depois da correção; 1.246 variantes ocultas (257 de preço igual, 989 com preço maior) listadas por `select sku, oculto_motivo from ecommerce_products where oculto`. Rotina `private.loja_dedup` a cada 15 min; teste em `supabase/tests/loja_duplicidade.sql`.
+- **Títulos crus** padronizados na origem (`titulo_vitrine`) e **PDF obrigatório** agora recusado pelo servidor (`validar_antes_de_cobrar`).
+- **Não feito**: trocar as fotos com o carimbo "TEXTURA" (está dentro da imagem de origem; só dá para refazer com outra foto ou edição de imagem por IA, que não rodei em milhares de arquivos); nomear as variantes ocultas (depende do dono).
+
 ## E-commerce Fase 13: navegação em 4 níveis, tudo em uma página, PDF no checkout e Laura (10/11/2026, branch `claude/funny-ride-s51uyy`)
 - **Laura (n8n, publicado)**: regra 3 do agente agora usa a frase exata de cobertura de preço quando o cliente pede desconto, acha caro ou diz que vai pesquisar (G2 só com a proposta); o nó `Montar prompt` deixou de mandar usar "vc" e o texto do corte virou "pedidos pagos até 10h30 começam a ser produzidos no mesmo dia". Export atualizado em `n8n/GBH-WF2-Agente.json`. O clone `GBH | TESTE | Agente (clone do WF2)` NÃO foi alterado. Falta rodar os cenários `e5-*` e um teste "achei caro, vou pesquisar" com o modelo real.
 - **Loja**: categoria > subcategoria (cards) > opção > tamanhos; lista completa em uma página (rolagem infinita); cards com nome completo, etiquetas e quantidade; menu e filtros na home; PDF obrigatório no checkout. Detalhes em `docs/ecommerce.md` (Fase 13).

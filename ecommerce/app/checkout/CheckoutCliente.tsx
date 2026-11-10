@@ -148,9 +148,11 @@ export function CheckoutCliente() {
     if (precisaArquivo && !arquivoOk && !arquivo) return setErro('Anexe o PDF da arte em alta qualidade para continuar.')
     setEnviando(true)
     try {
+      type Resp = { ok?: boolean; error?: string; pedido_id?: string; numero?: number; total?: number; link_pagamento?: string; pix?: Pix }
+      const chamarPagar = (id: string) => fetch('/api/v1/checkout/pay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pedido_id: id, metodo, email: dados.email }) })
       // pedido já criado (troca de forma de pagamento ou nova tentativa): não cria outro
-      const r = pedido
-        ? await fetch('/api/v1/checkout/pay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pedido_id: pedido.id, metodo, email: dados.email }) })
+      let r = pedido
+        ? await chamarPagar(pedido.id)
         : await fetch('/api/v1/checkout/create-preference', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -158,13 +160,16 @@ export function CheckoutCliente() {
               opcoes: { arte, entrega: tipoEntrega, cep: entrega === 'entrega' ? cepLimpo : null, frete_servico: tipoEntrega === 'envio' ? servico : null, pagamento: metodo, sessao: carrinho.sessao() },
             }),
           })
-      const d = await r.json() as { ok?: boolean; error?: string; pedido_id?: string; numero?: number; total?: number; link_pagamento?: string; pix?: Pix }
+      let d = await r.json() as Resp
       if (d.pedido_id && d.numero && !pedido) setPedido({ id: d.pedido_id, numero: d.numero })
-      if (!r.ok) { setErro(d.error ?? 'Não foi possível concluir. Tente de novo.'); setEnviando(false); return }
-      if (precisaArquivo && !arquivoOk) {
-        const ok = await enviarArquivo(d.pedido_id ?? pedido?.id ?? '')
-        if (!ok) { setEnviando(false); return }
+      const pid = d.pedido_id ?? pedido?.id
+      // O servidor só gera o Pix ou o link depois do PDF: o pedido nasce, o arquivo é enviado e o pagamento é pedido de novo
+      if (!r.ok && pid && precisaArquivo && !arquivoOk) {
+        if (!(await enviarArquivo(pid))) { setEnviando(false); return }
+        r = await chamarPagar(pid)
+        d = await r.json() as Resp
       }
+      if (!r.ok) { setErro(d.error ?? 'Não foi possível concluir. Tente de novo.'); setEnviando(false); return }
       if (d.total) setTotalFinal(d.total)
       if (metodo === 'cartao' && d.link_pagamento) { carrinho.limpar(); window.location.href = d.link_pagamento; return }
       if (metodo === 'pix' && d.pix) {
