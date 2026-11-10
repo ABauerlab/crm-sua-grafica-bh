@@ -2,10 +2,14 @@
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL
 const CHAVE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface Opcao { ref: string; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null }
+export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null }
+export interface Modelo {
+  titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
+  parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number
+}
 export interface ProdutoResumo {
   produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
-  foto: string | null; a_partir_de: number; parcela_2x_a_partir_de: number; prazo_dias_uteis: number | null; opcoes: Opcao[]
+  foto: string | null; a_partir_de: number; parcela_2x_a_partir_de: number; prazo_dias_uteis: number | null; opcoes: Opcao[]; sku?: string | null
 }
 export interface Ficha {
   titulo?: string; material?: string | null; espessura?: string | null; impressao?: string | null; tamanho_final?: string | null
@@ -15,6 +19,7 @@ export interface Produto {
   produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
   especificacao: string | null; descricao: string | null; ficha: Ficha | null; acabamentos: string[] | null; fotos: string[]
   prazo_dias_uteis: number | null; a_partir_de: number; ate: number; opcoes: Opcao[]; atualizado_em: string
+  sku?: string | null; irmaos: { produto_slug: string; impressao: string | null; formato: string | null; a_partir_de: number }[]
   variacoes: { produto_slug: string; titulo: string; impressao: string | null; formato: string | null; a_partir_de: number; foto: string | null }[]
 }
 export interface CategoriaResumo { slug: string; nome: string; produtos: number; a_partir_de: number; foto: string | null }
@@ -63,4 +68,13 @@ export async function produto(slug: string): Promise<Produto | null> {
 
 export async function slugs() {
   return (await rpc<{ produtos: { s: string; u: string }[]; categorias: string[] }>('loja_slugs', {}, 3600)) ?? { produtos: [], categorias: [] }
+}
+
+/** Modelos comerciais (papel/acabamento) com foto real, SKU e preço "a partir de". Substitui os antigos cartões de contagem. */
+export async function modelos(categoriasSlug: string[] | null, opts: { termo?: string | null; limite?: number; pagina?: number } = {}) {
+  const limite = opts.limite ?? 24
+  const r = await rpc<{ total: number; modelos: Modelo[] }>('loja_modelos', {
+    p_categorias: categoriasSlug, p_termo: opts.termo ?? null, p_limite: limite, p_offset: ((opts.pagina ?? 1) - 1) * limite,
+  }, 900)
+  return { total: r?.total ?? 0, modelos: (r?.modelos ?? []).map((m) => ({ ...m, categoria: nomeBonito(m.categoria), a_partir_de: Number(m.a_partir_de), parcela_2x_a_partir_de: Number(m.parcela_2x_a_partir_de) })) }
 }
