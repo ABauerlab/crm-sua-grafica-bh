@@ -3,7 +3,12 @@
 //
 // Preparo (uma vez):  npm i --no-save playwright sharp && npx playwright install chromium
 //
-// 1) Login (navegador visível; você digita login, senha e resolve o CAPTCHA; a sessão fica em storageState.json, que é ignorado pelo git):
+// MODO RECOMENDADO (Cloudflare bloqueia o navegador aberto por automação): use o SEU Chrome de verdade, com porta de depuração.
+//    a) Feche todas as janelas do Chrome e abra um Chrome só para isto (PowerShell):
+//       & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="$env:USERPROFILE\chrome-scrape"
+//    b) Nesse Chrome, entre no site do fornecedor normalmente (e-mail completo, senha, verificação) e deixe a conta logada.
+//    c) Em outro terminal: $env:ORIGEM_CDP="http://127.0.0.1:9222" e rode "extrair" (o script usa essa janela já logada).
+// 1) Login por automação (pode ser barrado pelo Cloudflare; navegador visível; você digita login, senha e resolve o CAPTCHA; a sessão fica em storageState.json, que é ignorado pelo git):
 //    ORIGEM_BASE=https://... node scripts/scrape-authenticated-fornecedor.ts login
 // 2) Extração em lote (usa a sessão salva; 1 página a cada 2-3 s; retoma de onde parou):
 //    ORIGEM_BASE=https://... ORIGEM_MARCA="termo1,termo2" SUPABASE_URL=https://xxxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=... \
@@ -22,6 +27,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 const BASE = (process.env.ORIGEM_BASE ?? '').replace(/\/+$/, '')
 const LOGIN_PATH = process.env.ORIGEM_LOGIN_PATH ?? '/login'
 const MARCAS = (process.env.ORIGEM_MARCA ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+const CDP = process.env.ORIGEM_CDP ?? ''
 const SESSAO = 'storageState.json'
 const PROGRESSO = 'scrape-progresso.json'
 const modo = process.argv[2]
@@ -40,8 +46,12 @@ async function carregar<T>(nome: string): Promise<T> {
 }
 const { chromium } = await carregar<typeof import('playwright')>('playwright')
 
+if (modo === 'login' && CDP) {
+  console.log('Com ORIGEM_CDP não precisa de "login": entre no site no Chrome aberto com a porta 9222 e rode "extrair".')
+  process.exit(0)
+}
 if (modo === 'login') {
-  const browser = await chromium.launch({ headless: false })
+  const browser = await chromium.launch({ headless: false, channel: 'chrome' }).catch(() => chromium.launch({ headless: false }))
   const ctx = await browser.newContext()
   const page = await ctx.newPage()
   await page.goto(BASE + LOGIN_PATH)
@@ -59,7 +69,7 @@ if (modo === 'login') {
 }
 
 // ---------- extração ----------
-if (!existsSync(SESSAO)) { console.error(`Sem ${SESSAO}. Rode o modo "login" primeiro.`); process.exit(1) }
+if (!CDP && !existsSync(SESSAO)) { console.error(`Sem ${SESSAO}. Use ORIGEM_CDP (recomendado) ou rode o modo "login".`); process.exit(1) }
 const SB = (process.env.SUPABASE_URL ?? '').replace(/\/+$/, '')
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 if (!dry && (!SB || !KEY)) { console.error('Informe SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou use --dry-run).'); process.exit(1) }
@@ -101,8 +111,10 @@ const fila = await (dry && !SB ? Promise.resolve([] as { chave: string; caminho:
 const pendentes = fila.filter((f) => !progresso.feitos.includes(f.chave)).slice(0, limite)
 console.log(`${fila.length} produtos mapeados, ${pendentes.length} nesta rodada${dry ? ' (dry-run: nada é gravado)' : ''}`)
 
-const browser = await chromium.launch({ headless: true })
-const ctx = await browser.newContext({ storageState: SESSAO })
+// Com ORIGEM_CDP, usa o Chrome real já logado (Cloudflare não barra); senão, abre um Chromium com a sessão salva.
+const browser = CDP ? await chromium.connectOverCDP(CDP) : await chromium.launch({ headless: true })
+const ctx = CDP ? browser.contexts()[0] : await browser.newContext({ storageState: SESSAO })
+if (!ctx) { console.error('Não achei janela no Chrome da porta 9222. Abra o Chrome com --remote-debugging-port=9222 e entre no site.'); process.exit(1) }
 const page = await ctx.newPage()
 mkdirSync('scrape-debug', { recursive: true })
 let n = 0
@@ -165,5 +177,6 @@ for (const item of pendentes) {
   await espera()
 }
 if (!dry) writeFileSync(PROGRESSO, JSON.stringify(progresso, null, 1))
+await page.close().catch(() => {})
 await browser.close()
 console.log(`Fim. Gabaritos para revisão manual (marca encontrada): ${progresso.gabaritos.filter((g) => g.revisar).length}`)
