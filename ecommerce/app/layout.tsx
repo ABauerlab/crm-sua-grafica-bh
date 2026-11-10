@@ -15,7 +15,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: 'Sua Gráfica BH | Gráfica online em Belo Horizonte', template: '%s | Sua Gráfica BH' },
   description: SITE.descricao,
-  openGraph: { type: 'website', locale: 'pt_BR', siteName: SITE.nome, url: SITE.url },
+  openGraph: { type: 'website', locale: 'pt_BR', siteName: SITE.nome, url: SITE.url, images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Sua Gráfica BH: impressão de qualidade para o seu negócio' }] },
+  twitter: { card: 'summary_large_image', images: ['/og-image.jpg'] },
   alternates: { canonical: '/' },
 }
 

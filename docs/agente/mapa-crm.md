@@ -260,3 +260,10 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## E-commerce Fase 10 (10/11/2026)
 - Segurança: `calcular_acabamento_seguro` só para `service_role` (migration `20261123000001`); `ecommerce/package.json` com `overrides.postcss`. Sem tabela, função ou rota nova.
+
+
+## Fase 11 (10/11/2026)
+- `conversations.brain` (jsonb) = cérebro da Laura: itens, orçamento, assunto atual e recentes, dúvidas pendentes. Escrito por `private.cerebro_recalcular` (chamado em `agente_entrada`), lido em `agente_contexto` (`cerebro`). `agente_cerebro_atualizar(uuid)` força o recálculo.
+- `orders.stage` ganhou `pronto` (entre `producao` e `entregue`); `ORDER_STAGES` e limite de 48 h no Kanban.
+- Novos: `loja_modelos`, `loja_acabamentos`, `acabamentos_extras`; `loja_buscar` e `loja_produto` devolvem `sku`; `loja_produto` devolve `irmaos`.
+- CRM: `AvisoCliente` (Kanban), `ReabrirJanela` (ChatPanel), gaveta inferior em `Inbox`, `salvarCliente` em `hooks/orders.ts`.

@@ -25,8 +25,10 @@ import { MetodoPagamentoField, type MetodoEscolhido } from '@/features/orders/Me
 import { OrderCardView, type CardActions } from '@/features/orders/OrderCardView'
 import { PerdidosColumn } from '@/features/orders/PerdidosColumn'
 import { PerderPedido } from '@/features/orders/PerderPedido'
+import { AvisoCliente } from '@/features/orders/AvisoCliente'
+import { textoPedidoPronto } from '@/lib/aviso-operacional'
 import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
-import { useAddOrderEvent, useCreateOrder, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
+import { CLIENTE_VAZIO, useAddOrderEvent, useCreateOrder, type ClienteManual, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
 import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
 import { contactLabel } from '@/lib/format'
@@ -98,6 +100,7 @@ export default function Kanban() {
   const { data: appSettings } = useSettings()
   const settings = appSettings?.kanban ?? DEFAULT_KANBAN
   const move = useMoveOrder()
+  const [aviso, setAviso] = useState<OrderCard | null>(null)
   const addEvent = useAddOrderEvent()
   const create = useCreateOrder()
   const confirmarManual = useConfirmarManual()
@@ -115,7 +118,7 @@ export default function Kanban() {
   }, [payConfirm])
   const [note, setNote] = useState<{ order: OrderCard; text: string } | null>(null)
   const [perda, setPerda] = useState<OrderCard | null>(null)
-  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number } | null>(null)
+  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number; cliente: ClienteManual } | null>(null)
   const [viewName, setViewName] = useState('')
   const openId = params.get('pedido')
 
@@ -147,6 +150,7 @@ export default function Kanban() {
     move.mutate(
       { order, to },
       {
+        onSuccess: () => { if (to === 'pronto') setAviso(order) },
         onError: (e) => {
           // Bloqueio por falta de pagamento: oferece confirmar manualmente
           if (to === 'pago' && order.payment_status !== 'aprovado') setPayConfirm({ order, then: to })
@@ -199,6 +203,7 @@ export default function Kanban() {
   return (
     <div className="flex h-full flex-col">
       <PerderPedido order={perda} onClose={() => setPerda(null)} />
+      <AvisoCliente order={aviso} titulo="Avisar o cliente que o pedido está pronto?" textoInicial={textoPedidoPronto(aviso?.delivery_method ?? null)} onClose={() => setAviso(null)} />
       <header className="space-y-3 border-b px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-black">Pedidos</h1>
@@ -206,7 +211,7 @@ export default function Kanban() {
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
               <Filter className="h-4 w-4" /> Filtros{hasFilters ? ' (ativos)' : ''}
             </Button>
-            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1 })}>
+            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO })}>
               <Plus className="h-4 w-4" /> Novo pedido
             </Button>
           </div>
@@ -321,7 +326,7 @@ export default function Kanban() {
           {(orders?.length ?? 0) === 0 && (
             <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 text-sm">
               <p><strong>Nenhum pedido ainda.</strong> Cada pedido nasce de uma conversa e anda por estas etapas até a entrega.</p>
-              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1 })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
+              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
             </div>
           )}
           {/* Desktop e tablet: quadro com arrastar e soltar */}
@@ -387,23 +392,33 @@ export default function Kanban() {
         </div>
       </Modal>
 
-      <Modal open={!!newOrder} onOpenChange={(o) => !o && setNewOrder(null)} title="Novo pedido" description="Escolha o contato. A origem do anúncio é copiada automaticamente quando existir.">
+      <Modal open={!!newOrder} onOpenChange={(o) => !o && setNewOrder(null)} title="Novo pedido" description="Escolha um contato ou cadastre um cliente novo. Os dados preenchidos são salvos no cadastro. A origem do anúncio é copiada quando existir.">
         <div className="space-y-3">
-          <Select aria-label="Contato" value={newOrder?.contactId ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, contactId: e.target.value })}>
-            <option value="">Selecione o contato</option>
+          <Select aria-label="Contato" value={newOrder?.contactId ?? ''} onChange={(e) => {
+            const c = (contacts ?? []).find((x) => x.id === e.target.value)
+            setNewOrder((n) => n && { ...n, contactId: e.target.value, cliente: c ? { name: c.name ?? '', whatsapp: c.wa_id, email: c.email ?? '', document: c.document ?? '', address: c.address ?? '' } : CLIENTE_VAZIO })
+          }}>
+            <option value="">Novo cliente (preencha abaixo)</option>
             {(contacts ?? []).map((c) => (
               <option key={c.id} value={c.id}>
                 {contactLabel(c)}
               </option>
             ))}
           </Select>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input aria-label="Nome" placeholder="Nome ou razão social" value={newOrder?.cliente.name ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, name: e.target.value } })} />
+            <Input aria-label="WhatsApp" inputMode="tel" placeholder="WhatsApp com DDD" disabled={!!newOrder?.contactId} value={newOrder?.cliente.whatsapp ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, whatsapp: e.target.value } })} />
+            <Input aria-label="E-mail" type="email" placeholder="E-mail" value={newOrder?.cliente.email ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, email: e.target.value } })} />
+            <Input aria-label="CPF ou CNPJ" inputMode="numeric" placeholder="CPF ou CNPJ" value={newOrder?.cliente.document ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, document: e.target.value } })} />
+          </div>
+          <Input aria-label="Endereço" placeholder="Endereço completo com CEP" value={newOrder?.cliente.address ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, address: e.target.value } })} />
           <Input aria-label="Título do pedido" placeholder="Ex.: 500 cartões de visita" value={newOrder?.title ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, title: e.target.value })} />
           <MetodoPagamentoField label="Como o cliente vai pagar" value={{ metodo: newOrder?.metodo ?? '', parcelas: newOrder?.parcelas ?? 1 }} onChange={(m) => setNewOrder((n) => n && { ...n, ...m })} />
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setNewOrder(null)}>Cancelar</Button>
           <Button
-            disabled={!newOrder?.contactId || !newOrder.metodo || create.isPending}
+            disabled={(!newOrder?.contactId && (newOrder?.cliente.whatsapp.replace(/\D/g, '').length ?? 0) < 10) || !newOrder?.metodo || create.isPending}
             onClick={() =>
               newOrder &&
               create.mutate(newOrder, {

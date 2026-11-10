@@ -8,7 +8,14 @@ import { Configurador } from '@/components/Configurador'
 import { SelosSeguranca } from '@/components/SelosSeguranca'
 import { ViewContent } from '@/components/ViewContent'
 import { SITE, brl } from '@/lib/site'
-import { fotoUrl, produto } from '@/lib/vitrine'
+import { CompreJunto } from '@/components/CompreJunto'
+import { fotoUrl, modelos, produto } from '@/lib/vitrine'
+
+// Combinações de venda cruzada por categoria (primeira que casar). Padrão: cartões de visita.
+const PARES: [RegExp, string][] = [
+  [/cartoes|cartao/, 'pastas'], [/panfleto|filipeta|folhas/, 'banners-faixas-lonas-e-tecidos'], [/adesivo|rotulo/, 'sacolas-e-sacos'],
+  [/banner|lona|faixa|wind/, 'cartoes-de-visita'], [/pasta/, 'cartoes-de-visita'], [/sacola|caixa|embalagem/, 'adesivos'],
+]
 
 export const revalidate = 900
 
@@ -27,13 +34,15 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
   const p = await produto(slug)
   if (!p) notFound()
   const foto = fotoUrl(p.fotos[0])
+  const par = PARES.find(([re]) => re.test(p.categoria_slug))?.[1] ?? 'cartoes-de-visita'
+  const sugestoes = (await modelos([par], { limite: 2 })).modelos.filter((m) => m.ref && m.produto_slug !== p.produto_slug)
   const f = p.ficha ?? {}
   const linhasFicha: [string, string | null | undefined][] = [
     ['Material', f.material], ['Espessura', f.espessura], ['Impressão', f.impressao ?? p.impressao], ['Tamanho final', f.tamanho_final ?? p.formato],
     ['Arte com sangria (3 mm)', f.arte_com_sangria], ['Acabamento', f.acabamento ?? p.acabamentos?.[0]], ['Prazo de produção', p.prazo_dias_uteis ? `${p.prazo_dias_uteis} dias úteis após pagamento e arte liberada` : null],
   ]
   const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'Product', name: p.titulo, category: p.categoria, image: foto ? [foto] : undefined,
+    '@context': 'https://schema.org', '@type': 'Product', name: p.titulo, sku: p.sku ?? undefined, category: p.categoria, image: foto ? [foto] : undefined,
     description: p.especificacao ?? undefined, brand: { '@type': 'Brand', name: SITE.nome },
     offers: { '@type': 'AggregateOffer', priceCurrency: 'BRL', lowPrice: Number(p.a_partir_de), highPrice: Number(p.ate), offerCount: p.opcoes.length,
       availability: 'https://schema.org/InStock', seller: { '@type': 'Organization', name: SITE.nome } },
@@ -65,8 +74,9 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
             <span className="text-xs font-semibold uppercase tracking-wide text-magenta">{p.categoria}</span>
             <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{p.titulo}</h1>
             <p className="mt-2 text-sm text-black/65">{[p.impressao, p.formato].filter(Boolean).join(' · ')}</p>
+            {p.sku && <p className="mt-1 text-sm font-semibold">Ref. / SKU: <span className="rounded bg-amarelo/60 px-1.5 py-0.5 font-mono">{p.sku}</span></p>}
           </div>
-          <Configurador slug={p.produto_slug} titulo={p.titulo} foto={p.fotos[0] ?? null} opcoes={p.opcoes} />
+          <Configurador slug={p.produto_slug} titulo={p.titulo} foto={p.fotos[0] ?? null} opcoes={p.opcoes} irmaos={p.irmaos} formato={p.formato} />
           <CobrimosBanner produto={p.titulo} />
           <SelosSeguranca escuro={false} />
         </div>
@@ -97,6 +107,8 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
             </div>) },
         ]} />
       </div>
+
+      <CompreJunto sugestoes={sugestoes} />
 
       {p.variacoes.length > 0 && (
         <section className="mt-10">

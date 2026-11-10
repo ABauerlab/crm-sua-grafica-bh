@@ -22,6 +22,7 @@ import { windowInfo } from '@/lib/window'
 import { cn } from '@/lib/utils'
 import { MessageBubble } from './MessageBubble'
 import { MessageInfo } from './MessageInfo'
+import { limparVariavel, primeiroNome, TEMPLATE_AVISO } from '@/lib/aviso-operacional'
 import { TemplatePicker } from './TemplatePicker'
 
 const PAGE = 60
@@ -573,11 +574,28 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 </button>
               )}
             </p>
+            {!win.open && <ReabrirJanela nome={conversation.contact.name} sending={send.isPending} onSend={(body) => send.mutate(body)} />}
             <TemplatePicker sending={send.isPending} onSend={(t) => send.mutate({ template_name: t.name, language: t.language, variables: t.variables })} />
           </div>
         )}
         {badges(conversation)}
       </footer>
+    </div>
+  )
+}
+
+/** Janela de 24 h fechada: um botão dispara o template oficial "aviso_operacional_pedido" com o nome do cliente e a mensagem digitada. */
+function ReabrirJanela({ nome, sending, onSend }: { nome: string | null; sending: boolean; onSend: (body: Record<string, unknown>) => void }) {
+  const [detalhe, setDetalhe] = useState('')
+  const variaveis = [primeiroNome(nome), limparVariavel(detalhe)]
+  return (
+    <div className="space-y-2 rounded-md border border-brand-yellow/60 bg-brand-yellow/10 p-3">
+      <p className="text-sm font-semibold">Reabrir a janela de 24 h</p>
+      <Textarea aria-label="Mensagem sobre o pedido" rows={2} value={detalhe} onChange={(e) => setDetalhe(e.target.value)} placeholder="Ex.: Seu pedido está pronto para retirada. Qual o melhor horário?" />
+      <p className="text-[11px] text-muted-foreground">Sai como: "Olá, {variaveis[0]}! Aqui é da equipe de atendimento da Sua Gráfica BH sobre o seu pedido. {variaveis[1] || '(sua mensagem)'} Qualquer dúvida, é só nos responder por aqui!"</p>
+      <Button size="sm" disabled={!variaveis[1] || sending} onClick={() => onSend({ template_name: TEMPLATE_AVISO.name, language: TEMPLATE_AVISO.language, variables: variaveis })}>
+        Enviar aviso e reabrir a conversa
+      </Button>
     </div>
   )
 }

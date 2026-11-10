@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CalendarCheck, Check, Loader2, MapPin, ShoppingCart, Rocket } from 'lucide-react'
 import { brl, carrinho, type Arte } from '@/lib/carrinho'
@@ -20,7 +21,10 @@ const ARTES: { id: Arte; titulo: string; texto: string; valor: string }[] = [
   { id: 'criacao', titulo: 'Criação completa da arte', texto: 'Nossa equipe cria do zero com as suas informações. Acrescenta 1 dia útil ao prazo.', valor: '+ R$ 39,90' },
 ]
 
-export function Configurador({ slug, titulo, foto, opcoes }: { slug: string; titulo: string; foto: string | null; opcoes: Opcao[] }) {
+export interface Irmao { produto_slug: string; impressao: string | null; formato: string | null; a_partir_de: number }
+
+export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato = null }: { slug: string; titulo: string; foto: string | null; opcoes: Opcao[]; irmaos?: Irmao[]; formato?: string | null }) {
+  const mesmoTamanho = irmaos.filter((i) => i.formato === formato)
   const router = useRouter()
   const [ref, setRef] = useState(opcoes[0]?.ref)
   const [arte, setArte] = useState<Arte>('pronta')
@@ -58,17 +62,36 @@ export function Configurador({ slug, titulo, foto, opcoes }: { slug: string; tit
 
   return (
     <div className="space-y-6">
+      {mesmoTamanho.length > 1 && (
+        <section>
+          <h2 className="mb-2 text-sm font-black uppercase tracking-wide">Impressão</h2>
+          <div className="flex flex-wrap gap-2">
+            {mesmoTamanho.map((i) => (
+              <Link key={i.produto_slug} href={`/produto/${i.produto_slug}`} scroll={false} aria-current={i.produto_slug === slug ? 'page' : undefined}
+                className={`rounded-lg border-2 px-3 py-2 text-sm ${i.produto_slug === slug ? 'border-magenta bg-magenta/5 font-bold' : 'border-black/10 hover:border-black/30'}`}>
+                {i.impressao}<span className="block text-xs font-normal text-black/55">a partir de {brl(Number(i.a_partir_de))}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section>
-        <h2 className="mb-2 text-sm font-black uppercase tracking-wide">1. Escolha a quantidade</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {opcoes.map((o) => (
-            <button key={o.ref} type="button" onClick={() => setRef(o.ref)} aria-pressed={o.ref === ref}
-              className={`rounded-lg border-2 p-2 text-left text-sm transition ${o.ref === ref ? 'border-magenta bg-magenta/5' : 'border-black/10 hover:border-black/30'}`}>
-              <b className="block">{o.quantidade ? `${o.quantidade.toLocaleString('pt-BR')} un.` : '1 un.'}</b>
-              <span className="text-xs text-black/60">{brl(Number(o.preco))}</span>
-            </button>
-          ))}
+        <h2 className="mb-2 text-sm font-black uppercase tracking-wide">1. Escolha a tiragem</h2>
+        <div role="radiogroup" aria-label="Tiragem" className="overflow-hidden rounded-lg border border-black/10">
+          {opcoes.map((o) => {
+            const un = o.quantidade ?? 1
+            return (
+              <button key={o.ref} type="button" role="radio" aria-checked={o.ref === ref} onClick={() => setRef(o.ref)}
+                className={`flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/5 px-3 py-2 text-left text-sm last:border-b-0 ${o.ref === ref ? 'bg-magenta/5 font-bold ring-2 ring-inset ring-magenta' : 'hover:bg-papel'}`}>
+                <span>{o.quantidade ? `${o.quantidade.toLocaleString('pt-BR')} un.` : '1 un.'}</span>
+                <span className="text-xs text-black/60">{brl(Number(o.preco) / un)} cada</span>
+                <span>{brl(Number(o.preco))}</span>
+              </button>
+            )
+          })}
         </div>
+        {opcao?.sku && <p className="mt-2 text-xs text-black/60">Ref. / SKU: <b className="font-mono text-tinta">{opcao.sku}</b></p>}
       </section>
 
       <section>

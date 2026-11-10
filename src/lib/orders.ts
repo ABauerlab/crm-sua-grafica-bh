@@ -1,4 +1,4 @@
-export type OrderStage = 'novo' | 'cotando' | 'aguardando_pagamento' | 'pago' | 'arte' | 'prova' | 'producao' | 'entregue' | 'recompra' | 'perdido'
+export type OrderStage = 'novo' | 'cotando' | 'aguardando_pagamento' | 'pago' | 'arte' | 'prova' | 'producao' | 'pronto' | 'entregue' | 'recompra' | 'perdido'
 export type PaymentStatus = 'pendente' | 'aprovado' | 'recusado' | 'expirado' | 'estornado'
 export type ArtStatus = 'aguardando' | 'em_criacao' | 'enviada' | 'aprovada' | 'ajuste'
 
@@ -21,6 +21,7 @@ export const ORDER_STAGES: StageInfo[] = [
   { value: 'arte', short: 'Arte', label: 'Arte', bar: 'bg-brand-magenta', chip: 'bg-brand-magenta/10 text-ink' },
   { value: 'prova', short: 'Prova', label: 'Prova', bar: 'bg-[#FF8A00]', chip: 'bg-[#FF8A00]/20 text-ink' },
   { value: 'producao', short: 'Produção', label: 'Produção', bar: 'bg-ink', chip: 'bg-ink/10 text-ink' },
+  { value: 'pronto', short: 'Pronto', label: 'Pronto', bar: 'bg-brand-green', chip: 'bg-brand-green/15 text-ink' },
   { value: 'entregue', short: 'Entregue', label: 'Entregue', bar: 'bg-brand-green', chip: 'bg-brand-green/10 text-brand-green' },
   { value: 'recompra', short: 'Recompra', label: 'Recompra', bar: 'bg-brand-red', chip: 'bg-brand-red/10 text-brand-red' },
   { value: 'perdido', short: 'Perdido', label: 'Perdido', bar: 'bg-ink/60', chip: 'bg-ink/10 text-ink' },
@@ -168,6 +169,7 @@ export const DEFAULT_KANBAN: KanbanSettings = {
     arte: 24,
     prova: 24,
     producao: 72,
+    pronto: 48,
     entregue: 0,
     recompra: 0,
     perdido: 0,

@@ -8,8 +8,8 @@ Antes de qualquer tarefa, leia `docs/agente/00-contexto.md`, `docs/agente/progre
 - O modelo de IA nunca calcula preço, prazo, frete nem desconto.
 - Segredos nunca ficam no repositório, no front nem em logs.
 - A tabela e o custo do fornecedor nunca vão ao repositório nem ficam visíveis ao cliente.
-- O SKU do fornecedor é interno.
-- O endereço da fábrica do fornecedor nunca é citado. O endereço do balcão de retirada (Rua Rio de Janeiro, 462, sala 2217, Edifício Helena Passig, Praça Sete) é PÚBLICO desde 09/11/2026 (decisão do dono): aparece no site e pode ser informado ao cliente, sempre como ponto de retirada agendada de materiais prontos (não é loja). Nunca citar o SKU do fornecedor.
+- O SKU da planilha de venda é PÚBLICO na loja desde 10/11/2026 (decisão do dono: aparece como "Ref. / SKU" nos cards e no produto; é o único dado interno liberado). Custo, piso, margem e a tabela do fornecedor continuam fechados. A Laura segue sem citar SKU até o dono decidir o contrário.
+- O endereço da fábrica do fornecedor nunca é citado. O endereço do balcão de retirada (Rua Rio de Janeiro, 462, sala 2217, Edifício Helena Passig, Praça Sete) é PÚBLICO desde 09/11/2026 (decisão do dono): aparece no site e pode ser informado ao cliente, sempre como ponto de retirada agendada de materiais prontos (não é loja). A Laura não cita SKU até o dono decidir (o SKU da planilha de venda é público só na loja).
 - Workflows do n8n sempre são criados pelo MCP do n8n, na pasta `Sua Gráfica BH`, com nome `GBH | ...`, e ficam DESATIVADOS até a Etapa 8.
 
 ## Fluxo de fechamento (padrão)
