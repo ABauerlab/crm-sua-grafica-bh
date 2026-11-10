@@ -12,7 +12,7 @@
 //    ORIGEM_BASE=https://... node scripts/scrape-authenticated-fornecedor.ts login
 // 2) Extração em lote (usa a sessão salva; 1 página a cada 2-3 s; retoma de onde parou):
 //    ORIGEM_BASE=https://... ORIGEM_MARCA="termo1,termo2" SUPABASE_URL=https://xxxx.supabase.co SUPABASE_SERVICE_ROLE_KEY=... \
-//      node scripts/scrape-authenticated-fornecedor.ts extrair [--limite 50] [--dry-run]
+//      node scripts/scrape-authenticated-fornecedor.ts extrair [--limite 50] [--filtro cartoes-de-visita] [--dry-run]
 //
 // O que faz: para cada produto já mapeado em `loja_fichas` (coluna `caminho`), abre a página logada e lê
 //  - acabamentos extras e o CUSTO de fábrica (grava em `acabamentos_extras`; a venda sai no banco como 3x o custo, terminando em ,90);
@@ -34,6 +34,7 @@ const modo = process.argv[2]
 const args = process.argv.slice(3)
 const dry = args.includes('--dry-run')
 const limite = Number(args[args.indexOf('--limite') + 1]) || Infinity
+const filtro = args.includes('--filtro') ? args[args.indexOf('--filtro') + 1].toLowerCase() : ''
 const espera = () => new Promise((r) => setTimeout(r, 2000 + Math.random() * 1000))
 
 if (!BASE || !['login', 'extrair'].includes(modo ?? '')) {
@@ -107,8 +108,17 @@ async function enviar(caminho: string, corpo: Buffer, tipo: string) {
 const progresso: { feitos: string[]; gabaritos: { produto: string; arquivo: string; tipo: string; revisar: boolean }[] } =
   existsSync(PROGRESSO) ? JSON.parse(readFileSync(PROGRESSO, 'utf8')) : { feitos: [], gabaritos: [] }
 
-const fila = await (dry && !SB ? Promise.resolve([] as { chave: string; caminho: string }[]) : sb<{ chave: string; caminho: string }[]>('/rest/v1/loja_fichas?select=chave,caminho&order=chave&limit=5000'))
-const pendentes = fila.filter((f) => !progresso.feitos.includes(f.chave)).slice(0, limite)
+// O Supabase devolve no máximo 1000 linhas por chamada: lê em páginas até acabar (são ~3.800 produtos).
+async function lerFila(): Promise<{ chave: string; caminho: string }[]> {
+  const todos: { chave: string; caminho: string }[] = []
+  for (let de = 0; ; de += 1000) {
+    const pg = await sb<{ chave: string; caminho: string }[]>('/rest/v1/loja_fichas?select=chave,caminho&order=chave', { headers: { Range: `${de}-${de + 999}`, 'Range-Unit': 'items' } })
+    todos.push(...pg)
+    if (pg.length < 1000) return todos
+  }
+}
+const fila = await (dry && !SB ? Promise.resolve([] as { chave: string; caminho: string }[]) : lerFila())
+const pendentes = fila.filter((f) => !progresso.feitos.includes(f.chave) && (!filtro || f.caminho.toLowerCase().includes(filtro))).slice(0, limite)
 console.log(`${fila.length} produtos mapeados, ${pendentes.length} nesta rodada${dry ? ' (dry-run: nada é gravado)' : ''}`)
 
 // Com ORIGEM_CDP, usa o Chrome real já logado (Cloudflare não barra); senão, abre um Chromium com a sessão salva.
