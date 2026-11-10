@@ -20,7 +20,7 @@ Roteiro aprovado pelo dono em 09/11/2026. Um PR por fase; cada fase para e esper
 | 7 | Meta Pixel + Conversions API com deduplicação por `event_id`, aviso de cookies (LGPD), Purchase no servidor quando o pagamento é aprovado | **feito** (falta criar o Pixel e o token na Meta) |
 | 8 | Blog automático (feeds do setor como pauta, texto próprio com crédito e link da fonte; NewsAPI opcional) e Central de Ajuda completa | feito |
 | 9 | Checkout em 3 passos (`/checkout`), `carrinhos_abandonados`, frete grátis só nos 7 bairros centrais (CEP resolvido para bairro), SuperFrete (falta o token), Pix copia e cola | **feito** (site publicado na Hostinger; falta DNS) |
-| 10 | JSON-LD de produto, sitemap dinâmico, varredura de segurança e PR final | pendente |
+| 10 | JSON-LD de produto, sitemap dinâmico, varredura de segurança e PR final | **feito** (JSON-LD e sitemap já vinham da Fase 5; esta fase fechou a segurança e a verificação no domínio real) |
 
 ## Banco (Fase 3)
 - `catalogo`: `preco_venda`, `preco_mercado_ref`, `prazo_cliente_dias`, `peso_frete_kg`, `embalagem_cm`, `tipo_embalagem`, `estrategia_preco`, `preco_planilha_em`.
@@ -73,3 +73,10 @@ npm run build:ecommerce
 - **Carrinho abandonado**: `carrinhos_abandonados` guarda o carrinho (valor recalculado no banco) e vira `recuperado` quando o pedido nasce. A view `v_carrinhos_recuperar` lista quem parou há 15 min a 24 h, com `consentiu` e `janela_aberta`. **O envio do follow-up não foi ligado**: marketing só com consentimento e fora das 24 h exige template aprovado pela Meta.
 - **Pix direto**: `POST /v1/payments` do Mercado Pago com `external_reference` do pedido; o `mp-webhook` e o `mp-conferir` já reconhecem o pagamento pelo mesmo caminho do cartão.
 - **Hostinger**: site Node.js `suagraficabh.com.br`, repositório `ABauerlab/crm-sua-grafica-bh`, branch `main`, Root Directory `ecommerce`, app `next`, Node 22, **Output Directory `.next`** (sem isso a publicação falha com erro 500 interno da Hostinger). Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (chave anon, também usada como Bearer) e `NEXT_PUBLIC_SITE_URL`. Depois de mudar variável `NEXT_PUBLIC_*` é preciso novo build.
+
+## Fase 10: segurança e fechamento
+- **Site no ar**: `https://suagraficabh.com.br` (DNS no Registro.br: `A` da raiz em 186.244.148.143 e `CNAME` do `www`; o MX do e-mail não mudou). Certificado vitalício ativo, `http` redireciona para `https`, `www` responde. Todas as rotas respondem 200, sem rolagem lateral em desktop e celular, JSON-LD de produto presente (`Product` e `LocalBusiness`) e `noindex` no checkout e no carrinho.
+- **Varredura**: `anon` não lê `v_funil_vendas_ia`, `carrinhos_abandonados` nem `cep_bairros` e não chama `loja_frete_base` nem `loja_carrinho_fechar`. **Achado corrigido**: `calcular_acabamento_seguro` devolvia dias e custo de acabamento a qualquer chamador com a chave pública (migration `20261123000001`; nada a usava). `npm audit` da loja foi de 2 vulnerabilidades (postcss dentro do Next) para 0, com `overrides.postcss` em `ecommerce/package.json`.
+- **Avisos que ficam (conferidos, sem exposição)**: `v_funil_vendas_ia` aparece como SECURITY DEFINER no linter, mas `anon` não tem permissão nela; tabelas internas com RLS e sem política (`cep_bairros`, `app_segredos`, `webhook_eventos`, `e2e_*`) são só da service role, de propósito; funções `loja_*` e `meta_evento_registrar` liberadas ao anônimo são a API pública. **Pendente do dono**: ligar "Leaked password protection" em Authentication no painel do Supabase (a API não liga).
+- **Google**: enviar `https://suagraficabh.com.br/sitemap.xml` no Search Console (verificar a propriedade do domínio por DNS TXT) e conferir a cobertura depois de alguns dias.
+- **Não feito**: imagem padrão de compartilhamento (Open Graph) da home e das páginas sem foto; precisa de uma arte 1200x630.
