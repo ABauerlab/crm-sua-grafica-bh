@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   openGraph: { type: 'website', locale: 'pt_BR', siteName: SITE.nome, url: SITE.url, images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Sua Gráfica BH: impressão de qualidade para o seu negócio' }] },
   twitter: { card: 'summary_large_image', images: ['/og-image.jpg'] },
   alternates: { canonical: '/' },
+  verification: { google: 'Poxj1j0h8NOL0UZR9Mg_TiWzFDNsiy0AJCe6kewz0JM' },
 }
 
 export const viewport: Viewport = { themeColor: '#0b0b0f', width: 'device-width', initialScale: 1 }
