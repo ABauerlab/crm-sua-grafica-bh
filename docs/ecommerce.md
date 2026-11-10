@@ -113,3 +113,9 @@ npm run build:ecommerce
 - **Para o dono decidir**: ver as variantes ocultas com `select sku, preco, oculto_motivo from ecommerce_products where oculto`. Se alguma variante deve ser vendida (ex.: base de vidro vs ferro), é preciso dar nome a ela no catálogo; enquanto isso a loja vende a de menor preço.
 - **Títulos padronizados**: `private.titulo_vitrine` agora entrega nomes de balcão ("Couchê Brilho Digital 300g") também para os itens sem ficha da origem.
 - **PDF obrigatório no servidor**: `validar_antes_de_cobrar` recusa Pix e cartão de pedido do site com arte própria (pronta ou conferência) que ainda não recebeu o PDF. O checkout cria o pedido, envia o PDF e então pede o pagamento.
+
+## Fase 14: menu em etapas, todos os departamentos e busca de categorias (10/11/2026)
+- **Menu em etapas** (`MenuDepartamentos`): abre tudo fechado; o cliente abre o departamento, depois a categoria (seta ao lado do nome) e só então vê os tipos. A categoria atual aparece destacada sem abrir sozinha. Os filtros da barra lateral também abrem fechados (abre só o que está com filtro ativo).
+- **Achar sem navegar**: campo "Achar categoria ou tipo" no menu e sugestões no campo de busca do cabeçalho (categorias e tipos de qualquer departamento, sem acento).
+- **Todos os departamentos** (`/departamentos`): índice de leitura com os 7 departamentos, todas as categorias, quantas opções e exemplos de tipos de cada uma. Botão "Departamentos" no cabeçalho abre a gaveta com o menu completo (celular, tablet e computador).
+- **Search Console**: meta de verificação do Google no `<head>` da home (`metadata.verification.google`).

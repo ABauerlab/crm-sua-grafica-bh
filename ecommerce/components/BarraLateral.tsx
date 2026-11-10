@@ -1,12 +1,12 @@
 import { ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { PainelFiltros } from './Filtros'
-import { ListaMenu } from './MenuLateral'
+import { MenuDepartamentos } from './MenuDepartamentos'
 import type { Facetas, Filtros, Vertical } from '@/lib/vitrine'
 
 /** Coluna da esquerda: departamentos (vertical > categoria > subcategoria) e filtros. No celular vira duas gavetas. Usada na home, em /categorias e nas categorias. */
 export function BarraLateral({ verticais, facetas, filtros, base, q, ordem, atual, subAtual }: { verticais: Vertical[]; facetas: Facetas; filtros: Filtros; base: string; q?: string; ordem: string; atual?: string; subAtual?: string }) {
   const nAtivos = Object.values(filtros).reduce((n, v) => n + (v?.length ?? 0), 0)
-  const menu = <ListaMenu verticais={verticais} atual={atual} subAtual={subAtual} />
+  const menu = <MenuDepartamentos verticais={verticais} atual={atual} subAtual={subAtual} />
   const filtrosUi = <PainelFiltros base={base} facetas={facetas} filtros={filtros} q={q} ordem={ordem} />
   return (
     <>

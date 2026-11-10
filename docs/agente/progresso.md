@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## E-commerce Fase 14: menu em etapas e departamentos completos (10/11/2026, branch `claude/funny-ride-s51uyy`)
+- Menu e filtros agora abrem fechados e o cliente vai destrinchando; busca de categorias e tipos no menu e sugestões no cabeçalho; página `/departamentos` com tudo; gaveta "Departamentos" no cabeçalho; meta do Google Search Console. Detalhes em `docs/ecommerce.md` (Fase 14). Conferido em 390, 768 e 1366 px, sem rolagem lateral.
+- Chaves: o dono já cadastrou `SUPERFRETE_TOKEN` e `GEMINI_API_KEY` no Supabase. Falta só o Pixel da Meta (`META_PIXEL_ID`, `META_CAPI_TOKEN` e `NEXT_PUBLIC_META_PIXEL_ID`). Falta testar o envio nacional (SuperFrete) com um CEP de fora de BH.
+
 ## E-commerce Fase 13b: duplicidade, títulos e PDF no servidor (10/11/2026)
 - **Wind Banner repetido**: causa e correção em `docs/ecommerce.md` (Fase 13b). 0 opções ativas repetidas depois da correção; 1.246 variantes ocultas (257 de preço igual, 989 com preço maior) listadas por `select sku, oculto_motivo from ecommerce_products where oculto`. Rotina `private.loja_dedup` a cada 15 min; teste em `supabase/tests/loja_duplicidade.sql`.
 - **Títulos crus** padronizados na origem (`titulo_vitrine`) e **PDF obrigatório** agora recusado pelo servidor (`validar_antes_de_cobrar`).

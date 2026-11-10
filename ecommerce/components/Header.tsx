@@ -4,12 +4,17 @@ import { Logo } from './Logo'
 import { CarrinhoIcone } from './CarrinhoIcone'
 import { MENSAGENS_WHATSAPP, linkWhatsApp, SITE } from '@/lib/site'
 import { arvore } from '@/lib/vitrine'
+import { itensDeBusca } from '@/lib/menu'
+import { BotaoDepartamentos } from './BotaoDepartamentos'
+import { BuscaHeader } from './BuscaHeader'
 
 const CURTO: Record<string, string> = { papelaria: 'Papelaria', embalagens: 'Embalagens', rotulos: 'Rótulos e Tags', editorial: 'Editorial', visual: 'Comunicação Visual', brindes: 'Brindes', festas: 'Festas e Delivery' }
 
 export async function Header() {
-  const verticais = (await arvore()).filter((v) => v.id !== 'mostruario')
-  const mostruario = (await arvore()).find((v) => v.id === 'mostruario')?.categorias[0]
+  const todas = await arvore()
+  const verticais = todas.filter((v) => v.id !== 'mostruario')
+  const mostruario = todas.find((v) => v.id === 'mostruario')?.categorias[0]
+  const itens = itensDeBusca(todas)
   return (
     <header className="sticky top-0 z-40 bg-tinta text-white">
       <div className="hidden border-b border-white/10 text-xs text-white/70 md:block">
@@ -20,10 +25,7 @@ export async function Header() {
       </div>
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
         <Link href="/" className="shrink-0" aria-label="Página inicial"><Logo /></Link>
-        <form action="/busca" className="relative hidden flex-1 md:block" role="search">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/40" aria-hidden />
-          <input name="q" placeholder="O que você quer imprimir hoje?" aria-label="Buscar produto" className="h-11 w-full rounded-lg bg-white pl-9 pr-3 text-sm text-tinta outline-none ring-amarelo focus:ring-2" />
-        </form>
+        <BuscaHeader itens={itens} placeholder="O que você quer imprimir hoje?" className="hidden flex-1 md:block" />
         <a href={linkWhatsApp(MENSAGENS_WHATSAPP.home)} target="_blank" rel="noopener" className="ml-auto hidden items-center gap-2 text-xs leading-tight lg:flex">
           <MessageCircle className="h-5 w-5" aria-hidden /><span>Atendimento<br />{SITE.telefone}</span>
         </a>
@@ -34,12 +36,10 @@ export async function Header() {
           </Link>
         </div>
       </div>
-      <form action="/busca" className="px-4 pb-3 md:hidden" role="search">
-        <input name="q" placeholder="O que você quer imprimir hoje?" aria-label="Buscar produto" className="h-10 w-full rounded-lg bg-white px-3 text-sm text-tinta outline-none ring-amarelo focus:ring-2" />
-      </form>
+      <div className="px-4 pb-3 md:hidden"><BuscaHeader itens={itens} placeholder="O que você quer imprimir hoje?" /></div>
       <nav aria-label="Departamentos" className="border-t border-white/10">
-        <ul className="relative mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 text-sm text-white/85 [scrollbar-width:none] lg:overflow-visible">
-          <li className="whitespace-nowrap"><Link href="/categorias" className="flex min-h-11 items-center px-2 font-semibold text-white">Todos os produtos</Link></li>
+        <ul className="relative mx-auto flex max-w-7xl items-center gap-0.5 overflow-x-auto px-4 text-sm text-white/85 [scrollbar-width:none] lg:overflow-visible">
+          <li className="shrink-0 py-0.5"><BotaoDepartamentos verticais={todas} /></li>
           {verticais.map((v) => (
             <li key={v.id} className="group whitespace-nowrap">
               <Link href={`/categorias?vertical=${v.id}`} className="flex min-h-11 items-center px-2 hover:text-amarelo">{CURTO[v.id] ?? v.nome}</Link>

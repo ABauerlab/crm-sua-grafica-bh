@@ -12,7 +12,7 @@ export function PainelFiltros({ base, facetas, filtros, q, ordem }: PropsF) {
       {FACETAS.map((f) => {
         const itens = facetas[f.id] ?? []
         if (!itens.length && !(filtros[f.id] ?? []).length) return null
-        const aberto = f.id !== 'preco' && f.id !== 'formato' || (filtros[f.id] ?? []).length > 0
+        const aberto = (filtros[f.id] ?? []).length > 0
         return (
           <details key={f.id} open={aberto} className="group border-b border-black/5 pb-1">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-bold [&::-webkit-details-marker]:hidden">
