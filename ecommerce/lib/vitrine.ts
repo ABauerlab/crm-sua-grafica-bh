@@ -2,7 +2,7 @@
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL
 const CHAVE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null }
+export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis?: number | null; peso_kg?: number | null }
 export interface Modelo {
   titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
   parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number

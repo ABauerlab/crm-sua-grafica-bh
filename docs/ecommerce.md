@@ -128,7 +128,7 @@ npm run build:ecommerce
 
 
 ## Fase 16: SKUs atômicos, ficha técnica e canal de E-commerce no CRM
-- **Catálogo**: a listagem passa a apresentar um card por `produto_slug` (variação comercial), sem agrupar tamanhos diferentes em uma família. Cada página mantém as tiragens como opções individuais, com SKU, quantidade, preço e prazo. A rota antiga `/opcao/[familia]` continua para links existentes, mas deixa de ser destino dos cards novos.
+- **Catálogo**: a listagem passa a apresentar um card por `produto_slug` (variação comercial), sem agrupar tamanhos diferentes em uma família. Cada página mantém as tiragens como opções individuais, com SKU, quantidade, preço e prazo em dias úteis exibido por tiragem. A rota antiga `/opcao/[familia]` continua para links existentes, mas deixa de ser destino dos cards novos.
 - **Ficha técnica**: a RPC `loja_produto` complementa a ficha com material, gramatura e código de impressão a partir dos dados internos do catálogo; acabamentos normalizados são traduzidos para rótulos da Sua Gráfica BH. A loja não expõe custos, pisos ou dados de fornecedores.
 - **Categorias rápidas**: Cartões de Visita, Panfletos, Banners, Adesivos e Pastas, sem remover os demais departamentos e categorias.
 - **CRM**: checkout grava `orders.origin_label = 'ecommerce'`; trigger define `orders.canal = 'ecommerce'`. Os rótulos antigos `site` continuam reconhecidos. O Kanban oferece Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site, com as mesmas colunas e regras de produção.

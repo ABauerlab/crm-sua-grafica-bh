@@ -86,6 +86,7 @@ export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato 
                 className={`flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/5 px-3 py-2 text-left text-sm last:border-b-0 ${o.ref === ref ? 'bg-magenta/5 font-bold ring-2 ring-inset ring-magenta' : 'hover:bg-papel'}`}>
                 <span>{o.quantidade ? `${o.quantidade.toLocaleString('pt-BR')} un.` : '1 un.'}</span>
                 <span className="text-xs text-black/60">{brl(Number(o.preco) / un)} cada</span>
+                <span className="text-[11px] text-black/55">{o.prazo_dias_uteis ? `${o.prazo_dias_uteis} dias úteis` : 'Prazo não informado'}</span>
                 <span>{brl(Number(o.preco))}</span>
               </button>
             )

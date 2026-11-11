@@ -264,7 +264,7 @@ begin
       'fotos', coalesce((array_agg(e.fotos) filter (where jsonb_array_length(e.fotos) > 0))[1], '[]'::jsonb),
       'prazo_dias_uteis', max(e.prazo_dias_uteis), 'a_partir_de', min(e.preco), 'ate', max(e.preco),
       'sku', (array_agg(e.sku order by e.preco, e.quantidade))[1],
-      'opcoes', jsonb_agg(jsonb_build_object('ref', e.ref, 'sku', e.sku, 'quantidade', e.quantidade, 'preco', e.preco, 'parcela_2x', e.parcela_2x,
+      'opcoes', jsonb_agg(jsonb_build_object('ref', e.ref, 'sku', e.sku, 'quantidade', e.quantidade, 'preco', e.preco, 'parcela_2x', e.parcela_2x, 'prazo_dias_uteis', e.prazo_dias_uteis,
                                              'peso_kg', e.peso_kg) order by e.quantidade, e.preco),
       'atualizado_em', max(e.atualizado_em)),
     min(e.categoria_slug), min(e.formato_rotulo), min(e.cores_rotulo), min(e.titulo)
