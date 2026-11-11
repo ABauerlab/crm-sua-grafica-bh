@@ -236,12 +236,22 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
   const logAction = (action: string, reason: string) =>
     supabase.from('agent_logs').insert({ conversation_id: conversation.id, actor: 'humano', action, detail: { reason }, result: 'ok' })
 
+  // trava contra clique repetido: o estado do mutation só atualiza no próximo render, então a ref barra o segundo clique do mesmo instante
+  const assumindoRef = useRef(false)
   function takeOver() {
-    const eraIA = conversation.ai_handled
-    updateConv.mutate({ ai_handled: false, attendant_changed_at: new Date().toISOString(), attendant_change_reason: 'Assumido pelo dono', needs_human: false })
-    void logAction('assumiu_conversa', 'Assumido pelo dono')
-    // aviso ao cliente só na passagem IA -> humano; sai por whatsapp-send (a API da Meta só é chamada nas Edge Functions)
-    if (eraIA) send.mutate({ text: 'Um de nossos consultores humanos acabou de assumir este atendimento para cuidar dos detalhes finais do seu pedido. Só um instante que já daremos continuidade!' })
+    if (assumindoRef.current || updateConv.isPending || !conversation.ai_handled) return
+    assumindoRef.current = true
+    updateConv.mutate(
+      { ai_handled: false, attendant_changed_at: new Date().toISOString(), attendant_change_reason: 'Assumido pelo dono', needs_human: false },
+      {
+        onSuccess: () => {
+          void logAction('assumiu_conversa', 'Assumido pelo dono')
+          // aviso ao cliente uma única vez, só na passagem IA -> humano; sai por whatsapp-send (a API da Meta só é chamada nas Edge Functions)
+          send.mutate({ text: 'Um de nossos consultores humanos acabou de assumir este atendimento para cuidar dos detalhes finais do seu pedido. Só um instante que já daremos continuidade!' })
+        },
+        onSettled: () => { assumindoRef.current = false },
+      },
+    )
   }
   function giveBack() {
     updateConv.mutate({ ai_handled: true, attendant_changed_at: new Date().toISOString(), attendant_change_reason: 'Devolvido para a IA' })
@@ -250,7 +260,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   function submit() {
     const t = text.trim()
-    if (mode === 'reply' && t.toLowerCase() === '/resetchat') return void resetChat.mutate()
+    if (mode === 'reply' && t.toLowerCase() === '/resetchat') return void (resetChat.isPending || resetChat.mutate())
     if (mode === 'reply' && arquivos.length) return void enviarComArquivos()
     if (!t) return
     if (mode === 'note') {
@@ -610,7 +620,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
         ) : ai ? (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-brand-blue/30 bg-brand-blue/5 p-3 text-sm">
             <p className="flex items-center gap-2"><Bot className="h-4 w-4 shrink-0" aria-hidden /> A IA está atendendo esta conversa. Assuma para responder você mesmo.</p>
-            <Button size="sm" onClick={takeOver}>Assumir conversa</Button>
+            <Button size="sm" onClick={takeOver} disabled={updateConv.isPending}>Assumir conversa</Button>
           </div>
         ) : (
           <div className="space-y-3">
