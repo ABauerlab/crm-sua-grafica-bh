@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { ModeloCard } from './ModeloCard'
 import type { Modelo } from '@/lib/vitrine'
 
-const LOTE = 48
+const LOTE = 60
 
-/** Todos os modelos em uma página só: mostra 48 e revela o resto sozinho conforme a rolagem (sem "próxima"). */
+/** Todos os SKUs em uma página só: mostra 60 e revela o resto sozinho conforme a rolagem (sem "próxima"). */
 export function ListaModelos({ modelos }: { modelos: Modelo[] }) {
   const [n, setN] = useState(LOTE)
   const fim = useRef<HTMLDivElement>(null)
@@ -18,7 +18,7 @@ export function ListaModelos({ modelos }: { modelos: Modelo[] }) {
   }, [n, modelos.length])
   return (
     <>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">{modelos.slice(0, n).map((m) => <ModeloCard key={(m.familia ?? '') + m.produto_slug} m={m} />)}</div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">{modelos.slice(0, n).map((m) => <ModeloCard key={m.ref} m={m} />)}</div>
       {n < modelos.length && (
         <div ref={fim} className="mt-6 flex justify-center">
           <button type="button" onClick={() => setN((x) => Math.min(x + LOTE, modelos.length))} className="min-h-11 rounded-lg border border-black/15 bg-white px-5 text-sm font-semibold hover:border-magenta">Mostrar mais ({modelos.length - n} restantes)</button>

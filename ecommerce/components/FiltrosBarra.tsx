@@ -54,7 +54,7 @@ export function FiltrosBarra({ base, facetas, filtros, q, ordem, total }: { base
             )
           })}
         </div>
-        <span className="ml-auto text-xs text-black/55">{total != null ? `${total.toLocaleString('pt-BR')} ${total === 1 ? 'opção' : 'opções'}` : ''}</span>
+        <span className="ml-auto text-xs text-black/55">{total != null ? `${total.toLocaleString('pt-BR')} ${total === 1 ? 'produto' : 'produtos'}` : ''}</span>
         <label className="flex items-center gap-1.5 text-xs text-black/60">Ordenar
           <select value={ordem} onChange={(e) => router.push(hrefFiltros(base, filtros, { q, ordem: e.target.value }))} className="h-9 rounded-lg border border-black/15 bg-white px-2 text-[13px] text-tinta">
             {ORDENS.map(([o, nome]) => <option key={o} value={o}>{nome}</option>)}

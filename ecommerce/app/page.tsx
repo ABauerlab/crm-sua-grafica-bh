@@ -37,7 +37,7 @@ const DEPARTAMENTOS = [
 ]
 
 export default async function Home() {
-  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 4 }))])
+  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 6 }))])
   const foto = (i: number) => fotoUrl(vitrines[i]?.modelos.find((m) => m.foto)?.foto)
   const slides: Slide[] = [
     { titulo: 'Pedidos pagos até 10h30 começam a ser produzidos no mesmo dia', texto: 'Pagamento confirmado até 10h30 em dia útil e a produção começa hoje. Frete grátis na região central de BH.', href: '/categoria/cartoes-de-visita', botao: 'Ver cartões de visita', foto: foto(0), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
@@ -64,9 +64,9 @@ export default async function Home() {
         <section key={d.slug} className="pb-2 pt-4">
           <div className="mb-4 flex items-end justify-between gap-4">
             <h2 className="text-xl font-black md:text-2xl">{d.titulo}</h2>
-            <Link href={`/categoria/${d.slug}`} className="text-sm font-semibold text-magenta hover:underline">Ver todos os modelos</Link>
+            <Link href={`/categoria/${d.slug}`} className="text-sm font-semibold text-magenta hover:underline">Ver todos os produtos</Link>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6">{vitrines[i].modelos.map((m) => <ModeloCard key={m.produto_slug} m={m} />)}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">{vitrines[i].modelos.map((m) => <ModeloCard key={m.ref} m={m} />)}</div>
         </section>
       ))}
 

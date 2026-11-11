@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { ChevronRight, ImageOff, ShieldCheck, Truck, Clock, Palette } from 'lucide-react'
 import { Abas } from '@/components/Abas'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
@@ -9,7 +9,7 @@ import { SelosSeguranca } from '@/components/SelosSeguranca'
 import { ViewContent } from '@/components/ViewContent'
 import { SITE, brl } from '@/lib/site'
 import { CompreJunto } from '@/components/CompreJunto'
-import { acabamentoLegivel, fotoUrl, impressaoComCodigo, materialLegivel, modelos, produto } from '@/lib/vitrine'
+import { acabamentoLegivel, fotoUrl, impressaoComCodigo, impressaoCurta, materialLegivel, modelos, skuDoProdutoAntigo, skuProduto, REF_DA_URL } from '@/lib/vitrine'
 
 // Combinações de venda cruzada por categoria (primeira que casar). Padrão: cartões de visita.
 const PARES: [RegExp, string][] = [
@@ -21,18 +21,32 @@ export const revalidate = 900
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const p = await produto(slug)
+  const p = await skuProduto(slug)
   if (!p) return { title: 'Produto não encontrado' }
-  const desc = `${p.titulo} (${p.categoria}). ${p.impressao ?? ''} ${p.formato ?? ''}. A partir de ${brl(Number(p.a_partir_de))} no Pix ou 2x sem juros. Produção rápida em Belo Horizonte e envio para todo o Brasil.`
+  const nome = nomeDoSku(p)
+  const desc = `${nome} (${p.categoria}). ${p.impressao ?? ''} ${p.formato ?? ''}, ${(p.quantidade ?? 1).toLocaleString('pt-BR')} unidades por ${brl(p.preco)} no Pix ou 2x sem juros. Produção rápida em Belo Horizonte e envio para todo o Brasil.`
   const foto = fotoUrl(p.fotos[0])
-  return { title: p.titulo, description: desc.replace(/\s+/g, ' ').trim(), alternates: { canonical: `/produto/${slug}` },
-    openGraph: { title: p.titulo, description: desc, images: foto ? [foto] : [] } }
+  return { title: nome, description: desc.replace(/s+/g, ' ').trim(), alternates: { canonical: `/produto/${p.sku_slug}` },
+    openGraph: { title: nome, description: desc, images: foto ? [foto] : [] } }
+}
+
+/** Nome do produto = título + quantidade (+ opção, quando o mesmo produto tem versões sem descrição própria). */
+function nomeDoSku(p: { titulo: string; quantidade: number | null; variante: string | null }) {
+  return `${p.titulo} · ${(p.quantidade ?? 1).toLocaleString('pt-BR')} un.${p.variante ? ` · ${p.variante}` : ''}`
 }
 
 export default async function PaginaProduto({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const p = await produto(slug)
+  // link antigo (produto agrupado): vai para o SKU mais barato do grupo
+  if (!REF_DA_URL.test(slug)) {
+    const novo = await skuDoProdutoAntigo(slug)
+    if (novo) permanentRedirect(`/produto/${novo}`)
+    notFound()
+  }
+  const p = await skuProduto(slug)
   if (!p) notFound()
+  if (p.sku_slug !== slug) permanentRedirect(`/produto/${p.sku_slug}`)
+  const nome = nomeDoSku(p)
   const foto = fotoUrl(p.fotos[0])
   const par = PARES.find(([re]) => re.test(p.categoria_slug))?.[1] ?? 'cartoes-de-visita'
   const sugestoes = (await modelos([par], { limite: 2 })).modelos.filter((m) => m.ref && m.produto_slug !== p.produto_slug)
@@ -47,9 +61,9 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
     ['Prazo de produção', p.prazo_dias_uteis ? `${p.prazo_dias_uteis} dias úteis após pagamento e arte liberada` : null],
   ]
   const jsonLd = {
-    '@context': 'https://schema.org', '@type': 'Product', name: p.titulo, sku: p.sku ?? undefined, category: p.categoria, image: foto ? [foto] : undefined,
+    '@context': 'https://schema.org', '@type': 'Product', name: nome, sku: p.sku ?? undefined, category: p.categoria, image: foto ? [foto] : undefined,
     description: p.especificacao ?? undefined, brand: { '@type': 'Brand', name: SITE.nome },
-    offers: { '@type': 'AggregateOffer', priceCurrency: 'BRL', lowPrice: Number(p.a_partir_de), highPrice: Number(p.ate), offerCount: p.opcoes.length,
+    offers: { '@type': 'Offer', priceCurrency: 'BRL', price: p.preco, url: `${SITE.url}/produto/${p.sku_slug}`,
       availability: 'https://schema.org/InStock', seller: { '@type': 'Organization', name: SITE.nome } },
   }
   return (
@@ -57,14 +71,14 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
       <nav aria-label="Caminho" className="mb-4 flex flex-wrap items-center gap-1 text-xs text-black/55">
         <Link href="/" className="hover:text-magenta">Início</Link><ChevronRight className="h-3 w-3" aria-hidden />
         <Link href={`/categoria/${p.categoria_slug}`} className="hover:text-magenta">{p.categoria}</Link><ChevronRight className="h-3 w-3" aria-hidden />
-        <span className="text-tinta">{p.titulo}</span>
+        <span className="text-tinta">{nome}</span>
       </nav>
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl2 bg-white shadow-sm">
             {foto
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={foto} alt={p.titulo} className="aspect-square w-full object-cover" />
+              ? <img src={foto} alt={nome} className="aspect-[4/3] w-full object-cover lg:aspect-square" />
               : <div className="flex aspect-square items-center justify-center text-black/25"><ImageOff className="h-16 w-16" aria-hidden /></div>}
           </div>
           <ul className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
@@ -77,12 +91,12 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
         <div className="space-y-5">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-magenta">{p.categoria}</span>
-            <h1 className="mt-1 text-2xl font-black leading-tight md:text-3xl">{p.titulo}</h1>
-            <p className="mt-2 text-sm text-black/65">{[p.impressao, p.formato].filter(Boolean).join(' · ')}</p>
+            <h1 className="mt-1 text-xl font-black leading-tight md:text-2xl">{nome}</h1>
+            <p className="mt-2 text-sm text-black/65">{[impressaoCurta(p.impressao), p.formato, p.prazo_dias_uteis ? `Produção: ${p.prazo_dias_uteis} ${p.prazo_dias_uteis === 1 ? 'dia útil' : 'dias úteis'}` : null].filter(Boolean).join(' · ')}</p>
             {p.sku && <p className="mt-1 text-sm font-semibold">Ref. / SKU: <span className="rounded bg-amarelo/60 px-1.5 py-0.5 font-mono">{p.sku}</span></p>}
           </div>
-          <Configurador slug={p.produto_slug} titulo={p.titulo} foto={p.fotos[0] ?? null} opcoes={p.opcoes} irmaos={p.irmaos} formato={p.formato} />
-          <CobrimosBanner produto={p.titulo} />
+          <Configurador slug={p.produto_slug} skuSlug={p.sku_slug} refAtual={p.ref} titulo={nome} foto={p.fotos[0] ?? null} opcoes={p.quantidades} irmaos={p.irmaos} formato={p.formato} />
+          <CobrimosBanner produto={nome} />
           <SelosSeguranca escuro={false} />
         </div>
       </div>
@@ -122,7 +136,7 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
             {p.variacoes.map((v) => {
               const fv = fotoUrl(v.foto)
               return (
-                <Link key={v.produto_slug} href={`/produto/${v.produto_slug}`} className="overflow-hidden rounded-xl2 bg-white text-sm shadow-sm hover:shadow-md">
+                <Link key={v.produto_slug} href={`/produto/${v.sku_slug}`} className="overflow-hidden rounded-xl2 bg-white text-sm shadow-sm hover:shadow-md">
                   {fv
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={fv} alt="" loading="lazy" className="aspect-square w-full object-cover" />
@@ -135,7 +149,7 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
           </div>
         </section>
       )}
-      <ViewContent nome={p.titulo} categoria={p.categoria} valor={Number(p.a_partir_de)} produtoRef={p.opcoes[0]?.ref ?? ''} />
+      <ViewContent nome={nome} categoria={p.categoria} valor={p.preco} produtoRef={p.ref} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </div>
   )

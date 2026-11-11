@@ -1,32 +1,34 @@
 import Link from 'next/link'
 import { ImageOff } from 'lucide-react'
 import { brl } from '@/lib/site'
-import { fotoUrl, limparTitulo, type Modelo } from '@/lib/vitrine'
+import { fotoUrl, impressaoCurta, limparTitulo, type Modelo } from '@/lib/vitrine'
 
-/** Card compacto de uma opção: foto, nome completo (sem corte), etiquetas, quantidade e preço "a partir de". */
+/** Card compacto de UM SKU (um SKU = um produto): foto, nome, impressão, quantidade, preço, prazo e Ref. */
 export function ModeloCard({ m }: { m: Modelo }) {
   const foto = fotoUrl(m.foto)
-  const tiragens = m.variacoes ?? 0
-  const href = `/produto/${m.produto_slug}`
-  const tags = (m.tags ?? []).slice(0, 3)
+  const href = `/produto/${m.sku_slug ?? m.produto_slug}`
   const qtd = m.quantidade ?? 1
+  const tamanho = m.formato?.split(' (')[0]
+  const detalhe = [impressaoCurta(m.impressao), tamanho].filter(Boolean).join(' · ')
   return (
     <Link href={href} className="group flex flex-col overflow-hidden rounded-lg border border-black/5 bg-white shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-magenta">
-      <div className="relative aspect-[5/4] bg-papel">
+      <div className="relative aspect-[4/3] bg-papel">
         {foto
           // eslint-disable-next-line @next/next/no-img-element
-          ? <img src={foto} alt={limparTitulo(m.titulo)} width={320} height={256} loading="lazy" className="h-full w-full object-cover" />
-          : <div className="flex h-full items-center justify-center text-black/25"><ImageOff className="h-8 w-8" aria-hidden /></div>}
-        {tiragens > 1 && <span className="absolute left-1.5 top-1.5 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-tinta shadow-sm">{tiragens} tiragens</span>}
+          ? <img src={foto} alt={limparTitulo(m.titulo)} width={240} height={180} loading="lazy" className="h-full w-full object-cover" />
+          : <div className="flex h-full items-center justify-center text-black/25"><ImageOff className="h-7 w-7" aria-hidden /></div>}
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-2.5">
-        <span className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-magenta">{m.subcategoria && m.subcategoria !== m.categoria ? m.subcategoria : m.categoria}</span>
-        <span className="text-[13px] font-bold leading-snug">{limparTitulo(m.titulo)}</span>
-        {tags.length > 0 && <ul className="flex flex-wrap gap-1" aria-label="Características">{tags.map((t) => <li key={t} className="rounded bg-papel px-1.5 py-0.5 text-[10px] font-medium leading-tight text-tinta/80">{t}</li>)}</ul>}
-        <div className="mt-auto pt-1.5">
-          <span className="text-[10px] text-black/55">A partir de</span>
-          <div className="flex flex-wrap items-baseline gap-x-1.5"><span className="text-base font-black leading-tight">{brl(m.a_partir_de)}</span><span className="text-[11px] font-semibold text-black/60">/ {qtd.toLocaleString('pt-BR')} {qtd === 1 ? 'un.' : 'un.'}</span></div>
-          {m.sku && <span className="mt-0.5 block text-[10px] text-black/45">Ref. <b className="font-mono text-tinta/80">{m.sku}</b></span>}
+      <div className="flex flex-1 flex-col gap-0.5 p-2">
+        <span className="line-clamp-2 text-[12px] font-bold leading-snug">{limparTitulo(m.titulo)}</span>
+        {detalhe && <span className="line-clamp-1 text-[11px] leading-snug text-black/60">{detalhe}</span>}
+        <div className="mt-auto flex flex-wrap items-center gap-x-1.5 pt-1">
+          <span className="text-sm font-black leading-tight">{brl(m.a_partir_de)}</span>
+          <span className="text-[11px] font-semibold text-black/60">/ {qtd.toLocaleString('pt-BR')} un.</span>
+          {m.variante && <span className="rounded bg-amarelo/60 px-1 py-px text-[10px] font-semibold text-tinta">{m.variante}</span>}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-2 text-[10px] text-black/50">
+          {m.sku && <span>Ref. <b className="font-mono text-tinta/80">{m.sku}</b></span>}
+          {m.prazo_dias_uteis ? <span>Produção: {m.prazo_dias_uteis} {m.prazo_dias_uteis === 1 ? 'dia útil' : 'dias úteis'}</span> : null}
         </div>
       </div>
     </Link>
