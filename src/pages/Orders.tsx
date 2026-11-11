@@ -14,7 +14,7 @@ import { useOrders } from '@/hooks/orders'
 import { downloadCsv } from '@/lib/csv'
 import { contactLabel } from '@/lib/format'
 import { formatBRL } from '@/lib/money'
-import { pedidoAtrasado, stageInfo, SUBESTATUS_LABEL, type OrderCard } from '@/lib/orders'
+import { pedidoAtrasado, stageInfo, SUBESTATUS_LABEL, type OrderCard, origemPedidoLabel } from '@/lib/orders'
 import { cn } from '@/lib/utils'
 
 type Aba = 'arte' | 'producao' | 'prontos' | 'entregas' | 'atrasados' | 'hoje' | 'todos'
@@ -210,7 +210,7 @@ export default function Orders() {
     const rows = (marcados.length ? marcados : linhas).map((o) => [
       pedidoNum(o), contactLabel(o.contact), resumoItens(o), o.fin.total.toFixed(2).replace('.', ','), o.payment_method ?? '',
       dono ? o.fin.net_profit.toFixed(2).replace('.', ',') : '', stageInfo(o.stage).label, o.subestatus_pedido ? SUBESTATUS_LABEL[o.subestatus_pedido] : '',
-      fmtData(o.due_date), o.delivery_method === 'uber' ? 'Entrega' : 'Retirada', o.origin_label ?? '', o.items.map((i) => i.code ?? '').filter(Boolean).join(' '),
+      fmtData(o.due_date), o.delivery_method === 'uber' ? 'Entrega' : 'Retirada', origemPedidoLabel(o), o.items.map((i) => i.code ?? '').filter(Boolean).join(' '),
     ])
     downloadCsv(`pedidos-${hoje}.csv`, ['Pedido', 'Cliente', 'Itens', 'Valor', 'Pagamento', dono ? 'Lucro líquido' : 'Lucro', 'Etapa', 'Subestatus', 'Previsão', 'Entrega', 'Origem', 'SKUs'], rows)
   }
@@ -319,7 +319,7 @@ export default function Orders() {
                     <td className="px-2 py-2"><div className="flex flex-col gap-1">{o.subestatus_pedido && <span className="text-xs font-semibold">{SUBESTATUS_LABEL[o.subestatus_pedido]}</span>}<AvisoChip avisos={avisos?.get(o.id)} /></div></td>
                     <td className={cn('px-2 py-2 tabular', atrasado && 'font-black text-brand-red')}>{fmtData(o.due_date)}{atrasado && ' · atrasado'}</td>
                     <td className="px-2 py-2">{o.delivery_method === 'uber' ? 'Entrega' : 'Retirada'}</td>
-                    <td className="max-w-[140px] px-2 py-2"><span className="line-clamp-2 text-xs text-muted-foreground">{o.origin_label ?? '-'}</span></td>
+                    <td className="max-w-[140px] px-2 py-2"><span className="line-clamp-2 text-xs text-muted-foreground">{origemPedidoLabel(o)}</span></td>
                     <td className="px-2 py-2"><div className="flex flex-wrap gap-1">{o.items.slice(0, 3).map((i, n) => <SkuBadge key={`${i.code}-${n}`} sku={i.code} />)}</div></td>
                   </tr>
                 )

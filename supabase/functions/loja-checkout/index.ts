@@ -16,7 +16,7 @@ type Falha = { falha: { status: number; mensagem: string } }
 async function pedidoParaCobrar(db: SupabaseClient, orderId: string): Promise<Falha | { order: Record<string, any>; cents: number }> {
   const { data: order } = await db.from('orders')
     .select('id, number, teste, payment_status, origin_label, contacts(name, email, document)').eq('id', orderId).maybeSingle()
-  if (!order || order.origin_label !== 'site') return { falha: { status: 404, mensagem: 'Pedido não encontrado.' } }
+  if (!order || !['site', 'ecommerce'].includes(String(order.origin_label))) return { falha: { status: 404, mensagem: 'Pedido não encontrado.' } }
   const { data: recusa, error } = await db.rpc('validar_antes_de_cobrar', { p_order: orderId })
   if (error) return { falha: { status: 500, mensagem: 'Não foi possível validar o pedido.' } }
   if (recusa) return { falha: { status: 422, mensagem: String(recusa) } }

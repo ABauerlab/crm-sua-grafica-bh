@@ -33,11 +33,18 @@ import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
 import { contactLabel } from '@/lib/format'
 import { formatBRL, formatPct } from '@/lib/money'
-import { DEFAULT_KANBAN, isStalled, metodoValido, ORDER_STAGES, type OrderCard, type OrderStage } from '@/lib/orders'
+import { DEFAULT_KANBAN, isStalled, metodoValido, ORDER_STAGES, pedidoEcommerce, pedidoWhatsApp, type OrderCard, type OrderStage } from '@/lib/orders'
 import { cn } from '@/lib/utils'
 
 const OrderDrawer = lazy(() => import('@/features/orders/OrderDrawer'))
 const PAGE = 50
+
+type OrigemPedidos = 'todos' | 'whatsapp' | 'ecommerce'
+const ABAS_ORIGEM: { value: OrigemPedidos; label: string }[] = [
+  { value: 'todos', label: 'Todos os Pedidos' },
+  { value: 'whatsapp', label: 'WhatsApp (Laura)' },
+  { value: 'ecommerce', label: 'E-commerce / Site' },
+]
 
 function Column({
   stage,
@@ -109,6 +116,7 @@ export default function Kanban() {
   const saved = useSavedViews()
 
   const [filters, setFilters] = useState<OrderFilters>({ ...EMPTY_FILTERS, q: params.get('q') ?? '' })
+  const [origemPedidos, setOrigemPedidos] = useState<OrigemPedidos>('todos')
   const [showFilters, setShowFilters] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [mobileStage, setMobileStage] = useState<OrderStage>('novo')
@@ -122,7 +130,17 @@ export default function Kanban() {
   const [viewName, setViewName] = useState('')
   const openId = params.get('pedido')
 
-  const filtered = useFilteredOrders(orders, filters)
+  const contagemOrigem = useMemo(() => {
+    const lista = orders ?? []
+    return { todos: lista.length, whatsapp: lista.filter(pedidoWhatsApp).length, ecommerce: lista.filter(pedidoEcommerce).length }
+  }, [orders])
+  const pedidosPorOrigem = useMemo(() => {
+    const lista = orders ?? []
+    if (origemPedidos === 'ecommerce') return lista.filter(pedidoEcommerce)
+    if (origemPedidos === 'whatsapp') return lista.filter(pedidoWhatsApp)
+    return lista
+  }, [orders, origemPedidos])
+  const filtered = useFilteredOrders(pedidosPorOrigem, filters)
   const byStage = useMemo(() => {
     const map = new Map<OrderStage, OrderCard[]>(ORDER_STAGES.map((s) => [s.value, []]))
     for (const o of filtered) map.get(o.stage)?.push(o)
@@ -131,7 +149,7 @@ export default function Kanban() {
     return map
   }, [filtered])
 
-  const origins = useMemo(() => [...new Set((orders ?? []).map((o) => o.origin_label).filter(Boolean) as string[])].sort(), [orders])
+  const origins = useMemo(() => [...new Set((orders ?? []).map((o) => o.origin_label).filter((v): v is string => !!v && v !== 'ecommerce' && v !== 'site'))].sort(), [orders])
   const paid = filtered.filter((o) => o.payment_status === 'aprovado' || o.payment_manual)
   const revenue = paid.reduce((n, o) => n + o.fin.total, 0)
   const profit = paid.reduce((n, o) => n + o.fin.net_profit, 0)
@@ -224,6 +242,16 @@ export default function Kanban() {
           <Kpi label="Conversão" value={formatPct(filtered.length ? (paid.length / filtered.length) * 100 : 0, 1)} hint={`${paid.length} de ${filtered.length} pedidos`} />
           <Kpi label="Parados" value={String(stalledCount)} hint="acima do limite da etapa" />
         </div>
+
+        <nav aria-label="Origem dos pedidos" className="flex gap-1.5 overflow-x-auto rounded-md border bg-card p-1.5">
+          {ABAS_ORIGEM.map((origem) => (
+            <button key={origem.value} type="button" onClick={() => setOrigemPedidos(origem.value)} aria-pressed={origemPedidos === origem.value}
+              className={cn('flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-md px-3 text-xs font-bold md:text-sm', origemPedidos === origem.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground')}>
+              {origem.label}
+              <span className={cn('rounded-sm px-1.5 py-0.5 text-[11px] tabular', origemPedidos === origem.value ? 'bg-white/20' : 'bg-secondary')}>{contagemOrigem[origem.value]}</span>
+            </button>
+          ))}
+        </nav>
 
         <nav aria-label="Etapas do pedido" className="flex gap-1.5 overflow-x-auto rounded-md border bg-card p-1.5">
           {ORDER_STAGES.map((st) => (

@@ -6,8 +6,8 @@ import { fotoUrl, limparTitulo, type Modelo } from '@/lib/vitrine'
 /** Card compacto de uma opção: foto, nome completo (sem corte), etiquetas, quantidade e preço "a partir de". */
 export function ModeloCard({ m }: { m: Modelo }) {
   const foto = fotoUrl(m.foto)
-  const varios = (m.tamanhos ?? 1) > 1
-  const href = varios && m.familia ? `/opcao/${m.familia}` : `/produto/${m.produto_slug}`
+  const tiragens = m.variacoes ?? 0
+  const href = `/produto/${m.produto_slug}`
   const tags = (m.tags ?? []).slice(0, 3)
   const qtd = m.quantidade ?? 1
   return (
@@ -17,7 +17,7 @@ export function ModeloCard({ m }: { m: Modelo }) {
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={foto} alt={limparTitulo(m.titulo)} width={320} height={256} loading="lazy" className="h-full w-full object-cover" />
           : <div className="flex h-full items-center justify-center text-black/25"><ImageOff className="h-8 w-8" aria-hidden /></div>}
-        {varios && <span className="absolute left-1.5 top-1.5 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-tinta shadow-sm">{m.tamanhos} tamanhos</span>}
+        {tiragens > 1 && <span className="absolute left-1.5 top-1.5 rounded-full bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold text-tinta shadow-sm">{tiragens} tiragens</span>}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-2.5">
         <span className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-magenta">{m.subcategoria && m.subcategoria !== m.categoria ? m.subcategoria : m.categoria}</span>

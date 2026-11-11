@@ -9,7 +9,7 @@ import { SelosSeguranca } from '@/components/SelosSeguranca'
 import { ViewContent } from '@/components/ViewContent'
 import { SITE, brl } from '@/lib/site'
 import { CompreJunto } from '@/components/CompreJunto'
-import { fotoUrl, modelos, produto } from '@/lib/vitrine'
+import { acabamentoLegivel, fotoUrl, impressaoComCodigo, materialLegivel, modelos, produto } from '@/lib/vitrine'
 
 // Combinações de venda cruzada por categoria (primeira que casar). Padrão: cartões de visita.
 const PARES: [RegExp, string][] = [
@@ -37,9 +37,14 @@ export default async function PaginaProduto({ params }: { params: Promise<{ slug
   const par = PARES.find(([re]) => re.test(p.categoria_slug))?.[1] ?? 'cartoes-de-visita'
   const sugestoes = (await modelos([par], { limite: 2 })).modelos.filter((m) => m.ref && m.produto_slug !== p.produto_slug)
   const f = p.ficha ?? {}
+  const acabamentos = [...new Set([...(f.acabamentos_catalogo ?? []).map(acabamentoLegivel), ...(p.acabamentos ?? []), ...(f.acabamento ? [f.acabamento] : [])].filter(Boolean))]
   const linhasFicha: [string, string | null | undefined][] = [
-    ['Material', f.material], ['Espessura', f.espessura], ['Impressão', f.impressao ?? p.impressao], ['Tamanho final', f.tamanho_final ?? p.formato],
-    ['Arte com sangria (3 mm)', f.arte_com_sangria], ['Acabamento', f.acabamento ?? p.acabamentos?.[0]], ['Prazo de produção', p.prazo_dias_uteis ? `${p.prazo_dias_uteis} dias úteis após pagamento e arte liberada` : null],
+    ['Papel / material', materialLegivel(f.material ?? f.material_catalogo)],
+    ['Gramatura', f.gramatura_g ? `${Number(f.gramatura_g).toLocaleString('pt-BR')} g` : null],
+    ['Espessura', f.espessura], ['Impressão / cores', impressaoComCodigo(f.impressao ?? p.impressao, f.codigo_cores)],
+    ['Tamanho final', f.tamanho_final ?? p.formato], ['Arte com sangria (3 mm)', f.arte_com_sangria],
+    ['Acabamentos', acabamentos.length ? acabamentos.join(', ') : null],
+    ['Prazo de produção', p.prazo_dias_uteis ? `${p.prazo_dias_uteis} dias úteis após pagamento e arte liberada` : null],
   ]
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'Product', name: p.titulo, sku: p.sku ?? undefined, category: p.categoria, image: foto ? [foto] : undefined,
