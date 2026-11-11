@@ -739,3 +739,9 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Texto do cliente (`montarConfirmacaoCliente`, em `cliente-pago-avisar` e `_shared/alertas.ts`): confirmação, pedido, previsão, uma frase sobre a arte e uma sobre a retirada. Sem "assistente virtual".
 - O template aprovado pela Meta (`pedido_pago_confirmacao`) não mudou. Só vale fora da janela de 24 h, e trocar o corpo exige nova aprovação.
 - Funções `cliente-pago-avisar` e `alertas-enviar` precisam de deploy para o texto novo entrar em produção.
+
+## Estabilização da Laura e exportação do n8n (11/11/2026)
+- WF1, WF2 e `chamar_dono` reexportados para `n8n/` (versões publicadas, sem credenciais). Runbook completo em `docs/agente/runbook-laura.md` (causas, correções, como testar, riscos).
+- Migrations de trava de saída aplicadas e mescladas (`20261111170000` a `20261111182000`). PR #88 (e-commerce, Kanban e catálogo atômico) mesclado.
+- 21 cenários `e5-*` e `mvp-*` passaram na última rodada; 2 contatos de teste antigos ("Anderson", "Paulo", 02/11) permanecem.
+- **Pendente:** exportar buscar_conhecimento, buscar_produto, salvar_contato, verificar_frete, agendar_followup e o clone do WF2; fixar versão do modelo Gemini; teste de ponta a ponta com pedido real no Mercado Pago.
