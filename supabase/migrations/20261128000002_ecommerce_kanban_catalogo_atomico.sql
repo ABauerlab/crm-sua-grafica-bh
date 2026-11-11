@@ -1,6 +1,10 @@
 -- Fase 16: canal de E-commerce, listagem por produto/SKU e ficha técnica explícita.
 -- Aditiva e idempotente. Preserva o rótulo legado 'site' para pedidos já criados.
 
+-- orders_canal_chk não aceitava 'ecommerce': sem isto, todo checkout do site falharia na gravação do pedido.
+ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_canal_chk;
+ALTER TABLE public.orders ADD CONSTRAINT orders_canal_chk CHECK (canal = ANY (ARRAY['whatsapp'::text, 'site'::text, 'ecommerce'::text, 'balcao'::text, 'mercado_livre'::text, 'shopee'::text, 'tiktok'::text, 'amazon'::text, 'magalu'::text, 'facebook'::text]));
+
 CREATE OR REPLACE FUNCTION private.orders_canal_site()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -13,7 +17,7 @@ begin
     new.canal := 'site';
   end if;
   return new;
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_checkout_preparar(p_cliente jsonb, p_itens jsonb, p_opcoes jsonb DEFAULT '{}'::jsonb)
@@ -83,7 +87,7 @@ begin
   v_calc := public.loja_calcular(p_itens, a ->> 'arte', case when v_entrega = 'entrega' then v_cep end);
   return jsonb_build_object('ok', true, 'pedido_id', v_order, 'numero', v_num, 'orcamento', r ->> 'numero', 'total', v_total,
     'prazo', coalesce(v_calc #>> '{prazo,frase}', r ->> 'prazo'), 'data_prevista', coalesce(v_calc #>> '{prazo,data_pronto}', r ->> 'data_prevista'));
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_pedido_status(p_pedido uuid)
@@ -95,7 +99,7 @@ AS $function$
   select coalesce((select jsonb_build_object('ok', true, 'numero', o.number, 'pago', o.payment_status = 'aprovado')
                      from public.orders o where o.id = p_pedido and o.origin_label in ('site', 'ecommerce')),
                   jsonb_build_object('ok', false));
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.validar_antes_de_cobrar(p_order uuid)
@@ -125,7 +129,7 @@ begin
   end if;
   return null;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_modelos_f(p_categorias text[] DEFAULT NULL::text[], p_termo text DEFAULT NULL::text, p_filtros jsonb DEFAULT '{}'::jsonb, p_ordem text DEFAULT 'relevancia'::text, p_limite integer DEFAULT 24, p_offset integer DEFAULT 0)
@@ -172,7 +176,7 @@ begin
          coalesce(jsonb_agg(to_jsonb(o) - 'rn' - 'sub_ordem' order by o.rn) filter (where o.rn > v_off and o.rn <= v_off + v_lim), '[]'::jsonb)
     into v_total, v_out from ord o;
   return jsonb_build_object('total', v_total, 'modelos', v_out);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_arvore()
@@ -196,7 +200,7 @@ AS $function$
       'categorias', coalesce((select jsonb_agg(jsonb_build_object('slug', c.slug, 'nome', c.nome, 'produtos', c.produtos, 'modelos', c.modelos, 'a_partir_de', c.a_partir_de, 'foto', c.foto,
           'subcategorias', coalesce((select jsonb_agg(jsonb_build_object('slug', s.slug, 'nome', s.nome, 'modelos', s.modelos, 'foto', s.foto) order by s.ordem) from s where s.categoria_slug = c.slug), '[]'::jsonb)) order by t.ordem)
           from public.loja_taxonomia t join c on c.slug = t.categoria_slug where t.vertical_id = v.id), '[]'::jsonb)) order by v.ordem) from public.loja_verticais v), '[]'::jsonb));
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_facetas(p_categorias text[] DEFAULT NULL::text[], p_termo text DEFAULT NULL::text, p_filtros jsonb DEFAULT '{}'::jsonb)
@@ -238,7 +242,7 @@ begin
   select coalesce(jsonb_object_agg(g.faceta, g.itens), '{}'::jsonb), (select count(distinct t.produto_slug)::integer from tb t where (v_sub is null or t.sub = v_sub) and (v_tipo is null or t.tipo = any(v_tipo)) and (v_mat is null or t.material = any(v_mat)) and (v_gram is null or t.gram = any(v_gram)) and (v_for is null or t.formato = any(v_for)) and (v_pra is null or t.prazo = any(v_pra)) and (v_pre is null or t.pf = any(v_pre)) and (v_acab is null or t.acab && v_acab))
     into v_out, v_total from g;
   return jsonb_build_object('total', v_total, 'facetas', v_out);
-end $function$
+end $function$;
 
 
 CREATE OR REPLACE FUNCTION public.loja_produto(p_slug text)
@@ -287,7 +291,7 @@ begin
          where e.ativo and e.categoria_slug = v_cat and e.titulo <> v_titulo
          group by e.produto_slug
          order by 7, 5 limit 12) x), '[]'::jsonb));
-end $function$
+end $function$;
 
 
 select private.loja_facetas_cache_atualizar();
