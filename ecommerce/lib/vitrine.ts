@@ -53,7 +53,7 @@ const MATERIAIS_LOJA: Record<string, string> = { couche: 'Papel Couchê', offset
 const ACABAMENTOS_LOJA: Record<string, string> = { brilho: 'Laminação Brilho', fosca: 'Laminação Fosca', uv: 'Verniz UV', 'soft-touch': 'Laminação Soft Touch', 'hot-stamping': 'Hot Stamping', relevo: 'Relevo Seco', holografica: 'Holográfico', padrao: 'Padrão' }
 export function materialLegivel(material: string | null | undefined): string | null {
   const value = material?.trim(); if (!value) return null
-  const key = value.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/^papel\\s+/, '').replace(/\\s+/g, '-')
+  const key = value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^papel\s+/, '').replace(/\s+/g, '-')
   return MATERIAIS_LOJA[key] ?? (key.startsWith('couche') ? `Papel ${nomeBonito(value)}` : nomeBonito(value))
 }
 export function acabamentoLegivel(acabamento: string): string {

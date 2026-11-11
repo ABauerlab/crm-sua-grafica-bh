@@ -121,14 +121,15 @@ npm run build:ecommerce
 - **Search Console**: meta de verificação do Google no `<head>` da home (`metadata.verification.google`).
 
 ## Fase 15: menu fixo, filtros na barra, ordem e cards compactos (10/11/2026)
+- **Menu fixo**: a lista de departamentos fica presa na lateral (rolagem própria, sem acompanhar a página) e o cabeçalho encolheu: só a faixa de busca e os departamentos acompanham a rolagem (a faixa de avisos some). No celular o cabeçalho rola junto e o menu fica na gaveta "Departamentos". O menu abre tudo fechado e fecha ao navegar.
+- **Filtros na barra** (`FiltrosBarra`): um botão por filtro logo acima da lista (computador) ou "Filtros" em gaveta (celular), ordenação, total de opções e filtros ativos com remoção. A barra acompanha a rolagem; os filtros saíram da lateral.
+- **Tudo em ordem**: opções por subcategoria na ordem do fornecedor, depois nome e gramatura; tamanhos por medida e depois impressão (colorido na frente 4x0, colorido + preto no verso 4x1, colorido frente e verso 4x4, depois preto e branco); quantidades da menor para a maior; impressões "irmãs" na mesma ordem. Função `private.loja_ordem_impressao`.
+- **Mais leve**: cards compactos (foto menor, texto menor, 5 a 6 por linha no computador), cabeçalho, hero e vantagens menores, container mais largo (1440 px).
+
+
 ## Fase 16: SKUs atômicos, ficha técnica e canal de E-commerce no CRM
 - **Catálogo**: a listagem passa a apresentar um card por `produto_slug` (variação comercial), sem agrupar tamanhos diferentes em uma família. Cada página mantém as tiragens como opções individuais, com SKU, quantidade, preço e prazo. A rota antiga `/opcao/[familia]` continua para links existentes, mas deixa de ser destino dos cards novos.
 - **Ficha técnica**: a RPC `loja_produto` complementa a ficha com material, gramatura e código de impressão a partir dos dados internos do catálogo; acabamentos normalizados são traduzidos para rótulos da Sua Gráfica BH. A loja não expõe custos, pisos ou dados de fornecedores.
 - **Categorias rápidas**: Cartões de Visita, Panfletos, Banners, Adesivos e Pastas, sem remover os demais departamentos e categorias.
 - **CRM**: checkout grava `orders.origin_label = 'ecommerce'`; trigger define `orders.canal = 'ecommerce'`. Os rótulos antigos `site` continuam reconhecidos. O Kanban oferece Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site, com as mesmas colunas e regras de produção.
 - **Banco**: migration `20261128000002_ecommerce_kanban_catalogo_atomico.sql` atualiza checkout/status, classificação do canal, agrupamento por produto e contadores/facetas. A migration fica versionada no PR; não é aplicada à produção nesta etapa.
-
-- **Menu fixo**: a lista de departamentos fica presa na lateral (rolagem própria, sem acompanhar a página) e o cabeçalho encolheu: só a faixa de busca e os departamentos acompanham a rolagem (a faixa de avisos some). No celular o cabeçalho rola junto e o menu fica na gaveta "Departamentos". O menu abre tudo fechado e fecha ao navegar.
-- **Filtros na barra** (`FiltrosBarra`): um botão por filtro logo acima da lista (computador) ou "Filtros" em gaveta (celular), ordenação, total de opções e filtros ativos com remoção. A barra acompanha a rolagem; os filtros saíram da lateral.
-- **Tudo em ordem**: opções por subcategoria na ordem do fornecedor, depois nome e gramatura; tamanhos por medida e depois impressão (colorido na frente 4x0, colorido + preto no verso 4x1, colorido frente e verso 4x4, depois preto e branco); quantidades da menor para a maior; impressões "irmãs" na mesma ordem. Função `private.loja_ordem_impressao`.
-- **Mais leve**: cards compactos (foto menor, texto menor, 5 a 6 por linha no computador), cabeçalho, hero e vantagens menores, container mais largo (1440 px).

@@ -152,7 +152,6 @@ begin
        and (v_sub is null or a.sub = v_sub) and (v_tipo is null or a.tipo = any(v_tipo)) and (v_mat is null or a.material = any(v_mat)) and (v_gram is null or a.gram = any(v_gram)) and (v_for is null or a.formato = any(v_for)) and (v_pra is null or a.prazo = any(v_pra)) and (v_pre is null or a.preco_faixa = any(v_pre)) and (v_acab is null or a.acab && v_acab)
   ), m as (
     select b.produto_slug, b.categoria_slug, min(b.titulo) titulo, min(e.categoria) categoria,
-           (array_agg(b.produto_slug order by b.preco, b.quantidade))[1] produto_slug,
            (array_agg(b.fotos ->> 0 order by b.preco) filter (where jsonb_array_length(b.fotos) > 0))[1] foto,
            min(b.preco) a_partir_de, (array_agg(b.parcela_2x order by b.preco))[1] parcela_2x_a_partir_de,
            (array_agg(b.sku order by b.preco, b.quantidade))[1] sku, (array_agg(b.ref order by b.preco, b.quantidade))[1] ref,
