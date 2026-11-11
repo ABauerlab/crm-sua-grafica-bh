@@ -1,709 +1,4 @@
 {
-  "connections": {
-    "Mensagem de entrada (receptor da Meta)": {
-      "main": [
-        [
-          {
-            "node": "Entrada normalizada",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Entrada normalizada": {
-      "main": [
-        [
-          {
-            "node": "Mensagem válida?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Teste: rodar cenário": {
-      "main": [
-        [
-          {
-            "node": "Preparar cenário de teste",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Preparar cenário de teste": {
-      "main": [
-        [
-          {
-            "node": "Entrada normalizada",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mensagem válida?": {
-      "main": [
-        [
-          {
-            "node": "Conferir se o agente deve responder",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Ignorada (sem chamar o modelo)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Conferir se o agente deve responder": {
-      "main": [
-        [
-          {
-            "node": "Chamar o modelo?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Chamar o modelo?": {
-      "main": [
-        [
-          {
-            "node": "Debounce (juntar mensagens seguidas)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Ignorada (sem chamar o modelo)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Debounce (juntar mensagens seguidas)": {
-      "main": [
-        [
-          {
-            "node": "Debounce: sou a última mensagem?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Debounce: sou a última mensagem?": {
-      "main": [
-        [
-          {
-            "node": "Última do grupo?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Última do grupo?": {
-      "main": [
-        [
-          {
-            "node": "Trava da conversa (uma rodada por vez)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Agrupada com a mensagem seguinte",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Trava da conversa (uma rodada por vez)": {
-      "main": [
-        [
-          {
-            "node": "Conversa livre?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Conversa livre?": {
-      "main": [
-        [
-          {
-            "node": "Separar mensagens do grupo",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Esperar a rodada em andamento",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Separar mensagens do grupo": {
-      "main": [
-        [
-          {
-            "node": "Tipo da mensagem",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Esperar a rodada em andamento": {
-      "main": [
-        [
-          {
-            "node": "Debounce de novo (depois da espera)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Debounce de novo (depois da espera)": {
-      "main": [
-        [
-          {
-            "node": "Ainda a última?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ainda a última?": {
-      "main": [
-        [
-          {
-            "node": "Trava da conversa (segunda tentativa)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Agrupada com a mensagem seguinte",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Trava da conversa (segunda tentativa)": {
-      "main": [
-        [
-          {
-            "node": "Conversa livre agora?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Conversa livre agora?": {
-      "main": [
-        [
-          {
-            "node": "Separar mensagens do grupo",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Registrar: conversa ocupada, rodada descartada",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Tipo da mensagem": {
-      "main": [
-        [
-          {
-            "node": "Áudio de teste (já transcrito)?",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Registrar imagem no CRM",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Registrar documento no CRM",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Texto da mensagem",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Áudio de teste (já transcrito)?": {
-      "main": [
-        [
-          {
-            "node": "Texto do áudio de teste",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Baixar o áudio (Edge Function whatsapp-media)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Texto do áudio de teste": {
-      "main": [
-        [
-          {
-            "node": "Juntar as mensagens tratadas",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Juntar as mensagens tratadas": {
-      "main": [
-        [
-          {
-            "node": "Texto único do cliente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Baixar o áudio (Edge Function whatsapp-media)": {
-      "main": [
-        [
-          {
-            "node": "Transcrever (Groq whisper-large-v3-turbo)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Transcrever (Groq whisper-large-v3-turbo)": {
-      "main": [
-        [
-          {
-            "node": "Texto transcrito",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Texto transcrito": {
-      "main": [
-        [
-          {
-            "node": "Gravar a transcrição no CRM",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gravar a transcrição no CRM": {
-      "main": [
-        [
-          {
-            "node": "Registrar custo da transcrição",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Registrar custo da transcrição": {
-      "main": [
-        [
-          {
-            "node": "Texto do áudio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Texto do áudio": {
-      "main": [
-        [
-          {
-            "node": "Juntar as mensagens tratadas",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Registrar imagem no CRM": {
-      "main": [
-        [
-          {
-            "node": "Texto da imagem",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Texto da imagem": {
-      "main": [
-        [
-          {
-            "node": "Juntar as mensagens tratadas",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Registrar documento no CRM": {
-      "main": [
-        [
-          {
-            "node": "Texto do documento",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Texto do documento": {
-      "main": [
-        [
-          {
-            "node": "Juntar as mensagens tratadas",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "Texto da mensagem": {
-      "main": [
-        [
-          {
-            "node": "Juntar as mensagens tratadas",
-            "type": "main",
-            "index": 3
-          }
-        ]
-      ]
-    },
-    "Texto único do cliente": {
-      "main": [
-        [
-          {
-            "node": "Primeiro contato: salvar origem do anúncio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Primeiro contato: salvar origem do anúncio": {
-      "main": [
-        [
-          {
-            "node": "Contexto enxuto da conversa",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Contexto enxuto da conversa": {
-      "main": [
-        [
-          {
-            "node": "Escolher o modelo (regra por palavras)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Escolher o modelo (regra por palavras)": {
-      "main": [
-        [
-          {
-            "node": "GBH | WF2 | Agente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GBH | WF2 | Agente": {
-      "main": [
-        [
-          {
-            "node": "Dividir em mensagens curtas",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Dividir em mensagens curtas": {
-      "main": [
-        [
-          {
-            "node": "Uma mensagem por vez",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Finalizar a rodada": {
-      "main": [
-        [
-          {
-            "node": "Era um cenário de teste?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Era um cenário de teste?": {
-      "main": [
-        [
-          {
-            "node": "Teste: avaliar os critérios do cenário",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Precisa atualizar o resumo?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Teste: avaliar os critérios do cenário": {
-      "main": [
-        [
-          {
-            "node": "Limpar o contato de teste?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limpar o contato de teste?": {
-      "main": [
-        [
-          {
-            "node": "Teste: apagar o contato e os dados do cenário",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Precisa atualizar o resumo?": {
-      "main": [
-        [
-          {
-            "node": "Resumo desatualizado?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resumo desatualizado?": {
-      "main": [
-        [
-          {
-            "node": "Atualizar o resumo (modelo pequeno)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Atualizar o resumo (modelo pequeno)": {
-      "main": [
-        [
-          {
-            "node": "Gravar o resumo na conversa",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Modelo pequeno do resumo": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Atualizar o resumo (modelo pequeno)",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gravar o resumo na conversa": {
-      "main": [
-        [
-          {
-            "node": "Registrar custo do resumo",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Atraso de digitação (1 a 6 s)": {
-      "main": [
-        [
-          {
-            "node": "Ainda pode responder? (modo humano, pagamento)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ainda pode responder? (modo humano, pagamento)": {
-      "main": [
-        [
-          {
-            "node": "Enviar esta parte?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Enviar esta parte?": {
-      "main": [
-        [
-          {
-            "node": "Modo de teste?",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Uma mensagem por vez",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Modo de teste?": {
-      "main": [
-        [
-          {
-            "node": "Teste: guardar a mensagem em testes_conversa",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Enviar no WhatsApp (Edge Function agente-enviar)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Teste: guardar a mensagem em testes_conversa": {
-      "main": [
-        [
-          {
-            "node": "Uma mensagem por vez",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Uma mensagem por vez": {
-      "main": [
-        [
-          {
-            "node": "Finalizar a rodada",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Atraso de digitação (1 a 6 s)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Enviar no WhatsApp (Edge Function agente-enviar)": {
-      "main": [
-        [
-          {
-            "node": "Uma mensagem por vez",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
   "name": "GBH | WF1 | Entrada e roteamento",
   "nodes": [
     {
@@ -724,8 +19,7 @@
           "onlyRunIf": "={{ !!$json.headers['x-gbh-token'] && !!$json.body && !!$json.body.message_id }}",
           "noResponseBody": true
         }
-      },
-      "webhookId": "7a01a703-7063-474b-b79f-f16e0864eb5d"
+      }
     },
     {
       "id": "62cb3898-408d-4eec-a61a-26e13e5ebed8",
@@ -759,8 +53,7 @@
         "options": {
           "noResponseBody": true
         }
-      },
-      "webhookId": "c1add923-0bb9-46b4-859e-d017e70839bd"
+      }
     },
     {
       "id": "8c860ef2-d7a2-4c04-8bb5-f291b59d28b6",
@@ -884,8 +177,7 @@
         "resume": "timeInterval",
         "amount": "={{ $json.teste ? 2 : ($json.debounce_segundos || 8) }}",
         "unit": "seconds"
-      },
-      "webhookId": "d5a1f3db-4575-44b9-a9be-696816682e49"
+      }
     },
     {
       "id": "f1b608f0-cefa-4a5b-b098-f042dca1f17b",
@@ -1011,7 +303,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const g = $('Conferir se o agente deve responder').first().json;\nlet deb = null;\ntry { deb = $('Debounce de novo (depois da espera)').first().json; } catch (e) { deb = null; }\nif (!deb || !Array.isArray(deb.mensagens)) deb = $('Debounce: sou a última mensagem?').first().json;\nconst msgs = Array.isArray(deb.mensagens) ? deb.mensagens : [];\n\n// Se a lista estiver vazia após o debounce, emite 1 item para não interromper a execução e permitir chamar agente_finalizar\nif (msgs.length === 0) {\n  return [{ json: { ordem: 0, id: null, tipo: 'vazia', corpo: '', media_id: '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: true } }];\n}\n\nreturn msgs.map((m, k) => ({ json: { ordem: k, id: m.id, tipo: m.tipo, corpo: m.corpo || '', media_id: m.media_id || '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: false } }));"
+        "jsCode": "const g = $('Conferir se o agente deve responder').first().json;\nlet deb = null;\ntry { deb = $('Debounce de novo (depois da espera)').first().json; } catch (e) { deb = null; }\nif (!deb || !Array.isArray(deb.mensagens)) deb = $('Debounce: sou a última mensagem?').first().json;\nconst msgs = Array.isArray(deb.mensagens) ? deb.mensagens : [];\n\nif (msgs.length === 0) {\n  const norm = $('Entrada normalizada').first().json;\n  return [{ json: { ordem: 0, id: norm.message_id, tipo: g.tipo || 'text', corpo: '', media_id: '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: false } }];\n}\n\nreturn msgs.map((m, k) => ({ json: { ordem: k, id: m.id, tipo: m.tipo, corpo: m.corpo || '', media_id: m.media_id || '', execucao_id: g.execucao_id, conversation_id: g.conversation_id, vazia: false } }));"
       }
     },
     {
@@ -1025,10 +317,9 @@
       ],
       "parameters": {
         "resume": "timeInterval",
-        "amount": 25,
+        "amount": 30,
         "unit": "seconds"
-      },
-      "webhookId": "1866b39f-794c-4474-a243-49b16a25151c"
+      }
     },
     {
       "id": "2dcbe195-c883-416a-ac69-74696ee2b8ea",
@@ -1523,7 +814,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nreturn [{ json: { ordem: orig.ordem, texto: '[o cliente enviou uma imagem/foto. Se o pedido já estiver pago, confirme o recebimento para a equipe conferir. Se ainda estiver em fase de orçamento ou dúvidas, considere como referência visual do que ele procura e responda naturalmente.]' } }];"
+        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nconst legenda = String(orig.corpo || '').trim();\nlet texto = '[o cliente enviou uma imagem/foto em anexo]';\nif (legenda) {\n  texto = `${legenda}\\n[anexo: imagem/foto enviada junto com a mensagem acima]`;\n}\nreturn [{ json: { ordem: orig.ordem, texto: texto } }];"
       }
     },
     {
@@ -1562,7 +853,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nreturn [{ json: { ordem: orig.ordem, texto: '[o cliente enviou um documento PDF/arquivo. Se o pedido já estiver pago, confirme o recebimento para a equipe conferir. Se a conversa ainda estiver na fase de orçamento ou dúvidas técnicas, avalie a mensagem do cliente pois pode ser um modelo ou referência de papel/formato e responda a dúvida técnica normalmente.]' } }];"
+        "jsCode": "const orig = $('Tipo da mensagem').item.json;\nconst legenda = String(orig.corpo || '').trim();\nlet texto = '[o cliente enviou um documento PDF/arquivo em anexo]';\nif (legenda) {\n  texto = `${legenda}\\n[anexo: documento/arquivo enviado junto com a mensagem acima]`;\n}\nreturn [{ json: { ordem: orig.ordem, texto: texto } }];"
       }
     },
     {
@@ -1592,7 +883,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const itens = $input.all().map((x) => x.json).sort((a, b) => a.ordem - b.ordem);\nconst ehVazia = itens.some(x => x.vazia === true);\nif (ehVazia) {\n  return [{ json: { texto_cliente: '[grupo_vazio]', quantidade_mensagens: 0, vazia: true } }];\n}\nconst texto = itens.map((x) => String(x.texto || '').trim()).filter(Boolean).join('\\n').slice(0, 2500);\n\n// Normalização de medidas: 50x50, 50×50, 50X50, 50*50, 50 por 50 -> 50x50\nconst normalizado = texto.replace(/(\\d+)\\s*([×X\\*]|\\bpor\\b)\\s*(\\d+)/gi, '$1x$3');\n\nreturn [{ json: { texto_cliente: normalizado || '[mensagem vazia]', quantidade_mensagens: itens.length, vazia: false } }];"
+        "jsCode": "const itens = $input.all().map((x) => x.json).sort((a, b) => a.ordem - b.ordem);\nconst ehVazia = itens.some(x => x.vazia === true);\nif (ehVazia) {\n  return [{ json: { texto_cliente: '[grupo_vazio]', quantidade_mensagens: 0, vazia: true } }];\n}\nlet texto = itens.map((x) => String(x.texto || '').trim()).filter(Boolean).join('\\n').slice(0, 2500);\n\n// Normalização de medidas: 50x50, 50×50, 50X50, 50*50, 50 por 50 -> 50x50\ntexto = texto.replace(/(\\d+)\\s*([×X\\*]|\\bpor\\b)\\s*(\\d+)/gi, '$1x$3');\n\n// Normalização de abreviações de quantidade: \"400 uni\", \"400 und\", \"400 unids\", \"400 un\" -> \"400 unidades\"\ntexto = texto.replace(/(\\d+)\\s*(uni|und|unid|unids|unis)\\b/gi, '$1 unidades');\n\nreturn [{ json: { texto_cliente: texto || '[mensagem vazia]', quantidade_mensagens: itens.length, vazia: false } }];"
       }
     },
     {
@@ -1752,7 +1043,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const r = $input.first() ? ($input.first().json || {}) : {};\nconst teste = $('Entrada normalizada').first().json.teste === true;\nconst texto = r.erro || r.error ? '' : String(r.texto || '').trim();\nconst partes = texto.split(/\\n\\s*\\n/).map((p) => p.trim()).filter(Boolean);\nconst curtas = [];\nfor (const p of partes) {\n  if (p.length <= 280) { curtas.push(p); continue; }\n  const frases = p.match(/[^.!?]+[.!?]*\\s*/g) || [p];\n  let atual = '';\n  for (const f of frases) {\n    if ((atual + f).length > 280 && atual) { curtas.push(atual.trim()); atual = f; } else { atual += f; }\n  }\n  if (atual.trim()) curtas.push(atual.trim());\n}\nconst finais = curtas.slice(0, 3);\nif (curtas.length > 3) finais[2] = (finais[2] + ' ' + curtas.slice(3).join(' ')).trim();\nif (!finais.length) return [{ json: { vazio: true, texto: '', atraso: 1, i: 0, erro: !!(r.erro || r.error) } }];\nreturn finais.map((t, i) => ({ json: { vazio: false, texto: t, atraso: teste ? 1 : Math.min(6, Math.max(1, Math.round(1 + t.length / 45))), i: i, erro: false } }));"
+        "jsCode": "const r = $input.first() ? ($input.first().json || {}) : {};\nconst teste = $('Entrada normalizada').first().json.teste === true;\nconst texto = r.erro || r.error ? '' : String(r.texto || r.output || r.text || '').trim();\nconst partes = texto.split(/\\n\\s*\\n/).map((p) => p.trim()).filter(Boolean);\nconst curtas = [];\nfor (const p of partes) {\n  if (p.length <= 280) { curtas.push(p); continue; }\n  const frases = p.match(/[^.!?]+[.!?]*\\s*/g) || [p];\n  let atual = '';\n  for (const f of frases) {\n    if ((atual + f).length > 280 && atual) { curtas.push(atual.trim()); atual = f; } else { atual += f; }\n  }\n  if (atual.trim()) curtas.push(atual.trim());\n}\nconst finais = curtas.slice(0, 3);\nif (curtas.length > 3) finais[2] = (finais[2] + ' ' + curtas.slice(3).join(' ')).trim();\nif (!finais.length) return [{ json: { vazio: true, texto: '', atraso: 1, i: 0, erro: !!(r.erro || r.error) } }];\nreturn finais.map((t, i) => ({ json: { vazio: false, texto: t, atraso: teste ? 1 : Math.min(6, Math.max(1, Math.round(1 + t.length / 45))), i: i, erro: false } }));"
       }
     },
     {
@@ -2033,8 +1324,7 @@
         "resume": "timeInterval",
         "amount": "={{ $json.atraso || 1 }}",
         "unit": "seconds"
-      },
-      "webhookId": "84406774-3045-4e65-86f9-875029687239"
+      }
     },
     {
       "id": "1c043096-5ad2-46f0-ba84-d3b8d8fd96ad",
@@ -2176,18 +1466,13 @@
         "specifyBody": "json",
         "jsonBody": "={{ { conversation_id: $(\"Conferir se o agente deve responder\").first().json.conversation_id, text: $(\"Uma mensagem por vez\").item.json.texto } }}",
         "options": {
-          "timeout": 30000,
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
+          "timeout": 30000
         }
       },
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 2000,
-      "onError": "continueRegularOutput"
+      "onError": "stopWorkflow"
     },
     {
       "id": "b1a01a45-18d3-465c-8590-c1eabef04c87",
@@ -2202,8 +1487,740 @@
         "content": "## GBH | WF1 | Entrada e roteamento (Etapa 5)\n**Objetivo:** decidir se uma mensagem de ENTRADA do cliente merece uma chamada ao modelo e, se sim, preparar o contexto, chamar o WF2 (Agente) e enviar a resposta em mensagens curtas com atraso de digitação.\n**Gatilho:** webhook do n8n chamado pelo único receptor da Meta (Edge Function whatsapp-webhook, depois de gravar a mensagem; segredos N8N_WF1_URL e N8N_WF1_TOKEN). NÃO existe outro webhook na Meta. Segundo gatilho \"Teste: rodar cenário\" (corpo { caso_id, limpar }) roda um cenário de testes_conversa sem enviar nada ao WhatsApp.\n**Ignora, sem chamar o modelo:** IA pausada (agente_config.ia_ligada e botão do topo), fora do horário, optout, modo humano, pedido já pago, mensagem duplicada, tipo sem resposta (figurinha etc.), teto de tokens da conversa ou do dia (com alerta).\n**Debounce:** espera debounce_segundos (8 s) e só a última mensagem do grupo segue; trava por conversa (uma rodada por vez).\n**Mídia:** áudio é transcrito com Groq whisper-large-v3-turbo (o mais barato, cerca de R$ 0,002 por áudio de 1 minuto) e vira texto; imagem e documento são registrados no CRM e o agente responde natural (arte só é conferida pelo dono depois do pagamento).\n**Contexto:** data e hora (America/Sao_Paulo), contato, anúncio, etapa, resumo, últimas 6 mensagens, orçamento aberto. Resumo atualizado por modelo pequeno a cada 8 mensagens novas.\n**Modelo:** padrão (pequeno) ou forte, por regra determinística de palavras de objeção ou pedido de desconto.\n**Saída:** mensagens curtas (até 3) com atraso de 1 a 6 s pela API (Edge Function agente-enviar, que reconfere IA, modo humano e pagamento antes de cada parte).\n**Dependências:** credenciais Supabase (service role), Groq e Google Gemini; WF2 e despachante de ferramentas.\n**Estado:** DESATIVADO até a Etapa 8.",
         "color": 4
       }
+    },
+    {
+      "id": "eea47cda-855c-4594-b8f8-9e33abddd19c",
+      "name": "Nomear o áudio (ogg)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4368,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nfor (const it of items) {\n  const b = it.binary && it.binary.data;\n  if (b) { b.fileName = 'audio.ogg'; b.fileExtension = 'ogg'; b.mimeType = 'audio/ogg'; }\n}\nreturn items;"
+      },
+      "notes": "O WhatsApp entrega o audio como oga sem nome de arquivo; o Groq recusa (unsupported_audio_format). Aqui o arquivo ganha nome e extensao .ogg antes da transcricao."
     }
   ],
+  "connections": {
+    "Mensagem de entrada (receptor da Meta)": {
+      "main": [
+        [
+          {
+            "node": "Entrada normalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada normalizada": {
+      "main": [
+        [
+          {
+            "node": "Mensagem válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: rodar cenário": {
+      "main": [
+        [
+          {
+            "node": "Preparar cenário de teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar cenário de teste": {
+      "main": [
+        [
+          {
+            "node": "Entrada normalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem válida?": {
+      "main": [
+        [
+          {
+            "node": "Conferir se o agente deve responder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorada (sem chamar o modelo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conferir se o agente deve responder": {
+      "main": [
+        [
+          {
+            "node": "Chamar o modelo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar o modelo?": {
+      "main": [
+        [
+          {
+            "node": "Debounce (juntar mensagens seguidas)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorada (sem chamar o modelo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce (juntar mensagens seguidas)": {
+      "main": [
+        [
+          {
+            "node": "Debounce: sou a última mensagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce: sou a última mensagem?": {
+      "main": [
+        [
+          {
+            "node": "Última do grupo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Última do grupo?": {
+      "main": [
+        [
+          {
+            "node": "Trava da conversa (uma rodada por vez)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agrupada com a mensagem seguinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava da conversa (uma rodada por vez)": {
+      "main": [
+        [
+          {
+            "node": "Conversa livre?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversa livre?": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens do grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Esperar a rodada em andamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar mensagens do grupo": {
+      "main": [
+        [
+          {
+            "node": "Tipo da mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar a rodada em andamento": {
+      "main": [
+        [
+          {
+            "node": "Debounce de novo (depois da espera)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debounce de novo (depois da espera)": {
+      "main": [
+        [
+          {
+            "node": "Ainda a última?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ainda a última?": {
+      "main": [
+        [
+          {
+            "node": "Trava da conversa (segunda tentativa)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agrupada com a mensagem seguinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava da conversa (segunda tentativa)": {
+      "main": [
+        [
+          {
+            "node": "Conversa livre agora?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversa livre agora?": {
+      "main": [
+        [
+          {
+            "node": "Separar mensagens do grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar: conversa ocupada, rodada descartada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo da mensagem": {
+      "main": [
+        [
+          {
+            "node": "Áudio de teste (já transcrito)?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar imagem no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar documento no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Texto da mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Áudio de teste (já transcrito)?": {
+      "main": [
+        [
+          {
+            "node": "Texto do áudio de teste",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Baixar o áudio (Edge Function whatsapp-media)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do áudio de teste": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar as mensagens tratadas": {
+      "main": [
+        [
+          {
+            "node": "Texto único do cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever (Groq whisper-large-v3-turbo)": {
+      "main": [
+        [
+          {
+            "node": "Texto transcrito",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto transcrito": {
+      "main": [
+        [
+          {
+            "node": "Gravar a transcrição no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar a transcrição no CRM": {
+      "main": [
+        [
+          {
+            "node": "Registrar custo da transcrição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar custo da transcrição": {
+      "main": [
+        [
+          {
+            "node": "Texto do áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do áudio": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar imagem no CRM": {
+      "main": [
+        [
+          {
+            "node": "Texto da imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto da imagem": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Registrar documento no CRM": {
+      "main": [
+        [
+          {
+            "node": "Texto do documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto do documento": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Texto da mensagem": {
+      "main": [
+        [
+          {
+            "node": "Juntar as mensagens tratadas",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Texto único do cliente": {
+      "main": [
+        [
+          {
+            "node": "Primeiro contato: salvar origem do anúncio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Primeiro contato: salvar origem do anúncio": {
+      "main": [
+        [
+          {
+            "node": "Contexto enxuto da conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto enxuto da conversa": {
+      "main": [
+        [
+          {
+            "node": "Escolher o modelo (regra por palavras)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escolher o modelo (regra por palavras)": {
+      "main": [
+        [
+          {
+            "node": "GBH | WF2 | Agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GBH | WF2 | Agente": {
+      "main": [
+        [
+          {
+            "node": "Dividir em mensagens curtas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dividir em mensagens curtas": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalizar a rodada": {
+      "main": [
+        [
+          {
+            "node": "Era um cenário de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Era um cenário de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: avaliar os critérios do cenário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Precisa atualizar o resumo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: avaliar os critérios do cenário": {
+      "main": [
+        [
+          {
+            "node": "Limpar o contato de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar o contato de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: apagar o contato e os dados do cenário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Precisa atualizar o resumo?": {
+      "main": [
+        [
+          {
+            "node": "Resumo desatualizado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo desatualizado?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar o resumo (modelo pequeno)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar o resumo (modelo pequeno)": {
+      "main": [
+        [
+          {
+            "node": "Gravar o resumo na conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo pequeno do resumo": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Atualizar o resumo (modelo pequeno)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gravar o resumo na conversa": {
+      "main": [
+        [
+          {
+            "node": "Registrar custo do resumo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atraso de digitação (1 a 6 s)": {
+      "main": [
+        [
+          {
+            "node": "Ainda pode responder? (modo humano, pagamento)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ainda pode responder? (modo humano, pagamento)": {
+      "main": [
+        [
+          {
+            "node": "Enviar esta parte?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar esta parte?": {
+      "main": [
+        [
+          {
+            "node": "Modo de teste?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modo de teste?": {
+      "main": [
+        [
+          {
+            "node": "Teste: guardar a mensagem em testes_conversa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar no WhatsApp (Edge Function agente-enviar)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Teste: guardar a mensagem em testes_conversa": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Uma mensagem por vez": {
+      "main": [
+        [
+          {
+            "node": "Finalizar a rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atraso de digitação (1 a 6 s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar no WhatsApp (Edge Function agente-enviar)": {
+      "main": [
+        [
+          {
+            "node": "Uma mensagem por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixar o áudio (Edge Function whatsapp-media)": {
+      "main": [
+        [
+          {
+            "node": "Nomear o áudio (ogg)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nomear o áudio (ogg)": {
+      "main": [
+        [
+          {
+            "node": "Transcrever (Groq whisper-large-v3-turbo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": true,
@@ -2214,7 +2231,6 @@
   },
   "tags": [
     {
-      "id": "3v3X7fxvimbtoign",
       "name": "gbh"
     }
   ]

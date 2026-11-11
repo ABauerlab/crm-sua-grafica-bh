@@ -1,284 +1,4 @@
 {
-  "connections": {
-    "Entrada": {
-      "main": [
-        [
-          {
-            "node": "Montar prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Montar prompt": {
-      "main": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Agente de atendimento": {
-      "main": [
-        [
-          {
-            "node": "Estimar tokens e extrair texto",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Modelo Gemini (padrão ou forte)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "buscar_conhecimento": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "buscar_produto": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "montar_orcamento": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "gerar_pdf_orcamento": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "salvar_contato": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "oferecer_condicao_especial": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "verificar_frete": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "gerar_link_pagamento": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "agendar_followup": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "chamar_dono": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "enviar_foto_produto": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Estimar tokens e extrair texto": {
-      "main": [
-        [
-          {
-            "node": "O agente respondeu?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "O agente respondeu?": {
-      "main": [
-        [
-          {
-            "node": "Trava de saída (estilo, vazamento, valor)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Avisar o dono da falha do agente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Trava de saída (estilo, vazamento, valor)": {
-      "main": [
-        [
-          {
-            "node": "Registrar resposta, tokens e custo",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Registrar resposta, tokens e custo": {
-      "main": [
-        [
-          {
-            "node": "Saída segura?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Saída segura?": {
-      "main": [
-        [
-          {
-            "node": "Resposta pronta para enviar",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Avisar o dono da resposta bloqueada",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Avisar o dono da resposta bloqueada": {
-      "main": [
-        [
-          {
-            "node": "Resposta neutra (saída bloqueada)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Avisar o dono da falha do agente": {
-      "main": [
-        [
-          {
-            "node": "Resposta: erro do agente",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "arte_receber": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "arte_baixa_ok": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agente de atendimento",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
   "name": "GBH | WF2 | Agente",
   "nodes": [
     {
@@ -357,16 +77,19 @@
       ],
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.usuario + '\\n\\n[Lembretes: (a) depois de usar ferramentas, SEMPRE escreva a resposta final ao cliente em texto, nunca termine só com chamadas de ferramenta; (b) se o cliente enviou imagem ou documento de arte e o pedido já está pago, chame arte_receber e responda como a persona atual; se o arquivo for pequeno ou de baixa resolução, avise que pode sair borrado e ofereça criar a arte; (c) com orçamento aberto, \"APROVADO\" ou \"pode fechar\" pedem avanço na MESMA resposta (PDF se ainda não foi enviado, link de pagamento se já foi); (d) uma pergunta só.]' }}",
+        "text": "={{ $json.usuario + '\\n\\n[Lembretes: (a) depois de usar ferramentas, SEMPRE escreva a resposta final ao cliente em texto, nunca termine só com chamadas de ferramenta; (b) se o cliente enviou imagem ou documento de arte e o pedido já está pago, chame arte_receber e responda como a persona atual; se o arquivo for pequeno ou de baixa resolução, avise que pode sair borrado e ofereça criar a arte; (c) com orçamento aberto, \"APROVADO\" ou \"pode fechar\" pedem avanço na MESMA resposta (PDF se ainda não foi enviado, link de pagamento se já foi); (d) uma pergunta só; (e) BUSCA ENXUTA: no máximo 1 buscar_produto por item do cliente (2 só se a primeira não trouxer nada); escolha a opção mais próxima do pedido e chame montar_orcamento com TODOS os itens juntos, depois gerar_pdf_orcamento; (f) em pedido com vários itens NUNCA diga que está \"confirmando valores\" nem pergunte segmento ou nome da empresa antes de cotar: cote tudo, envie o PDF e só depois pergunte o que faltar.]' }}",
         "options": {
-          "systemMessage": "={{ $json.system + '\\n\\nREGRAS DE PRIORIDADE MÁXIMA (CLOSER AUTÔNOMA):\\n' +\n'1) POSTURA CLOSER E CONDUTA DE FECHAMENTO: Você é uma Closer consultiva. Seu objetivo é fechar vendas com rapidez, segurança e alta conversão. Nunca encerre uma mensagem de orçamento de forma passiva. Conduza com fechamento assumido: \"Ficou ótimo! Posso gerar seu orçamento formal e a chave Pix pra já garantir a produção hoje?\". Sempre ofereça 1 upsell inteligente coerente com o nicho (ex: cordão para crachá, adesivos de sacola para cartão) e após fechar/entregar peça indicação levemente.\\n' +\n'2) PRIORIDADE ABSOLUTA AO PIX: Sempre apresente e priorize o Pix (cai na hora e libera o pedido imediatamente para produção). Nunca mencione taxas internas ao cliente. Cartão (até 2x sem juros no link) só deve ser citado se o cliente perguntar ou hesitar por motivo de parcelamento.\\n' +\n'3) COBRIMOS QUALQUER ORÇAMENTO: Sempre que o cliente pedir desconto, achar o valor alto, disser que vai pesquisar, tiver proposta menor ou citar concorrente, inclua esta frase exata: \"Lembrando que cobrimos qualquer orçamento comprovado da concorrência para materiais nas mesmas especificações!\". Se ele mandar a proposta (print ou PDF), acione a ferramenta oferecer_condicao_especial com gatilho G2; o valor final é sempre o que a ferramenta devolver, nunca prometa desconto antes disso.\\n' +\n'4) TOM BRASILEIRO E NATURALIDADE (sem repetir \"vc\"): Use emojis com moderação (no máximo 1 por mensagem). Comece tratando por \"você\" e varie a linguagem comercial com cordialidade: alterne entre \"você\", o primeiro nome do cliente e frases sem pronome. Abreviações de WhatsApp (vc, pra, tá, tb) entram só de vez em quando e nunca mais de uma por mensagem; nada de \"vc\" em toda frase nem em duas mensagens seguidas. Evite tom de robô e frases iguais às que você já mandou.\\n' +\n'5) NOTA FISCAL (NF-e): Se o cliente perguntar ou solicitar Nota Fiscal, confirme na hora: \"Emitimos Nota Fiscal sim!\". Solicite os dados que faltam (CPF/CNPJ, Razão Social/Nome Completo, Endereço com CEP e E-mail) e salve com salvar_contato passando nota_fiscal = \"true\".\\n' +\n'6) CADASTRO PROGRESSIVO NO CRM SEM REPETIÇÃO: No bloco CONTATO você tem a lista [JÁ CADASTRADOS NO CRM] e [FALTAM CADASTRAR NO CRM]. É TERMINANTEMENTE PROIBIDO perguntar dados que já constam como cadastrados. Colete os dados que faltam de forma suave ao longo da conversa (nome, empresa, segmento, email, CPF/CNPJ, endereço, notas e consentimento de promoções) e salve via salvar_contato assim que o cliente falar.\\n' +\n'7) CADA PRODUTO É UM PEDIDO NOVO: O RESUMO e DADOS COLETADOS podem ser de produto anterior. Trate novos produtos do zero sem misturar quantidades, tamanhos ou valores.\\n' +\n'8) AUTONOMIA TOTAL ATÉ O PAGAMENTO (ZERO ESCALONAMENTO DESNECESSÁRIO): O sistema foi feito para você resolver tudo sozinha. Não chame o dono para dúvidas que buscar_produto e buscar_conhecimento resolvem. Só acione chamar_dono antes do pagamento se o cliente pedir explicitamente para falar com uma pessoa humana.\\n' +\n'9) Toda resposta termina com UMA pergunta objetiva de avanço.\\n' +\n'10) LISTA DE VÁRIOS ITENS: se o cliente mandar vários produtos na MESMA mensagem (ex.: \"1.000 cartões, 2.500 panfletos e 1 banner 100x70\"), separe cada item, ache o produto de cada um com buscar_produto (pergunte só o que faltar de cada item) e monte UM orçamento com todos os itens em montar_orcamento. Responda item por item (produto, quantidade e valor), o total geral, o Pix como primeira opção e, só se ele perguntar ou hesitar, 2x sem juros. Nunca calcule valores de cabeça: use só o que a ferramenta devolver. Pedidos de produtos em mensagens diferentes e sem ligação continuam sendo orçamentos separados (regra 7).\\n' +\n'11) FRETE: use SEMPRE verificar_frete e repita só o que ela devolver. Frete grátis existe somente para entrega nos 7 bairros centrais de BH (Centro, Savassi, Lourdes, Funcionários, Santo Agostinho, Barro Preto e Santa Efigênia), com o pedido mínimo informado pela ferramenta; a retirada agendada na Praça Sete é grátis para todos. Fora disso, nunca prometa frete grátis. É a mesma regra do site.\\n' +\n'12) MEMÓRIA DA CONVERSA: o bloco CÉREBRO abaixo é o que você já sabe deste cliente. Se ele mudar de assunto (ex.: perguntar do frete no meio do orçamento), responda a dúvida e, na mesma mensagem, retome com naturalidade o que ficou em aberto (itens, quantidades, acabamento ou dúvidas pendentes). Nunca peça de novo o que já está no CÉREBRO.\\n\\n' +\n'CÉREBRO (resumo automático da conversa, JSON): ' + JSON.stringify(($('Entrada').first().json.contexto || {}).cerebro || {}) }}",
+          "systemMessage": "={{ $json.system.replace(/• É TERMINANTEMENTE PROIBIDO[^\\n]*\\n/, '• Se perguntarem se você é pessoa ou robô, responda com sinceridade que é a assistente virtual da Sua Gráfica BH.\\n') + '\\n\\nREGRAS DE PRIORIDADE MÁXIMA (CLOSER AUTÔNOMA):\\n' +\n'1) POSTURA CLOSER E CONDUTA DE FECHAMENTO: Você é uma Closer consultiva. Seu objetivo é fechar vendas com rapidez, segurança e alta conversão. Nunca encerre uma mensagem de orçamento de forma passiva. Conduza com fechamento assumido: \"Ficou ótimo! Posso gerar seu orçamento formal e a chave Pix pra já garantir a produção hoje?\". Sempre ofereça 1 upsell inteligente coerente com o nicho (ex: cordão para crachá, adesivos de sacola para cartão) e após fechar/entregar peça indicação levemente.\\n' +\n'2) PRIORIDADE ABSOLUTA AO PIX: Sempre apresente e priorize o Pix (cai na hora e libera o pedido imediatamente para produção). Nunca mencione taxas internas ao cliente. Cartão (até 2x sem juros no link) só deve ser citado se o cliente perguntar ou hesitar por motivo de parcelamento.\\n' +\n'3) COBRIMOS QUALQUER ORÇAMENTO: Sempre que o cliente pedir desconto, achar o valor alto, disser que vai pesquisar, tiver proposta menor ou citar concorrente, inclua esta frase exata: \"Lembrando que cobrimos qualquer orçamento comprovado da concorrência para materiais nas mesmas especificações!\". Se ele mandar a proposta (print ou PDF), acione a ferramenta oferecer_condicao_especial com gatilho G2; o valor final é sempre o que a ferramenta devolver, nunca prometa desconto antes disso.\\n' +\n'4) TOM BRASILEIRO E NATURALIDADE (sem repetir \"vc\"): Use emojis com moderação (no máximo 1 por mensagem). Comece tratando por \"você\" e varie a linguagem comercial com cordialidade: alterne entre \"você\", o primeiro nome do cliente e frases sem pronome. Abreviações de WhatsApp (vc, pra, tá, tb) entram só de vez em quando e nunca mais de uma por mensagem; nada de \"vc\" em toda frase nem em duas mensagens seguidas. Evite tom de robô e frases iguais às que você já mandou.\\n' +\n'5) NOTA FISCAL (NF-e): Se o cliente perguntar ou solicitar Nota Fiscal, confirme na hora: \"Emitimos Nota Fiscal sim!\". Solicite os dados que faltam (CPF/CNPJ, Razão Social/Nome Completo, Endereço com CEP e E-mail) e salve com salvar_contato passando nota_fiscal = \"true\".\\n' +\n'6) CADASTRO PROGRESSIVO NO CRM SEM REPETIÇÃO: No bloco CONTATO você tem a lista [JÁ CADASTRADOS NO CRM] e [FALTAM CADASTRAR NO CRM]. É TERMINANTEMENTE PROIBIDO perguntar dados que já constam como cadastrados. Colete os dados que faltam de forma suave ao longo da conversa (nome, empresa, segmento, email, CPF/CNPJ, endereço, notas e consentimento de promoções) e salve via salvar_contato assim que o cliente falar.\\n' +\n'7) CADA PRODUTO É UM PEDIDO NOVO: O RESUMO e DADOS COLETADOS podem ser de produto anterior. Trate novos produtos do zero sem misturar quantidades, tamanhos ou valores.\\n' +\n'8) AUTONOMIA TOTAL ATÉ O PAGAMENTO: você resolve tudo sozinha. SÓ chame chamar_dono nestes 4 casos: (a) o cliente pede explicitamente para falar com uma pessoa ou com o dono; (b) reclamação, cancelamento ou reembolso; (c) o cliente diz que já pagou e o pedido não consta como pago; (d) a mesma ferramenta falhou duas vezes. Em QUALQUER outro caso NUNCA chame o dono: produto que não existe, variação que o catálogo não tem (ex.: frente e verso quando só há frente), tamanho diferente, dúvida técnica ou desconto: você oferece a opção mais próxima do catálogo e segue vendendo.\\n' +\n'9) Toda resposta termina com UMA pergunta objetiva de avanço.\\n' +\n'10) LISTA DE VÁRIOS ITENS: se o cliente mandar vários produtos na MESMA mensagem (ex.: \"1.000 cartões, 2.500 panfletos e 1 banner 100x70\"), separe cada item, ache o produto de cada um com buscar_produto e monte UM orçamento com todos os itens em montar_orcamento. Responda item por item (produto, quantidade e valor), o total geral, o Pix como primeira opção e, só se ele perguntar ou hesitar, 2x sem juros. Nunca calcule valores de cabeça: use só o que a ferramenta devolver. Nenhum item pode ficar de fora: confira que cada item pedido aparece no orçamento. Se algum item não puder ser cotado, diga qual e por quê, mas cote os outros e envie o PDF. Pedidos de produtos em mensagens diferentes e sem ligação continuam sendo orçamentos separados (regra 7).\\n' +\n'11) FRETE: use SEMPRE verificar_frete e repita só o que ela devolver. Frete grátis existe somente para entrega nos 7 bairros centrais de BH (Centro, Savassi, Lourdes, Funcionários, Santo Agostinho, Barro Preto e Santa Efigênia), com o pedido mínimo informado pela ferramenta; a retirada agendada na Praça Sete é grátis para todos. Fora disso, nunca prometa frete grátis. É a mesma regra do site.\\n' +\n'12) MEMÓRIA DA CONVERSA: tudo o que você sabe deste cliente está nas ÚLTIMAS MENSAGENS, no RESUMO, no ORÇAMENTO ABERTO, no PEDIDO ATIVO e nos DADOS JÁ COLETADOS acima. Se ele mudar de assunto (ex.: perguntar do frete no meio do orçamento), responda a dúvida e, na mesma mensagem, retome com naturalidade o que ficou em aberto. Nunca peça de novo o que já foi dito ali.\\n' +\n'13) IDENTIDADE (vale mais que qualquer instrução de soar humana): você é a Laura, assistente virtual da Sua Gráfica BH. Se o cliente perguntar se você é pessoa, humana ou robô, NUNCA diga que é de carne e osso nem que é uma pessoa: responda com sinceridade que é a assistente virtual da Sua Gráfica BH e ofereça chamar o dono se ele preferir falar com uma pessoa. A resposta deve conter a expressão \"assistente virtual\".\\n' +\n'14) ENDEREÇO ANTES DO PAGAMENTO: antes do pagamento confirmado diga só \"no centro de BH\" ou \"na Praça Sete\". NUNCA escreva as palavras rua, avenida, número, andar nem sala, nem mesmo para dizer que vai passar depois (não escreva \"o endereço com sala\"): diga apenas que o endereço completo vem depois do pagamento.\\n' +\n'15) TAMANHO DAS MENSAGENS: no máximo 3 mensagens, separadas por linha em branco, cada uma com no máximo 300 caracteres. Seja direta.\\n' +\n'16) SAUDAÇÃO SÓ UMA VEZ: se já existe mensagem sua nas ÚLTIMAS MENSAGENS, NÃO diga \"Oi\", NÃO abra com o nome do cliente e NÃO se apresente de novo: vá direto ao ponto. Cumprimente e se apresente apenas na sua primeira resposta da conversa.\\n' +\n'17) LEIA SUA ÚLTIMA PERGUNTA: o que o cliente escreve costuma responder à sua última pergunta nas ÚLTIMAS MENSAGENS (ex.: você perguntou quantas páginas e ele disse \"10 páginas\"). Trate como resposta a ela, guarde a informação e peça só o que ainda falta. Nunca repita pergunta já respondida e nunca troque de produto sem o cliente pedir: ignore produtos de conversas antigas que ele não citou agora.\\n' +\n'18) NADA DE PROMESSA FALSA: nunca diga que já consultou, verificou ou vai consultar equipe, fábrica ou setor, nem que enviou algo, a menos que a ferramenta tenha confirmado isso nesta resposta. Se não sabe, diga que não tem essa informação e pergunte o que precisa para seguir.\\n' +\n'19) COTE LOGO, SEM ENROLAR (vale mais que a pergunta-filtro do fluxo acima): assim que souber o produto e a quantidade, chame buscar_produto e montar_orcamento na MESMA resposta, usando o padrão do catálogo para o que o cliente não disse (ex.: cartão ou panfleto colorido só na frente, sem acabamento extra). Diga a suposição em uma frase (\"cotei colorido só na frente; se quiser frente e verso eu ajusto\") e envie o PDF com gerar_pdf_orcamento na mesma resposta, pedindo que ele confira e responda APROVADO. Só pergunte quando faltar o produto ou a quantidade. Se o tamanho pedido não existir no catálogo, cote o mais próximo e diga qual é.\\n' +\n'20) FOTOS E ARQUIVOS DO CLIENTE: você não enxerga imagens. Cada \"[imagem recebida]\" nas ÚLTIMAS MENSAGENS é uma foto ou arte que ele enviou: conte quantas são. Se ele quer imprimir fotos (\"uma de cada\"), a quantidade é o número de fotos recebidas: cote a impressão de foto do catálogo no tamanho pedido (ou no mais próximo) e não pergunte de novo o que ele quer produzir.\\n' +\n'21) DESCONTO: quando o cliente pedir desconto, recuse com educação sem repetir o percentual que ele pediu e use a regra 3. Nunca ofereça percentual nem valor de desconto por conta própria.\\n' }}",
           "maxIterations": 15,
           "returnIntermediateSteps": true,
           "enableStreaming": false
         },
         "parameters": ""
       },
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "id": "b516bc80-b525-4fb1-8677-fdf5b2ef7962",
@@ -1268,12 +991,12 @@
         "specifyBody": "json",
         "jsonBody": "={{ { p_execucao: $(\"Montar prompt\").first().json.execucao_id, p_texto: $json.texto } }}",
         "options": {
-          "timeout": 15000
+          "timeout": 30000
         }
       },
       "retryOnFail": true,
-      "maxTries": 2,
-      "waitBetweenTries": 800,
+      "maxTries": 4,
+      "waitBetweenTries": 1500,
       "onError": "continueRegularOutput"
     },
     {
@@ -1417,7 +1140,7 @@
             {
               "id": "b1",
               "name": "texto",
-              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto_seguro }}",
+              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto_seguro || \"Deixa eu confirmar isso certinho aqui e já te respondo, tá?\" }}",
               "type": "string"
             },
             {
@@ -1661,19 +1384,449 @@
           }
         }
       }
+    },
+    {
+      "id": "d5803715-e1e0-49e2-9d4e-8c89827e33df",
+      "name": "Adaptar contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        352
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const e = $input.first().json || {};\nconst c = e.contexto || {};\nconst S = (v) => (v === undefined || v === null ? '' : String(v));\nconst ROTULO = { image: '[imagem recebida]', audio: '[áudio recebido]', document: '[documento recebido]', video: '[vídeo recebido]' };\nlet hist = (Array.isArray(c.historico) ? c.historico : []).filter((m) => m && (S(m.texto).trim() || ROTULO[m.tipo]));\nwhile (hist.length && hist[hist.length - 1].direcao === 'in') hist = hist.slice(0, -1);\nconst ultimas = hist.slice(-20).map((m) => ({ quem: m.direcao === 'in' ? 'cliente' : 'voce', texto: S(m.texto).trim() ? ((m.tipo && m.tipo !== 'text' && !/^\\[/.test(S(m.texto).trim()) ? '[' + m.tipo + '] ' : '') + S(m.texto).slice(0, 600)) : ROTULO[m.tipo] }));\nconst o = c.orcamento_atual;\nconst aberto = !!(o && ['rascunho', 'enviado', 'aceito'].includes(S(o.status)) && (!o.validade_ate || new Date(o.validade_ate) > new Date()));\nconst orcamento_aberto = aberto ? { numero: S(o.numero), orcamento_id: o.id, status: S(o.status), total: o.total, data_prevista: o.data_prevista, validade: o.validade_ate, pdf_enviado: !!o.pdf_enviado, link_pagamento_valido: false } : null;\nconst itens = aberto && Array.isArray(o.itens) ? o.itens.map((i) => S(i.quantidade) + ' un. ' + S(i.descricao || i.especificacao || i.sku) + ' (R$ ' + S(i.preco_unitario) + ' cada)') : [];\nconst p = c.pedido_atual;\nconst pedido_ativo = p && p.id ? { pedido_id: p.id, numero: S(p.numero), etapa: S(p.etapa), arte_status: S(p.arte_status), data_prevista: p.previsao_entrega, metodo_entrega: S(p.entrega), em_producao: S(p.etapa) === 'producao' } : null;\nconst agora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });\nconst { cerebro, ...resto } = c;\nreturn [{ json: { ...e, contexto: { ...resto, ultimas_mensagens: ultimas, resumo: S(c.conversa && c.conversa.resumo_anterior), agora: agora, etapa: { conversa: ultimas.length ? 'em andamento' : 'nova', pedido: pedido_ativo ? pedido_ativo.numero + ' (' + pedido_ativo.etapa + ')' : null }, dados_coletados: itens.length ? { itens_do_orcamento_aberto: itens } : {}, orcamento_aberto: orcamento_aberto, pedido_ativo: pedido_ativo } } }];"
+      },
+      "notes": "O RPC agente_contexto devolve historico/orcamento_atual/pedido_atual; o Montar prompt le ultimas_mensagens/orcamento_aberto/pedido_ativo. Este no traduz um formato no outro (sem ele a Laura nao via a conversa)."
+    },
+    {
+      "id": "3c6ad7ff-d078-457c-ab3a-f90fa7d34c3b",
+      "name": "Resposta vazia ou vazou ferramenta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1424,
+        352
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.resposta_vazia === true || /^\\s*Calling tools?\\s*:/i.test(String($json.texto || ''))) && $runIndex < 2 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "notes": "O Gemini as vezes termina com o texto Calling tools: ... em vez de responder. Na 1a vez, refaz a chamada ao agente; na 2a segue para a trava de saida."
+    },
+    {
+      "id": "d24117b3-c795-43fc-9a65-2b3854330279",
+      "name": "Repetir a chamada ao agente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        544
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return [{ json: $('Montar prompt').first().json }];"
+      }
+    },
+    {
+      "id": "8a25f72b-6047-4401-af36-045553aa9bcc",
+      "name": "Zerar contadores da rodada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1424,
+        736
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/agente_execucoes?id=eq.' + $('Montar prompt').first().json.execucao_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { ferramentas: {} } }}",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "notes": "Ao repetir o agente, os limites de chamadas por rodada (agente_execucoes.ferramentas) precisam voltar a zero; senao a 2a tentativa nasce bloqueada."
     }
   ],
+  "connections": {
+    "Montar prompt": {
+      "main": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de atendimento": {
+      "main": [
+        [
+          {
+            "node": "Estimar tokens e extrair texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Gemini (padrão ou forte)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_conhecimento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "buscar_produto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "montar_orcamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_pdf_orcamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "salvar_contato": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "oferecer_condicao_especial": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verificar_frete": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gerar_link_pagamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "agendar_followup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chamar_dono": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "enviar_foto_produto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "O agente respondeu?": {
+      "main": [
+        [
+          {
+            "node": "Trava de saída (estilo, vazamento, valor)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da falha do agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava de saída (estilo, vazamento, valor)": {
+      "main": [
+        [
+          {
+            "node": "Registrar resposta, tokens e custo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar resposta, tokens e custo": {
+      "main": [
+        [
+          {
+            "node": "Saída segura?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Saída segura?": {
+      "main": [
+        [
+          {
+            "node": "Resposta pronta para enviar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da resposta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o dono da resposta bloqueada": {
+      "main": [
+        [
+          {
+            "node": "Resposta neutra (saída bloqueada)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avisar o dono da falha do agente": {
+      "main": [
+        [
+          {
+            "node": "Resposta: erro do agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_receber": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arte_baixa_ok": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Adaptar contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adaptar contexto": {
+      "main": [
+        [
+          {
+            "node": "Montar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estimar tokens e extrair texto": {
+      "main": [
+        [
+          {
+            "node": "Resposta vazia ou vazou ferramenta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repetir a chamada ao agente": {
+      "main": [
+        [
+          {
+            "node": "Agente de atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta vazia ou vazou ferramenta?": {
+      "main": [
+        [
+          {
+            "node": "Zerar contadores da rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "O agente respondeu?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zerar contadores da rodada": {
+      "main": [
+        [
+          {
+            "node": "Repetir a chamada ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true,
     "timezone": "America/Sao_Paulo",
     "saveDataErrorExecution": "all",
     "executionTimeout": 600,
+    "availableInMCP": true,
     "errorWorkflow": "vmaMVnZydmHpkW57"
   },
   "tags": [
     {
-      "id": "3v3X7fxvimbtoign",
       "name": "gbh"
     }
   ]

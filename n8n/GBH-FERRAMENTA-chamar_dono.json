@@ -45,7 +45,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_motivo: String($json.motivo || \"\").slice(0, 300), p_gravidade: String($json.gravidade || \"baixa\") } }}",
+        "jsonBody": "={{ { p_conversation: $json.conversation_id, p_motivo: String($json.motivo || \"\").slice(0, 300), p_gravidade: String($json.gravidade || \"baixa\"), p_tipo: \"agente_chamado\" } }}",
         "options": {
           "timeout": 15000
         }
