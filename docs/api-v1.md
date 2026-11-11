@@ -67,7 +67,7 @@ Organização para consulta: **vertical > categoria > subcategoria** (as subcate
 | `preco` | `ate-50`, `50-150`, `150-500`, `500-mais` (preço "a partir de" da opção) |
 
 ### GET `/api/v1/modelos?categoria=&q=&acab=&ordem=menor_preco|maior_preco|relevancia&limite=24&pagina=1`
-`{ total, modelos: [{ titulo, categoria, subcategoria, produto_slug, foto, a_partir_de, parcela_2x_a_partir_de, ref, sku, quantidade, variacoes, prazo_dias_uteis, acab }] }`.
+(Fase 17: um item por SKU.) `{ total, itens: [{ ref, sku, sku_slug, produto_slug, titulo, categoria, categoria_slug, foto, preco, parcela_2x, quantidade, prazo_dias_uteis, impressao, formato, variante, sub, subcategoria, acab }] }`. A página do item é `/produto/<sku_slug>`. Banco: `loja_sku_lista`, `loja_sku_produto(p_ref)`, `loja_sku_do_produto`, `loja_sku_slugs` e `loja_facetas_sku`.
 
 ### Banco
 `loja_arvore()`, `loja_facetas(p_categorias, p_termo, p_filtros)`, `loja_modelos_f(...)` e `loja_interpretar_busca(termo)` (sinônimos: "papel grosso" vira `gram=encorpado`, "aveludado" vira `acab=soft-touch`, "metalizado/dourado" vira `acab=hot-stamping`, "papel marrom" vira `material=kraft`). Dados em `loja_verticais`, `loja_taxonomia`, `loja_subcategorias`, `loja_facetas_def` e `loja_sinonimos` (só o servidor lê). Os atributos de cada opção ficam em `private.loja_atributos`, recalculados a cada 15 min só quando a vitrine muda (`private.loja_atributos_atualizar(true)` força).
