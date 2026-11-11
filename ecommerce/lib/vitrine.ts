@@ -2,7 +2,7 @@
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL
 const CHAVE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null }
+export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis?: number | null; peso_kg?: number | null }
 export interface Modelo {
   titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
   parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number
@@ -14,7 +14,8 @@ export interface ProdutoResumo {
   foto: string | null; a_partir_de: number; parcela_2x_a_partir_de: number; prazo_dias_uteis: number | null; opcoes: Opcao[]; sku?: string | null
 }
 export interface Ficha {
-  titulo?: string; material?: string | null; espessura?: string | null; impressao?: string | null; tamanho_final?: string | null
+  titulo?: string; material?: string | null; material_catalogo?: string | null; gramatura_g?: number | null; codigo_cores?: string | null
+  acabamentos_catalogo?: string[] | null; espessura?: string | null; impressao?: string | null; tamanho_final?: string | null
   arte_com_sangria?: string | null; acabamento?: string | null; observacoes?: string[]
 }
 export interface Produto {
@@ -46,6 +47,23 @@ const MINUSCULAS = new Set(['e', 'de', 'da', 'do', 'das', 'dos', 'em', 'com', 'p
 /** "PANFLETOS, FLYERS E FOLHETOS" -> "Panfletos, Flyers e Folhetos" */
 export function nomeBonito(s: string) {
   return s.toLowerCase().split(' ').map((p, i) => (i > 0 && MINUSCULAS.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(' ')
+}
+
+const MATERIAIS_LOJA: Record<string, string> = { couche: 'Papel Couchê', offset: 'Papel Offset', sulfite: 'Papel Sulfite', kraft: 'Papel Kraft', supremo: 'Papel Supremo', triplex: 'Papel Triplex', duplex: 'Papel Duplex', bopp: 'BOPP', vinil: 'Vinil', pvc: 'PVC', pet: 'PET', lona: 'Lona', tecido: 'Tecido' }
+const ACABAMENTOS_LOJA: Record<string, string> = { brilho: 'Laminação Brilho', fosca: 'Laminação Fosca', uv: 'Verniz UV', 'soft-touch': 'Laminação Soft Touch', 'hot-stamping': 'Hot Stamping', relevo: 'Relevo Seco', holografica: 'Holográfico', padrao: 'Padrão' }
+export function materialLegivel(material: string | null | undefined): string | null {
+  const value = material?.trim(); if (!value) return null
+  const key = value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^papel\s+/, '').replace(/\s+/g, '-')
+  return MATERIAIS_LOJA[key] ?? (key.startsWith('couche') ? `Papel ${nomeBonito(value)}` : nomeBonito(value))
+}
+export function acabamentoLegivel(acabamento: string): string {
+  const key = acabamento.trim().toLowerCase()
+  return ACABAMENTOS_LOJA[key] ?? nomeBonito(acabamento.replace(/-/g, ' '))
+}
+export function impressaoComCodigo(impressao: string | null | undefined, codigo: string | null | undefined): string | null {
+  if (!impressao && !codigo) return null
+  if (!codigo) return impressao ?? null
+  return impressao ? `${impressao} (${codigo.trim().toLowerCase()})` : codigo.trim().toLowerCase()
 }
 
 /** Caminho do Storage público -> URL. */

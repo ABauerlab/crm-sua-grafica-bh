@@ -8,7 +8,7 @@ import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/compo
 import { formatBRL, formatPct } from '@/lib/money'
 import { ORCAMENTO_STATUS } from '@/lib/orcamentos'
 import { contactLabel } from '@/lib/format'
-import { formatDuration, hoursInStage, ORDER_STAGES, type KanbanSettings, type OrderCard, type OrderStage } from '@/lib/orders'
+import { formatDuration, hoursInStage, ORDER_STAGES, type KanbanSettings, type OrderCard, type OrderStage, origemPedidoLabel } from '@/lib/orders'
 import { cn } from '@/lib/utils'
 
 export interface CardActions {
@@ -136,8 +136,8 @@ export function OrderCardView({
       {order.stage === 'producao' && draggable && <StatusPedido order={order} compact />}
 
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2 text-[11px] text-muted-foreground">
-        <span className="truncate" title={order.origin_label ?? 'Sem anúncio de origem'}>
-          {order.origin_label ? `Anúncio: ${order.origin_label}` : 'Orgânico'}
+        <span className="truncate" title={origemPedidoLabel(order)}>
+          {origemPedidoLabel(order)}
         </span>
         <span className={cn('flex shrink-0 items-center gap-1 tabular', stalled && 'font-bold text-brand-red')} title={limit > 0 ? `Limite da etapa: ${limit} h` : 'Sem limite'}>
           {stalled ? <AlertTriangle className="h-3 w-3" aria-hidden /> : <Clock className="h-3 w-3" aria-hidden />}

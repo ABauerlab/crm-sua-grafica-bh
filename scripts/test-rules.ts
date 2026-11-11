@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled, metodoLabel, metodoValido, pedidoAtrasado } from '../src/lib/orders.ts'
+import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled, metodoLabel, metodoValido, origemPedidoLabel, pedidoAtrasado, pedidoEcommerce, pedidoWhatsApp } from '../src/lib/orders.ts'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
@@ -13,6 +13,13 @@ import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts
 import { conferirLinhas, linhasDaPlanilha } from '../src/lib/planilha-precos.ts'
 
 const fmt = (v: number) => `R$ ${v.toFixed(2)}`
+
+// Origem única para separar o checkout do atendimento WhatsApp; 'site' é o rótulo legado.
+assert.equal(pedidoEcommerce({ origin_label: 'ecommerce', canal: 'ecommerce' }), true)
+assert.equal(pedidoEcommerce({ origin_label: 'site', canal: 'site' }), true)
+assert.equal(pedidoWhatsApp({ origin_label: null, canal: 'whatsapp' }), true)
+assert.equal(origemPedidoLabel({ origin_label: 'ecommerce', canal: 'ecommerce' }), 'E-commerce / Site')
+assert.equal(origemPedidoLabel({ origin_label: null, canal: 'whatsapp' }), 'WhatsApp (Laura)')
 
 // Piso = custo x 1,5
 assert.equal(unitFloor(100, DEFAULT_PRICING), 150)

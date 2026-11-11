@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## E-commerce/CRM Fase 16: Kanban por canal e catálogo por SKU atômico (11/11/2026, branch `feat/ecommerce-kanban-catalogo-atomico`)
+- Kanban com abas Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site. Os dois canais continuam no mesmo pipeline e nas mesmas travas de pagamento/arte/produção.
+- Checkout passa a gravar `origin_label = 'ecommerce'`; trigger padroniza `canal = 'ecommerce'`. Valores legados `site` continuam aceitos nas funções de status e cobrança.
+- Loja: cards separados por `produto_slug`, cada página lista tiragens/SKUs individuais com preço e prazo em dias úteis por opção. Ficha mostra material, gramatura, código de cores, acabamentos e prazo usando campos do catálogo. Acesso rápido às cinco categorias solicitadas.
+- Migration `20261128000002_ecommerce_kanban_catalogo_atomico.sql` atualiza RPCs e trigger. **Pendente**: executar typecheck/testes/build, revisar PR e aplicar migration em produção somente após aprovação.
+
 ## E-commerce Fase 15: menu fixo, filtros na barra, ordem e cards compactos (10/11/2026, branch `claude/funny-ride-s51uyy`)
 - Menu lateral fixo com rolagem própria, filtros em barra acima da lista (acompanha a rolagem), ordem por quantidade e impressão (4x0, 4x1, 4x4), cards e cabeçalho mais compactos. Migration `20261128000001` (aplicada). Detalhes em `docs/ecommerce.md` (Fase 15). Conferido em 390, 820, 1366 e 1920 px, sem rolagem lateral.
 

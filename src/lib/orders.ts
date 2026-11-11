@@ -29,6 +29,16 @@ export const ORDER_STAGES: StageInfo[] = [
 
 export const stageInfo = (s: OrderStage) => ORDER_STAGES.find((x) => x.value === s) ?? ORDER_STAGES[0]
 
+/** Site legado e novo checkout são tratados como E-commerce para não misturar pedidos no funil do WhatsApp. */
+export function pedidoEcommerce(o: Pick<Order, 'origin_label' | 'canal'>): boolean {
+  return o.origin_label === 'ecommerce' || o.origin_label === 'site' || o.canal === 'ecommerce' || o.canal === 'site'
+}
+export function pedidoWhatsApp(o: Pick<Order, 'origin_label' | 'canal'>): boolean { return !pedidoEcommerce(o) }
+export function origemPedidoLabel(o: Pick<Order, 'origin_label' | 'canal'>): string {
+  if (pedidoEcommerce(o)) return 'E-commerce / Site'
+  return o.origin_label ? `WhatsApp (Laura) · Anúncio: ${o.origin_label}` : 'WhatsApp (Laura)'
+}
+
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
   pendente: 'Pendente',
   aprovado: 'Aprovado',
@@ -70,6 +80,8 @@ export interface Order {
   notes: string | null
   origin_ad_id: string | null
   origin_label: string | null
+  /** Canal de entrada gravado pelo checkout ou pelo CRM. */
+  canal?: string | null
   origin_url: string | null
   discount_pct: number
   tax_pct: number

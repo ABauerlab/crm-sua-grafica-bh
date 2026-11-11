@@ -221,8 +221,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - `orcamentos.itens_exibicao` passa a ser preenchido por `montar_orcamento` quando o mesmo produto vem em sub-lotes.
 - n8n `pesquisar_preco_mercado`: só SearXNG e Playwright.
 
-## E-commerce Fases 1 e 3 (09/11/2026)
-- **Preço:** `calcular_preco` lê `catalogo.preco_venda` (planilha oficial). Fórmula antiga em `private.calcular_preco_mercado`, usada só para SKU sem preço ou com `parametros_comerciais.fonte_preco = 'mercado'`. Novos parâmetros: `fonte_preco`, `lucro_bruto_minimo`.
+## E-commerce Fases 1 e 3 (09/11/2026)- **Preço:** `calcular_preco` lê `catalogo.preco_venda` (planilha oficial). Fórmula antiga em `private.calcular_preco_mercado`, usada só para SKU sem preço ou com `parametros_comerciais.fonte_preco = 'mercado'`. Novos parâmetros: `fonte_preco`, `lucro_bruto_minimo`.
 - **Carga:** `planilha_precos_import` (staging privada), `importar_precos_planilha`, `aplicar_planilha_precos_lote`, `aplicar_planilha_precos`, `planilha_precos_relatorio`, `private.sku_planilha`, `private.pode_importar_precos` (dono, service role ou token de 2 h em `app_segredos`).
 - **Vitrine:** `ecommerce_products` (leitura pública, sem a coluna `sku`), `ecommerce_sincronizar`, `private.ecommerce_sincronizar_interno`, `private.ecommerce_sincronizar_skus`, tradutores `private.cores_rotulo`, `private.formato_rotulo`, `private.titulo_vitrine`, `private.slugify`.
 - **Front do CRM:** `src/features/catalog/PlanilhaPrecosImport.tsx`, `src/lib/planilha-precos.ts`.
@@ -275,3 +274,10 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 ## Fase 13 (10/11/2026)
 - Banco: `loja_desagrupar` (+ gatilho `zz_loja_desagrupar` em `ecommerce_products`), `private.loja_familias` (+ view `_v`), `private.loja_facetas_cache`; funções `loja_familia`, `loja_facetas_home`; `loja_modelos_f`, `loja_facetas` e `loja_arvore` reescritas. Crons `loja-atributos` e `loja-facetas-home`.
 - Edge Function `loja-arquivo` (PDF da arte no checkout; grava em `order-files` e `order_files`, art_status `enviada`). Loja: `/opcao/[familia]`, `BarraLateral`, `ListaModelos`; `lib/departamentos.ts` e a paginação saíram.
+
+
+## E-commerce/CRM Fase 16 (11/11/2026)
+- `orders.origin_label = 'ecommerce'` e `orders.canal = 'ecommerce'` identificam pedidos do checkout. `site` permanece como valor legado e também é classificado como E-commerce. `loja-checkout`, `loja_checkout_preparar`, `loja_pedido_status` e `validar_antes_de_cobrar` mantêm compatibilidade.
+- Kanban `/kanban`: filtro rápido por Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site; os pedidos seguem as mesmas colunas `ORDER_STAGES`.
+- Catálogo: `loja_modelos_f` lista um card por `produto_slug`; `variacoes` conta SKUs/tiragens. `loja_facetas`, `loja_arvore` e cache da home contam o mesmo agrupamento. `loja_produto` complementa a ficha com `material_catalogo`, `gramatura_g`, `codigo_cores` e `acabamentos_catalogo`.
+- Loja: `ModeloCard` abre diretamente a página da variação; `/opcao/[familia]` permanece para compatibilidade. `CategoriasPage` adiciona atalhos às cinco categorias principais.

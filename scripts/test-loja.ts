@@ -5,6 +5,7 @@ import { cepLimpo, corpoSuperFrete, juntarPacotes, lerEnderecoCep, opcoesEnvio, 
 import { corpoPix, lerPix } from '../supabase/functions/_shared/mp-pix.ts'
 import { cnpjValido, cpfValido, mensagemErro, normalizarWhatsapp, validarPedido } from '../supabase/functions/_shared/loja-validar.ts'
 import { hrefFiltros, lerFiltros, lerOrdem } from '../ecommerce/lib/filtros.ts'
+import { acabamentoLegivel, impressaoComCodigo, materialLegivel } from '../ecommerce/lib/vitrine.ts'
 import { citaMarca, espessura, fichaBalcao, lerFicha, limparTitulo, marcasDaOrigem, traduzirAcabamento, traduzirCores } from '../supabase/functions/_shared/ficha-origem.ts'
 
 // marca fictícia: o teste nunca usa o nome real da origem
@@ -46,6 +47,12 @@ assert.ok(!citaMarca(saida, marcas), 'a ficha de balcão não cita a origem')
 assert.ok(!/CFV02|4X4|ofset/i.test(saida), 'sem SKU, código de cor nem jargão de impressão')
 
 // glossário de balcão pedido pelo dono
+assert.equal(materialLegivel('couche'), 'Papel Couchê')
+assert.equal(materialLegivel('bopp'), 'BOPP')
+assert.equal(impressaoComCodigo('Colorido Apenas na Frente', '4X0'), 'Colorido Apenas na Frente (4x0)')
+assert.equal(acabamentoLegivel('fosca'), 'Laminação Fosca')
+assert.equal(acabamentoLegivel('brilho'), 'Laminação Brilho')
+
 assert.equal(traduzirCores('4x0'), 'Colorido Apenas na Frente')
 assert.equal(traduzirCores('1X1'), 'Preto e Branco Frente e Verso')
 assert.equal(traduzirAcabamento('BOPP BRILHO TOTAL'), 'Película Protetora com Brilho Total')
