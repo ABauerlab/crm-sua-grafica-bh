@@ -34,21 +34,7 @@ import { resumoConferencia, useConferir, useConfirmarManual, useCriarLink, useMp
 import { invokeFunction } from '@/lib/api'
 import { contactLabel, formatPhone } from '@/lib/format'
 import { formatBRL, formatPct, parseMoney } from '@/lib/money'
-import {
-  ART_LABELS,
-  blockReason,
-  formatDuration,
-  hoursInStage,
-  ORDER_STAGES,
-  metodoValido,
-  PAYMENT_LABELS,
-  stageInfo,
-  type ArtStatus,
-  type OrderCard,
-  type OrderItem,
-  type OrderStage,
-  type PaymentStatus,
-} from '@/lib/orders'
+import { ART_LABELS, blockReason, formatDuration, hoursInStage, ORDER_STAGES, metodoValido, PAYMENT_LABELS, stageInfo, type ArtStatus, type OrderCard, type OrderItem, type OrderStage, type PaymentStatus, origemPedidoLabel, pedidoEcommerce } from '@/lib/orders'
 import { ProductPicker } from '@/features/catalog/KitsTab'
 import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
 import { SituacaoOrcamento } from '@/features/orders/SituacaoOrcamento'
@@ -125,8 +111,8 @@ function SummaryTab({ order }: { order: OrderCard }) {
       <div className="rounded-md border p-3">
         <p className="font-bold">{contactLabel(order.contact)}</p>
         <p className="text-sm text-muted-foreground">{formatPhone(order.contact.wa_id)}</p>
-        <p className="mt-1 text-sm">{order.origin_label ? `Veio do anúncio: ${order.origin_label}` : 'Origem: orgânico'}</p>
-        {order.origin_url && (
+        <p className="mt-1 text-sm">{origemPedidoLabel(order)}</p>
+        {!pedidoEcommerce(order) && order.origin_url && (
           <a href={order.origin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-link underline">
             Ver anúncio <ExternalLink className="h-3 w-3" />
           </a>
