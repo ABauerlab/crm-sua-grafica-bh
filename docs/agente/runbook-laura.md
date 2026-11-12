@@ -24,7 +24,7 @@ Documento de passagem de bastão. Descreve como o agente funciona hoje, o que fo
 - Link de pagamento só sai com `pdf_enviado_em` e uma mensagem do cliente depois do PDF com palavra de aprovação (`preparar_link_pagamento`).
 
 ## Riscos conhecidos
-- Gemini não determinístico; `gemini-flash-latest` (alias) para padrão, forte e resumo em `agente_config`: considerar fixar uma versão.
+- Gemini não determinístico; `gemini-flash-latest` (alias) para padrão, forte e resumo em `agente_config`: fixar versão ainda NÃO foi possível: `gemini-2.5-flash` fez o agente errar em todas as rodadas (12/11); descobrir a versão real do alias e validar a suíte antes.
 - Caminho do link do Mercado Pago pelo agente foi validado em teste simulado, não com pedido real de ponta a ponta.
 - Picos de carga no banco podem estourar a trava (há tentativas e resposta neutra).
 - Workflows ainda fora do repositório: `buscar_conhecimento`, `buscar_produto`, `salvar_contato`, `verificar_frete`, `agendar_followup`, o clone do WF2 e o `despachar` pode estar defasado em relação à instância. Reexportar pelo MCP do n8n (`get_workflow_details`) quando for mexer neles.
