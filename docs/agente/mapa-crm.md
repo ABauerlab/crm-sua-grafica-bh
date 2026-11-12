@@ -281,3 +281,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Kanban `/kanban`: filtro rápido por Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site; os pedidos seguem as mesmas colunas `ORDER_STAGES`.
 - Catálogo: `loja_modelos_f` lista um card por `produto_slug`; `variacoes` conta SKUs/tiragens. `loja_facetas`, `loja_arvore` e cache da home contam o mesmo agrupamento. `loja_produto` complementa a ficha com `material_catalogo`, `gramatura_g`, `codigo_cores` e `acabamentos_catalogo`.
 - Loja: `ModeloCard` abre diretamente a página da variação; `/opcao/[familia]` permanece para compatibilidade. `CategoriasPage` adiciona atalhos às cinco categorias principais.
+
+## Fase 17: loja por SKU (11/11/2026)
+- `ecommerce_products` ganhou `sku_slug` e `variante`; funções `loja_sku_*`; `buscar_produto` devolve `link_produto`. Loja: `ecommerce/components/ModeloCard.tsx` (card por SKU), `ecommerce/app/produto/[slug]/page.tsx` (página do SKU), `ecommerce/lib/vitrine.ts` (`skuProduto`, `skuSlugs`). CRM: `src/features/catalog/ProductsTab.tsx` (lista com altura mínima).

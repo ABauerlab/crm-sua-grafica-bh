@@ -59,7 +59,7 @@ export default async function PaginaCategoria({ params, searchParams }: { params
           <div>
             <h1 className="text-2xl font-black md:text-3xl">{subAtiva ? `${c.nome}: ${subAtiva.nome}` : c.nome}</h1>
             <p className="mt-1 text-sm text-black/60">
-              {mostrarSubs ? `Escolha o tipo de ${c.nome.toLowerCase()}. ${c.modelos} opções no total.` : `${r?.total ?? 0} ${(r?.total ?? 0) === 1 ? 'opção' : 'opções'}${q ? ` para "${q}"` : ''}. Escolha a opção, depois o tamanho e a quantidade.`}
+              {mostrarSubs ? `Escolha o tipo de ${c.nome.toLowerCase()}. ${c.modelos} opções no total.` : `${(r?.total ?? 0).toLocaleString('pt-BR')} ${(r?.total ?? 0) === 1 ? 'produto' : 'produtos'}${q ? ` para "${q}"` : ''}. Cada produto já traz a quantidade, a impressão e o preço.`}
             </p>
           </div>
           <form className="flex w-full gap-2 sm:w-auto" role="search">

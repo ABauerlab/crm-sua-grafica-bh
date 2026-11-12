@@ -745,3 +745,9 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Migrations de trava de saída aplicadas e mescladas (`20261111170000` a `20261111182000`). PR #88 (e-commerce, Kanban e catálogo atômico) mesclado.
 - 21 cenários `e5-*` e `mvp-*` passaram na última rodada; 2 contatos de teste antigos ("Anderson", "Paulo", 02/11) permanecem.
 - **Pendente:** exportar buscar_conhecimento, buscar_produto, salvar_contato, verificar_frete, agendar_followup e o clone do WF2; fixar versão do modelo Gemini; teste de ponta a ponta com pedido real no Mercado Pago.
+
+## Fase 3: um SKU = um produto na loja (11/11/2026)
+- Detalhes em `docs/ecommerce.md` (Fase 17). Migrations `20261129000001` a `20261129000005` aplicadas em produção. Loja: cards e páginas por SKU, sitemap com 20.381 produtos, redirecionamento dos links antigos. Nada oculto (1.246 SKUs voltaram; 1.779 com rótulo "Opção").
+- Laura: `buscar_produto` devolve `link_produto` (workflow republicado) e o divisor do WF1 não corta link. Regressão: 21 `e5-*` e `mvp-A1/A2/B1` passaram. No e5-04 e no e5-12 a resposta foi a neutra ("Deixa eu confirmar isso certinho..."), que passa no critério mas é fraca.
+- CRM: lista do Catálogo > Produtos não colapsa mais (altura mínima). `scripts/test-rules.ts` usa `fileURLToPath` (quebrava no Windows com acento no caminho); `test-conhecimento`, `test-orcamento` e outros scripts ainda usam `.pathname` e falham no Windows do dono (passam no Linux).
+- **Não verificado:** a loja em produção (só local), o catálogo do CRM no navegador do dono (a correção é de layout, sem teste visual), e a Fase 3 com a referência logada (a extensão do Chrome não esteve disponível; usei páginas públicas).

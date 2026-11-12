@@ -167,7 +167,7 @@ export function ProductsTab() {
   const pages = Math.max(1, Math.ceil(total / PAGE))
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="space-y-3 border-b px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-52 flex-1">
@@ -197,7 +197,8 @@ export function ProductsTab() {
         </p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      {/* min-h garante que a lista nunca colapse a zero (a tabela sumia e só sobrava o rodapé), mesmo se a cadeia de alturas do layout falhar */}
+      <div className="min-h-[24rem] flex-1 overflow-auto">
         {error ? (
           <ErrorState message="Não foi possível carregar o catálogo." onRetry={() => refetch()} />
         ) : isLoading ? (

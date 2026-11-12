@@ -31,3 +31,6 @@ Documento de passagem de bastão. Descreve como o agente funciona hoje, o que fo
 
 ## Como reexportar um workflow
 `get_workflow_details` no MCP do n8n, manter só `name`, `nodes`, `connections`, `settings` e `tags`, remover `webhookId` e qualquer credencial, gravar em `n8n/` com indentação de 2 espaços. Conferir que não há chave, token ou JWT no arquivo antes do commit.
+
+## Atualização de 11/11/2026 (loja por SKU)
+- A ferramenta `buscar_produto` devolve `link_produto` (página do SKU) e a orientação de mandar o link uma única vez; o divisor do WF1 só quebra mensagem em pontuação seguida de espaço, então o link nunca é cortado.

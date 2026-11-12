@@ -25,7 +25,7 @@ export default async function Busca({ searchParams }: { searchParams: Promise<Pa
       <BarraLateral verticais={verticais} />
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-black">{bruto ? `Resultados para "${bruto}"` : 'Busca'}</h1>
-        <p className="mt-1 text-sm text-black/60">{r.total} {r.total === 1 ? 'modelo' : 'modelos'}{ajustes ? '. Entendemos o que você quis dizer e já aplicamos os filtros abaixo.' : ''}</p>
+        <p className="mt-1 text-sm text-black/60">{r.total.toLocaleString('pt-BR')} {r.total === 1 ? 'produto' : 'produtos'}{ajustes ? '. Entendemos o que você quis dizer e já aplicamos os filtros abaixo.' : ''}</p>
         {bruto && <FiltrosBarra base="/busca" facetas={f.facetas} filtros={filtros} q={bruto} ordem={ordem} total={r.total} />}
         {r.total === 0 && bruto && (
           <p className="mt-6 rounded-xl2 bg-white p-6 text-sm">Não achamos esse item no site, mas fazemos sob medida.{' '}

@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { blockReason, DEFAULT_KANBAN, formatDuration, isStalled, metodoLabel, metodoValido, origemPedidoLabel, pedidoAtrasado, pedidoEcommerce, pedidoWhatsApp } from '../src/lib/orders.ts'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor } from '../src/lib/pricing.ts'
 import { parseMoney } from '../src/lib/money.ts'
@@ -216,7 +217,7 @@ assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((
 // Variações de grafia: separadores (ponto, traço, sublinhado, asterisco) e o "a" trocado por 4 ou @. Espaços ficam de fora de propósito (falso positivo em "faz a prova").
 const sep = '[._\\-*]{0,2}'
 const forbidden = new RegExp(['z', sep, '[a4@]', sep, 'p'].join('') + '(?!pier)', 'i')
-const root = new URL('..', import.meta.url).pathname
+const root = fileURLToPath(new URL('..', import.meta.url)) // fileURLToPath: o .pathname quebra em caminhos do Windows com espaço ou acento
 const skip = new Set(['node_modules', '.git', 'dist', '.next', 'package-lock.json'])
 const textExt = /\.(ts|tsx|js|cjs|mjs|json|md|sql|toml|html|css|svg|example|txt|csv|yml|yaml|xml|sh|webmanifest)$/
 const leaks: string[] = []

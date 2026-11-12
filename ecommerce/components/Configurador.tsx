@@ -21,12 +21,13 @@ const ARTES: { id: Arte; titulo: string; texto: string; valor: string }[] = [
   { id: 'criacao', titulo: 'Criação completa da arte', texto: 'Nossa equipe cria do zero com as suas informações. Acrescenta 1 dia útil ao prazo.', valor: '+ R$ 39,90' },
 ]
 
-export interface Irmao { produto_slug: string; impressao: string | null; formato: string | null; a_partir_de: number }
+export interface Irmao { produto_slug: string; impressao: string | null; formato: string | null; a_partir_de: number; ref?: string; sku_slug?: string; quantidade?: number | null }
 
-export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato = null }: { slug: string; titulo: string; foto: string | null; opcoes: Opcao[]; irmaos?: Irmao[]; formato?: string | null }) {
+/** Página de UM SKU: `refAtual` é o produto da página; as outras quantidades e impressões são links para outros SKUs (cada um com sua URL). */
+export function Configurador({ slug, skuSlug, refAtual, titulo, foto, opcoes, irmaos = [], formato = null }: { slug: string; skuSlug: string; refAtual: string; titulo: string; foto: string | null; opcoes: Opcao[]; irmaos?: Irmao[]; formato?: string | null }) {
   const mesmoTamanho = irmaos.filter((i) => i.formato === formato)
   const router = useRouter()
-  const [ref, setRef] = useState(opcoes[0]?.ref)
+  const ref = refAtual
   const [arte, setArte] = useState<Arte>('pronta')
   const [cep, setCep] = useState('')
   const [cot, setCot] = useState<Cotacao | null>(null)
@@ -50,7 +51,7 @@ export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato 
   function concluir(destino: 'carrinho' | 'comprar') {
     if (!opcao) return
     carrinho.salvarArte(arte)
-    carrinho.adicionar({ ref: opcao.ref, quantidade: 1, titulo, unidades: opcao.quantidade, preco: Number(opcao.preco), foto, slug })
+    carrinho.adicionar({ ref: opcao.ref, quantidade: 1, titulo, unidades: opcao.quantidade, preco: Number(opcao.preco), foto, slug: skuSlug })
     setAdicionado(true)
     void rastrear('AddToCart', { content_ids: [opcao.ref], content_name: titulo, content_type: 'product', value: Number(cot?.total ?? opcao.preco), currency: 'BRL' })
     if (destino === 'comprar') router.push('/carrinho')
@@ -67,7 +68,7 @@ export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato 
           <h2 className="mb-2 text-sm font-black uppercase tracking-wide">Impressão</h2>
           <div className="flex flex-wrap gap-2">
             {mesmoTamanho.map((i) => (
-              <Link key={i.produto_slug} href={`/produto/${i.produto_slug}`} scroll={false} aria-current={i.produto_slug === slug ? 'page' : undefined}
+              <Link key={i.produto_slug} href={`/produto/${i.sku_slug ?? i.produto_slug}`} scroll={false} aria-current={i.produto_slug === slug ? 'page' : undefined}
                 className={`rounded-lg border-2 px-3 py-2 text-sm ${i.produto_slug === slug ? 'border-magenta bg-magenta/5 font-bold' : 'border-black/10 hover:border-black/30'}`}>
                 {i.impressao}<span className="block text-xs font-normal text-black/55">a partir de {brl(Number(i.a_partir_de))}</span>
               </Link>
@@ -77,21 +78,22 @@ export function Configurador({ slug, titulo, foto, opcoes, irmaos = [], formato 
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-black uppercase tracking-wide">1. Escolha a tiragem</h2>
-        <div role="radiogroup" aria-label="Tiragem" className="overflow-hidden rounded-lg border border-black/10">
+        <h2 className="mb-2 text-sm font-black uppercase tracking-wide">1. Quantidade (cada uma é um produto)</h2>
+        <nav aria-label="Quantidades deste produto" className="overflow-hidden rounded-lg border border-black/10">
           {opcoes.map((o) => {
             const un = o.quantidade ?? 1
+            const atual = o.ref === ref
             return (
-              <button key={o.ref} type="button" role="radio" aria-checked={o.ref === ref} onClick={() => setRef(o.ref)}
-                className={`flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/5 px-3 py-2 text-left text-sm last:border-b-0 ${o.ref === ref ? 'bg-magenta/5 font-bold ring-2 ring-inset ring-magenta' : 'hover:bg-papel'}`}>
-                <span>{o.quantidade ? `${o.quantidade.toLocaleString('pt-BR')} un.` : '1 un.'}</span>
+              <Link key={o.ref} href={`/produto/${o.sku_slug ?? ''}`} scroll={false} aria-current={atual ? 'page' : undefined}
+                className={`flex min-h-11 w-full items-center justify-between gap-3 border-b border-black/5 px-3 py-1.5 text-left text-sm last:border-b-0 ${atual ? 'bg-magenta/5 font-bold ring-2 ring-inset ring-magenta' : 'hover:bg-papel'}`}>
+                <span>{o.quantidade ? `${o.quantidade.toLocaleString('pt-BR')} un.` : '1 un.'}{o.variante ? <em className="ml-1.5 rounded bg-amarelo/60 px-1 text-[10px] font-semibold not-italic">{o.variante}</em> : null}</span>
                 <span className="text-xs text-black/60">{brl(Number(o.preco) / un)} cada</span>
                 <span className="text-[11px] text-black/55">{o.prazo_dias_uteis ? `${o.prazo_dias_uteis} dias úteis` : 'Prazo não informado'}</span>
                 <span>{brl(Number(o.preco))}</span>
-              </button>
+              </Link>
             )
           })}
-        </div>
+        </nav>
         {opcao?.sku && <p className="mt-2 text-xs text-black/60">Ref. / SKU: <b className="font-mono text-tinta">{opcao.sku}</b></p>}
       </section>
 

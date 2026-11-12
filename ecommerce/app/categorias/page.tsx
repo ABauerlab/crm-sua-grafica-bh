@@ -33,7 +33,7 @@ export default async function Produtos({ searchParams }: { searchParams: Promise
       <BarraLateral verticais={verticais} />
       <section className="min-w-0 flex-1">
         <h1 className="text-2xl font-black md:text-3xl">{v ? v.nome : 'Todos os produtos'}</h1>
-        <p className="mt-1 text-sm text-black/60">{v?.descricao ?? 'Escolha um departamento na lateral ou use os filtros.'} {r.total.toLocaleString('pt-BR')} opções com preço fechado.</p>
+        <p className="mt-1 text-sm text-black/60">{v?.descricao ?? 'Escolha um departamento na lateral ou use os filtros.'} {r.total.toLocaleString('pt-BR')} produtos com preço fechado.</p>
         {!v && <nav aria-label="Categorias principais" className="mt-4 flex flex-wrap gap-2">
           {CATEGORIAS_PRINCIPAIS.map((c) => <a key={c.slug} href={`/categoria/${c.slug}`} className="inline-flex min-h-10 items-center rounded-full border border-black/15 bg-white px-3.5 text-sm font-semibold hover:border-magenta hover:text-magenta">{c.nome}</a>)}
         </nav>}

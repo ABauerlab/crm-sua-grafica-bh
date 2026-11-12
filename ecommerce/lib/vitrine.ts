@@ -2,12 +2,27 @@
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL
 const CHAVE = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export interface Opcao { ref: string; sku?: string | null; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis?: number | null; peso_kg?: number | null }
+export interface Opcao { ref: string; sku?: string | null; sku_slug?: string | null; variante?: string | null; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis?: number | null; peso_kg?: number | null }
+/** Um SKU = um produto (card da lista). Os nomes `a_partir_de` e `variacoes` ficam por compatibilidade com os blocos antigos. */
 export interface Modelo {
   titulo: string; categoria: string; categoria_slug: string; produto_slug: string; foto: string | null; a_partir_de: number
   parcela_2x_a_partir_de: number; sku: string | null; ref: string; quantidade: number | null; variacoes: number
   subcategoria?: string | null; sub?: string | null; prazo_dias_uteis?: number | null; acab?: string[] | null
   familia?: string; tags?: string[] | null; tamanhos?: number
+  sku_slug?: string | null; variante?: string | null; impressao?: string | null; formato?: string | null
+}
+interface SkuLinha {
+  ref: string; sku: string | null; sku_slug: string | null; produto_slug: string; titulo: string; categoria: string; categoria_slug: string; foto: string | null
+  preco: number | string; parcela_2x: number | string; quantidade: number | null; prazo_dias_uteis: number | null; impressao: string | null; formato: string | null
+  variante: string | null; sub: string | null; subcategoria: string | null; acab: string[] | null
+}
+export interface SkuProduto {
+  ref: string; sku: string | null; sku_slug: string; produto_slug: string; variante: string | null; titulo: string; categoria: string; categoria_slug: string
+  impressao: string | null; formato: string | null; especificacao: string | null; descricao: string | null; ficha: Ficha | null; acabamentos: string[] | null
+  fotos: string[]; prazo_dias_uteis: number | null; quantidade: number | null; preco: number; parcela_2x: number; peso_kg?: number | null; atualizado_em: string
+  quantidades: Opcao[]
+  irmaos: { produto_slug: string; impressao: string | null; formato: string | null; a_partir_de: number; ref: string; sku_slug: string; quantidade: number | null }[]
+  variacoes: { produto_slug: string; titulo: string; impressao: string | null; formato: string | null; a_partir_de: number; foto: string | null; ref: string; sku_slug: string }[]
 }
 export interface ProdutoResumo {
   produto_slug: string; titulo: string; categoria: string; categoria_slug: string; impressao: string | null; formato: string | null
@@ -125,7 +140,7 @@ function paraBanco(f: Filtros) {
 }
 
 export async function facetas(categoriasSlug: string[] | null, termo: string | null, f: Filtros = {}) {
-  const r = await rpc<{ total: number; facetas: Facetas }>('loja_facetas', { p_categorias: categoriasSlug, p_termo: termo, p_filtros: paraBanco(f) }, 900)
+  const r = await rpc<{ total: number; facetas: Facetas }>('loja_facetas_sku', { p_categorias: categoriasSlug, p_termo: termo, p_filtros: paraBanco(f) }, 900)
   return { total: r?.total ?? 0, facetas: r?.facetas ?? {} }
 }
 
@@ -135,13 +150,43 @@ export async function facetasHome() {
   return { total: r?.total ?? 0, facetas: r?.facetas ?? {} }
 }
 
+/** Lista de SKUs (cada um é um produto, com foto, preço e URL próprios). Mantém o formato de `Modelo` para os componentes. */
 export async function modelosFiltrados(categoriasSlug: string[] | null, opts: { termo?: string | null; filtros?: Filtros; ordem?: string; limite?: number; pagina?: number } = {}) {
   const limite = opts.limite ?? 24
-  const r = await rpc<{ total: number; modelos: Modelo[] }>('loja_modelos_f', {
+  const r = await rpc<{ total: number; itens: SkuLinha[] }>('loja_sku_lista', {
     p_categorias: categoriasSlug, p_termo: opts.termo ?? null, p_filtros: paraBanco(opts.filtros ?? {}), p_ordem: opts.ordem ?? 'relevancia',
     p_limite: limite, p_offset: ((opts.pagina ?? 1) - 1) * limite,
   }, 900)
-  return { total: r?.total ?? 0, modelos: (r?.modelos ?? []).map((m) => ({ ...m, categoria: nomeBonito(m.categoria), a_partir_de: Number(m.a_partir_de), parcela_2x_a_partir_de: Number(m.parcela_2x_a_partir_de) })) }
+  const modelos: Modelo[] = (r?.itens ?? []).map((i) => ({
+    titulo: i.titulo, categoria: nomeBonito(i.categoria), categoria_slug: i.categoria_slug, produto_slug: i.produto_slug, foto: i.foto,
+    a_partir_de: Number(i.preco), parcela_2x_a_partir_de: Number(i.parcela_2x), sku: i.sku, ref: i.ref, quantidade: i.quantidade, variacoes: 0,
+    subcategoria: i.subcategoria, sub: i.sub, prazo_dias_uteis: i.prazo_dias_uteis, acab: i.acab,
+    sku_slug: i.sku_slug, variante: i.variante, impressao: i.impressao, formato: i.formato,
+  }))
+  return { total: r?.total ?? 0, modelos }
+}
+
+/** Página de um SKU. O fim da URL é a ref estável (12 caracteres hexadecimais); o resto é só texto para leitura e busca. */
+export const REF_DA_URL = /-([a-f0-9]{12})$/
+export async function skuProduto(slug: string): Promise<SkuProduto | null> {
+  const ref = REF_DA_URL.exec(slug)?.[1]
+  if (!ref) return null
+  const p = await rpc<SkuProduto | null>('loja_sku_produto', { p_ref: ref }, 900)
+  if (!p) return null
+  const quantidades = [...(p.quantidades ?? [])].sort((a, b) => (a.quantidade ?? 0) - (b.quantidade ?? 0) || Number(a.preco) - Number(b.preco))
+  const irmaos = [...(p.irmaos ?? [])].sort((a, b) => ordemImpressao(a.impressao) - ordemImpressao(b.impressao) || (a.formato ?? '').localeCompare(b.formato ?? '') || Number(a.a_partir_de) - Number(b.a_partir_de))
+  return { ...p, categoria: nomeBonito(p.categoria), preco: Number(p.preco), parcela_2x: Number(p.parcela_2x), quantidades, irmaos }
+}
+
+/** Link antigo (produto agrupado): devolve o SKU mais barato do grupo, para redirecionar. */
+export async function skuDoProdutoAntigo(produtoSlug: string): Promise<string | null> {
+  const r = await rpc<string | null>('loja_sku_do_produto', { p_produto_slug: produtoSlug }, 3600)
+  return r ? r.split('|')[1] ?? null : null
+}
+
+/** Sitemap: todos os SKUs, em páginas. */
+export async function skuSlugs(offset: number, limite = 5000) {
+  return (await rpc<{ s: string; u: string }[]>('loja_sku_slugs', { p_offset: offset, p_limite: limite }, 3600)) ?? []
 }
 
 /** "papel grosso aveludado" -> { termo: null, filtros: { gram: ['encorpado'], acab: ['soft-touch'] } } */
@@ -158,6 +203,17 @@ export async function familia(id: string): Promise<Familia | null> {
   if (!/^[a-f0-9]{32}$/.test(id)) return null
   const r = await rpc<Familia | null>('loja_familia', { p_familia: id }, 900)
   return r ? { ...r, categoria: nomeBonito(r.categoria), tamanhos: r.tamanhos.map((t) => ({ ...t, a_partir_de: Number(t.a_partir_de) })).sort((a, b) => Number(/metro/i.test(a.tamanho)) - Number(/metro/i.test(b.tamanho))) } : null
+}
+
+/** "Colorido Apenas na Frente" -> "Colorido na frente" (rótulo curto para o card). */
+export function impressaoCurta(i: string | null | undefined): string | null {
+  const t = (i ?? '').trim().toLowerCase()
+  if (!t) return null
+  const mapa: Record<string, string> = {
+    'colorido apenas na frente': 'Colorido na frente', 'colorido frente e verso': 'Colorido frente e verso',
+    'colorido na frente e preto e branco no verso': 'Colorido + P&B no verso', 'preto e branco apenas na frente': 'P&B na frente', 'preto e branco frente e verso': 'P&B frente e verso',
+  }
+  return mapa[t] ?? (i as string)
 }
 
 /** Texto do card sem espaços duplos nem pontas soltas. */
