@@ -1,0 +1,29 @@
+# Referência do que foi criado no Coolify (os segredos são variáveis do serviço; aqui só os nomes).
+services:
+  navegador:
+    image: lscr.io/linuxserver/chromium:latest
+    shm_size: 1gb
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Sao_Paulo
+      - CUSTOM_USER=gbh
+      - PASSWORD=${SERVICE_PASSWORD_NOVNC}
+      - CHROME_CLI=--remote-debugging-port=9222 --no-first-run --disable-features=Translate
+    volumes:
+      - perfil:/config
+  consulta:
+    image: node:20-slim
+    network_mode: service:navegador
+    depends_on:
+      - navegador
+    environment:
+      - ORIGEM_BASE=${ORIGEM_BASE}
+      - API_TOKEN=${SERVICE_PASSWORD_TOKEN}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
+      - ORIGEM_SESSAO_TOKEN=${ORIGEM_SESSAO_TOKEN}
+volumes:
+  perfil:
