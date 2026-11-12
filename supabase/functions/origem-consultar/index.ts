@@ -2,8 +2,7 @@ import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shar
 
 // Conferência ao vivo de um SKU na origem logada (Chrome persistente na VPS). Dono ou service role.
 // Entrada: { sku }. Saída ao agente: só o essencial e sem custo, fornecedor nem endereço da origem.
-// Modo (app_settings.origem.modo): 'observar' (registra e alerta, nunca bloqueia) ou 'bloquear' (divergência de preço vira motivo de bloqueio).
-const brl = (s: string) => Number(s.replace(/[^0-9,]/g, '').replace(',', '.'))
+// Modo (app_settings.origem.modo): 'observar' (só registra) ou 'atualizar' (custo e prazo SÓ SOBEM no catálogo; queda apenas registra).
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -44,16 +43,19 @@ Deno.serve(async (req) => {
     return json({ ok: false, status: 'inconclusivo', motivo: 'origem_indisponivel' })
   }
 
-  // Compara o custo do catálogo com os preços lidos na página (qualquer ocorrência com o mesmo valor confirma)
-  const precos = ((dados?.precos as string[] | undefined) ?? []).map(brl).filter((n) => Number.isFinite(n))
-  const custo = Number(info.custo)
-  const texto = String(dados?.texto ?? '')
-  const achouSku = texto.toUpperCase().includes(sku)
-  let status: 'confere' | 'divergente' | 'inconclusivo' = 'inconclusivo'
-  if (precos.length) status = precos.some((p) => Math.abs(p - custo) < 0.011) ? 'confere' : (achouSku ? 'divergente' : 'inconclusivo')
-  await db.rpc('origem_registrar', { p_sku: sku, p_caminho: info.caminho, p_status: status, p_custo: custo, p_detalhe: { precos: precos.slice(0, 30), achou_sku: achouSku, medidas: dados?.medidas, lpa: dados?.largura_profundidade_altura, prazo: dados?.prazo_dias_uteis, cache: dados?.cache } })
+  // Aplica a leitura ao catálogo (custo e prazo só sobem; tamanho final de embalagens é gravado) e registra a consulta
+  const aplicar = modo === 'atualizar'
+  const { data: res } = await db.rpc('origem_aplicar', { p_sku: sku, p_dados: dados, p_aplicar: aplicar })
+  const status = String(res?.status ?? 'inconclusivo')
+  const imagens = ((dados?.imagens as { src: string }[] | undefined) ?? []).map((i) => i.src)
+  const foto = imagens.find((u) => u.toUpperCase().includes(sku)) ?? null
+  await db.rpc('origem_registrar', {
+    p_sku: sku, p_caminho: info.caminho, p_status: status, p_custo: Number(info.custo),
+    p_detalhe: { custo_origem: res?.custo_origem, aplicado: res?.aplicado, motivo: res?.motivo, prazo_origem: res?.prazo_origem, prazo_catalogo: res?.prazo_catalogo, tamanho_final: res?.tamanho_final,
+      ficha: dados?.ficha, valor_servico: dados?.valor_servico, acabamentos: dados?.acabamentos, quantidades: dados?.quantidades, foto_url: foto, imagens: imagens.slice(0, 12), cache: dados?.cache },
+  })
 
-  // Resposta ao agente: sem custo, sem endereço da origem
-  const lpa = ((dados?.largura_profundidade_altura as string[] | undefined) ?? [])[0] ?? null
-  return json({ ok: true, status, bloquear: modo === 'bloquear' && status === 'divergente', tamanho_final_origem: lpa, prazo_dias_uteis_origem: ((dados?.prazo_dias_uteis as number[] | undefined) ?? [])[0] ?? null })
+  // Resposta ao agente: sem valores de custo, sem endereço da origem, sem URL de imagem
+  return json({ ok: true, status, custo_atualizado: res?.aplicado === true, tamanho_final: res?.tamanho_final ?? null, prazo_dias_uteis_origem: res?.prazo_origem ?? null, tem_foto: !!foto })
+})
 })

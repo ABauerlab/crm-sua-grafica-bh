@@ -23,7 +23,7 @@ const MARCADORES_LOGIN = new RegExp(process.env.MARCADOR_LOGIN ?? '(esqueci (min
 if (!BASE || !TOKEN) { console.error('Faltam ORIGEM_BASE e API_TOKEN.'); process.exit(1) }
 
 // Nasce PAUSADO: não conecta ao Chrome enquanto o dono faz o login (a Cloudflare reprova login em navegador com depuração anexada).
-let pausado = (process.env.INICIO_PAUSADO ?? 'sim') === 'sim'
+let pausado = false
 let estado = { logado: null, ultima_checagem: null, motivo: null }
 const cache = new Map()
 let fila = Promise.resolve()
@@ -49,7 +49,7 @@ async function lerPagina(page) {
   return page.evaluate(() => {
     const t = (document.querySelector('main') ?? document.body).innerText.replace(/\n{3,}/g, '\n\n').trim()
     const tabelas = [...document.querySelectorAll('table')].slice(0, 8).map((tb) => tb.innerText.replace(/\s+\n/g, '\n').trim().slice(0, 1500))
-    return { titulo: document.title, h1: document.querySelector('h1')?.innerText ?? null, texto: t.slice(0, 8000), tabelas, corpo_completo: document.body.innerText.slice(0, 20000) }
+    return { titulo: document.title, h1: document.querySelector('h1')?.innerText ?? null, texto: t.slice(0, 8000), tabelas, corpo_completo: document.body.innerText.slice(0, 20000), imagens: [...document.images].filter((i) => i.naturalWidth >= 250).map((i) => ({ src: i.currentSrc || i.src, alt: i.alt || '' })).slice(0, 12), og: document.querySelector('meta[property="og:image"]')?.content ?? null }
   })
 }
 function extrair(d) {
@@ -59,7 +59,27 @@ function extrair(d) {
   const lpa = [...new Set([...t.matchAll(/L\s*[:=]?\s*\d+[\s,.]*(?:x|×)?\s*P\s*[:=]?\s*\d+[\s,.]*(?:x|×)?\s*A\s*[:=]?\s*\d+(?:\s*(?:mm|cm))?/gi)].map((m) => m[0]))]
   const precos = [...new Set([...t.matchAll(/R\$\s*\d{1,3}(?:\.\d{3})*,\d{2}/g)].map((m) => m[0]))].slice(0, 40)
   const prazo = [...t.matchAll(/(\d+)\s*dias?\s*[úu]teis?/gi)].map((m) => Number(m[1])).slice(0, 10)
-  return { medidas, largura_profundidade_altura: lpa, precos, prazo_dias_uteis: prazo }
+  const numero = (s) => Number(String(s).replace(/[^\d,]/g, '').replace(',', '.'))
+  const ficha = {}
+  const bloco = (t.split('Ficha técnica')[1] ?? '').split('Prazo')[0]
+  for (const l of bloco.split('\n')) { const m = l.match(/^\s*([^:\n]{2,40}):\s*(.+)$/); if (m) ficha[m[1].trim()] = m[2].trim() }
+  const din = (re) => { const m = t.match(re); return m ? numero(m[1]) : null }
+  const valor_servico = din(/Valor do Servi[cç]o:\s*R\$\s*([\d.,]+)/i)
+  const valor_acabamento = din(/Valor do Acabamento:\s*R\$\s*([\d.,]+)/i)
+  const valor_ajuste_arte = din(/Valor do Ajuste da Arte:\s*R\$\s*([\d.,]+)/i)
+  const prazo_producao_dias = Number((t.match(/Prazo de produ[cç][aã]o:\s*(\d+)/i) ?? [])[1]) || null
+  const quantidades = [...t.matchAll(/^\s*(\d+)\s*unid\./gim)].map((m) => Number(m[1]))
+  const acabamentos = []
+  const L = t.split('\n').map((x) => x.trim()).filter(Boolean)
+  for (let i = 0; i < L.length - 1; i++) {
+    if (/^R\$\s*[\d.,]+$/.test(L[i]) && /^Subseq\./.test(L[i + 1])) {
+      let j = i - 1
+      while (j >= 0 && /^(Veja um exemplo\.|Entenda|\d+)$/.test(L[j])) j--
+      const mm = L[i + 1].match(/R\$\s*([\d.,]+)\s*\+\s*(\d+)/)
+      acabamentos.push({ nome: L[j] ?? null, valor: numero(L[i]), subseq: mm ? numero(mm[1]) : null, dias: mm ? Number(mm[2]) : null })
+    }
+  }
+  return { medidas, largura_profundidade_altura: lpa, precos, prazo_dias_uteis: prazo, ficha, valor_servico, valor_acabamento, valor_ajuste_arte, prazo_producao_dias, quantidades, acabamentos: acabamentos.slice(0, 80) }
 }
 function sessao(d, urlFinal) {
   const loginUrl = /login|entrar|auth/i.test(new URL(urlFinal).pathname)
@@ -107,7 +127,7 @@ async function consultar(caminho) {
     const d = await lerPagina(page)
     const s = sessao(d, page.url())
     if (!s.logado) { estado = { ...estado, logado: false, motivo: 'sessao_expirada_na_consulta' }; await avisarBanco(false, estado.motivo); throw Object.assign(new Error('sessao_expirada'), { status: 409 }) }
-    const dados = { caminho, consultado_em: new Date().toISOString(), titulo: d.titulo, h1: d.h1, ...extrair(d), tabelas: d.tabelas, texto: d.texto, cache: false }
+    const dados = { caminho, consultado_em: new Date().toISOString(), titulo: d.titulo, h1: d.h1, ...extrair(d), tabelas: d.tabelas, texto: d.texto, imagens: d.imagens, og: d.og, cache: false }
     cache.set(caminho, { em: Date.now(), dados })
     return dados
   }))
