@@ -22,21 +22,26 @@ const MARCADORES_LOGADO = new RegExp(process.env.MARCADOR_LOGADO ?? '(sair|logou
 const MARCADORES_LOGIN = new RegExp(process.env.MARCADOR_LOGIN ?? '(esqueci (minha )?senha|entrar na sua conta|fa[cç]a (seu )?login)', 'i')
 if (!BASE || !TOKEN) { console.error('Faltam ORIGEM_BASE e API_TOKEN.'); process.exit(1) }
 
-let browser = null
+// Nasce PAUSADO: não conecta ao Chrome enquanto o dono faz o login (a Cloudflare reprova login em navegador com depuração anexada).
+let pausado = (process.env.INICIO_PAUSADO ?? 'sim') === 'sim'
 let estado = { logado: null, ultima_checagem: null, motivo: null }
 const cache = new Map()
 let fila = Promise.resolve()
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 
-async function conectar() {
-  if (browser?.isConnected()) return browser
-  browser = await chromium.connectOverCDP(await cdpUrl())
-  return browser
-}
-async function aba() {
+// Conecta só durante a operação e desconecta no fim (a conexão fica anexada o mínimo possível).
+const conectar = async () => chromium.connectOverCDP(await cdpUrl())
+async function comPagina(fn) {
   const b = await conectar()
-  const ctx = b.contexts()[0] ?? (await b.newContext())
-  return ctx.newPage()
+  let page
+  try {
+    const ctx = b.contexts()[0] ?? (await b.newContext())
+    page = await ctx.newPage()
+    return await fn(page)
+  } finally {
+    try { await page?.close() } catch { /* ignora */ }
+    try { await b.close() } catch { /* ignora */ }
+  }
 }
 const serial = (fn) => { const p = fila.then(fn, fn); fila = p.then(() => espera(2000), () => espera(2000)); return p }
 
@@ -70,24 +75,24 @@ async function avisarBanco(logado, motivo) {
 }
 
 async function checarSessao() {
+  if (pausado) return estado
   return serial(async () => {
-    let page
     try {
-      page = await aba()
-      await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 30000 })
-      await page.waitForTimeout(2500)
-      const d = await lerPagina(page)
-      const s = sessao(d, page.url())
-      const mudou = estado.logado !== s.logado
-      estado = { logado: s.logado, ultima_checagem: new Date().toISOString(), motivo: s.logado ? null : (s.loginUrl ? 'redirecionado_para_login' : 'sem_marcador_de_conta') }
-      if (mudou || !s.logado) await avisarBanco(s.logado, estado.motivo)
-      return estado
+      return await comPagina(async (page) => {
+        await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await page.waitForTimeout(2500)
+        const d = await lerPagina(page)
+        const s = sessao(d, page.url())
+        const mudou = estado.logado !== s.logado
+        estado = { logado: s.logado, ultima_checagem: new Date().toISOString(), motivo: s.logado ? null : (s.loginUrl ? 'redirecionado_para_login' : 'sem_marcador_de_conta') }
+        if (mudou || !s.logado) await avisarBanco(s.logado, estado.motivo)
+        return estado
+      })
     } catch (e) {
       estado = { logado: false, ultima_checagem: new Date().toISOString(), motivo: `erro: ${String(e.message).slice(0, 120)}` }
-      browser = null
       await avisarBanco(false, estado.motivo)
       return estado
-    } finally { try { await page?.close() } catch { /* ignora */ } }
+    }
   })
 }
 
@@ -95,29 +100,45 @@ async function consultar(caminho) {
   if (!/^\/[A-Za-z0-9\-_/.%]+$/.test(caminho) || caminho.includes('..')) throw Object.assign(new Error('caminho inválido'), { status: 400 })
   const hit = cache.get(caminho)
   if (hit && Date.now() - hit.em < CACHE_MS) return { ...hit.dados, cache: true }
-  return serial(async () => {
-    const page = await aba()
-    try {
-      await page.goto(BASE + caminho, { waitUntil: 'domcontentloaded', timeout: 30000 })
-      await page.waitForTimeout(3000)
-      const d = await lerPagina(page)
-      const s = sessao(d, page.url())
-      if (!s.logado) { estado = { ...estado, logado: false, motivo: 'sessao_expirada_na_consulta' }; await avisarBanco(false, estado.motivo); throw Object.assign(new Error('sessao_expirada'), { status: 409 }) }
-      const dados = { caminho, consultado_em: new Date().toISOString(), titulo: d.titulo, h1: d.h1, ...extrair(d), tabelas: d.tabelas, texto: d.texto, cache: false }
-      cache.set(caminho, { em: Date.now(), dados })
-      return dados
-    } finally { try { await page.close() } catch { /* ignora */ } }
-  })
+  if (pausado) throw Object.assign(new Error('sessao_expirada'), { status: 409 })
+  return serial(() => comPagina(async (page) => {
+    await page.goto(BASE + caminho, { waitUntil: 'domcontentloaded', timeout: 30000 })
+    await page.waitForTimeout(3000)
+    const d = await lerPagina(page)
+    const s = sessao(d, page.url())
+    if (!s.logado) { estado = { ...estado, logado: false, motivo: 'sessao_expirada_na_consulta' }; await avisarBanco(false, estado.motivo); throw Object.assign(new Error('sessao_expirada'), { status: 409 }) }
+    const dados = { caminho, consultado_em: new Date().toISOString(), titulo: d.titulo, h1: d.h1, ...extrair(d), tabelas: d.tabelas, texto: d.texto, cache: false }
+    cache.set(caminho, { em: Date.now(), dados })
+    return dados
+  }))
 }
 
 const srv = http.createServer(async (req, res) => {
   const out = (st, o) => { res.writeHead(st, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)) }
   if ((req.headers.authorization ?? '') !== `Bearer ${TOKEN}`) return out(401, { error: 'Não autorizado.' })
   try {
-    if (req.method === 'GET' && req.url === '/saude') {
-      let nav = false
-      try { await conectar(); nav = true } catch { nav = false }
-      return out(200, { ok: nav, navegador: nav, ...estado })
+    if (req.method === 'GET' && req.url === '/saude') return out(200, { ok: true, pausado, ...estado })
+    if (req.method === 'POST' && req.url === '/retomar') { pausado = false; setTimeout(checarSessao, 500); return out(200, { ok: true, pausado }) }
+    if (req.method === 'POST' && req.url === '/pausar') { pausado = true; return out(200, { ok: true, pausado }) }
+    if (req.method === 'GET' && req.url === '/diagnostico') {
+      const b = await conectar(); const ctx = b.contexts()[0]
+      const abas = []
+      try {
+        for (const p of ctx ? ctx.pages() : []) {
+          try { abas.push({ url: p.url(), titulo: await p.title(), texto: (await p.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ').slice(0, 600) }) } catch { /* ignora */ }
+        }
+      } finally { try { await b.close() } catch { /* ignora */ } }
+      return out(200, { ok: true, abas, ...estado })
+    }
+    if (req.method === 'POST' && req.url === '/sessao') {
+      let corpo = ''; for await (const c of req) { corpo += c; if (corpo.length > 3_000_000) break }
+      const j = JSON.parse(corpo || '{}')
+      const cookies = (Array.isArray(j) ? j : j.cookies ?? []).filter((c) => c && c.name && c.value && c.domain)
+      const b = await conectar()
+      try { const ctx = b.contexts()[0] ?? (await b.newContext()); await ctx.addCookies(cookies) } finally { try { await b.close() } catch { /* ignora */ } }
+      cache.clear(); pausado = false
+      setTimeout(checarSessao, 500)
+      return out(200, { ok: true, importados: cookies.length })
     }
     if (req.method === 'POST' && req.url === '/consultar') {
       let corpo = ''; for await (const c of req) { corpo += c; if (corpo.length > 5000) break }
