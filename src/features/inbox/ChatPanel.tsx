@@ -100,18 +100,25 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
     onError: (e: Error) => setError(e.message),
   })
 
-  // /resetchat: zera o contexto do agente nesta conversa (só o que vem depois) e manda a saudação inicial, para novos testes com o mesmo número
+  // /resetchat: apaga TODO o histórico deste número (mensagens, notas, tarefas, orçamentos, pedidos não pagos, logs e execuções do agente),
+  // como se fosse um cliente novo. Só funciona para números cadastrados como "números de teste" (Configurações) e sem pedido pago.
   const resetChat = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc('resetar_contexto_conversa', { p_conversation: conversation.id })
+      const { data, error } = await supabase.rpc('resetar_chat_completo', { p_conversation: conversation.id })
       if (error) throw new Error(error.message)
-      await invokeFunction('whatsapp-send', { conversation_id: conversation.id, text: 'Oi! Tudo bem? Aqui é da Sua Gráfica BH. Como posso te ajudar hoje?' })
+      const r = data as { ok: boolean; erro?: string } | null
+      if (!r?.ok) {
+        if (r?.erro === 'numero_nao_e_de_teste') throw new Error('Este número não está cadastrado como número de teste (Configurações > Números de teste). Nada foi apagado.')
+        if (r?.erro === 'tem_pedido_pago') throw new Error('Este contato tem pedido pago. Pedido pago nunca é apagado. Nada foi apagado.')
+        throw new Error('Não foi possível limpar a conversa.')
+      }
     },
     onSuccess: () => {
       setText('')
       setError(null)
       qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
       qc.invalidateQueries({ queryKey: ['conversations'] })
+      qc.invalidateQueries({ queryKey: ['orders'] })
     },
     onError: (e: Error) => setError(e.message),
   })
@@ -260,7 +267,11 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
 
   function submit() {
     const t = text.trim()
-    if (mode === 'reply' && t.toLowerCase() === '/resetchat') return void (resetChat.isPending || resetChat.mutate())
+    if (mode === 'reply' && t.toLowerCase() === '/resetchat') {
+      if (resetChat.isPending) return
+      if (!window.confirm('Apagar TODO o histórico deste número (mensagens, notas, tarefas, orçamentos, pedidos não pagos e logs do agente)? Só funciona em número de teste. Não dá para desfazer.')) return
+      return void resetChat.mutate()
+    }
     if (mode === 'reply' && arquivos.length) return void enviarComArquivos()
     if (!t) return
     if (mode === 'note') {

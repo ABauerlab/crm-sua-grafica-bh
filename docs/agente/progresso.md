@@ -1,5 +1,13 @@
 # Progresso do agente de IA
 
+## Fase 1: /resetchat completo e números de teste (12/11/2026, branch `feat/resetchat-numeros-teste`)
+- **Feito**: `/resetchat` agora chama `resetar_chat_completo` e apaga TODO o histórico do número (mensagens, notas, tarefas, alertas, orçamentos, pedidos não pagos e tudo que aponta para eles, logs e execuções do agente, follow-ups, envios de foto), devolvendo contato e conversa ao estado de cliente novo (fica o número e o nome do WhatsApp). Antes pede confirmação no navegador.
+- **Travas**: só número da lista `numeros_teste` (casa pelo final do `wa_id`; inicial: 3132232356); recusa contato com pedido pago (`payment_status = aprovado`, etapas de produção em diante ou pagamento aprovado); cada tentativa, aceita ou recusada, grava em `reset_chat_auditoria` (que o reset não apaga). Aba Configurações > Números de teste lista, cadastra (só admin) e mostra os últimos usos.
+- **Migrations** (aplicadas): `20261201000001` (tabelas, função, recusa com auditoria).
+- **Testado de verdade (produção)**: ensaio em transação desfeita, recusa de TEIA (número comum) e de número de teste com pedido pago; reset REAL do 3132232356 (128 mensagens, 198 logs do agente, 36 execuções, 18 alertas, 2 orçamentos e 2 envios de foto apagados); depois, mensagem nova simulada: histórico só com ela, sem resumo, cérebro vazio, sem orçamento nem pedido, situação "novo".
+- **Não verificado**: o clique no botão pelo navegador (o front passou em typecheck e build, não abri o CRM); apagar arquivos do Storage (PDFs de orçamento e fotos ficam, são inofensivos); números de celular com o nono dígito cadastrados de outro jeito (o casamento é pelo final do número).
+- **Achado para a Fase 2**: `agente_contexto` lista `consentimento_promocoes` como "já cadastrado" em cliente novo (o valor padrão `none` conta como cadastrado), então a Laura nunca pergunta.
+
 ## Origem logada funcionando e calibrada (12/11/2026, noite)
 - **Login feito pelo dono na VPS** e reconhecido (`origem_sessao.logado = true`). A leitura real da página de produto devolve: referência, material, cores, gramatura, peso, **tamanho da arte** e **tamanho final**, prazo de produção, valor do serviço, acabamentos com preço e dias, quantidades e fotos do produto exato (arquivos com o SKU no nome).
 - **Achado**: SACDUP0201 custava R$ 2.002,93 no catálogo e R$ 2.186,21 no site; o preço da planilha (R$ 3.204,90) ficava abaixo do piso real (R$ 3.279,32). CFV02 e SCK02C500 conferem.

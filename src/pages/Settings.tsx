@@ -192,6 +192,79 @@ function QuickRepliesTab() {
   )
 }
 
+function TestNumbersTab() {
+  const toast = useToast()
+  const qc = useQueryClient()
+  const [fone, setFone] = useState('')
+  const [apelido, setApelido] = useState('')
+  const { data, isLoading } = useQuery({
+    queryKey: ['numeros-teste'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('numeros_teste').select('telefone, apelido, criado_em').order('criado_em')
+      if (error) throw new Error(error.message)
+      return data as { telefone: string; apelido: string | null; criado_em: string }[]
+    },
+  })
+  const audit = useQuery({
+    queryKey: ['reset-auditoria'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('reset_chat_auditoria').select('id, em, operador_nome, telefone, resultado').order('em', { ascending: false }).limit(15)
+      if (error) throw new Error(error.message)
+      return data as { id: string; em: string; operador_nome: string | null; telefone: string | null; resultado: string }[]
+    },
+  })
+  const add = useMutation({
+    mutationFn: async () => {
+      const t = fone.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '')
+      if (!/^\d{10,11}$/.test(t)) throw new Error('Informe DDD e número, só dígitos (ex.: 31999999999).')
+      const { error } = await supabase.from('numeros_teste').insert({ telefone: t, apelido: apelido.trim() || null })
+      if (error) throw new Error(error.code === '23505' ? 'Esse número já está na lista.' : error.message)
+    },
+    onSuccess: () => { setFone(''); setApelido(''); qc.invalidateQueries({ queryKey: ['numeros-teste'] }); toast('ok', 'Número de teste cadastrado.') },
+    onError: (e: Error) => toast('error', e.message),
+  })
+  const del = useMutation({
+    mutationFn: async (t: string) => { const { error } = await supabase.from('numeros_teste').delete().eq('telefone', t); if (error) throw new Error(error.message) },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['numeros-teste'] }),
+    onError: (e: Error) => toast('error', e.message),
+  })
+  return (
+    <div className="max-w-2xl space-y-5">
+      <p className="text-sm text-muted-foreground">
+        O comando <code>/resetchat</code> no chat apaga <strong>todo o histórico</strong> do número (mensagens, notas, tarefas, orçamentos, pedidos não pagos, logs e execuções do agente), como se fosse um cliente novo.
+        Só funciona para os números desta lista e nunca apaga pedido pago. Só administradores cadastram números.
+      </p>
+      <form className="grid gap-3 rounded-md border p-3 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); add.mutate() }}>
+        <div className="space-y-1.5"><Label htmlFor="nt-f">DDD e número</Label><Input id="nt-f" required inputMode="numeric" placeholder="31999999999" value={fone} onChange={(e) => setFone(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label htmlFor="nt-a">Apelido</Label><Input id="nt-a" placeholder="Celular do dono" value={apelido} onChange={(e) => setApelido(e.target.value)} /></div>
+        <div className="flex items-end"><Button type="submit" disabled={add.isPending}><Plus className="h-4 w-4" /> Cadastrar</Button></div>
+      </form>
+      <ul className="divide-y rounded-md border">
+        {isLoading && <li className="p-3"><Skeleton className="h-5 w-40" /></li>}
+        {(data ?? []).map((n) => (
+          <li key={n.telefone} className="flex items-center justify-between gap-2 p-3 text-sm">
+            <span><strong>{n.telefone}</strong>{n.apelido ? <span className="text-muted-foreground"> · {n.apelido}</span> : null}</span>
+            <Button variant="ghost" size="icon" aria-label="Remover número de teste" onClick={() => del.mutate(n.telefone)}><Trash2 className="h-4 w-4" /></Button>
+          </li>
+        ))}
+        {!isLoading && (data ?? []).length === 0 && <li className="p-4 text-sm text-muted-foreground">Nenhum número de teste: o /resetchat fica bloqueado para todos.</li>}
+      </ul>
+      <section className="space-y-2">
+        <h3 className="text-sm font-bold">Últimos usos do /resetchat</h3>
+        <ul className="divide-y rounded-md border text-sm">
+          {(audit.data ?? []).map((a) => (
+            <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 p-2.5">
+              <span>{new Date(a.em).toLocaleString('pt-BR')} · {a.operador_nome ?? 'operador'} · {a.telefone}</span>
+              <span className={a.resultado === 'ok' ? 'text-emerald-700' : 'text-red-700'}>{a.resultado === 'ok' ? 'apagado' : a.resultado === 'recusado_pedido_pago' ? 'recusado: pedido pago' : 'recusado: não é número de teste'}</span>
+            </li>
+          ))}
+          {(audit.data ?? []).length === 0 && <li className="p-3 text-muted-foreground">Nenhum uso registrado.</li>}
+        </ul>
+      </section>
+    </div>
+  )
+}
+
 function LabelsTab() {
   const toast = useToast()
   const { data } = useSetting('labels')
@@ -463,6 +536,7 @@ export default function Settings() {
           <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
           <TabsTrigger value="personas">Personas e política</TabsTrigger>
+          <TabsTrigger value="testes">Números de teste</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>
         <TabsContent value="empresa"><CompanyTab /></TabsContent>
@@ -479,6 +553,7 @@ export default function Settings() {
         <TabsContent value="followups"><Suspense fallback={<Skeleton className="h-40 w-full" />}><FollowupsTab /></Suspense></TabsContent>
         <TabsContent value="personas"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PersonasTab /></Suspense></TabsContent>
         <TabsContent value="conhecimento"><Suspense fallback={<Skeleton className="h-40 w-full" />}><KnowledgeTab /></Suspense></TabsContent>
+        <TabsContent value="testes"><TestNumbersTab /></TabsContent>
         <TabsContent value="dados"><DataTab /></TabsContent>
       </Tabs>
     </div>
