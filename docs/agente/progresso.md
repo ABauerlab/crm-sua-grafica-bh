@@ -1,5 +1,15 @@
 # Progresso do agente de IA
 
+## Origem logada 24 h, tamanhos e melhorias (12/11/2026, mesma branch)
+- **VPS (Coolify, serviço `origem-logada`)**: Chrome real com perfil persistente (noVNC com usuário `gbh` e senha em `SERVICE_PASSWORD_NOVNC`, no painel do Coolify) e API de consulta com token (`/saude`, `/consultar`) no mesmo contêiner de rede. Guarda de sessão a cada 4 min: se perder o login, `origem_sessao_registrar` cria alerta alto ao dono. Referência em `infra/origem-logada/`.
+- **PENDENTE DO DONO**: abrir o navegador do serviço (Coolify > origem-logada > domínios; endereço novnc), entrar na conta da origem uma vez (e-mail, senha, CAPTCHA) e deixar a janela aberta. Depois conferir `select * from origem_sessao` (logado = true) e `origem_consultas`.
+- **Edge Function `origem-consultar`** (dono ou service role): pega o caminho do SKU (`produto_fotos_mapa`), chama a API da VPS, compara preços lidos com o custo do catálogo e grava `origem_consultas` (confere, divergente, inconclusivo, erro). URL e token da VPS ficam em `app_segredos` (`origem_api_url`, `origem_api_token`). Modo `app_settings.origem.modo = observar`: registra e alerta, nunca bloqueia; `bloquear` fica para depois de calibrar.
+- **n8n**: `GBH | FERRAMENTA | montar_orcamento` consulta o primeiro SKU antes de montar (observação, timeout 25 s, falha não atrasa a venda). Sem login na VPS responde na hora "sessao_expirada".
+- **Não calibrado**: os seletores e a leitura de preços/medidas são genéricos; só dá para ajustar depois do login (ver o que `/consultar` devolve em `origem_consultas.detalhe`). Divergência hoje = nenhum preço da página bate com o custo do catálogo e o SKU aparece no texto.
+- **Tamanhos**: `catalogo.tamanho_final` e `tamanho_arte` (embalagens). 298 de 1.037 SKUs 3D preenchidos de títulos da loja; o resto mostra "a confirmar com o cliente". `buscar_produto` não mostra mais o tamanho da arte como tamanho do produto.
+- **Melhorias aplicadas**: aprovação do link exige palavra explícita (palavras soltas só valem como mensagem inteira) e `marketing_consent` volta a gravar texto (`opted_in`/`opted_out`).
+- **Resultado de segurança**: o Coolify negou a leitura de segredos pelo conector (correto); o token da API foi definido por mim e guardado só no Coolify e em `app_segredos`.
+
 ## Primeira venda automática: lições e correções (12/11/2026, branch `claude/laughing-ride-6sslzd`)
 Cliente TEIA (sacolas), pedido pago. O que a conversa mostrou: PDF enviado 1 minuto depois de uma pergunta sem resposta; sacola 4x0 orçada para quem pediu frente e verso, com a afirmação inventada "cobre frente, verso e laterais"; tamanho da ARTE planificada (465 x 285) apresentado como tamanho do produto (`catalogo.tamanho_mm` é o da arte; o tamanho final não existe no catálogo); resumo do PDF e pedido de APROVADO repetidos depois do "aprovado".
 - **Causa no prompt**: regra 19 do WF2 ("COTE LOGO") mandava cotar e enviar o PDF na mesma resposta, e a regra 1 mandava "fechamento assumido".
