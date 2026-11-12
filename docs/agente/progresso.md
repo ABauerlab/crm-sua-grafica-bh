@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## Primeira venda automática: lições e correções (12/11/2026, branch `claude/laughing-ride-6sslzd`)
+Cliente TEIA (sacolas), pedido pago. O que a conversa mostrou: PDF enviado 1 minuto depois de uma pergunta sem resposta; sacola 4x0 orçada para quem pediu frente e verso, com a afirmação inventada "cobre frente, verso e laterais"; tamanho da ARTE planificada (465 x 285) apresentado como tamanho do produto (`catalogo.tamanho_mm` é o da arte; o tamanho final não existe no catálogo); resumo do PDF e pedido de APROVADO repetidos depois do "aprovado".
+- **Causa no prompt**: regra 19 do WF2 ("COTE LOGO") mandava cotar e enviar o PDF na mesma resposta, e a regra 1 mandava "fechamento assumido".
+- **Feito (produção)**: migration `20261130000001` (`orcamento_gate_qualificacao`: bloqueia PDF com pergunta sem resposta, conversa curta demais, frente e verso pedido para item 4x0, embalagem sem tamanho final dito pelo cliente); sub-workflow `GBH | FERRAMENTA | gerar_pdf_orcamento` chama a trava antes do envio e devolve a orientação ao agente (falha da trava não bloqueia a venda); WF2 com regras 1, 19, 22 e 23 novas (publicado). Cenários `e11-01` e `e11-02` em `testes_conversa`. Teste SQL: `supabase/tests/gate_qualificacao.sql`.
+- **Não feito**: conferência ao vivo no site do fornecedor (contêiner com Chrome logado na VPS, ferramenta `conferir_origem`); colunas `tamanho_final` e `tamanho_arte` no catálogo; export de `n8n/` atualizado (o MCP do n8n não grava no repositório: reexportar WF2 e `gerar_pdf_orcamento`).
+- **Observado**: `agente_salvar_contato` grava `marketing_consent` booleano em coluna texto; a regex de aprovação de `preparar_link_pagamento` aceita "sim", "ok", "beleza", "certo" como aprovação.
+
 ## E-commerce/CRM Fase 16: Kanban por canal e catálogo por SKU atômico (11/11/2026, branch `feat/ecommerce-kanban-catalogo-atomico`)
 - Kanban com abas Todos os Pedidos, WhatsApp (Laura) e E-commerce / Site. Os dois canais continuam no mesmo pipeline e nas mesmas travas de pagamento/arte/produção.
 - Checkout passa a gravar `origin_label = 'ecommerce'`; trigger padroniza `canal = 'ecommerce'`. Valores legados `site` continuam aceitos nas funções de status e cobrança.
