@@ -1,5 +1,29 @@
 # Progresso do agente de IA
 
+## Fase 2: Laura pronta para tráfego pago (12/11/2026, branch `feat/laura-trafego-pago`)
+### Padrões de falha encontrados nas 27 conversas e 474 execuções do histórico (somente leitura)
+- **Contato nunca salvo**: `agente_salvar_contato` falhava SEMPRE (gravava em `contacts.quer_nota_fiscal`, coluna que nunca existiu) e, mesmo corrigida, a restrição `contacts_segment_check` aceitava só 4 segmentos enquanto a função gera 10. Além disso o sub-workflow `salvar_contato` do n8n só repassava 7 dos 15 campos (e-mail, CNPJ, nota fiscal, endereço, notas e consentimento nunca chegavam). Corrigido nas três camadas.
+- **Consentimento**: `none` (padrão) contava como "já cadastrado": a Laura nunca perguntava sobre promoções.
+- **Cotação sem qualificação**: os "Lembretes" anexados a toda mensagem (e) e (f) e o bloco base mandavam cotar e enviar PDF de imediato, contradizendo a regra 19. Reescritos; regras 8, 9, 14, 19, 22 e nova 24 alinhadas (endereço do balcão agora público, como decidido em 09/11).
+- **Silêncio**: 277 de 304 execuções "ignoradas" foram `modo_humano` (cliente sem resposta depois que uma pessoa assumiu, ex.: conversa ASARI em 10/11, resolvido no reset de teste). `fora_do_piloto` (10), `teto_conversa` (2) e `aguardando_dono` (8) são esperados; o piloto está desligado. Contatos reais sem resposta em modo IA: 4 antigos (1 a 10/11), anteriores às correções de 11/11.
+- **Erros do n8n**: 16 `erro_workflow`; 6 são do nó de avaliação do cenário de teste (não do agente) e 3 "Bad request" no contexto são de 10/11 (antes da estabilização).
+- **Trava de saída**: "margem" bloqueava "margem de segurança/sangria" (vocabulário normal de gráfica) e levava à resposta neutra; corrigido na origem.
+- **Workflow solto**: um workflow de consulta ao site do fornecedor (ativo, sem pasta e com o nome do fornecedor no título; raspa o site sem login) NÃO é usado pelo despachante. Recomendação: despublicar. Não toquei.
+
+### Entregue
+- Migrations aplicadas: coluna `quer_nota_fiscal`, `contacts_segment_check` alargado, consentimento `none`, trava de saída "margem", `resetar_chat_completo` (Fase 1). n8n: `salvar_contato` (15 campos) e WF2 (prompt) publicados.
+- Cenários novos `e12-*` em `testes_conversa` (vago, item parecido, 3 itens, link do SKU, nota fiscal, endereço, sacola, segmento sem kit); `e5-07` e `e8-fluxo-2` atualizados para a política do endereço público.
+- Blindagem: `npm run gate` (typecheck, testes e build; roda no CI em `.github/workflows/gate.yml`) e `scripts/test-contratos.ts` (toda RPC e Edge Function chamada pelo n8n existe; prompt sem as instruções conflitantes; contexto lido; sem alias de modelo nos workflows).
+
+### O que NÃO foi feito ou verificado (honestidade)
+- **Modelo fixo do Gemini: tentei `gemini-2.5-flash` e o agente passou a dar ERRO em todas as rodadas; revertido para o alias na hora.** A versão precisa ser descoberta (o alias atual não informa a versão) e validada antes de fixar. Os workflows exportados já não contêm o alias no fallback.
+- Suíte completa NÃO rodada. Com o prompt novo e o alias do modelo: `e12-01` (vago), `e12-04` (3 itens, cotou tudo e mandou PDF), `e12-07` (nota fiscal salva) e `e12-08` (endereço do balcão) PASSARAM; `e12-05` (link do SKU) e `e12-09` (sacola) não terminaram a tempo; `e12-02`, `e12-03`, `e12-10`, os `e5-*`, `mvp-*` e `e8-*` não foram reexecutados. No `e12-04` o cliente pediu cartão 4x4 e a Laura cotou 4x0 como "mais próxima": falha de qualidade que o critério automático não pega.
+- Exportar para `n8n/`: `buscar_conhecimento`, `buscar_produto`, `agendar_followup` e o clone do WF2 continuam pendentes (o WF2 local foi atualizado à mão com o que publiquei).
+- Tela "Erros recentes dos workflows do agente": não verificada.
+- Teste ponta a ponta até o link do Mercado Pago em modo teste: não feito (o link é simulado nos cenários).
+- Foto no PDF e a Laura enviar a foto do item orçado: não feito.
+- 5 funções do banco ainda sem migration no repositório (listadas em `scripts/test-contratos.ts`): `agente_agendar_followup`, `agente_salvar_contato`, `verificar_frete`, `buscar_conhecimento`, `agente_preco`.
+
 ## Fase 1: /resetchat completo e números de teste (12/11/2026, branch `feat/resetchat-numeros-teste`)
 - **Feito**: `/resetchat` agora chama `resetar_chat_completo` e apaga TODO o histórico do número (mensagens, notas, tarefas, alertas, orçamentos, pedidos não pagos e tudo que aponta para eles, logs e execuções do agente, follow-ups, envios de foto), devolvendo contato e conversa ao estado de cliente novo (fica o número e o nome do WhatsApp). Antes pede confirmação no navegador.
 - **Travas**: só número da lista `numeros_teste` (casa pelo final do `wa_id`; inicial: 3132232356); recusa contato com pedido pago (`payment_status = aprovado`, etapas de produção em diante ou pagamento aprovado); cada tentativa, aceita ou recusada, grava em `reset_chat_auditoria` (que o reset não apaga). Aba Configurações > Números de teste lista, cadastra (só admin) e mostra os últimos usos.

@@ -14,7 +14,7 @@
     "typecheck": "tsc -b",
     "test:webhook": "node scripts/test-webhook.ts",
     "test:rules": "node scripts/test-rules.ts",
-    "test": "npm run test:webhook && npm run test:rules && npm run test:mp && npm run test:conhecimento && npm run test:orcamento && npm run test:fotos && npm run test:loja && npm run test:bling && npm run test:blog && npm run test:agente && npm run test:alertas && npm run test:proativo && npm run test:e2e",
+    "test": "npm run test:contratos && npm run test:webhook && npm run test:rules && npm run test:mp && npm run test:conhecimento && npm run test:orcamento && npm run test:fotos && npm run test:loja && npm run test:bling && npm run test:blog && npm run test:agente && npm run test:alertas && npm run test:proativo && npm run test:e2e",
     "test:mp": "node scripts/test-mp.ts",
     "test:sql": "supabase/tests/rodar-local.sh supabase/tests/trava_lucro_caminhos.sql supabase/tests/melhorias_bloco_a.sql supabase/tests/melhorias_bloco_b.sql supabase/tests/melhorias_bloco_cd.sql supabase/tests/preco_etapa3.sql",
     "test:conhecimento": "node scripts/test-conhecimento.ts",
@@ -30,7 +30,9 @@
     "exemplos:orcamento": "node scripts/gerar-exemplos-orcamento.ts",
     "gerar:conhecimento": "node scripts/gerar-seed-conhecimento.ts",
     "e2e": "node tests/e2e/run.ts",
-    "test:e2e": "node tests/e2e/selftest.ts"
+    "test:e2e": "node tests/e2e/selftest.ts",
+    "test:contratos": "node scripts/test-contratos.ts",
+    "gate": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

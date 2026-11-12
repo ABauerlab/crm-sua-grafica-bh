@@ -124,6 +124,9 @@ A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram n
 ### /resetchat (12/11/2026)
 `/resetchat` no chat apaga TODO o histórico do número (função `resetar_chat_completo`). Só para números da tabela `numeros_teste` (Configurações > Números de teste; inicial 3132232356), nunca com pedido pago, sempre auditado em `reset_chat_auditoria`.
 
+### Portão de publicação (12/11/2026)
+Nada de prompt, workflow, função do banco ou catálogo vai a produção sem `npm run gate` verde (typecheck, `npm test` com `scripts/test-contratos.ts`, build); o CI roda o mesmo em todo PR. Depois de mexer no WF2, nas ferramentas ou em funções do agente, rode os cenários `e5-*`, `mvp-*` e `e12-*` (webhook de teste do WF1, `docs/agente/runbook-laura.md`) e leia as respostas, não só o status. Não fixe o modelo do Gemini sem rodar a suíte inteira: a tentativa com `gemini-2.5-flash` derrubou o agente.
+
 ## Convenções
 - **Sigilo do fornecedor (regra do dono): nunca escrever o nome do fornecedor em lugar nenhum** (código, textos de tela, mensagens e templates do WhatsApp, documentação, comentários, testes, exemplos, commits e PRs). Usar sempre "fornecedor". O front é público e o repositório não pode ser público. `npm test` falha se o nome aparecer no repositório.
 - UI, mensagens de erro e commits em português do Brasil; código (identificadores) em inglês.
