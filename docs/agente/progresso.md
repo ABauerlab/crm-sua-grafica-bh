@@ -903,3 +903,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - `buscar_produto`: as 4 opções agora são as mais baratas entre as relevantes (antes espalhava até o mais caro); A4 e A3 viram tamanho de catálogo. Migration `20261215000003`.
 - Alerta ao dono (`agente_chamado`, média) quando um orçamento é enviado com total a partir de R$ 1.000 ou com adesivo/banner: trigger `orcamento_revisao_alerta`. **NÃO aplicado em produção** (o Supabase pediu confirmação do dono): aplicar a migration `20261215000003` no PC; as partes de busca e testes já estão aplicadas e a migration é idempotente.
 - Ainda aberto: adesivo é vendido por cartela (ex.: 53 x 53 mm com 40 unidades) e a Laura precisa traduzir "300 adesivos redondos 5 cm" em número inteiro de cartelas; a busca devolve hoje um adesivo BOPP de R$ 1.137,90. O alerta ao dono cobre esse caso até existir regra própria de adesivo.
+
+### 15/11/2026 à noite: bloqueio do modelo e pendências do PC
+- A bateria completa rodou às 21h e 15 cenários seguidos terminaram sem resposta: o nó do agente devolveu "Payment required" (cobrança do Gemini sem crédito ou bloqueada). Antes disso 33 passaram. Corrigir a cobrança é o primeiro passo do lançamento. Ver `docs/agente/checklist-lancamento.md`.
+- Aplicado em produção: alerta de orçamento alto (`orcamento_revisao_alerta`) e ordem da loja por quantidade (`20261215000004`).
+- Não aplicado (o Supabase pede confirmação do dono): `20261202000002` e `20261203000003`.
