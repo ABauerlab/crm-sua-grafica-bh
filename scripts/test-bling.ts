@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createHash, createHmac } from 'node:crypto'
 import { corpoMeta, eventoMeta, sha256 } from '../supabase/functions/_shared/meta.ts'
-import { bloqueios, celularBling, corpoContato, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
+import { bloqueios, celularBling, corpoContato, ehServicoDeArte, ncmSugerido, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
 import { assinaturaBlingValida, descricaoMarketplace, resumoEventoBling, tituloMarketplace } from '../supabase/functions/_shared/bling.ts'
 
 const segredo = 'segredo-de-teste'
@@ -42,7 +42,7 @@ console.log('OK: Bling (assinatura do webhook), anúncios de marketplace e Conve
 
 // ---- envio ao Bling: bloqueios, corpos e leitura do código de autorização
 assert.deepEqual(bloqueios(['cpf_ou_cnpj', 'cep', 'email']), [], 'dados fiscais incompletos não impedem o envio (viram aviso)')
-assert.deepEqual(bloqueios(['nome', 'ncm_de_item', 'cep']), ['nome', 'ncm_de_item'])
+assert.deepEqual(bloqueios(['nome', 'ncm_de_item', 'cep']), ['ncm_de_item'], 'sem nome vai com nome provisório')
 assert.deepEqual(bloqueios(['pedido_nao_pago']), ['pedido_nao_pago'])
 const ct = corpoContato({ nome: 'Maria', codigo: 'SG-1', numeroDocumento: '', tipo: 'F', indicadorIe: 9, ie: null, celular: '5531999998888', email: '', endereco: { geral: { endereco: 'Rua A', numero: '', cep: '30130000' } } })
 assert.equal(ct.numeroDocumento, undefined, 'campos vazios saem do corpo')
@@ -63,4 +63,11 @@ assert.deepEqual(extrairCodigo('abc123DEF456ghi789jk'), { code: 'abc123DEF456ghi
 assert.equal(extrairCodigo('oi'), null)
 assert.match(textoErroBling({ status: 400, data: { error: { type: 'VALIDATION_ERROR', description: 'Dados inválidos', fields: [{ msg: 'NCM obrigatório' }] } } }), /Dados inválidos \(NCM obrigatório\)/)
 assert.equal(textoErroBling({ status: 500, data: {} }), 'HTTP 500')
+assert.equal(ncmSugerido('Placa Cemass'), '39269090')
+assert.equal(ncmSugerido('Placa Iracema FRENTE E VERSO'), '39269090')
+assert.equal(ncmSugerido('CARTÕES DE VISITA COUCHÊ 250G LAMINAÇÃO'), '49119900')
+assert.equal(ncmSugerido('Jornal 12 páginas'), '49111090')
+assert.equal(ncmSugerido('Serviço qualquer'), undefined)
+assert.equal(ehServicoDeArte('Criação de arte básica'), true)
+assert.equal(ehServicoDeArte('Placa Mr Barbosa'), false)
 console.log('OK: envio ao Bling (bloqueios, corpos, código de autorização, erros)')
