@@ -115,18 +115,12 @@ export function montarConfirmacaoCliente(i: {
   persona?: string | null
   artigo?: string | null
 }): string {
-  // Versão curta: confirmação, pedido, previsão, uma frase sobre a arte e uma sobre a retirada. Sem "assistente virtual".
-  const arte =
-    i.arte_status === 'aprovada'
-      ? 'Arte aprovada, seguimos para produção.'
-      : i.arte_status === 'enviada'
-        ? 'Recebemos a sua arte e estamos conferindo.'
-        : i.arte_status === 'em_criacao'
-          ? 'Estamos montando a arte para você aprovar.'
-          : 'Tem arte? É só mandar aqui.'
-  const entrega = i.entrega === 'uber' ? 'Combinamos a entrega por aqui.' : 'Aviso aqui quando estiver pronto para retirada.'
-  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona}. ` : ''
-  return `${i.persona ? `Oi, ${i.nome}! ` : ''}${quem}${i.persona ? 'Pagamento confirmado' : `Pagamento confirmado, ${i.nome}`}! Pedido ${i.pedido} na fila. Previsão: ${i.previsao}. ${arte} ${entrega}`
+  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona} da Sua Gráfica BH! ` : ''
+  const prazo = `Previsão de ficar pronto: ${i.previsao}.`
+  const saida = i.entrega === 'uber'
+    ? 'Quando estiver prontinho, combinamos a entrega por aqui.'
+    : 'Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete.'
+  return `Oi, ${i.nome}! ${quem}Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo} ${saida}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
