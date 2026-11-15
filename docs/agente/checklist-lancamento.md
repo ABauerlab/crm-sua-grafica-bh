@@ -36,3 +36,9 @@ O cron dispara 5 cenários por minuto e se desliga sozinho. Leia o resultado em 
 - Imagens de baixa qualidade (ex.: SKU CPC5405C1) e revisão da home a partir do HTML extraído.
 - Regra de adesivo por cartela e fluxo de recuperação para todos os erros possíveis do agente.
 - Mensagem neutra ao cliente quando o modelo falha (hoje só o dono é avisado).
+
+## 7. Custo dos testes (medido em 15/11/2026)
+- Uma bateria completa (55 cenários) gasta cerca de 1,5 milhão de tokens do Gemini (estimativa do sistema: 2,72 na moeda configurada). Um cenário de orçamento com 3 itens chega a 100 mil a 290 mil tokens, porque cada chamada de ferramenta reenvia o prompt inteiro.
+- Em 15/11 foram rodadas quatro baterias e vários reenvios: a maior parte do gasto do dia foi de teste (17 rodadas de clientes reais custaram 0,39 na estimativa).
+- Trava criada: o disparador `private.suite_disparar()` dispara no máximo 60 cenários por dia e se desliga sozinho. Nenhum agendamento de teste fica ativo.
+- Regra: rodar a bateria completa só quando o dono pedir, no máximo uma vez por dia, e reexecutar só os cenários afetados.
