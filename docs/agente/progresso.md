@@ -886,3 +886,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Corrigidos: celular com DDI, item sem SKU ("insira ao menos um item"), contato com código já cadastrado, gravação do id (bigint) e duplicidade (consulta por `numeroLoja`). Pedidos 219, 220, 224, 293, 294, 295 e 296 enviados sem erro; o 23 é teste e fica ignorado.
 - Conferir no Bling antes de emitir nota: NCM dos itens manuais e nomes provisórios de contato.
 - Pendente na Meta: templates `pedido_pago_confirmacao` (editado) e `pos_venda_avaliacao` (novo) ainda PENDING; depois de aprovados, sincronizar no CRM.
+
+### Correção da busca de produtos antes do tráfego pago (15/11/2026)
+- `buscar_produto` mostrava, para "cartão de visita", Mini Cartão, Duplo e Fidelidade de plástico (R$ 3.289,90) porque as categorias elegíveis casavam com qualquer termo. Agora só ficam as categorias que casam com mais termos (`private.categoria_pontos`).
+- Material exótico (PVC, plástico, holográfico, hot stamping, kraft, metalizado, madeira, acrílico, imantado) só aparece se o cliente citar. "A5" e "A6" viram 150 x 210 e 100 x 150. Sinônimos fosco/fosca e brilho/brilhante.
+- `montar_orcamento` recusa quantidade fracionada (0,8 pacote virava "192 cartões") com mensagem clara em vez de erro; era a origem do "probleminha no sistema" do e5-06.
+- Pendente: A4 e A3 ainda não mapeiam para tamanho; a escolha de 4 opções espalha por preço dentro da categoria (do mais barato ao mais caro) e pode mostrar papel premium; e8-fluxo-2 e e8-fluxo-4 usam um papel (apergaminhado 240g) que não existe nesse formato.
+- Migration `20261215000002`.
