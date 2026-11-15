@@ -29,7 +29,7 @@ const por = (s: string) => trechos.find((t) => t.slug === s)!
 assert.equal(por('abertura-cartao').resposta_pronta, 'Oi! Aqui é a [Nome], da Sua Gráfica BH. Vi que você veio pelo anúncio de cartão de visita. É pra qual negócio?')
 assert.equal(por('frete-retirada').resposta_pronta, 'A retirada é grátis, sim! Assim que o pagamento cair eu te passo o endereço e o horário certinho.')
 assert.equal(por('obj-caro').resposta_pronta, 'Entendo! Posso te mostrar uma opção com acabamento mais simples, que fica mais em conta. Quer comparar as duas?')
-assert.equal(por('robo-honesto').resposta_pronta, 'Sou o assistente virtual da Sua Gráfica BH, mas se preferir eu chamo o dono pra falar com você. Posso seguir por aqui?')
+assert.equal(por('robo-honesto').resposta_pronta, 'Sou a Laura, do atendimento da Sua Gráfica BH! Cuido de tudo por aqui e, se preferir falar com o dono, eu chamo ele pra você. Posso seguir por aqui?')
 assert.match(por('obj-vou-pensar').resposta_pronta!, /\{\{validade\}\}/, 'a validade vem de variável')
 
 // Lint de tamanho, tom e vazamento em TODOS os trechos

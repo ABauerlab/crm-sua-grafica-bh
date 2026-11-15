@@ -20,7 +20,7 @@ const PAR0: Parcelamento = { sem_juros_ate: 2, maximo_link: 12 }
 const A0: Arte = { formato_ideal: 'PDF em alta qualidade', horas_novo_alerta: 4 }
 const C0: Cupom = { ativo: false, percentual: 5, teto_reais: 25, validade_dias: 30 }
 
-/** Configurações > Personas e política: nomes do assistente virtual, política de troca e cancelamento, parcelamento, fila da arte e cupom de recompra. */
+/** Configurações > Personas e política: nomes da atendente, política de troca e cancelamento, parcelamento, fila da arte e cupom de recompra. */
 export default function PersonasTab() {
   const toast = useToast()
   const salvar = useSalvarConfig()
@@ -48,8 +48,8 @@ export default function PersonasTab() {
   return (
     <div className="space-y-8">
       <section className="space-y-3">
-        <h2 className="text-base font-semibold">Personas do assistente virtual</h2>
-        <p className="text-sm text-muted-foreground">Laura e João Victor são só nomes do mesmo assistente virtual. Antes do pagamento a conversa usa o nome de vendas; depois que o pagamento é confirmado, o nome do pós-pagamento. Quem decide a fase é o pedido, nunca o modelo. O agente nunca nega que é virtual.</p>
+        <h2 className="text-base font-semibold">Personas do atendimento</h2>
+        <p className="text-sm text-muted-foreground">Laura e João Victor são só nomes da mesma atendente. Antes do pagamento a conversa usa o nome de vendas; depois que o pagamento é confirmado, o nome do pós-pagamento. Quem decide a fase é o pedido, nunca o modelo. O agente nunca nega que é virtual.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5"><Label htmlFor="p-v">Nome de vendas (antes do pagamento)</Label><Input id="p-v" value={p.vendas} onChange={(e) => setP({ ...p, vendas: e.target.value })} /></div>
           <div className="space-y-1.5"><Label htmlFor="p-p">Nome do pós-pagamento</Label><Input id="p-p" value={p.pos_pagamento} onChange={(e) => setP({ ...p, pos_pagamento: e.target.value })} /></div>

@@ -20,6 +20,7 @@ import { ORDER_STAGES, type OrderStage } from '@/lib/orders'
 import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
 
+import BlingTab from '@/features/bling/BlingTab'
 import AgentTemplatesStatus from '@/features/agent/AgentTemplatesStatus'
 import DiscountPolicyTab from '@/features/agent/DiscountPolicyTab'
 const NotificationsTab = lazy(() => import('@/features/notifications/NotificationsTab'))
@@ -545,6 +546,7 @@ export default function Settings() {
           <TabsTrigger value="followups">Follow-ups</TabsTrigger>
           <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
           <TabsTrigger value="personas">Personas e política</TabsTrigger>
+          <TabsTrigger value="bling">Bling</TabsTrigger>
           <TabsTrigger value="testes">Números de teste</TabsTrigger>
           <TabsTrigger value="dados">Dados</TabsTrigger>
         </TabsList>
@@ -558,6 +560,7 @@ export default function Settings() {
         <TabsContent value="metas"><GoalsTab /></TabsContent>
         <TabsContent value="whatsapp"><WhatsAppTab /></TabsContent>
         <TabsContent value="notificacoes"><Suspense fallback={<Skeleton className="h-40 w-full" />}><NotificationsTab /></Suspense></TabsContent>
+        <TabsContent value="bling"><BlingTab /></TabsContent>
         <TabsContent value="agente"><AgentTab /></TabsContent>
         <TabsContent value="followups"><Suspense fallback={<Skeleton className="h-40 w-full" />}><FollowupsTab /></Suspense></TabsContent>
         <TabsContent value="personas"><Suspense fallback={<Skeleton className="h-40 w-full" />}><PersonasTab /></Suspense></TabsContent>

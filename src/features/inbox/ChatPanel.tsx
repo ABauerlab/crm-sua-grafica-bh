@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Bot, FileText, Info, Link2, Lock, Mic, MoreVertical, Paperclip, Send, Square, StickyNote, User, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useAuth } from '@/auth/AuthProvider'
+import { Link, useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
@@ -119,6 +120,27 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
       qc.invalidateQueries({ queryKey: ['messages', conversation.id] })
       qc.invalidateQueries({ queryKey: ['conversations'] })
       qc.invalidateQueries({ queryKey: ['orders'] })
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  // Apagar conversa (só admin): remove mensagens, orçamentos e pedidos não pagos do contato. Pedido pago nunca é apagado.
+  const navegar = useNavigate()
+  const { profile } = useAuth()
+  const apagarConversa = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('excluir_conversa', { p_conversation: conversation.id, p_motivo: 'Apagada pelo menu do chat' })
+      if (error) throw new Error(error.message)
+      const r = data as { ok: boolean; erro?: string } | null
+      if (!r?.ok) {
+        if (r?.erro === 'tem_pedido_pago') throw new Error('Este contato tem pedido pago. Pedido pago nunca é apagado. Nada foi apagado.')
+        throw new Error('Não foi possível apagar a conversa.')
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+      qc.invalidateQueries({ queryKey: ['orders'] })
+      navegar('/inbox')
     },
     onError: (e: Error) => setError(e.message),
   })
@@ -397,6 +419,17 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 <MenuItem onSelect={() => updateConv.mutate({ needs_human: !conversation.needs_human })}>
                   {conversation.needs_human ? 'Tirar marca de atenção' : 'Marcar: precisa de atenção'}
                 </MenuItem>
+                {profile?.role === 'admin' && (
+                  <>
+                    <MenuSeparator />
+                    <MenuItem
+                      disabled={apagarConversa.isPending}
+                      onSelect={() => { if (window.confirm('Apagar esta conversa inteira (mensagens, notas, orçamentos e pedidos não pagos)? Pedido pago nunca é apagado. O contato continua cadastrado. Não dá para desfazer.')) apagarConversa.mutate() }}
+                    >
+                      <span className="text-destructive">Apagar conversa</span>
+                    </MenuItem>
+                  </>
+                )}
                 {openOrder && (
                   <>
                     <MenuSeparator />

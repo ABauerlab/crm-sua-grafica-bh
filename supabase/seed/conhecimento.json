@@ -1342,7 +1342,7 @@
     "titulo": "Honestidade sobre ser robô",
     "categoria": "robo",
     "quando_usar": "Cliente pergunta se está falando com pessoa ou robô.",
-    "resposta_pronta": "Sou o assistente virtual da Sua Gráfica BH, mas se preferir eu chamo o dono pra falar com você. Posso seguir por aqui?",
+    "resposta_pronta": "Sou a Laura, do atendimento da Sua Gráfica BH! Cuido de tudo por aqui e, se preferir falar com o dono, eu chamo ele pra você. Posso seguir por aqui?",
     "fatos": "Se a pergunta for direta e sincera, não negue. Nunca finja ter feito algo físico. Ofereça chamar o dono.",
     "proximo_passo": "Seguir o atendimento ou chamar o dono se o cliente preferir.",
     "tags": [

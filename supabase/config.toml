@@ -94,3 +94,6 @@ verify_jwt = false
 
 [functions.origem-consultar]
 verify_jwt = false
+
+[functions.bling-integracao]
+verify_jwt = false

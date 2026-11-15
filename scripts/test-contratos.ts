@@ -35,6 +35,7 @@ for (const obrigatorio of ['19) QUALIFIQUE ANTES DE ORÇAR', '22) EMBALAGENS', '
   if (!wf2.includes(obrigatorio)) falhas.push(`WF2 perdeu a regra "${obrigatorio}"`)
 }
 // A loja ainda não está aberta: nenhum fluxo do agente pode mandar link do site ao cliente
+if (/a assistente virtual da Sua/.test(wf2)) falhas.push('WF2 voltou a dizer que a Laura é assistente virtual')
 if (wf2.includes('link_produto')) falhas.push('WF2 voltou a mandar link_produto (a loja ainda não está aberta ao público)')
 const bp = readFileSync(join(n8n, 'GBH-FERRAMENTA-buscar_produto.json'), 'utf8')
 if (bp.includes('link_produto')) falhas.push('buscar_produto voltou a devolver link_produto')

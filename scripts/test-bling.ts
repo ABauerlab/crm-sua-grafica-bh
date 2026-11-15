@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { createHash, createHmac } from 'node:crypto'
 import { corpoMeta, eventoMeta, sha256 } from '../supabase/functions/_shared/meta.ts'
+import { bloqueios, corpoContato, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
 import { assinaturaBlingValida, descricaoMarketplace, resumoEventoBling, tituloMarketplace } from '../supabase/functions/_shared/bling.ts'
 
 const segredo = 'segredo-de-teste'
@@ -38,3 +39,23 @@ assert.equal('event_source_url' in ev, false)
 assert.equal(corpoMeta([], 'TEST123').test_event_code, 'TEST123')
 
 console.log('OK: Bling (assinatura do webhook), anúncios de marketplace e Conversions API')
+
+// ---- envio ao Bling: bloqueios, corpos e leitura do código de autorização
+assert.deepEqual(bloqueios(['cpf_ou_cnpj', 'cep', 'email']), [], 'dados fiscais incompletos não impedem o envio (viram aviso)')
+assert.deepEqual(bloqueios(['nome', 'ncm_de_item', 'cep']), ['nome', 'ncm_de_item'])
+assert.deepEqual(bloqueios(['pedido_nao_pago']), ['pedido_nao_pago'])
+const ct = corpoContato({ nome: 'Maria', codigo: 'SG-1', numeroDocumento: '', tipo: 'F', indicadorIe: 9, ie: null, celular: '5531999998888', email: '', endereco: { geral: { endereco: 'Rua A', numero: '', cep: '30130000' } } })
+assert.equal(ct.numeroDocumento, undefined, 'campos vazios saem do corpo')
+assert.equal(ct.email, undefined)
+assert.deepEqual((ct.endereco as any).geral, { endereco: 'Rua A', cep: '30130000' })
+assert.equal(ct.celular, '5531999998888')
+const pr = corpoProduto({ codigo: 'CV4X11000C', descricao: 'Cartão de visita 4x1 1000un', valor: 150.5, unidade: 'UN', ncm: '4911.99.00', origem: 0 })
+assert.deepEqual((pr as any).tributacao, { origem: 0, ncm: '49119900' })
+assert.equal((pr as any).codigo, 'CV4X11000C')
+assert.equal((corpoProduto({ codigo: 'X', valor: 1, ncm: '123' }) as any).tributacao.ncm, undefined, 'NCM inválido não vai')
+assert.deepEqual(extrairCodigo('https://suagraficabh.com.br/?code=abc123DEF456ghi789&state=xyz'), { code: 'abc123DEF456ghi789', state: 'xyz' })
+assert.deepEqual(extrairCodigo('abc123DEF456ghi789jk'), { code: 'abc123DEF456ghi789jk' })
+assert.equal(extrairCodigo('oi'), null)
+assert.match(textoErroBling({ status: 400, data: { error: { type: 'VALIDATION_ERROR', description: 'Dados inválidos', fields: [{ msg: 'NCM obrigatório' }] } } }), /Dados inválidos \(NCM obrigatório\)/)
+assert.equal(textoErroBling({ status: 500, data: {} }), 'HTTP 500')
+console.log('OK: envio ao Bling (bloqueios, corpos, código de autorização, erros)')
