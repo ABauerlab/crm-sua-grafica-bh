@@ -915,3 +915,7 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - WF2: quando o modelo falha, repete a chamada até 2 vezes com 3,5 s de intervalo (antes só repetia resposta vazia) e, se tudo falhar, manda ao cliente "Oi! Recebi sua mensagem e já volto aqui com você, só um instante." em vez de silêncio.
 - Erros de agente, ferramenta, workflow e follow-up não interrompem mais o dono: vão só para o resumo de 2 h. O vigia de silêncio continua imediato. O alerta de orçamento alto foi retirado.
 - Migration `20261215000005`.
+
+### Fechamento de 15/11/2026 (noite)
+- Bateria completa depois da recarga do Gemini: 54 de 55 aprovados. Falha restante: `e8-fluxo-2-orcar-e-fechar` (a Laura chama `verificar_frete` para o bairro informado mas não conta o resultado ao cliente na mesma resposta).
+- Testes calibrados: e5-18 (sem exigir alerta ao dono nem proibir preços vindos da planilha), e8-fluxo-3 (exige o PDF antes do link, como manda a regra), e8-fluxo-2 e e8-fluxo-4 (papel que existe), e5-06 e mvp-B2.
