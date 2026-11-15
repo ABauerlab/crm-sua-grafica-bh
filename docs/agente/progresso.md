@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## Fase 3, rodada 4 (15/11/2026): CRM responsivo, Financeiro e Bling
+- **Bug raiz das abas**: `TabsContent` com `flex` vencia o `hidden` das abas inativas, então todos os painéis apareciam empilhados e o ativo ficava espremido (Catálogo e Kits "em branco com rolagem"). Corrigido em `ui/tabs.tsx` (`data-[state=inactive]:hidden`), vale para o CRM inteiro. Catálogo: cards no celular (tabela só de `md` para cima), abas quebram linha, filtros em largura total. Números de WhatsApp não são mais cortados (lista de conversas e cabeçalho do chat).
+- **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
+- **Bling**: ids salvos em `app_settings.bling` (loja do site 206358250; marketplaces `lojas_marketplace`: Mercado Livre 206359728 e Shopee 206359841, para a futura exportação). O envio automático continua DESLIGADO até o dono ligar em Configurações > Bling (ao ligar, os pedidos pagos já existentes vão de uma vez).
+- Ainda pendente: migrations `20261202000002` (apagar conversa e contato) e `20261203000003` (pós-entrega), blog, fotos pela VPS, loja, bateria completa.
+
+
 ## Fase 3, rodada 3 (15/11/2026): cupom, relâmpago e pós-entrega
 - **Cupom VOLTEI5 (5%)**: a Laura pergunta se o cliente já avaliou no Google; se sim, usa `oferecer_condicao_especial` com o gatilho `VOLTEI5`; se não, manda o link de avaliação (https://g.page/r/CZ6eNNGjdgO4EAE/review) e pede para voltar. Vale uma vez por cliente (`cupom_ja_usado`), não empilha com outra condição e só sai se o percentual couber acima do piso (tudo ou nada). Regra 29 do prompt.
 - **Desconto relâmpago (3%, link válido por 1 hora)**: gatilho `RELAMPAGO`, usado pelo follow-up F3 (dia 2, depois dos lembretes F1 e F2 sem resposta). Nada de percentual escolhido pelo modelo: `private.condicao_gatilho_fixo` calcula, confere o piso e a ferramenta gera orçamento novo, link e PDF. Testado no banco (desfeito no fim): R$ 7,97 sobre R$ 265,90, validade de 1 h; orçamentos sem gordura ou que já têm condição são recusados.

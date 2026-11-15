@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { buildDemo } from '@/features/dashboard/demo'
+import { ResultadoDoMes } from '@/features/dashboard/ResultadoDoMes'
 import { useAdTotals } from '@/hooks/campaigns'
 import { useSetting } from '@/hooks/settings'
 import { goalState, metrics as adMetrics } from '@/lib/campaigns'
@@ -253,6 +254,8 @@ function VisaoGeral() {
               </span>
             </Tile>
           </div>
+
+          <ResultadoDoMes />
 
           {showAds && ads && (
             <section aria-label="Campanhas" className="rounded-md border bg-card p-4">

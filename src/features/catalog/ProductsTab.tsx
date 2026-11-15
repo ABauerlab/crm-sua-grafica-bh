@@ -170,15 +170,15 @@ export function ProductsTab() {
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="space-y-3 border-b px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-52 flex-1">
+          <div className="relative w-full min-w-0 flex-1 sm:min-w-52">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <Input className="pl-9" placeholder="Buscar por SKU ou descrição" aria-label="Buscar produto" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <Select aria-label="Categoria" className="w-52" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <Select aria-label="Categoria" className="w-full sm:w-52" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">Todas as categorias</option>
             {(categories ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <Select aria-label="Status de venda" className="w-44" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select aria-label="Status de venda" className="w-full sm:w-44" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Todos os status</option>
             {(Object.keys(STATUS_VENDA_LABELS) as StatusVenda[]).map((k) => <option key={k} value={k}>{STATUS_VENDA_LABELS[k]}</option>)}
           </Select>
@@ -192,7 +192,7 @@ export function ProductsTab() {
           </Button>
           <Button size="sm" onClick={() => setForm({ sku: '', description: '', category: '', colors: '', weight: '', qty: '', size: '', lead: '', cost: '' })}><Plus className="h-4 w-4" /> Novo produto</Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="hidden text-xs text-muted-foreground md:block">
           Cada linha é uma opção fechada de quantidade: o SKU identifica o item exato. O custo é privado (só o dono vê). O <b>preço de venda</b> vem da <b>planilha oficial de preços</b> (botão "Importar planilha de preços"), aplicado por <code>calcular_preco</code> com as travas de lucro; a <b>base de custo</b> só vale para SKU sem preço de planilha.
         </p>
       </div>
@@ -208,7 +208,28 @@ export function ProductsTab() {
             {debounced || category || status ? 'Tente outro termo, categoria ou status.' : 'Importe a tabela do fornecedor (PDF, Excel ou CSV) ou cadastre os produtos um a um.'}
           </EmptyState>
         ) : (
-          <table className="w-full min-w-[1360px] text-sm">
+          <>
+          <ul className="divide-y md:hidden">
+            {data!.rows.map((p) => {
+              const pr = p.sku ? precos?.get(p.sku) : undefined
+              const detalhes = [p.category, p.colors, p.qty === null ? null : `${formatNumber(p.qty)} un`, p.size && !/^0\s*x\s*0$/i.test(p.size) ? `${p.size} mm` : null, p.lead_days === null ? null : `${p.lead_days} d.u.`].filter(Boolean).join(' · ')
+              return (
+                <li key={p.id} className="space-y-1 px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <SkuBadge sku={p.sku} />
+                    <Badge className={STATUS_TONE[p.status_venda]}>{STATUS_VENDA_LABELS[p.status_venda]}</Badge>
+                  </div>
+                  <p className="text-sm font-semibold">{p.description}</p>
+                  {detalhes && <p className="text-xs text-muted-foreground">{detalhes}</p>}
+                  <p className="text-sm tabular">
+                    <b>{pr ? formatBRL(pr.preco_total) : p.vendavel ? '…' : '—'}</b>
+                    <span className="text-xs text-muted-foreground"> · piso {p.piso === null ? '—' : formatBRL(p.piso)} · custo {formatBRL(p.cost)}</span>
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+          <table className="hidden w-full min-w-[1360px] text-sm md:table">
             <thead className="sticky top-0 bg-background">
               <tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                 <th className="px-4 py-2 font-medium">SKU</th>
@@ -253,6 +274,7 @@ export function ProductsTab() {
               })}
             </tbody>
           </table>
+          </>
         )}
       </div>
 
