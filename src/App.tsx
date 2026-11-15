@@ -20,6 +20,7 @@ const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
 const Catalog = lazy(() => import('@/pages/Catalog'))
 const Campaigns = lazy(() => import('@/pages/Campaigns'))
 const Payments = lazy(() => import('@/pages/Payments'))
+const Financeiro = lazy(() => import('@/pages/Financeiro'))
 const Tasks = lazy(() => import('@/pages/Tasks'))
 const PaymentThanks = lazy(() => import('@/pages/PaymentThanks'))
 
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/funil" element={<Navigate to="/kanban" replace />} />
             <Route element={<RequireAdmin />}>
               <Route path="/atendentes" element={<Team />} />
+              <Route path="/financeiro" element={<Financeiro />} />
             </Route>
           </Route>
         </Route>

@@ -97,3 +97,6 @@ verify_jwt = false
 
 [functions.bling-integracao]
 verify_jwt = false
+
+[functions.mp-saldo]
+verify_jwt = false

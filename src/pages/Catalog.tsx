@@ -15,7 +15,7 @@ export default function Catalog() {
         <h1 className="text-xl font-black">Catálogo e Kits</h1>
       </header>
       <Tabs defaultValue="catalogo" className="flex min-h-0 flex-1 flex-col">
-        <TabsList>
+        <TabsList className="flex-wrap gap-y-0 md:flex-nowrap">
           <TabsTrigger value="catalogo">Catálogo do fornecedor</TabsTrigger>
           <TabsTrigger value="kits">Kits prontos</TabsTrigger>
           <TabsTrigger value="sem-codigo">Sem código{n > 0 ? ` (${n})` : ''}</TabsTrigger>

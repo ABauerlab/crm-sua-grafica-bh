@@ -373,9 +373,9 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
           <Link to="/inbox" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-secondary md:hidden" aria-label="Voltar para a lista">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="min-w-0 flex-1 md:flex-none">
-            <p className="truncate text-base font-black leading-tight md:text-sm">{contactLabel(conversation.contact)}</p>
-            <p className="truncate text-xs text-muted-foreground">{formatPhone(conversation.contact.wa_id)}</p>
+          <div className="min-w-0 flex-1 md:min-w-fit md:flex-none">
+            <p className={cn('text-base font-black leading-tight md:text-sm', conversation.contact.name?.trim() ? 'truncate' : 'whitespace-nowrap')}>{contactLabel(conversation.contact)}</p>
+            {conversation.contact.name?.trim() && <p className="whitespace-nowrap text-xs text-muted-foreground">{formatPhone(conversation.contact.wa_id)}</p>}
           </div>
           {/* Desktop: todas as ações à vista */}
           <div className="ml-auto hidden items-center gap-2 md:flex">

@@ -24,6 +24,6 @@ export const TabsTrigger = forwardRef<ElementRef<typeof T.Trigger>, ComponentPro
 TabsTrigger.displayName = 'TabsTrigger'
 
 export const TabsContent = forwardRef<ElementRef<typeof T.Content>, ComponentPropsWithoutRef<typeof T.Content>>(({ className, ...p }, ref) => (
-  <T.Content ref={ref} className={cn('min-h-0 flex-1 overflow-y-auto p-4 outline-none', className)} {...p} />
+  <T.Content ref={ref} className={cn('min-h-0 flex-1 overflow-y-auto p-4 outline-none data-[state=inactive]:hidden', className)} {...p} />
 ))
 TabsContent.displayName = 'TabsContent'
