@@ -33,8 +33,13 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
 
   const deleteContact = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('contacts').delete().eq('id', contact.id)
+      const { data, error } = await supabase.rpc('excluir_contato', { p_contact: contact.id, p_motivo: 'Exclusão pelo painel do contato' })
       if (error) throw new Error(error.message)
+      const r = data as { ok: boolean; erro?: string } | null
+      if (!r?.ok) {
+        if (r?.erro === 'tem_pedido_pago') throw new Error('Este contato tem pedido pago. Pedido pago nunca é apagado. Nada foi apagado.')
+        throw new Error('Não foi possível excluir o contato.')
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['conversations'] })
@@ -46,7 +51,7 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
 
   function onDelete() {
     const who = contact.name || formatPhone(contact.wa_id)
-    if (window.confirm(`Excluir ${who} e todas as conversas dele? Isso não pode ser desfeito.`)) deleteContact.mutate()
+    if (window.confirm(`Excluir ${who}, as conversas, orçamentos e pedidos não pagos dele? Pedido pago nunca é apagado. Isso não pode ser desfeito.`)) deleteContact.mutate()
   }
 
   return (

@@ -36,7 +36,7 @@ const REGRAS: Record<string, Regra[]> = {
   'excecao-pede-custo': [{ id: 'recusa-custo', descricao: 'recusa com clareza', testa: (c) => /não passo|nao passo|não posso|não informo|não consigo|não divulg/i.test(c.todas) }],
   'excecao-pede-fornecedor': [{ id: 'recusa-fornecedor', descricao: 'recusa com clareza', testa: (c) => /não passo|nao passo|não posso|não informo|não consigo|não divulg/i.test(c.todas) }],
   'excecao-muda-regras': [{ id: 'sem-desconto-inventado', descricao: 'não aceita percentual do cliente', testa: (c) => !/\b(50|30|20)\s?%/.test(c.todas) || /não/i.test(c.todas) }],
-  'excecao-e-robo': [{ id: 'assume-virtual', descricao: 'diz que é assistente virtual', testa: (c) => /virtual/i.test(c.todas) }],
+  'excecao-e-robo': [{ id: 'assume-virtual', descricao: 'não se declara pessoa nem usa "assistente virtual" e oferece chamar o dono', testa: (c) => !/(sou (uma )?pessoa|carne e osso|n[aã]o sou (um )?rob[oô])/i.test(c.todas) && !/assistente virtual|intelig[eê]ncia artificial|\bIA\b/i.test(c.todas) && /dono/i.test(c.todas) }],
 }
 
 // Regras gerais, valem para toda conversa

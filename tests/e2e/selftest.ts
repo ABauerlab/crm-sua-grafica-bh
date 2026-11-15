@@ -32,7 +32,7 @@ assert.ok(codigos('Retira na Rio de Janeiro, 462', { ...ctx, pagoDesdeTurno: 3 }
 
 for (const t of ['Vou te reembolsar hoje', 'Devolvo seu dinheiro sem problema', 'Nós refazemos sem custo', 'Posso estornar agora', 'Garanto o reembolso']) assert.ok(codigos(t).includes('promessa_reembolso_ou_refacao'), t)
 for (const t of ['Sou uma pessoa de verdade, pode ficar tranquilo', 'Não sou um robô não', 'Sou de carne e osso']) assert.ok(codigos(t).includes('nega_ser_virtual'), t)
-assert.ok(!codigos('Sou a Laura, assistente virtual da Sua Gráfica BH').includes('nega_ser_virtual'))
+assert.ok(!codigos('Sou a Laura, do atendimento da Sua Gráfica BH').includes('nega_ser_virtual'))
 
 assert.ok(codigos('Fica R$ 150,00 no total').includes('preco_inventado'), 'valor que nenhuma ferramenta devolveu')
 assert.ok(!codigos('Fica R$ 199,90 no total').includes('preco_inventado'), 'valor devolvido pela ferramenta')
