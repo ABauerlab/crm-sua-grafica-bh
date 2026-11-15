@@ -874,3 +874,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Ainda falham, por qualificação legítima (regra 19) e não por vazamento: e5-06, e8-fluxo-4, mvp-B2, mvp-B3-r3 (a segunda mensagem genérica que acrescentei fala de banner e adesivo que o cenário não pediu; reescrever por cenário) e e8-fluxo-2 (a Laura confirma o nome antes de cotar).
 - Silêncio intermitente (cenário sem nenhuma saída) apareceu em e5-10, e11-01 e e8-fluxo-2 e some ao reexecutar: provável corrida do debounce, investigar com `agente_execucoes`.
 - Os cenários mvp-B agora têm uma segunda mensagem de resposta nas entradas. A fila de execução em lote usou `private.suite_fila` e `private.suite_disparar()` (cron `suite-disparar`, que se desliga sozinho): pode ser apagada.
+
+### Bling: todos os pedidos pagos enviados (15/11/2026)
+- Corrigidos: celular com DDI, item sem SKU ("insira ao menos um item"), contato com código já cadastrado, gravação do id (bigint) e duplicidade (consulta por `numeroLoja`). Pedidos 219, 220, 224, 293, 294, 295 e 296 enviados sem erro; o 23 é teste e fica ignorado.
+- Conferir no Bling antes de emitir nota: NCM dos itens manuais e nomes provisórios de contato.
+- Pendente na Meta: templates `pedido_pago_confirmacao` (editado) e `pos_venda_avaliacao` (novo) ainda PENDING; depois de aprovados, sincronizar no CRM.
