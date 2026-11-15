@@ -881,3 +881,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Achado: `agente_watchdog_reconciliar` (citada no CLAUDE.md) NÃO existe em produção e nenhum cron a chamava. Não recriar como estava: ela marcaria como erro rodadas com mais de 60 s.
 - Correção: `private.agente_silencio_vigiar()` + cron `agente-silencio-vigia` (a cada minuto). Só observa: cria alerta `agente_falhou` (alta, chave por mensagem) quando conversa em modo IA fica mais de 150 s sem resposta, sem rodada ativa nos últimos 5 min e fora de teste. Migration `20261215000001`.
 - Bateria em lote: fila temporária `private.suite_fila` e `private.suite_disparar()` (podem ser apagadas); leia o resultado só depois do fim da rodada (`agente_execucoes.status`).
+
+- Os cenários mvp-B agora têm uma segunda mensagem de resposta nas entradas. A fila de execução em lote usou `private.suite_fila` e `private.suite_disparar()` (cron `suite-disparar`, que se desliga sozinho): pode ser apagada.
+
+### Bling: todos os pedidos pagos enviados (15/11/2026)
+- Corrigidos: celular com DDI, item sem SKU ("insira ao menos um item"), contato com código já cadastrado, gravação do id (bigint) e duplicidade (consulta por `numeroLoja`). Pedidos 219, 220, 224, 293, 294, 295 e 296 enviados sem erro; o 23 é teste e fica ignorado.
+- Conferir no Bling antes de emitir nota: NCM dos itens manuais e nomes provisórios de contato.
+- Pendente na Meta: templates `pedido_pago_confirmacao` (editado) e `pos_venda_avaliacao` (novo) ainda PENDING; depois de aprovados, sincronizar no CRM.

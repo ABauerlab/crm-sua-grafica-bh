@@ -291,3 +291,14 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - n8n: `GBH | FERRAMENTA | buscar_produto` com busca de reserva e `em_palavras` (cópia em `n8n/GBH-FERRAMENTA-buscar_produto.json`); `despachar` com motivo real da falha; WF2 com regras 25 a 28.
 - Edge Function `cliente-pago-avisar` v12 com a nova mensagem pós-pagamento.
 - CRM: Configurações > Agente de IA mostra o estado real; Prazos e feriados mostra o escopo.
+
+- CRM: Configurações > Agente de IA mostra o estado real; Prazos e feriados mostra o escopo.
+
+### Envio de pedidos pagos ao Bling (15/11/2026)
+- Edge Function `bling-integracao` (ações `status`, `url_autorizacao`, `trocar_codigo`, `descobrir_loja`, `ativar`, `enviar`, `processar`; cron `bling-enviar` a cada 2 min, só envia com `app_settings.bling.ativo = true`). Lógica pura em `_shared/bling-envio.ts`; testes em `npm run test:bling`.
+- Bloqueios reais: `pedido_nao_pago`, `pedido_nao_encontrado`, `ncm_de_item`. As demais lacunas fiscais viram aviso e o pedido segue.
+- `orders.bling_pedido_id` e `contacts.bling_contact_id` são bigint; `bling_resultado` converte o texto antes de gravar.
+- Itens manuais (sem SKU, fora da arte) viram produto `SG<número>-<n>` no Bling com NCM sugerido por palavra-chave (`ncmSugerido`): conferir antes de emitir a nota.
+- Contato: usa o documento quando existe; senão o nome provisório "Cliente WhatsApp <final do telefone>" e o código `SG-xxxx`; se o Bling disser que o código já existe, o contato é reaproveitado pela pesquisa do código.
+- Envio idempotente: antes de criar, consulta `GET /pedidos/vendas?numerosLojas[]=<número>` e só reaproveita se o `numeroLoja` for exatamente igual.
+- Celular: sem o 55, 10 ou 11 dígitos (`celularBling`).
