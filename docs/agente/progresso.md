@@ -1,5 +1,14 @@
 # Progresso do agente de IA
 
+## Fase 3, rodada 2 (15/11/2026, PR #95 mesclado)
+- **Bling automático**: função `bling-integracao` (OAuth, fila a cada 2 min, contato, produto com NCM, pedido de venda na loja SUAGRÁFICABH), RPCs `bling_pendentes/resultado/reenviar/painel` e aba Configurações > Bling. Pedido sem CPF/endereço vai com aviso; só bloqueia sem nome, NCM ou pagamento. Falha repetida (3 tentativas) vira alerta ao dono. O envio fica desligado até o dono ligar na aba.
+- **Laura é atendente**: nada de "assistente virtual", "IA" ou "robô" (prompt regra 13, persona `apresentacao`, 12 trechos da base de conhecimento, seed, testes). Se perguntarem se é pessoa ou robô, ela diz "sou a Laura, do atendimento" e oferece o dono, sem afirmar ser humana.
+- **Template da Meta** `pedido_pago_confirmacao` editado pelo MCP (nova mensagem, em revisão); a Edge Function já usa o novo texto dentro da janela de 24 h.
+- **Alerta da VPS**: só dispara depois de 3 verificações seguidas falhando (`origem_sessao.falhas_seguidas`).
+- **Apagar conversa e contato** (admin, auditoria em `exclusoes_auditoria`, recusa pedido pago): telas prontas; as funções `excluir_conversa`/`excluir_contato` PRECISAM ser aplicadas no banco (a confirmação do Supabase trava os `delete`; SQL em `supabase/migrations/20261202000002_excluir_conversa_e_contato.sql`; a tabela já existe).
+- **Pendente**: cupom VOLTEI5, desconto relâmpago de 3% por 1 h e pós-entrega com avaliação no Google (precisam de ferramenta nova na Laura + banco); CRM responsivo, Financeiro, blog; fotos pela VPS; loja; bateria completa de cenários.
+
+
 ## Fase 3: máquina de vendas, rodada 1 (15/11/2026, branch `feat/maquina-de-vendas`)
 ### Causa raiz do alerta "Falha da ferramenta buscar_produto" (cliente de teste, 13/11)
 - A RPC `buscar_produto` estourava o `statement_timeout` (erro 57014): `private.categoria_bate` normalizava a categoria (`norm_busca`, ~7 ms por chamada) por token e por linha, milhares de vezes por busca (7 s a quente, mais de 18 s sob carga). O n8n repetia duas vezes o mesmo timeout e devolvia só "falhou".
