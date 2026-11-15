@@ -898,3 +898,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Passam: cartão de visita, panfleto (A5/A6), orçamento de 3 itens com PDF, criação de arte, sacola, adesivo vago, quantidade fora do lote (oferece o lote mais próximo, sem fração).
 - Risco aberto: a escolha de opções dentro da categoria espalha por preço, e a Laura pode escolher um item caro ou fora do pedido (ex.: 300 adesivos redondos de 5 cm a R$ 1.137,90 em vez de R$ 107,90; 500 cartões a R$ 724,90 em vez de R$ 294,90). Não é prejuízo (o piso continua valendo), mas derruba conversão.
 - Sugestão: no lançamento, anunciar só cartão de visita e panfleto; alertar o dono em orçamento acima de R$ 1.000 ou com item de adesivo e banner até a escolha de opções ser ordenada por relevância e preço sensato.
+
+### Riscos abertos corrigidos (15/11/2026, fim do dia)
+- `buscar_produto`: as 4 opções agora são as mais baratas entre as relevantes (antes espalhava até o mais caro); A4 e A3 viram tamanho de catálogo. Migration `20261215000003`.
+- Alerta ao dono (`agente_chamado`, média) quando um orçamento é enviado com total a partir de R$ 1.000 ou com adesivo/banner: trigger `orcamento_revisao_alerta`. **NÃO aplicado em produção** (o Supabase pediu confirmação do dono): aplicar a migration `20261215000003` no PC; as partes de busca e testes já estão aplicadas e a migration é idempotente.
+- Ainda aberto: adesivo é vendido por cartela (ex.: 53 x 53 mm com 40 unidades) e a Laura precisa traduzir "300 adesivos redondos 5 cm" em número inteiro de cartelas; a busca devolve hoje um adesivo BOPP de R$ 1.137,90. O alerta ao dono cobre esse caso até existir regra própria de adesivo.
