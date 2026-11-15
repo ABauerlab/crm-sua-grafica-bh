@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { FileText, MessageCircle, Search } from 'lucide-react'
+import { FileText, Search } from 'lucide-react'
+import { IconeWhatsApp } from './IconeWhatsApp'
 import { Logo } from './Logo'
 import { CarrinhoIcone } from './CarrinhoIcone'
 import { MENSAGENS_WHATSAPP, linkWhatsApp, SITE } from '@/lib/site'
@@ -27,7 +28,7 @@ export async function Header() {
         <Link href="/" className="shrink-0" aria-label="Página inicial"><Logo /></Link>
         <BuscaHeader itens={itens} placeholder="O que você quer imprimir hoje?" className="hidden flex-1 md:block" />
         <a href={linkWhatsApp(MENSAGENS_WHATSAPP.home)} target="_blank" rel="noopener" className="ml-auto hidden items-center gap-2 text-xs leading-tight lg:flex">
-          <MessageCircle className="h-5 w-5" aria-hidden /><span>Atendimento<br />{SITE.telefone}</span>
+          <IconeWhatsApp className="h-5 w-5" /><span>Atendimento<br />{SITE.telefone}</span>
         </a>
         <div className="ml-auto flex items-center gap-1 lg:ml-0">
           <CarrinhoIcone />
