@@ -1,16 +1,13 @@
 # Checklist de lançamento do tráfego pago (gerado em 15/11/2026)
 
-## 0. BLOQUEIO (fazer primeiro): cobrança do Gemini
-Em 15/11 às 21h os testes passaram a falhar com a mensagem **"Payment required - perhaps check your payment details?"** no nó do agente do WF2. Ou seja, a Laura NÃO consegue responder enquanto a conta do Google (Gemini API) estiver sem crédito ou com a cobrança bloqueada.
-- Abra o Google AI Studio (ou o Google Cloud) do projeto da chave usada na credencial do n8n, confira Faturamento, saldo e limite de gasto, e recarregue ou ative a cobrança.
-- Confirme com um teste: o cenário `e5-01-cartao-do-anuncio` deve voltar a responder (ver "Como rodar a bateria").
-- Sem isso, nenhuma venda sai. O vigia de silêncio avisa o dono depois de 150 s, mas não responde o cliente.
+## 0. Cobrança do Gemini: RESOLVIDO em 15/11 às 21h20
+O saldo foi recarregado e a Laura voltou a responder. A pane tinha causado 15 falhas seguidas ("Payment required"). Depois da recarga a bateria completa deu **54 de 55 cenários aprovados**; o único que falha é o `e8-fluxo-2-orcar-e-fechar` (a Laura consulta o frete do bairro informado mas não conta o resultado na resposta). Se a cobrança travar de novo, o WF2 repete a chamada 2 vezes e manda ao cliente "Oi! Recebi sua mensagem e já volto aqui com você, só um instante.", e o vigia de silêncio avisa o dono depois de 150 s.
 
 ## 1. Migrations que só aplicam no PC (o Supabase pede confirmação do dono)
 Aprove a confirmação no app do Claude no PC e rode `supabase db push` (as migrations são idempotentes):
 - `20261202000002_excluir_conversa_e_contato.sql`: funções de apagar conversa e contato (o botão já está no CRM).
 - `20261203000003_pos_entrega_avaliacao_e_consentimento.sql`: agradecimento, avaliação no Google e consentimento depois da entrega.
-Já aplicadas em produção hoje: `20261215000001` (vigia de silêncio), `20261215000002` e `20261215000003` (busca, alerta de orçamento alto) e `20261215000004` (ordem da loja por quantidade).
+Já aplicadas em produção hoje: `20261215000001` (vigia de silêncio), `20261215000002`, `20261215000003` e `20261215000005` (busca, preço oficial obrigatório, erros no resumo de 2 h) e `20261215000004` (ordem da loja por quantidade). O alerta de orçamento alto foi retirado.
 
 ## 2. Meta
 - Templates `pedido_pago_confirmacao` (texto novo, sem a parte da arte) e `pos_venda_avaliacao` estavam PENDING. Quando aprovarem, sincronize em Templates no CRM.
