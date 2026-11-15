@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/toast'
 import { useSettings } from '@/hooks/orders'
+import { usePainelAgente } from '@/hooks/etapa7'
 import { ORDER_STAGES, type OrderStage } from '@/lib/orders'
 import { type PricingRules } from '@/lib/pricing'
 import { supabase } from '@/lib/supabase'
@@ -339,7 +340,7 @@ function HolidaysTab() {
   })
   return (
     <div className="max-w-xl space-y-5">
-      <p className="text-sm text-muted-foreground">O prazo do pedido conta a partir do pagamento confirmado, em dias úteis (sem sábado, domingo e os dias abaixo). Inclua aqui recessos e feriados da gráfica.</p>
+      <p className="text-sm text-muted-foreground">O prazo do pedido conta a partir do pagamento confirmado, em dias úteis (sem sábado, domingo e os dias abaixo). Os feriados nacionais, de Minas Gerais e de Belo Horizonte já estão cadastrados. Inclua aqui recessos e feriados da gráfica.</p>
       <div className="flex items-end gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="extra-days">Dias extras de margem</Label>
@@ -355,7 +356,7 @@ function HolidaysTab() {
       <ul className="divide-y rounded-md border">
         {(holidays ?? []).map((h) => (
           <li key={h.day} className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm">
-            <span><span className="tabular font-semibold">{new Date(h.day + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</span> · {h.name}</span>
+            <span><span className="tabular font-semibold">{new Date(h.day + 'T12:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</span> · {h.name} <span className="ml-1 rounded-sm bg-secondary px-1.5 py-0.5 text-xs text-muted-foreground">{h.scope === 'nacional' ? 'Nacional' : h.scope === 'minas_gerais' ? 'Minas Gerais' : h.scope === 'belo_horizonte' ? 'Belo Horizonte' : 'Gráfica'}</span></span>
             <button aria-label={`Remover ${h.name}`} onClick={() => remove.mutate(h.day)} className="flex h-8 w-8 items-center justify-center rounded-sm hover:bg-secondary"><Trash2 className="h-4 w-4" /></button>
           </li>
         ))}
@@ -393,6 +394,7 @@ function AgentTab() {
   const toast = useToast()
   const { data } = useSetting('agent')
   const save = useSaveSetting('agent')
+  const painel = usePainelAgente(1)
   const [v, setV] = useState<AgentSettings | null>(null)
   useEffect(() => { if (data && !v) setV(data) }, [data, v])
   const logs = useQuery({
@@ -409,7 +411,14 @@ function AgentTab() {
   return (
     <div className="max-w-3xl space-y-6">
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(v, { onSuccess: () => toast('ok', 'Configuração do agente salva.'), onError: (er) => toast('error', er.message) }) }}>
-        <p className="text-sm text-muted-foreground">O agente de IA ainda não está conectado. Esta tela guarda as regras que ele vai ler. Para pausar ou ligar tudo na hora, use o botão no topo do sistema.</p>
+        <p className="text-sm text-muted-foreground">
+          {painel.data
+            ? painel.data.ia_ligada
+              ? 'A Laura (agente de IA) está ligada e atende 24 horas por dia. Esta tela guarda as regras que ela lê.'
+              : 'A Laura (agente de IA) está pausada agora: nenhuma conversa nova recebe resposta automática.'
+            : 'Conferindo o estado da Laura...'}{' '}
+          Para pausar ou ligar tudo na hora, use o botão no topo do sistema.
+        </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5"><Label htmlFor="ag-s">Começa às</Label><Input id="ag-s" type="time" value={v.hours.start} onChange={(e) => setV({ ...v, hours: { ...v.hours, start: e.target.value } })} /></div>
           <div className="space-y-1.5"><Label htmlFor="ag-e">Termina às</Label><Input id="ag-e" type="time" value={v.hours.end} onChange={(e) => setV({ ...v, hours: { ...v.hours, end: e.target.value } })} /></div>

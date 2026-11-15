@@ -284,3 +284,10 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Fase 17: loja por SKU (11/11/2026)
 - `ecommerce_products` ganhou `sku_slug` e `variante`; funções `loja_sku_*`; `buscar_produto` devolve `link_produto`. Loja: `ecommerce/components/ModeloCard.tsx` (card por SKU), `ecommerce/app/produto/[slug]/page.tsx` (página do SKU), `ecommerce/lib/vitrine.ts` (`skuProduto`, `skuSlugs`). CRM: `src/features/catalog/ProductsTab.tsx` (lista com altura mínima).
+
+
+## Fase 3 (15/11/2026): busca de produto rápida e recuperação
+- Banco: `private.categoria_norm` (cache) e `private.categoria_bate` reescrita; `buscar_produto` sem `link_produto` e rápida (migration `20261201000003`). `holidays` ganhou o escopo `minas_gerais` e 2028 (`20261201000004`).
+- n8n: `GBH | FERRAMENTA | buscar_produto` com busca de reserva e `em_palavras` (cópia em `n8n/GBH-FERRAMENTA-buscar_produto.json`); `despachar` com motivo real da falha; WF2 com regras 25 a 28.
+- Edge Function `cliente-pago-avisar` v12 com a nova mensagem pós-pagamento.
+- CRM: Configurações > Agente de IA mostra o estado real; Prazos e feriados mostra o escopo.
