@@ -1,5 +1,30 @@
 # Progresso do agente de IA
 
+## Fase 3: máquina de vendas, rodada 1 (15/11/2026, branch `feat/maquina-de-vendas`)
+### Causa raiz do alerta "Falha da ferramenta buscar_produto" (cliente de teste, 13/11)
+- A RPC `buscar_produto` estourava o `statement_timeout` (erro 57014): `private.categoria_bate` normalizava a categoria (`norm_busca`, ~7 ms por chamada) por token e por linha, milhares de vezes por busca (7 s a quente, mais de 18 s sob carga). O n8n repetia duas vezes o mesmo timeout e devolvia só "falhou".
+- Correção: cache `private.categoria_norm` e `categoria_bate` com uma normalização por chamada; `buscar_produto` calcula as categorias que casam uma vez. Medido depois: 0,07 a 0,7 s (antes 7 a 18 s), com as mesmas 4 a 5 opções.
+- Recuperação autônoma: o workflow `buscar_produto` agora tenta uma busca de reserva (3 palavras-chave, sem filtros) antes de desistir; se tudo falhar devolve `erro_detalhe`. O `despachar` grava `falhou: <motivo real>` em `agent_logs` e orienta o agente a manter o contexto, não repetir perguntas e oferecer o item mais próximo antes de chamar o dono.
+### Qualidade da conversa
+- `buscar_produto` passou a entregar `em_palavras` (tradução oficial da impressão, ex.: 4x1 = "colorido na frente e preto no verso") e `numero` de cada opção; o agente descreve cada opção só com isso (causa dos erros "4x1 descrito como frente e verso" e "1x1" no resumo da opção 2).
+- Link do site removido da resposta da ferramenta e do prompt (a loja ainda não está aberta). Novas regras 25 a 28 no WF2: sem links do site, confirmar o nome real do cliente (nome do WhatsApp costuma ser falso) e salvar, não repetir pergunta já respondida para o produto em pauta, descrever opções só pelos campos da ferramenta. Travadas em `scripts/test-contratos.ts`.
+- Mensagem pós-pagamento nova (sem o parágrafo da arte): "Oi, <nome>! Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido SG-xxxx já entrou na fila. Previsão de ficar pronto: dd/mm. Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete." (`cliente-pago-avisar` v12; fora da janela de 24 h segue o template aprovado `pedido_pago_confirmacao`, que NÃO foi alterado).
+### CRM
+- Feriados: escopo `minas_gerais` (Data Magna, 17/07), calendário 2028 e etiqueta do escopo na lista; nacionais e de BH já existiam.
+- Configurações > Agente de IA mostra o estado real da Laura (ligada 24 h ou pausada) no lugar de "ainda não está conectado".
+### Testado na prática
+- `buscar_produto` com 5 buscas reais depois do ajuste; clone do WF2 com o prompt novo: cenários `e12-07` (nota fiscal salva) e `e2e-c6a` (funil de cartão) passaram; `npm run gate` verde. WF2 de produção publicado depois do clone.
+### NÃO feito nesta rodada (continua pendente, em ordem sugerida)
+1. **Bling**: envio automático do pedido pago (loja SUAGRÁFICABH, NCM obrigatório, dados fiscais); a ativação depende do estudo em `docs/bling-fiscal.md` e de credenciais do dono.
+2. **Cupom VOLTEI5, desconto relâmpago de 3% por 1 hora e mensagem de pós-entrega com avaliação no Google e consentimento**: precisam de tabela e função no banco (o modelo nunca calcula desconto) e do ajuste do WF7.
+3. **Foto de todas as opções direto do site do fornecedor logado**, preço em tempo real para tamanho fora da planilha e falso alerta de "sessão caiu" da VPS.
+4. **CRM**: responsividade (números de WhatsApp cortados, abas Catálogo e Kits), aba Financeiro, blog (NewsAPI) funcionando.
+5. **Loja (`ecommerce/`)**: reorganização por departamentos, um SKU por produto com foto própria, selos reais, avaliações do Google, banners, SuperFrete no checkout.
+6. **PDF do orçamento**: revisão de redundâncias.
+7. **Bateria completa** `e5-*`, `mvp-*`, `e8-*`, `e12-*` com leitura das respostas e conversas longas de ponta a ponta (só rodei 2 cenários de verificação).
+- Observações: o prompt ainda manda a Laura se declarar "assistente virtual" quando perguntarem (regra 13, mantida por ser a conduta honesta, embora a decisão 7B diga o contrário; precisa de decisão do dono). O template `pedido_pago_confirmacao` aprovado ainda tem o texto antigo e exige nova submissão à Meta para mudar.
+
+
 ## Fase 2: Laura pronta para tráfego pago (12/11/2026, branch `feat/laura-trafego-pago`)
 ### Padrões de falha encontrados nas 27 conversas e 474 execuções do histórico (somente leitura)
 - **Contato nunca salvo**: `agente_salvar_contato` falhava SEMPRE (gravava em `contacts.quer_nota_fiscal`, coluna que nunca existiu) e, mesmo corrigida, a restrição `contacts_segment_check` aceitava só 4 segmentos enquanto a função gera 10. Além disso o sub-workflow `salvar_contato` do n8n só repassava 7 dos 15 campos (e-mail, CNPJ, nota fiscal, endereço, notas e consentimento nunca chegavam). Corrigido nas três camadas.

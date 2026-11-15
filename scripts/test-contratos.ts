@@ -31,9 +31,14 @@ const wf2 = readFileSync(join(n8n, 'GBH-WF2-Agente.json'), 'utf8')
 for (const proibido of ['COTE LOGO, SEM ENROLAR', 'Conduza com fechamento assumido', 'cote tudo, envie o PDF e só depois pergunte', 'AVANCE PARA A COTAÇÃO!']) {
   if (wf2.includes(proibido)) falhas.push(`WF2 voltou a conter a instrução "${proibido}" (conflita com a regra 19: qualificar antes de orçar)`)
 }
-for (const obrigatorio of ['19) QUALIFIQUE ANTES DE ORÇAR', '22) EMBALAGENS', '24) PRODUTO CERTO COM MUITAS OPÇÕES']) {
+for (const obrigatorio of ['19) QUALIFIQUE ANTES DE ORÇAR', '22) EMBALAGENS', '24) PRODUTO CERTO COM MUITAS OPÇÕES', '25) SEM LINKS DO SITE', '26) NOME REAL DO CLIENTE', '27) NÃO REPETIR PERGUNTA', '28) OPÇÕES E DESCRIÇÃO']) {
   if (!wf2.includes(obrigatorio)) falhas.push(`WF2 perdeu a regra "${obrigatorio}"`)
 }
+// A loja ainda não está aberta: nenhum fluxo do agente pode mandar link do site ao cliente
+if (wf2.includes('link_produto')) falhas.push('WF2 voltou a mandar link_produto (a loja ainda não está aberta ao público)')
+const bp = readFileSync(join(n8n, 'GBH-FERRAMENTA-buscar_produto.json'), 'utf8')
+if (bp.includes('link_produto')) falhas.push('buscar_produto voltou a devolver link_produto')
+if (!bp.includes('em_palavras')) falhas.push('buscar_produto deve entregar em_palavras (descrição oficial da impressão) ao agente')
 // Contrato do contexto: o bloco base lê estas chaves
 for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_faltantes_crm', 'ultimas_mensagens', 'orcamento_aberto', 'pedido_ativo']) {
   if (!wf2.includes(chave)) falhas.push(`WF2 não lê mais a chave de contexto ${chave}`)
