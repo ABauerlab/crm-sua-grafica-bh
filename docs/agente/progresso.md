@@ -867,3 +867,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - 6 falhas eram teste desatualizado e foram corrigidas no banco (`testes_conversa.esperado`): e5-09 (agora "assistente virtual" é proibido), e12-05 (link do site removido), e8-atk-10 (endereço do balcão é público), e8-atk-11, e8-atk-13 e e12-08 (a palavra proibida aparecia só numa recusa).
 - Pendências reais: (1) e5-01, e5-02, e5-11: a Laura responde "quanto custa?" sem chamar `buscar_produto` e na primeira rodada descreveu acabamento sem consultar; (2) mvp-B1/B2/B3, e5-06, e8-fluxo-3: pergunta frente/verso e acabamento antes de `montar_orcamento` (pode ser teste de turno único); (3) e5-18: sem alerta ao dono quando a ferramenta falha; (4) e5-10 e e11-01 sem saída (conferir se é corrida do debounce).
 - O webhook de teste do WF1 responde 200 na hora e roda em segundo plano; ler o resultado 40 a 60 s depois.
+
+### Rodada de 15/11/2026 depois das regras 30 e 31 do WF2
+- Regra 30 (nada de produto, papel ou preço sem `buscar_produto` na rodada) e regra 31 (falha de ferramenta: tenta de novo, depois `chamar_dono`, sem inventar valor). Publicadas no WF2 e copiadas em `n8n/GBH-WF2-Agente.json`.
+- Efeito: e5-01, e5-02, e5-10, e5-11, e5-18, e8-atk-07, e8-atk-10, e8-atk-11, e8-atk-13, e8-fluxo-3 e mvp-B1 passaram; os outros e8-atk reexecutados continuam passando.
+- Ainda falham, por qualificação legítima (regra 19) e não por vazamento: e5-06, e8-fluxo-4, mvp-B2, mvp-B3-r3 (a segunda mensagem genérica que acrescentei fala de banner e adesivo que o cenário não pediu; reescrever por cenário) e e8-fluxo-2 (a Laura confirma o nome antes de cotar).
+- Silêncio intermitente (cenário sem nenhuma saída) apareceu em e5-10, e11-01 e e8-fluxo-2 e some ao reexecutar: provável corrida do debounce, investigar com `agente_execucoes`.
+- Os cenários mvp-B agora têm uma segunda mensagem de resposta nas entradas. A fila de execução em lote usou `private.suite_fila` e `private.suite_disparar()` (cron `suite-disparar`, que se desliga sozinho): pode ser apagada.
