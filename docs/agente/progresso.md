@@ -908,3 +908,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - A bateria completa rodou às 21h e 15 cenários seguidos terminaram sem resposta: o nó do agente devolveu "Payment required" (cobrança do Gemini sem crédito ou bloqueada). Antes disso 33 passaram. Corrigir a cobrança é o primeiro passo do lançamento. Ver `docs/agente/checklist-lancamento.md`.
 - Aplicado em produção: alerta de orçamento alto (`orcamento_revisao_alerta`) e ordem da loja por quantidade (`20261215000004`).
 - Não aplicado (o Supabase pede confirmação do dono): `20261202000002` e `20261203000003`.
+
+### Recuperação de erros e preço oficial (15/11/2026, noite)
+- O saldo do Gemini foi recarregado e a Laura voltou (e5-01 passou). Cobrança bloqueada era a causa das 15 falhas seguidas das 21h.
+- Auditoria: 0 orçamentos de clientes com preço diferente da planilha. 14 itens antigos (3 a 12/11) sem SKU ou sem preço de planilha e 9 SKUs legados (BONE-AR, CAM-DRY, CART-A5, CORD20MM, CV-LONA100-OP, ETIQ-BAG, SOB-CORD-825X20, SOB-CRED-100X148, SQZ-500) caíam na fórmula antiga. Agora `buscar_produto` nunca os mostra e `montar_orcamento` recusa com orientação de oferecer o produto mais próximo.
+- WF2: quando o modelo falha, repete a chamada até 2 vezes com 3,5 s de intervalo (antes só repetia resposta vazia) e, se tudo falhar, manda ao cliente "Oi! Recebi sua mensagem e já volto aqui com você, só um instante." em vez de silêncio.
+- Erros de agente, ferramenta, workflow e follow-up não interrompem mais o dono: vão só para o resumo de 2 h. O vigia de silêncio continua imediato. O alerta de orçamento alto foi retirado.
+- Migration `20261215000005`.
