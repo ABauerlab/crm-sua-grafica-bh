@@ -63,7 +63,7 @@ Parte 2: `conversations` ganhou `needs_human`, `summary`, `collected_data`, `lab
 
 Mercado Pago: `pagamentos` (links e tentativas), `eventos_pagamento` (contrato com o agente), `pagamentos_alertas`, `orders.teste`. Um só caminho para marcar pago (`private.confirmar_pagamento`, usado pelo webhook e por `confirmar_pagamento_manual`). Detalhes em `docs/pagamento-mercadopago.md`.
 
-Telemetria e fila (10/11/2026): `webhook_eventos` é a fila de entrada da Meta (evento bruto, `processado_em`, reprocessamento dos pendentes; só service role). `v_funil_vendas_ia` é a view diária da Laura (conversas, mensagens, pedidos pagos, faturamento, conversão, P50/P95 em ms das rodadas de até 10 min, ocupadas e erros). `agente_watchdog_reconciliar` alerta lead parado há mais de 90 s. Tela em `/laura` (Performance da Laura / IA).
+Telemetria e fila (10/11/2026): `webhook_eventos` é a fila de entrada da Meta (evento bruto, `processado_em`, reprocessamento dos pendentes; só service role). `v_funil_vendas_ia` é a view diária da Laura (conversas, mensagens, pedidos pagos, faturamento, conversão, P50/P95 em ms das rodadas de até 10 min, ocupadas e erros). `private.agente_silencio_vigiar` (cron a cada minuto) alerta o dono de lead parado há mais de 150 s. Tela em `/laura` (Performance da Laura / IA).
 
 Extras além do pedido original: `conversations.last_message_preview` (prévia na lista) e a função `admin-create-agent` (admin cria atendentes, já que o cadastro público é desativado).
 

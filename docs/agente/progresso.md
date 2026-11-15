@@ -874,3 +874,10 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Ainda falham, por qualificação legítima (regra 19) e não por vazamento: e5-06, e8-fluxo-4, mvp-B2, mvp-B3-r3 (a segunda mensagem genérica que acrescentei fala de banner e adesivo que o cenário não pediu; reescrever por cenário) e e8-fluxo-2 (a Laura confirma o nome antes de cotar).
 - Silêncio intermitente (cenário sem nenhuma saída) apareceu em e5-10, e11-01 e e8-fluxo-2 e some ao reexecutar: provável corrida do debounce, investigar com `agente_execucoes`.
 - Os cenários mvp-B agora têm uma segunda mensagem de resposta nas entradas. A fila de execução em lote usou `private.suite_fila` e `private.suite_disparar()` (cron `suite-disparar`, que se desliga sozinho): pode ser apagada.
+
+### Investigação do silêncio da Laura (15/11/2026)
+- Tráfego real dos últimos 3 dias: nenhuma rodada presa e nenhum cliente real sem resposta. Rodadas concluídas: P50 52 s e P95 128 s. Sob 5 cenários simultâneos o P95 sobe para 247 s.
+- Os "silêncios" dos testes eram leitura antes do fim: o webhook de teste responde 200 na hora e a rodada leva de 1 a 4 min. Há 4 rodadas com status erro em 12/11 às 23:25 (carga simultânea), sem alerta na época.
+- Achado: `agente_watchdog_reconciliar` (citada no CLAUDE.md) NÃO existe em produção e nenhum cron a chamava. Não recriar como estava: ela marcaria como erro rodadas com mais de 60 s.
+- Correção: `private.agente_silencio_vigiar()` + cron `agente-silencio-vigia` (a cada minuto). Só observa: cria alerta `agente_falhou` (alta, chave por mensagem) quando conversa em modo IA fica mais de 150 s sem resposta, sem rodada ativa nos últimos 5 min e fora de teste. Migration `20261215000001`.
+- Bateria em lote: fila temporária `private.suite_fila` e `private.suite_disparar()` (podem ser apagadas); leia o resultado só depois do fim da rodada (`agente_execucoes.status`).
