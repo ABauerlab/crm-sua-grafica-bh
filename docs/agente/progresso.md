@@ -5,6 +5,11 @@
 - **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
 - **Bling**: ids salvos em `app_settings.bling` (loja do site 206358250; marketplaces `lojas_marketplace`: Mercado Livre 206359728 e Shopee 206359841, para a futura exportação). O envio automático continua DESLIGADO até o dono ligar em Configurações > Bling (ao ligar, os pedidos pagos já existentes vão de uma vez).
 - Ainda pendente: migrations `20261202000002` (apagar conversa e contato) e `20261203000003` (pós-entrega), blog, fotos pela VPS, loja, bateria completa.
+## Fase 3, rodada 5 (15/11/2026): blog e frete do site
+- **Blog**: nenhum post saía porque o modelo configurado (`gemini-2.5-flash`) e o reserva davam 404 com a chave do Supabase (290 pautas coletadas, 0 posts). `app_settings.blog.modelo` passou para `gemini-flash-latest` (o mesmo alias do agente), o NewsAPI foi ligado (`newsapi: true`; só roda se o segredo `NEWSAPI_KEY` existir) e as pautas com erro voltaram para `nova`. Resultado: 2 posts publicados na primeira rodada, com crédito à fonte e sem preço. A função usa o alias como reserva (`blog-pautas`).
+- **SuperFrete no checkout do site**: conferido com chamada real à `loja-frete`: CEP de São Paulo devolveu PAC R$ 33,09 (5 dias) e SEDEX R$ 50,61 (1 dia); a Praça Sete devolveu frete grátis. O `loja-checkout` recalcula o serviço escolhido no servidor e o frete entra no pedido com a trava de lucro. NÃO fiz uma compra completa de teste (criaria pedido e link de pagamento reais).
+- **Site**: os selos já existem e só afirmam o que é verdade (HTTPS, Mercado Pago, CNPJ, avaliações públicas). Avaliações do Google NÃO foram importadas (exige a API do Google); a loja só linka para o perfil.
+- Pendente: migrations `20261202000002` e `20261203000003`, fotos pela VPS, preço em tempo real para tamanho fora da planilha, banners, bateria completa.
 
 
 ## Fase 3, rodada 3 (15/11/2026): cupom, relâmpago e pós-entrega
