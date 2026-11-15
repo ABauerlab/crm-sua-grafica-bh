@@ -893,3 +893,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - `montar_orcamento` recusa quantidade fracionada (0,8 pacote virava "192 cartões") com mensagem clara em vez de erro; era a origem do "probleminha no sistema" do e5-06.
 - Pendente: A4 e A3 ainda não mapeiam para tamanho; a escolha de 4 opções espalha por preço dentro da categoria (do mais barato ao mais caro) e pode mostrar papel premium; e8-fluxo-2 e e8-fluxo-4 usam um papel (apergaminhado 240g) que não existe nesse formato.
 - Migration `20261215000002`.
+
+### Prontidão para tráfego pago (15/11/2026, fim da rodada de correções)
+- Passam: cartão de visita, panfleto (A5/A6), orçamento de 3 itens com PDF, criação de arte, sacola, adesivo vago, quantidade fora do lote (oferece o lote mais próximo, sem fração).
+- Risco aberto: a escolha de opções dentro da categoria espalha por preço, e a Laura pode escolher um item caro ou fora do pedido (ex.: 300 adesivos redondos de 5 cm a R$ 1.137,90 em vez de R$ 107,90; 500 cartões a R$ 724,90 em vez de R$ 294,90). Não é prejuízo (o piso continua valendo), mas derruba conversão.
+- Sugestão: no lançamento, anunciar só cartão de visita e panfleto; alertar o dono em orçamento acima de R$ 1.000 ou com item de adesivo e banner até a escolha de opções ser ordenada por relevância e preço sensato.
