@@ -64,3 +64,17 @@ begin
   execute d;
 end
 $mig$;
+
+-- montar_orcamento: quantidade é o número INTEIRO de pacotes do SKU. Fração (0,8 pacote de 240 unidades = "192 cartões")
+-- derrubava a ferramenta ou cobrava quantidade diferente da pedida. Agora devolve bloqueio claro, sem exceção.
+do $mig$
+declare d text; novo text; a1 text;
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'montar_orcamento';
+  if position('quantidade_invalida' in d) > 0 then return; end if;
+  a1 := E'    v_qtd := coalesce((it ->> ''quantidade'')::integer, 1);';
+  if position(a1 in d) = 0 then raise exception 'âncora de quantidade não encontrada'; end if;
+  novo := replace(d, a1, E'    if nullif(btrim(coalesce(it ->> ''quantidade'', '''')), '''') is not null and btrim(it ->> ''quantidade'') !~ ''^[1-9][0-9]*$'' then\n      return jsonb_build_object(''status'', ''bloqueado'', ''motivo'', ''quantidade_invalida'', ''alternativa'', ''A quantidade é o número INTEIRO de pacotes do SKU (cada SKU tem a sua quantidade fixa). Nunca use fração. Se a quantidade exata do cliente não existir, ofereça a opção mais próxima que a busca devolveu.'');\n    end if;\n' || a1);
+  execute novo;
+end
+$mig$;
