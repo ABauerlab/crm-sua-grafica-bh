@@ -58,7 +58,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ String($json.orcamento_id || '').length === 36 && ['G1', 'G2', 'G3'].includes($json.gatilho) }}",
+              "leftValue": "={{ String($json.orcamento_id || '').length === 36 && ['G1', 'G2', 'G3', 'RELAMPAGO', 'VOLTEI5'].includes($json.gatilho) }}",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -211,7 +211,7 @@
             {
               "id": "s5",
               "name": "orientacao",
-              "value": "Sem condição especial agora. Reforce o valor (arte, agilidade, atendimento) ou sugira uma especificação mais simples. Não prometa desconto.",
+              "value": "={{ $json.motivo === 'cupom_ja_usado' ? 'Este cupom já foi usado neste cadastro (vale uma vez por cliente). Explique com educação e siga com o orçamento atual, sem prometer outro desconto.' : 'Sem condição especial agora. Reforce o valor (arte, agilidade, atendimento) ou sugira uma especificação mais simples. Não prometa desconto.' }}",
               "type": "string"
             },
             {
