@@ -1,6 +1,6 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
-import { bloqueios, corpoContato, corpoProduto, extrairCodigo, textoErroBling } from '../_shared/bling-envio.ts'
+import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, extrairCodigo, ncmSugerido, textoErroBling } from '../_shared/bling-envio.ts'
 
 // Bling API v3: autorização (OAuth), fila de pedidos pagos e envio. Tokens ficam em app_segredos (nunca no front nem em log).
 // Ações: status, url_autorizacao, trocar_codigo, descobrir_loja, ativar, enviar, processar.
@@ -109,6 +109,13 @@ async function acharOuCriarContato(db: SupabaseClient, c: Record<string, any>, e
     const id = b.data?.data?.[0]?.id
     if (id) return { id: String(id) }
   }
+  // já cadastrado com o nosso código (envio anterior que não chegou a gravar o id): procura pelo código e reaproveita
+  const codigo = String(c.codigo ?? '')
+  if (codigo) {
+    const b = await bling(db, 'GET', `/contatos?pesquisa=${encodeURIComponent(codigo)}`)
+    const achado = ((b.data?.data ?? []) as { id: number; codigo?: string }[]).find((x) => String(x.codigo ?? '') === codigo) ?? b.data?.data?.[0]
+    if (b.status === 200 && achado?.id) return { id: String(achado.id) }
+  }
   return { erro: `contato: ${textoErroBling(novo)}` }
 }
 
@@ -135,14 +142,38 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
   const pend = ((p.pendencias ?? []) as string[]).filter((x) => x !== 'loja_id_do_bling')
   const duros = bloqueios(pend)
   if (duros.length) { const erro = `bloqueado: falta ${duros.join(', ')}`; await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: null, p_contato_id: null, p_erro: erro }); return { ok: false, erro } }
-  const aviso = pend.length ? `Dados fiscais incompletos (complete no Bling antes de emitir a nota): ${pend.join(', ')}` : ''
+  const aviso0 = pend.length ? `Dados fiscais incompletos (complete no Bling antes de emitir a nota): ${pend.join(', ')}` : ''
 
+  let avisoNome = ''
+  if (!String(p.contato?.nome ?? '').trim()) {
+    const fim = String(p.contato?.celular ?? '').replace(/\D/g, '').slice(-4)
+    p.contato = { ...p.contato, nome: `Cliente WhatsApp ${fim}`.trim() }
+    avisoNome = 'Nome do cliente não informado: nome provisório, corrigir no Bling'
+  }
   const contato = await acharOuCriarContato(db, p.contato, p.pedido?.contato?.id ?? null)
   if (!contato.id) { await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: null, p_contato_id: null, p_erro: contato.erro }); return { ok: false, erro: contato.erro } }
 
+  // Itens digitados à mão (sem SKU) que não são arte: entram como produto com código SGnnn-i e NCM sugerido (o operador confere antes de emitir)
+  const numeroPedido = String(p.pedido?.numeroLoja ?? '').replace(/\D/g, '')
+  const manuais = ((p.servicos ?? []) as Record<string, any>[]).filter((s) => !ehServicoDeArte(String(s.descricao ?? '')))
+  const itensBase = [...((p.pedido?.itens ?? []) as Record<string, any>[]), ...manuais.map((s, k) => ({
+    codigo: `SG${numeroPedido}-${k + 1}`, descricao: s.descricao, unidade: 'UN', quantidade: s.quantidade, valor: s.valor, ncm: ncmSugerido(String(s.descricao ?? '')), origem: 0, manual: true,
+  }))]
+  const semNcm = manuais.filter((s) => !ncmSugerido(String(s.descricao ?? ''))).length
+  const avisoManual = manuais.length ? `Item(ns) sem SKU enviados como produto: conferir NCM${semNcm ? ` (${semNcm} sem NCM sugerido)` : ' sugerido'} antes de emitir a nota` : ''
+  if (!itensBase.length) { const erro = 'bloqueado: pedido sem item de mercadoria'; await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: null, p_contato_id: null, p_erro: erro }); return { ok: false, erro } }
+
+  const aviso = [aviso0, avisoNome, avisoManual].filter(Boolean).join(' | ')
+  // idempotente: se o pedido já foi criado no Bling (ex.: o id não chegou a ser gravado), só registra e não cria de novo
+  const existente = await bling(db, 'GET', `/pedidos/vendas?numerosLojas[]=${encodeURIComponent(String(p.pedido.numeroLoja))}`)
+  const jaId = existente.status === 200 ? ((existente.data?.data ?? []) as { id: number; numeroLoja?: string }[]).find((x) => String(x.numeroLoja ?? '') === String(p.pedido.numeroLoja))?.id ?? null : null
+  if (jaId) {
+    await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: String(jaId), p_contato_id: contato.id, p_erro: null, p_aviso: aviso || null })
+    return { ok: true, bling_pedido_id: String(jaId), aviso: aviso || undefined }
+  }
   const cache = new Map<string, string>()
   const itens: Record<string, unknown>[] = []
-  for (const it of (p.pedido?.itens ?? []) as Record<string, any>[]) {
+  for (const it of itensBase) {
     const prod = await garantirProduto(db, it, cache)
     if (!prod.id) { await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: null, p_contato_id: null, p_erro: prod.erro }); return { ok: false, erro: prod.erro } }
     itens.push({ codigo: it.codigo, descricao: it.descricao, unidade: it.unidade ?? 'UN', quantidade: it.quantidade, valor: it.valor, produto: { id: Number(prod.id) } })
@@ -173,12 +204,13 @@ async function processar(db: SupabaseClient) {
   if (!cfg.ativo) return { ok: true, ativo: false, enviados: 0 }
   if (!(await token(db))) return { ok: false, ativo: true, erro: 'Bling não conectado. Autorize em Configurações > Bling.', enviados: 0 }
   const { data: fila } = await db.rpc('bling_pendentes', { p_limite: 8 })
-  const resumo = { ok: true, ativo: true, enviados: 0, falhas: 0 }
+  const resumo: Record<string, unknown> = { ok: true, ativo: true, enviados: 0, falhas: 0, erros: [] as string[] }
   for (const linha of (fila ?? []) as { order_id: string }[]) {
     const r = await enviarPedido(db, linha.order_id)
-    if (r.ok) resumo.enviados++
+    if (r.ok) resumo.enviados = Number(resumo.enviados) + 1
     else {
-      resumo.falhas++
+      resumo.falhas = Number(resumo.falhas) + 1
+      ;(resumo.erros as string[]).push(String(r.erro ?? 'erro').slice(0, 160))
       const { data: o } = await db.from('orders').select('number, bling_tentativas, contact_id').eq('id', linha.order_id).maybeSingle()
       if (o && o.bling_tentativas >= 3) {
         await db.rpc('alerta_criar', { p_tipo: 'bling_falha', p_gravidade: 'alta', p_contact: o.contact_id, p_conversation: null, p_order: linha.order_id,
