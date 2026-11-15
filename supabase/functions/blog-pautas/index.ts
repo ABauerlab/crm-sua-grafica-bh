@@ -27,7 +27,7 @@ async function buscarTexto(url: string, ms = 12000): Promise<string> {
 }
 
 async function gemini(prompt: string, modelo: string, chave: string): Promise<unknown> {
-  for (const m of [...new Set([modelo, 'gemini-2.0-flash'])]) {
+  for (const m of [...new Set([modelo, 'gemini-flash-latest', 'gemini-2.0-flash'])]) {
     const ctl = new AbortController()
     const t = setTimeout(() => ctl.abort(), 45000)
     try {
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     resumo.avaliadas++
     let saida: unknown
     try {
-      saida = await gemini(promptPost({ titulo: p.titulo, resumo: p.resumo_fonte ?? '', fonte: p.fonte_nome }, categorias), cfg.modelo ?? 'gemini-2.5-flash', chave)
+      saida = await gemini(promptPost({ titulo: p.titulo, resumo: p.resumo_fonte ?? '', fonte: p.fonte_nome }, categorias), cfg.modelo ?? 'gemini-flash-latest', chave)
     } catch (e) {
       const t = (p.tentativas ?? 0) + 1
       await db.from('blog_pautas').update({ tentativas: t, status: t >= 3 ? 'erro' : 'nova', motivo: String((e as Error).message).slice(0, 200), atualizado_em: new Date().toISOString() }).eq('id', p.id)

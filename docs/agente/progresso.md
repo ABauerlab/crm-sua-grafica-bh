@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## Fase 3, rodada 5 (15/11/2026): blog e frete do site
+- **Blog**: nenhum post saía porque o modelo configurado (`gemini-2.5-flash`) e o reserva davam 404 com a chave do Supabase (290 pautas coletadas, 0 posts). `app_settings.blog.modelo` passou para `gemini-flash-latest` (o mesmo alias do agente), o NewsAPI foi ligado (`newsapi: true`; só roda se o segredo `NEWSAPI_KEY` existir) e as pautas com erro voltaram para `nova`. Resultado: 2 posts publicados na primeira rodada, com crédito à fonte e sem preço. A função usa o alias como reserva (`blog-pautas`).
+- **SuperFrete no checkout do site**: conferido com chamada real à `loja-frete`: CEP de São Paulo devolveu PAC R$ 33,09 (5 dias) e SEDEX R$ 50,61 (1 dia); a Praça Sete devolveu frete grátis. O `loja-checkout` recalcula o serviço escolhido no servidor e o frete entra no pedido com a trava de lucro. NÃO fiz uma compra completa de teste (criaria pedido e link de pagamento reais).
+- **Site**: os selos já existem e só afirmam o que é verdade (HTTPS, Mercado Pago, CNPJ, avaliações públicas). Avaliações do Google NÃO foram importadas (exige a API do Google); a loja só linka para o perfil.
+- Pendente: migrations `20261202000002` e `20261203000003`, fotos pela VPS, preço em tempo real para tamanho fora da planilha, banners, bateria completa.
+
+
 ## Fase 3, rodada 3 (15/11/2026): cupom, relâmpago e pós-entrega
 - **Cupom VOLTEI5 (5%)**: a Laura pergunta se o cliente já avaliou no Google; se sim, usa `oferecer_condicao_especial` com o gatilho `VOLTEI5`; se não, manda o link de avaliação (https://g.page/r/CZ6eNNGjdgO4EAE/review) e pede para voltar. Vale uma vez por cliente (`cupom_ja_usado`), não empilha com outra condição e só sai se o percentual couber acima do piso (tudo ou nada). Regra 29 do prompt.
 - **Desconto relâmpago (3%, link válido por 1 hora)**: gatilho `RELAMPAGO`, usado pelo follow-up F3 (dia 2, depois dos lembretes F1 e F2 sem resposta). Nada de percentual escolhido pelo modelo: `private.condicao_gatilho_fixo` calcula, confere o piso e a ferramenta gera orçamento novo, link e PDF. Testado no banco (desfeito no fim): R$ 7,97 sobre R$ 265,90, validade de 1 h; orçamentos sem gordura ou que já têm condição são recusados.
