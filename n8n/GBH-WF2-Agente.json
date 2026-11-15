@@ -1208,7 +1208,7 @@
             {
               "id": "x1",
               "name": "texto",
-              "value": "",
+              "value": "Oi! Recebi sua mensagem e já volto aqui com você, só um instante.",
               "type": "string"
             },
             {
@@ -1220,7 +1220,7 @@
             {
               "id": "x3",
               "name": "erro",
-              "value": true,
+              "value": false,
               "type": "boolean"
             },
             {
@@ -1419,7 +1419,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ ($json.resposta_vazia === true || /^\\s*Calling tools?\\s*:/i.test(String($json.texto || ''))) && $runIndex < 2 }}",
+              "leftValue": "={{ ($json.resposta_vazia === true || $json.falhou === true || /^\\s*Calling tools?\\s*:/i.test(String($json.texto || ''))) && $runIndex < 2 }}",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -1444,7 +1444,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "return [{ json: $('Montar prompt').first().json }];"
+        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nreturn [{ json: $('Montar prompt').first().json }];"
       }
     },
     {
