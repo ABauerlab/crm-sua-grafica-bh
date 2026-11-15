@@ -11,6 +11,7 @@ import {
   Palette,
   ChevronsRight,
   CreditCard,
+  Wallet,
   FileText,
   KanbanSquare,
   ListChecks,
@@ -40,7 +41,7 @@ import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 
-const NAV: { to: string; label: string; icon: LucideIcon }[] = [
+const NAV: { to: string; label: string; icon: LucideIcon; admin?: boolean }[] = [
   { to: '/painel', label: 'Painel', icon: BarChart3 },
   { to: '/laura', label: 'Laura / IA', icon: Bot },
   { to: '/kanban', label: 'Kanban', icon: KanbanSquare },
@@ -52,14 +53,16 @@ const NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/catalogo', label: 'Catálogo e Kits', icon: Package },
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
+  { to: '/financeiro', label: 'Financeiro', icon: Wallet, admin: true },
   { to: '/tarefas', label: 'Tarefas', icon: ListChecks },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const { profile } = useAuth()
   return (
     <nav aria-label="Principal" className="flex flex-1 flex-col gap-0.5 px-2">
-      {NAV.map(({ to, label, icon: Icon }) => (
+      {NAV.filter((n) => !n.admin || profile?.role === 'admin').map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}

@@ -75,7 +75,7 @@ export function ConversationList() {
               className={({ isActive }) => cn('relative block border-b px-4 py-3 transition-colors hover:bg-secondary/70', isActive && 'bg-accent before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-primary')}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className={cn('truncate text-sm', c.unread_count > 0 ? 'font-black' : 'font-semibold')}>{contactLabel(c.contact)}</span>
+                <span className={cn('text-sm', c.contact.name?.trim() ? 'truncate' : 'whitespace-nowrap', c.unread_count > 0 ? 'font-black' : 'font-semibold')}>{contactLabel(c.contact)}</span>
                 <span className={cn('shrink-0 text-xs tabular', c.unread_count > 0 ? 'font-bold text-brand-magenta' : 'text-muted-foreground')}>{formatListTime(c.last_message_at)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between gap-2">
