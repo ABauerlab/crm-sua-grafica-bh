@@ -20,8 +20,15 @@ function limpar(v: unknown): unknown {
   return v
 }
 
+/** O Bling quer DDD + número (10 ou 11 dígitos), sem o 55 do país. Número que não fecha com isso não vai (o operador completa no Bling). */
+export function celularBling(bruto: unknown): string | undefined {
+  let n = String(bruto ?? '').replace(/\D/g, '')
+  if ((n.length === 12 || n.length === 13) && n.startsWith('55')) n = n.slice(2)
+  return n.length === 10 || n.length === 11 ? n : undefined
+}
+
 export function corpoContato(c: Record<string, any>): Record<string, unknown> {
-  const celular = String(c.celular ?? '').replace(/\D/g, '')
+  const celular = celularBling(c.celular)
   return limpar({
     nome: String(c.nome ?? '').slice(0, 120),
     codigo: c.codigo,
@@ -30,7 +37,7 @@ export function corpoContato(c: Record<string, any>): Record<string, unknown> {
     tipo: c.tipo === 'J' ? 'J' : 'F',
     indicadorIe: c.indicadorIe ?? 9,
     ie: c.ie,
-    celular: celular || undefined,
+    celular,
     email: c.email,
     endereco: c.endereco,
   }) as Record<string, unknown>

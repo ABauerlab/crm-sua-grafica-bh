@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createHash, createHmac } from 'node:crypto'
 import { corpoMeta, eventoMeta, sha256 } from '../supabase/functions/_shared/meta.ts'
-import { bloqueios, corpoContato, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
+import { bloqueios, celularBling, corpoContato, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
 import { assinaturaBlingValida, descricaoMarketplace, resumoEventoBling, tituloMarketplace } from '../supabase/functions/_shared/bling.ts'
 
 const segredo = 'segredo-de-teste'
@@ -48,7 +48,12 @@ const ct = corpoContato({ nome: 'Maria', codigo: 'SG-1', numeroDocumento: '', ti
 assert.equal(ct.numeroDocumento, undefined, 'campos vazios saem do corpo')
 assert.equal(ct.email, undefined)
 assert.deepEqual((ct.endereco as any).geral, { endereco: 'Rua A', cep: '30130000' })
-assert.equal(ct.celular, '5531999998888')
+assert.equal(ct.celular, '31999998888', 'o 55 do país não vai ao Bling')
+assert.equal(celularBling('5531971494800'), '31971494800')
+assert.equal(celularBling('553132232356'), '3132232356')
+assert.equal(celularBling('31 97149-4800'), '31971494800')
+assert.equal(celularBling('12345'), undefined, 'número que não fecha não vai')
+assert.equal(corpoContato({ nome: 'X', celular: '999' }).celular, undefined)
 const pr = corpoProduto({ codigo: 'CV4X11000C', descricao: 'Cartão de visita 4x1 1000un', valor: 150.5, unidade: 'UN', ncm: '4911.99.00', origem: 0 })
 assert.deepEqual((pr as any).tributacao, { origem: 0, ncm: '49119900' })
 assert.equal((pr as any).codigo, 'CV4X11000C')
