@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## Fase 3, rodada 3 (15/11/2026): cupom, relâmpago e pós-entrega
+- **Cupom VOLTEI5 (5%)**: a Laura pergunta se o cliente já avaliou no Google; se sim, usa `oferecer_condicao_especial` com o gatilho `VOLTEI5`; se não, manda o link de avaliação (https://g.page/r/CZ6eNNGjdgO4EAE/review) e pede para voltar. Vale uma vez por cliente (`cupom_ja_usado`), não empilha com outra condição e só sai se o percentual couber acima do piso (tudo ou nada). Regra 29 do prompt.
+- **Desconto relâmpago (3%, link válido por 1 hora)**: gatilho `RELAMPAGO`, usado pelo follow-up F3 (dia 2, depois dos lembretes F1 e F2 sem resposta). Nada de percentual escolhido pelo modelo: `private.condicao_gatilho_fixo` calcula, confere o piso e a ferramenta gera orçamento novo, link e PDF. Testado no banco (desfeito no fim): R$ 7,97 sobre R$ 265,90, validade de 1 h; orçamentos sem gordura ou que já têm condição são recusados.
+- **Pós-entrega**: agradecimento, pedido de avaliação no Google e aviso de novidades com saída por PARAR; quem recebe o pedido passa a `opted_in` (origem `pos_entrega`), exceto quem pediu PARAR. Template `pos_venda_avaliacao` enviado à Meta (MARKETING, em revisão). **A migration `20261203000003` ainda NÃO foi aplicada** (o Supabase pede confirmação para o `update` em massa): rodar no SQL Editor. Enquanto isso o pós-entrega segue com o texto antigo.
+- Aplicadas direto no banco e versionadas: `20261203000001` (cupom e relâmpago) e `20261203000002` (alerta da VPS com 3 falhas e persona sem "assistente virtual").
+
+
 ## Fase 3, rodada 2 (15/11/2026, PR #95 mesclado)
 - **Bling automático**: função `bling-integracao` (OAuth, fila a cada 2 min, contato, produto com NCM, pedido de venda na loja SUAGRÁFICABH), RPCs `bling_pendentes/resultado/reenviar/painel` e aba Configurações > Bling. Pedido sem CPF/endereço vai com aviso; só bloqueia sem nome, NCM ou pagamento. Falha repetida (3 tentativas) vira alerta ao dono. O envio fica desligado até o dono ligar na aba.
 - **Laura é atendente**: nada de "assistente virtual", "IA" ou "robô" (prompt regra 13, persona `apresentacao`, 12 trechos da base de conhecimento, seed, testes). Se perguntarem se é pessoa ou robô, ela diz "sou a Laura, do atendimento" e oferece o dono, sem afirmar ser humana.
