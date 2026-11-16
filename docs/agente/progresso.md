@@ -919,3 +919,11 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 ### Fechamento de 15/11/2026 (noite)
 - Bateria completa depois da recarga do Gemini: 54 de 55 aprovados. Falha restante: `e8-fluxo-2-orcar-e-fechar` (a Laura chama `verificar_frete` para o bairro informado mas não conta o resultado ao cliente na mesma resposta).
 - Testes calibrados: e5-18 (sem exigir alerta ao dono nem proibir preços vindos da planilha), e8-fluxo-3 (exige o PDF antes do link, como manda a regra), e8-fluxo-2 e e8-fluxo-4 (papel que existe), e5-06 e mvp-B2.
+
+### 16/11/2026: liberação para o tráfego pago (com o dono no PC)
+- Aplicadas: apagar conversa e contato; pós-entrega com avaliação e consentimento (a lista de origens do consentimento não aceitava `pos_entrega`; corrigido na migration `20261203000003`). Contatos de teste apagados.
+- Laura: regras 32 a 36 (CEP, envio para todo o Brasil, arte dita de forma indireta, dados da nota, fotos sem pedir) e `verificar_frete` com SuperFrete para CEP fora de BH. O frete dos Correios é pago à parte (ainda não entra no link do WhatsApp).
+- Busca: adesivo por centímetros (5 cm = 53 x 53 mm, R$ 91,90 em vez de R$ 1.137,90), preferência pelo acabamento de cor pedido (4x4 não vem mais como 4x1), opções por relevância e sem SKU sem preço de planilha. Migration `20261216000001`.
+- Telas: valores do Dashboard sem corte no iPhone; checkout da loja com campos de 16px, sem estouro de largura e com código Pix quebrando linha.
+- Validado: fluxo completo em banco (orçamento SG-0508 a R$ 93,90 igual à planilha, PDF, link só depois do APROVADO, pagamento simulado, sem envio de pedido de teste ao Bling nem ao Meta) e 54 de 55 cenários na bateria completa de ontem à noite, mais os cenários tocados hoje.
+- Não feito: frete dos Correios dentro do link de pagamento do WhatsApp; fotos pela VPS e preço em tempo real; avaliações do Google no site; export do workflow `verificar_frete` para `n8n/`.
