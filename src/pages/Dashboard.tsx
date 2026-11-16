@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { buildDemo } from '@/features/dashboard/demo'
+import { ResultadoDoMes } from '@/features/dashboard/ResultadoDoMes'
 import { useAdTotals } from '@/hooks/campaigns'
 import { useSetting } from '@/hooks/settings'
 import { goalState, metrics as adMetrics } from '@/lib/campaigns'
@@ -65,7 +66,7 @@ function Tile({ label, value, children }: { label: string; value: string; childr
   return (
     <div className="min-w-0 rounded-md border bg-card p-3 sm:p-4">
       <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-2xl font-black leading-none tabular sm:text-3xl">{value}</p>
+      <p className="mt-1 whitespace-nowrap text-[clamp(1rem,4.7vw,1.5rem)] font-black leading-tight tabular sm:text-3xl">{value}</p>
       <div className="mt-2 min-h-4">{children}</div>
     </div>
   )
@@ -254,6 +255,8 @@ function VisaoGeral() {
             </Tile>
           </div>
 
+          <ResultadoDoMes />
+
           {showAds && ads && (
             <section aria-label="Campanhas" className="rounded-md border bg-card p-4">
               <div className="mb-3 flex items-baseline justify-between gap-2">
@@ -270,7 +273,7 @@ function VisaoGeral() {
                 ].map((t) => (
                   <div key={t.l} className={cn('min-w-0 border-l-4 pl-3', t.st === 'good' ? 'border-brand-green' : t.st === 'bad' ? 'border-brand-red' : 'border-brand-cyan')}>
                     <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{t.l}</p>
-                    <p className="truncate text-xl font-black tabular">{t.v}</p>
+                    <p className="whitespace-nowrap text-[clamp(1rem,4.7vw,1.25rem)] font-black tabular">{t.v}</p>
                   </div>
                 ))}
               </div>

@@ -2,7 +2,7 @@
 
 /** Pendências que impedem o envio. As demais (CPF, endereço, e-mail...) seguem como aviso: o operador completa no Bling antes de emitir a nota. */
 export function bloqueios(pendencias: string[]): string[] {
-  return pendencias.filter((p) => ['pedido_nao_pago', 'pedido_nao_encontrado', 'nome', 'ncm_de_item'].includes(p))
+  return pendencias.filter((p) => ['pedido_nao_pago', 'pedido_nao_encontrado', 'ncm_de_item'].includes(p))
 }
 
 function limpar(v: unknown): unknown {
@@ -20,8 +20,15 @@ function limpar(v: unknown): unknown {
   return v
 }
 
+/** O Bling quer DDD + número (10 ou 11 dígitos), sem o 55 do país. Número que não fecha com isso não vai (o operador completa no Bling). */
+export function celularBling(bruto: unknown): string | undefined {
+  let n = String(bruto ?? '').replace(/\D/g, '')
+  if ((n.length === 12 || n.length === 13) && n.startsWith('55')) n = n.slice(2)
+  return n.length === 10 || n.length === 11 ? n : undefined
+}
+
 export function corpoContato(c: Record<string, any>): Record<string, unknown> {
-  const celular = String(c.celular ?? '').replace(/\D/g, '')
+  const celular = celularBling(c.celular)
   return limpar({
     nome: String(c.nome ?? '').slice(0, 120),
     codigo: c.codigo,
@@ -30,7 +37,7 @@ export function corpoContato(c: Record<string, any>): Record<string, unknown> {
     tipo: c.tipo === 'J' ? 'J' : 'F',
     indicadorIe: c.indicadorIe ?? 9,
     ie: c.ie,
-    celular: celular || undefined,
+    celular,
     email: c.email,
     endereco: c.endereco,
   }) as Record<string, unknown>
@@ -64,4 +71,36 @@ export function textoErroBling(r: { status: number; data: any }): string {
   const campos = Array.isArray(e?.fields) ? e.fields.map((f: any) => f?.msg ?? f?.element).filter(Boolean).join('; ') : ''
   const base = e?.description || e?.message || e?.type || r.data?.erro || r.data?.message || `HTTP ${r.status}`
   return `${base}${campos ? ` (${campos})` : ''}`.replace(/\s+/g, ' ').slice(0, 220)
+}
+
+/** Item digitado à mão (sem SKU) que é serviço (arte, criação): fica fora da NF-e de mercadoria. */
+export function ehServicoDeArte(descricao: string): boolean {
+  return /\b(arte|cria[cç][aã]o|design|layout|diagrama[cç][aã]o|montagem de arte)\b/i.test(descricao)
+}
+
+/** NCM sugerido pela descrição (tabela do dono em docs/bling-fiscal.md). Só sugere; o operador confere no Bling antes de emitir. */
+export function ncmSugerido(descricao: string): string | undefined {
+  const d = descricao.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const regras: [RegExp, string][] = [
+    [/\bcart(ao|oes)( de visita)?\b|cartoes de visita/, '49119900'],
+    [/panfleto|folheto|filipeta|folder|flyer|cartaz|encarte|jornal|wobbler/, '49111090'],
+    [/catalogo/, '49111010'],
+    [/calendario|folhinha/, '49100000'],
+    [/postal/, '49090000'],
+    [/envelope/, '48171000'],
+    [/\bbloco|talao|comanda|receituario/, '48201000'],
+    [/agenda|caderno/, '48202000'],
+    [/\bpasta/, '48203000'],
+    [/revista|livreto/, '49019900'],
+    [/etiqueta|rotulo|\btag/, '48211000'],
+    [/adesivo/, '39199000'],
+    [/caneca|azulejo/, '69120000'],
+    [/camiseta/, '61091000'],
+    [/bandeira|faixa de tecido/, '63079090'],
+    [/placa|display|totem|expositor/, '39269090'],
+    [/copo|squeeze|garrafa/, '39241000'],
+    [/\bcaneta/, '96081000'],
+  ]
+  for (const [re, ncm] of regras) if (re.test(d)) return ncm
+  return undefined
 }

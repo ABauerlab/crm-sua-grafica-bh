@@ -51,7 +51,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { p_limite: 5 } }}",
+        "jsonBody": "={{ { p_limite: 30 } }}",
         "options": {
           "timeout": 30000
         }
@@ -71,7 +71,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const lista = $input.first().json;\nconst grupos = Array.isArray(lista) ? lista : (Array.isArray(lista?.fotos_grupos_para_aquecer) ? lista.fotos_grupos_para_aquecer : []);\nreturn grupos.map((g) => ({ json: { grupo: String(g) } }));"
+        "jsCode": "const itens = $input.all();\nconst grupos = [];\nfor (const it of itens) {\n  const j = it.json;\n  if (typeof j === 'string') { grupos.push(j); continue; }\n  if (Array.isArray(j)) { for (const g of j) grupos.push(String(g)); continue; }\n  if (j && typeof j === 'object') {\n    if (Array.isArray(j.fotos_grupos_para_aquecer)) { for (const g of j.fotos_grupos_para_aquecer) grupos.push(String(g)); continue; }\n    const v = j.grupo || j.data || j.value;\n    if (v) grupos.push(String(v));\n  }\n}\nreturn grupos.filter(Boolean).map((g) => ({ json: { grupo: g } }));"
       }
     },
     {

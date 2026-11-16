@@ -7,7 +7,7 @@ import { ModeloCard } from '@/components/ModeloCard'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { ProdutoCard } from '@/components/ProdutoCard'
 import { SITE, linkWhatsApp } from '@/lib/site'
-import { arvore, buscar, facetasHome, fotoUrl, modelos, type ProdutoResumo } from '@/lib/vitrine'
+import { arvore, buscar, facetasHome, modelos, type ProdutoResumo } from '@/lib/vitrine'
 
 export const revalidate = 3600
 
@@ -38,12 +38,11 @@ const DEPARTAMENTOS = [
 
 export default async function Home() {
   const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 6 }))])
-  const foto = (i: number) => fotoUrl(vitrines[i]?.modelos.find((m) => m.foto)?.foto)
   const slides: Slide[] = [
-    { titulo: 'Pedidos pagos até 10h30 começam a ser produzidos no mesmo dia', texto: 'Pagamento confirmado até 10h30 em dia útil e a produção começa hoje. Frete grátis na região central de BH.', href: '/categoria/cartoes-de-visita', botao: 'Ver cartões de visita', foto: foto(0), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
-    { titulo: 'Kits comerciais para lojas com parcelamento em até 2x sem juros', texto: 'Cartões, sacolas, etiquetas e adesivos para a sua loja. Pix na hora ou 2x sem juros no cartão.', href: '/categoria/sacolas-e-sacos', botao: 'Montar o kit da minha loja', foto: foto(4), fundo: 'bg-magenta', destaque: 'bg-white text-tinta hover:bg-papel' },
-    { titulo: 'Cobrimos qualquer orçamento comprovado da concorrência', texto: 'Achou mais barato em outra gráfica para o mesmo produto? Mande o orçamento e a gente avalia.', href: '/ajuda#orcamento', botao: 'Enviar orçamento para cobrir', foto: foto(2), fundo: 'bg-ciano', destaque: 'bg-tinta text-white hover:bg-black' },
-    { titulo: 'Retirada física agendada no Edifício Helena Passig, na Praça Sete', texto: 'Retire seus materiais prontos no centro de BH, com hora marcada. Sem pagar frete.', href: '/categorias', botao: 'Escolher meus produtos', foto: foto(1), fundo: 'bg-tinta', destaque: 'bg-amarelo text-tinta hover:bg-amarelo-escuro' },
+    { alt: 'Pagou até as 10h30? Produzimos hoje mesmo. Em dia útil, pedido pago até as 10h30 entra na produção no mesmo dia.', href: '/categoria/cartoes-de-visita', desktop: '/banners/mesmo-dia-desktop.jpg', celular: '/banners/mesmo-dia-celular.jpg' },
+    { alt: 'Kit completo para a sua loja: cartões, adesivos e embalagens com a sua marca. 2x sem juros no cartão.', href: '/categoria/sacolas-e-sacos', desktop: '/banners/kit-loja-desktop.jpg', celular: '/banners/kit-loja-celular.jpg' },
+    { alt: 'Achou mais barato? Cobrimos qualquer orçamento comprovado da concorrência. Envie a proposta para o mesmo produto.', href: '/ajuda#orcamento', desktop: '/banners/cobrimos-desktop.jpg', celular: '/banners/cobrimos-celular.jpg' },
+    { alt: 'Frete grátis na região central de Belo Horizonte e retirada agendada na Praça Sete. Condições do frete no carrinho.', href: '/categorias', desktop: '/banners/frete-retirada-desktop.jpg', celular: '/banners/frete-retirada-celular.jpg' },
   ]
   return (
     <>

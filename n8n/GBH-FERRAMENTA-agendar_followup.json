@@ -1,0 +1,15 @@
+{
+  "name": "GBH | FERRAMENTA | agendar_followup",
+  "settings": { "executionOrder": "v1", "timezone": "America/Sao_Paulo", "saveDataErrorExecution": "all", "executionTimeout": 120 },
+  "tags": [{ "name": "gbh" }],
+  "nodes": [
+    { "name": "Entrada", "type": "n8n-nodes-base.executeWorkflowTrigger", "typeVersion": 1.2, "position": [0, 0], "parameters": { "inputSource": "workflowInputs", "workflowInputs": { "values": [{ "name": "conversation_id", "type": "string" }, { "name": "tipo", "type": "string" }, { "name": "quando", "type": "string" }] } } },
+    { "name": "Agendar follow-up no banco", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.5, "position": [224, 0], "parameters": { "method": "POST", "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_agendar_followup", "authentication": "predefinedCredentialType", "nodeCredentialType": "supabaseApi", "sendBody": true, "contentType": "json", "specifyBody": "json", "jsonBody": "={{ { p_conversation: $json.conversation_id, p_tipo: String($json.tipo || \"\"), p_quando: String($json.quando || \"\") } }}", "options": { "timeout": 15000 } }, "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1000, "onError": "continueRegularOutput" },
+    { "name": "Resposta mínima ao agente", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [448, 0], "parameters": { "mode": "runOnceForAllItems", "language": "javaScript", "jsCode": "const r = $input.first().json || {};\nif (r.ok === true) return [{ json: { ok: true, ja_agendado: r.ja_agendado === true, quando: String(r.quando || '') } }];\nif (r.motivo === 'sem_orcamento_aberto') return [{ json: { ok: false, orientacao: 'Só dá para agendar depois de montar o orçamento. Não avise o cliente.' } }];\nreturn [{ json: { ok: false, orientacao: 'Não foi possível agendar agora. Siga a conversa e não avise o cliente.' } }];" } },
+    { "name": "Sticky Note 15ff1eda", "type": "n8n-nodes-base.stickyNote", "typeVersion": 1, "position": [160, 0], "parameters": { "content": "## GBH | FERRAMENTA | agendar_followup\n**Objetivo:** registrar na fila de follow-up um lembrete para o orçamento aberto (o envio é do WF6).\n**Entradas:** conversation_id (fixo, vem do WF2), tipo (orcamento ou pagamento), quando (orcamento: 2h, 20h, dia2, dia5; pagamento: 1h, 6h, 24h).\n**Saída mínima ao agente:** { ok, quando } ou { ok: false, orientacao }.\n**Regras:** função agente_agendar_followup do banco: o agente só escolhe entre opções fixas, o horário sai das regras F1 a F4 e PAG_* (entre 8h e 20h, Brasília), idempotente por orçamento. Exige orçamento aberto.\n**Dependências:** credencial Supabase (service role). Chamada pelo despachante GBH | FERRAMENTA | despachar.", "color": 4 } }
+  ],
+  "connections": {
+    "Entrada": { "main": [[{ "node": "Agendar follow-up no banco", "type": "main", "index": 0 }]] },
+    "Agendar follow-up no banco": { "main": [[{ "node": "Resposta mínima ao agente", "type": "main", "index": 0 }]] }
+  }
+}

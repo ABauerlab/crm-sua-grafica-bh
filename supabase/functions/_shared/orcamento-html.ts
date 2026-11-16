@@ -11,7 +11,7 @@ export interface OrcamentoDoc {
   itens: { descricao: string; especificacao?: string | null; quantidade: number; valor_unitario: number; valor_total: number }[]
   subtotal: number
   arte: { modo: 'nenhuma' | 'cliente' | 'paga' | 'com_frete'; valor: number; opcoes?: { texto: string; valor: number }[] | null }
-  frete: { modo: 'retirada' | 'bike_gratis' | 'uber_cliente'; valor: number }
+  frete: { modo: 'retirada' | 'bike_gratis' | 'uber_cliente' | 'correios'; valor: number }
   desconto: number
   total: number
   condicao_especial?: { valida_ate: string; tipo: string; total: number; texto: string } | null
@@ -142,9 +142,11 @@ export function orcamentoHtml(d: OrcamentoDoc): string {
   const freteLinha =
     d.frete.modo === 'bike_gratis'
       ? `<div class="l g"><span>Entrega (região central)</span><span>Grátis</span></div>`
-      : d.frete.modo === 'uber_cliente'
-        ? `<div class="l"><span>Entrega por Uber</span><span>por conta do cliente</span></div>`
-        : `<div class="l g"><span>Retirada</span><span>Grátis</span></div>`
+      : d.frete.modo === 'correios'
+        ? `<div class="l"><span>Frete (Correios)</span><span>${brl(d.frete.valor)}</span></div>`
+        : d.frete.modo === 'uber_cliente'
+          ? `<div class="l"><span>Entrega por Uber</span><span>por conta do cliente</span></div>`
+          : `<div class="l g"><span>Retirada</span><span>Grátis</span></div>`
 
   const totais = `<div class="totais">
     <div class="l"><span>Subtotal</span><span>${brl(d.subtotal)}</span></div>
@@ -208,7 +210,7 @@ ${alternativas}${arredonda}
   </div>
   <div>
     <p class="sec">Retirada e entrega</p>
-    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}</p>
+    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}${d.frete.modo === 'correios' ? ' O frete dos Correios já está somado ao total.' : ''}</p>
   </div>
 </section>
 <section class="passos"><p class="sec">Como fechar seu pedido</p><ol>

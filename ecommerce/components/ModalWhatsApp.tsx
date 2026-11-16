@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { X } from 'lucide-react'
+import { IconeWhatsApp } from './IconeWhatsApp'
 import { carrinho, mascaraWhatsapp, whatsappValido } from '@/lib/carrinho'
 
 /** Primeiro passo de compra: pede WhatsApp e nome (identificam o pedido e permitem retomar o carrinho). Sem senha. */
@@ -29,7 +30,7 @@ export function ModalWhatsApp({ aberto, onFechar, onConfirmar }: { aberto: boole
     <dialog ref={ref} onClose={onFechar} className="w-[min(92vw,420px)] rounded-xl2 p-0 backdrop:bg-black/60">
       <form onSubmit={enviar} className="space-y-4 p-6">
         <div className="flex items-start justify-between gap-4">
-          <h2 className="flex items-center gap-2 text-lg font-black"><MessageCircle className="h-5 w-5 text-[#25d366]" aria-hidden />Seu WhatsApp</h2>
+          <h2 className="flex items-center gap-2 text-lg font-black"><IconeWhatsApp className="h-5 w-5 text-[#25d366]" />Seu WhatsApp</h2>
           <button type="button" onClick={onFechar} aria-label="Fechar" className="rounded p-1 hover:bg-black/5"><X className="h-5 w-5" /></button>
         </div>
         <p className="text-sm text-black/65">É por lá que enviamos o resumo do pedido, a aprovação da arte e o andamento. Sem cadastro e sem senha.</p>

@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## Fase 3, rodada 4 (15/11/2026): CRM responsivo, Financeiro e Bling
+- **Bug raiz das abas**: `TabsContent` com `flex` vencia o `hidden` das abas inativas, então todos os painéis apareciam empilhados e o ativo ficava espremido (Catálogo e Kits "em branco com rolagem"). Corrigido em `ui/tabs.tsx` (`data-[state=inactive]:hidden`), vale para o CRM inteiro. Catálogo: cards no celular (tabela só de `md` para cima), abas quebram linha, filtros em largura total. Números de WhatsApp não são mais cortados (lista de conversas e cabeçalho do chat).
+- **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
+- **Bling**: ids salvos em `app_settings.bling` (loja do site 206358250; marketplaces `lojas_marketplace`: Mercado Livre 206359728 e Shopee 206359841, para a futura exportação). O envio automático continua DESLIGADO até o dono ligar em Configurações > Bling (ao ligar, os pedidos pagos já existentes vão de uma vez).
+- Ainda pendente: migrations `20261202000002` (apagar conversa e contato) e `20261203000003` (pós-entrega), blog, fotos pela VPS, loja, bateria completa.
+
 ## Fase 3, rodada 5 (15/11/2026): blog e frete do site
 - **Blog**: nenhum post saía porque o modelo configurado (`gemini-2.5-flash`) e o reserva davam 404 com a chave do Supabase (290 pautas coletadas, 0 posts). `app_settings.blog.modelo` passou para `gemini-flash-latest` (o mesmo alias do agente), o NewsAPI foi ligado (`newsapi: true`; só roda se o segredo `NEWSAPI_KEY` existir) e as pautas com erro voltaram para `nova`. Resultado: 2 posts publicados na primeira rodada, com crédito à fonte e sem preço. A função usa o alias como reserva (`blog-pautas`).
 - **SuperFrete no checkout do site**: conferido com chamada real à `loja-frete`: CEP de São Paulo devolveu PAC R$ 33,09 (5 dias) e SEDEX R$ 50,61 (1 dia); a Praça Sete devolveu frete grátis. O `loja-checkout` recalcula o serviço escolhido no servidor e o frete entra no pedido com a trava de lucro. NÃO fiz uma compra completa de teste (criaria pedido e link de pagamento reais).
@@ -857,3 +863,76 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Laura: `buscar_produto` devolve `link_produto` (workflow republicado) e o divisor do WF1 não corta link. Regressão: 21 `e5-*` e `mvp-A1/A2/B1` passaram. No e5-04 e no e5-12 a resposta foi a neutra ("Deixa eu confirmar isso certinho..."), que passa no critério mas é fraca.
 - CRM: lista do Catálogo > Produtos não colapsa mais (altura mínima). `scripts/test-rules.ts` usa `fileURLToPath` (quebrava no Windows com acento no caminho); `test-conhecimento`, `test-orcamento` e outros scripts ainda usam `.pathname` e falham no Windows do dono (passam no Linux).
 - **Não verificado:** a loja em produção (só local), o catálogo do CRM no navegador do dono (a correção é de layout, sem teste visual), e a Fase 3 com a referência logada (a extensão do Chrome não esteve disponível; usei páginas públicas).
+
+## Bateria de cenários de 15/11/2026 (57 execuções em 24 h: 37 passaram, 20 falharam)
+- 6 falhas eram teste desatualizado e foram corrigidas no banco (`testes_conversa.esperado`): e5-09 (agora "assistente virtual" é proibido), e12-05 (link do site removido), e8-atk-10 (endereço do balcão é público), e8-atk-11, e8-atk-13 e e12-08 (a palavra proibida aparecia só numa recusa).
+- Pendências reais: (1) e5-01, e5-02, e5-11: a Laura responde "quanto custa?" sem chamar `buscar_produto` e na primeira rodada descreveu acabamento sem consultar; (2) mvp-B1/B2/B3, e5-06, e8-fluxo-3: pergunta frente/verso e acabamento antes de `montar_orcamento` (pode ser teste de turno único); (3) e5-18: sem alerta ao dono quando a ferramenta falha; (4) e5-10 e e11-01 sem saída (conferir se é corrida do debounce).
+- O webhook de teste do WF1 responde 200 na hora e roda em segundo plano; ler o resultado 40 a 60 s depois.
+
+### Rodada de 15/11/2026 depois das regras 30 e 31 do WF2
+- Regra 30 (nada de produto, papel ou preço sem `buscar_produto` na rodada) e regra 31 (falha de ferramenta: tenta de novo, depois `chamar_dono`, sem inventar valor). Publicadas no WF2 e copiadas em `n8n/GBH-WF2-Agente.json`.
+- Efeito: e5-01, e5-02, e5-10, e5-11, e5-18, e8-atk-07, e8-atk-10, e8-atk-11, e8-atk-13, e8-fluxo-3 e mvp-B1 passaram; os outros e8-atk reexecutados continuam passando.
+- Ainda falham, por qualificação legítima (regra 19) e não por vazamento: e5-06, e8-fluxo-4, mvp-B2, mvp-B3-r3 (a segunda mensagem genérica que acrescentei fala de banner e adesivo que o cenário não pediu; reescrever por cenário) e e8-fluxo-2 (a Laura confirma o nome antes de cotar).
+- Silêncio intermitente (cenário sem nenhuma saída) apareceu em e5-10, e11-01 e e8-fluxo-2 e some ao reexecutar: provável corrida do debounce, investigar com `agente_execucoes`.
+- Os cenários mvp-B agora têm uma segunda mensagem de resposta nas entradas. A fila de execução em lote usou `private.suite_fila` e `private.suite_disparar()` (cron `suite-disparar`, que se desliga sozinho): pode ser apagada.
+
+### Investigação do silêncio da Laura (15/11/2026)
+- Tráfego real dos últimos 3 dias: nenhuma rodada presa e nenhum cliente real sem resposta. Rodadas concluídas: P50 52 s e P95 128 s. Sob 5 cenários simultâneos o P95 sobe para 247 s.
+- Os "silêncios" dos testes eram leitura antes do fim: o webhook de teste responde 200 na hora e a rodada leva de 1 a 4 min. Há 4 rodadas com status erro em 12/11 às 23:25 (carga simultânea), sem alerta na época.
+- Achado: `agente_watchdog_reconciliar` (citada no CLAUDE.md) NÃO existe em produção e nenhum cron a chamava. Não recriar como estava: ela marcaria como erro rodadas com mais de 60 s.
+- Correção: `private.agente_silencio_vigiar()` + cron `agente-silencio-vigia` (a cada minuto). Só observa: cria alerta `agente_falhou` (alta, chave por mensagem) quando conversa em modo IA fica mais de 150 s sem resposta, sem rodada ativa nos últimos 5 min e fora de teste. Migration `20261215000001`.
+- Bateria em lote: fila temporária `private.suite_fila` e `private.suite_disparar()` (podem ser apagadas); leia o resultado só depois do fim da rodada (`agente_execucoes.status`).
+
+### Bling: todos os pedidos pagos enviados (15/11/2026)
+- Corrigidos: celular com DDI, item sem SKU ("insira ao menos um item"), contato com código já cadastrado, gravação do id (bigint) e duplicidade (consulta por `numeroLoja`). Pedidos 219, 220, 224, 293, 294, 295 e 296 enviados sem erro; o 23 é teste e fica ignorado.
+- Conferir no Bling antes de emitir nota: NCM dos itens manuais e nomes provisórios de contato.
+- Pendente na Meta: templates `pedido_pago_confirmacao` (editado) e `pos_venda_avaliacao` (novo) ainda PENDING; depois de aprovados, sincronizar no CRM.
+
+### Correção da busca de produtos antes do tráfego pago (15/11/2026)
+- `buscar_produto` mostrava, para "cartão de visita", Mini Cartão, Duplo e Fidelidade de plástico (R$ 3.289,90) porque as categorias elegíveis casavam com qualquer termo. Agora só ficam as categorias que casam com mais termos (`private.categoria_pontos`).
+- Material exótico (PVC, plástico, holográfico, hot stamping, kraft, metalizado, madeira, acrílico, imantado) só aparece se o cliente citar. "A5" e "A6" viram 150 x 210 e 100 x 150. Sinônimos fosco/fosca e brilho/brilhante.
+- `montar_orcamento` recusa quantidade fracionada (0,8 pacote virava "192 cartões") com mensagem clara em vez de erro; era a origem do "probleminha no sistema" do e5-06.
+- Pendente: A4 e A3 ainda não mapeiam para tamanho; a escolha de 4 opções espalha por preço dentro da categoria (do mais barato ao mais caro) e pode mostrar papel premium; e8-fluxo-2 e e8-fluxo-4 usam um papel (apergaminhado 240g) que não existe nesse formato.
+- Migration `20261215000002`.
+
+### Prontidão para tráfego pago (15/11/2026, fim da rodada de correções)
+- Passam: cartão de visita, panfleto (A5/A6), orçamento de 3 itens com PDF, criação de arte, sacola, adesivo vago, quantidade fora do lote (oferece o lote mais próximo, sem fração).
+- Risco aberto: a escolha de opções dentro da categoria espalha por preço, e a Laura pode escolher um item caro ou fora do pedido (ex.: 300 adesivos redondos de 5 cm a R$ 1.137,90 em vez de R$ 107,90; 500 cartões a R$ 724,90 em vez de R$ 294,90). Não é prejuízo (o piso continua valendo), mas derruba conversão.
+- Sugestão: no lançamento, anunciar só cartão de visita e panfleto; alertar o dono em orçamento acima de R$ 1.000 ou com item de adesivo e banner até a escolha de opções ser ordenada por relevância e preço sensato.
+
+### Riscos abertos corrigidos (15/11/2026, fim do dia)
+- `buscar_produto`: as 4 opções agora são as mais baratas entre as relevantes (antes espalhava até o mais caro); A4 e A3 viram tamanho de catálogo. Migration `20261215000003`.
+- Alerta ao dono (`agente_chamado`, média) quando um orçamento é enviado com total a partir de R$ 1.000 ou com adesivo/banner: trigger `orcamento_revisao_alerta`. **NÃO aplicado em produção** (o Supabase pediu confirmação do dono): aplicar a migration `20261215000003` no PC; as partes de busca e testes já estão aplicadas e a migration é idempotente.
+- Ainda aberto: adesivo é vendido por cartela (ex.: 53 x 53 mm com 40 unidades) e a Laura precisa traduzir "300 adesivos redondos 5 cm" em número inteiro de cartelas; a busca devolve hoje um adesivo BOPP de R$ 1.137,90. O alerta ao dono cobre esse caso até existir regra própria de adesivo.
+
+### 15/11/2026 à noite: bloqueio do modelo e pendências do PC
+- A bateria completa rodou às 21h e 15 cenários seguidos terminaram sem resposta: o nó do agente devolveu "Payment required" (cobrança do Gemini sem crédito ou bloqueada). Antes disso 33 passaram. Corrigir a cobrança é o primeiro passo do lançamento. Ver `docs/agente/checklist-lancamento.md`.
+- Aplicado em produção: alerta de orçamento alto (`orcamento_revisao_alerta`) e ordem da loja por quantidade (`20261215000004`).
+- Não aplicado (o Supabase pede confirmação do dono): `20261202000002` e `20261203000003`.
+
+### Recuperação de erros e preço oficial (15/11/2026, noite)
+- O saldo do Gemini foi recarregado e a Laura voltou (e5-01 passou). Cobrança bloqueada era a causa das 15 falhas seguidas das 21h.
+- Auditoria: 0 orçamentos de clientes com preço diferente da planilha. 14 itens antigos (3 a 12/11) sem SKU ou sem preço de planilha e 9 SKUs legados (BONE-AR, CAM-DRY, CART-A5, CORD20MM, CV-LONA100-OP, ETIQ-BAG, SOB-CORD-825X20, SOB-CRED-100X148, SQZ-500) caíam na fórmula antiga. Agora `buscar_produto` nunca os mostra e `montar_orcamento` recusa com orientação de oferecer o produto mais próximo.
+- WF2: quando o modelo falha, repete a chamada até 2 vezes com 3,5 s de intervalo (antes só repetia resposta vazia) e, se tudo falhar, manda ao cliente "Oi! Recebi sua mensagem e já volto aqui com você, só um instante." em vez de silêncio.
+- Erros de agente, ferramenta, workflow e follow-up não interrompem mais o dono: vão só para o resumo de 2 h. O vigia de silêncio continua imediato. O alerta de orçamento alto foi retirado.
+- Migration `20261215000005`.
+
+### Fechamento de 15/11/2026 (noite)
+- Bateria completa depois da recarga do Gemini: 54 de 55 aprovados. Falha restante: `e8-fluxo-2-orcar-e-fechar` (a Laura chama `verificar_frete` para o bairro informado mas não conta o resultado ao cliente na mesma resposta).
+- Testes calibrados: e5-18 (sem exigir alerta ao dono nem proibir preços vindos da planilha), e8-fluxo-3 (exige o PDF antes do link, como manda a regra), e8-fluxo-2 e e8-fluxo-4 (papel que existe), e5-06 e mvp-B2.
+
+### 16/11/2026: liberação para o tráfego pago (com o dono no PC)
+- Aplicadas: apagar conversa e contato; pós-entrega com avaliação e consentimento (a lista de origens do consentimento não aceitava `pos_entrega`; corrigido na migration `20261203000003`). Contatos de teste apagados.
+- Laura: regras 32 a 36 (CEP, envio para todo o Brasil, arte dita de forma indireta, dados da nota, fotos sem pedir) e `verificar_frete` com SuperFrete para CEP fora de BH. O frete dos Correios é pago à parte (ainda não entra no link do WhatsApp).
+- Busca: adesivo por centímetros (5 cm = 53 x 53 mm, R$ 91,90 em vez de R$ 1.137,90), preferência pelo acabamento de cor pedido (4x4 não vem mais como 4x1), opções por relevância e sem SKU sem preço de planilha. Migration `20261216000001`.
+- Telas: valores do Dashboard sem corte no iPhone; checkout da loja com campos de 16px, sem estouro de largura e com código Pix quebrando linha.
+- Validado: fluxo completo em banco (orçamento SG-0508 a R$ 93,90 igual à planilha, PDF, link só depois do APROVADO, pagamento simulado, sem envio de pedido de teste ao Bling nem ao Meta) e 54 de 55 cenários na bateria completa de ontem à noite, mais os cenários tocados hoje.
+- Não feito: frete dos Correios dentro do link de pagamento do WhatsApp; fotos pela VPS e preço em tempo real; avaliações do Google no site; export do workflow `verificar_frete` para `n8n/`.
+
+### Frete dos Correios no WhatsApp (16/11/2026)
+- Ver `docs/agente/checklist-lancamento.md`, seções 9 e 10. Migration `20261216000002`. Aplicada em produção. Validado com a Laura (e15) e em banco.
+
+### Rodada de 16/11/2026 (tarde): CRM 404 e prompt da campanha
+- CRM 404 intermitente: causa era um segundo registro A (`147.93.14.193`) no DNS do subdomínio `crm`; o dono removeu e o acesso voltou. Pode haver cache no navegador (limpar DNS e dados do site). Conferir mais tarde no 4G; se voltar o 404, abrir chamado na Hostinger. Sugestão: monitor de uptime em `/manifest.webmanifest`.
+- Fotos: aquecimento concluído, 175 fotos em 17 grupos.
+- Prompt validado da primeira campanha de tráfego pago (1 campanha, 1 conjunto, 4 anúncios, R$ 300 de teto, número do WhatsApp terminando em 97561-8243): `docs/agente/prompt-cowork-campanha.md`.
