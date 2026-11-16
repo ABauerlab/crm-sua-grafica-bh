@@ -69,3 +69,11 @@ O cron dispara 5 cenários por minuto e se desliga sozinho. Leia o resultado em 
 - Imagens de baixa qualidade (ex.: SKU CPC5405C1) e revisão da home a partir do HTML extraído.
 - Exportar o workflow `verificar_frete` para `n8n/`.
 - Avaliações do Google no site: fora do escopo por decisão do dono (sem API do Google por enquanto).
+
+
+## 11. Fotos e VPS (16/11/2026)
+- A VPS `origem-logada` (Coolify) está rodando e a sessão está logada (sem falhas seguidas). A conferência ao vivo de preço (`origem-consultar`) está em modo `atualizar`: custo e prazo só sobem no catálogo; queda só é registrada.
+- Preço de tamanho livre: banner, lona e outros itens por metro quadrado já saem da planilha em tempo real (`calcular_preco` com largura e altura). Tamanho fora da planilha em item que NÃO é por metro quadrado não existe na origem: a Laura oferece o tamanho de catálogo mais próximo.
+- Fotos: o cache tinha só 30 fotos (11 grupos) porque o workflow `GBH | WF4 | Aquecer fotos de madrugada` estava desligado e, quando rodou, descartava a lista (defeito corrigido). Agora está ativo (todo dia às 03:20, até 30 grupos por noite, 1 por vez), com limites de 5 fotos por pedido e 20 imagens por contato por dia.
+- A foto é por grupo de produto (não por SKU): a opção sem imagem própria recebe a foto do grupo ou vai só o texto.
+- Workflows exportados para `n8n/` em 16/11: `verificar_frete`, `buscar_conhecimento`, `salvar_contato` e `agendar_followup`. Ficam de fora só o clone de teste do WF2, a entrada de teste e o workflow de consulta da origem (o nome dele cita o fornecedor; renomear antes de exportar).
