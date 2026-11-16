@@ -24,3 +24,19 @@ select 'e14-aprovado-gera-link', 'Orçamento aberto, cliente aprova e pede nota 
        '{"nome":"Marcos","preparar":["orcamento_aberto"],"mensagens":[{"texto":"APROVADO. Pode mandar o Pix. Quero nota fiscal no CNPJ 12.345.678/0001-95."}]}'::jsonb,
        '{"ferramentas_obrigatorias":["gerar_pdf_orcamento"],"texto_nao_contem":["assistente virtual"],"max_chars_mensagem":420}'::jsonb, true
 where not exists (select 1 from public.testes_conversa where nome = 'e14-aprovado-gera-link');
+
+-- A Laura orçava cartão 4x1 quando o cliente pedia 4x4 (as opções vêm do mais barato para o mais caro). A busca agora prefere,
+-- sem filtrar nem esconder nada, o acabamento de cor pedido no texto: 4x4 (ou "frente e verso colorido"), 4x1, 4x0, 1x1 e 1x0.
+do $mig$
+declare d text; a1 text := 'v_cats_ok text[] := ''{}'';'; a2 text := '  v_variantes := array[v_norm];'; a3 text := 'order by case when v_exact then preco_base_custo else 0 end, score desc, preco_base_custo';
+begin
+  select pg_get_functiondef(p.oid) into d from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'buscar_produto';
+  if position('cores_preferidas' in d) = 0 then
+    if position(a1 in d) = 0 or position(a2 in d) = 0 or position(a3 in d) = 0 then raise exception 'âncoras não encontradas'; end if;
+    d := replace(d, a1, a1 || ' v_cores_pref text;');
+    d := replace(d, a2, E'  if v_cores is null then /* cores_preferidas */\n    v_cores_pref := case\n      when v_norm ~ ''(^| )4 ?x ?4( |$)'' or v_norm ~ ''frente e verso colorid|colorid[oa]? (na )?frente e (no )?verso|colorid[oa]? dos dois lados'' then ''4X4''\n      when v_norm ~ ''(^| )4 ?x ?1( |$)'' then ''4X1''\n      when v_norm ~ ''(^| )4 ?x ?0( |$)'' or v_norm ~ ''colorid[oa]? so (na )?frente|so frente colorid'' then ''4X0''\n      when v_norm ~ ''(^| )1 ?x ?1( |$)'' then ''1X1''\n      when v_norm ~ ''(^| )1 ?x ?0( |$)'' then ''1X0'' end;\n  end if;\n' || a2);
+    d := replace(d, a3, 'order by case when v_cores_pref is not null and upper(btrim(coalesce(cores, ''''))) = v_cores_pref then 0 else 1 end, case when v_exact then preco_base_custo else 0 end, score desc, preco_base_custo');
+    execute d;
+  end if;
+end
+$mig$;
