@@ -53,3 +53,19 @@ O cron dispara 5 cenários por minuto e se desliga sozinho. Leia o resultado em 
 - Adesivo: a busca entende "5 cm" e traz o adesivo de 53 x 53 mm (R$ 91,90 a R$ 109,90) em vez de R$ 1.137,90. Banner 80 x 120 já batia com a planilha.
 - Dashboard no iPhone: valores em reais sem corte. Checkout da loja: campos com fonte de 16px (iOS não dá mais zoom), colunas sem estouro e código Pix quebrando linha.
 - Fluxo completo validado em banco com pedido de teste: orçamento SG-0508 a R$ 93,90 (igual à planilha), PDF marcado como enviado, link recusado antes do "APROVADO" e liberado depois, pagamento simulado levou o pedido a "pago" com evento e alerta; pedido de teste não foi ao Bling nem ao Meta.
+
+
+## 9. Frete dos Correios no WhatsApp (16/11/2026)
+- Cliente de fora de BH: `verificar_frete` cota PAC e SEDEX no SuperFrete (função `loja-frete`), grava as opções em `frete_cotacoes` (por conversa e CEP) e a Laura pergunta qual ele prefere. Ao montar o orçamento ela envia `frete_servico` (pac ou sedex) e o valor vem SEMPRE da tabela, nunca do modelo.
+- O frete é somado ao total do orçamento, do PDF (linha "Frete (Correios)"), do pedido (linha "Frete Correios", repasse com custo igual ao valor) e do link de pagamento. O Bling recebe o frete no campo de transporte.
+- Travas: sem escolher PAC ou SEDEX o orçamento é recusado com orientação (`escolher_frete`); sem cotação guardada também (`frete_sem_cotacao`). Cotação vale 3 dias; se os itens mudarem, a Laura consulta o frete de novo.
+- Teste com a Laura de verdade (e15): cartão 500 un. R$ 121,90 + PAC R$ 29,83 = R$ 151,73 no Pix, orçamento e PDF gerados. Teste em banco: pedido com o mesmo total do orçamento.
+- Funções republicadas: `orcamento-pdf` (v25). Workflows n8n atualizados: `verificar_frete`, `despachar` e WF2 (regra 37). O workflow `verificar_frete` ainda não foi exportado para `n8n/`.
+- Fila temporária de testes removida (`private.suite_fila`, `private.suite_uso`, `private.suite_disparar`).
+
+## 10. Pendências reais depois do lançamento
+- Fotos de todas as opções pela VPS logada e conferência de imagem e SKU contra o site do fornecedor.
+- Preço em tempo real pela VPS para tamanho fora da planilha.
+- Imagens de baixa qualidade (ex.: SKU CPC5405C1) e revisão da home a partir do HTML extraído.
+- Exportar o workflow `verificar_frete` para `n8n/`.
+- Avaliações do Google no site: fora do escopo por decisão do dono (sem API do Google por enquanto).

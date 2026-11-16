@@ -59,6 +59,7 @@ function resumoDoPedido(doc: OrcamentoDoc): string {
   if (doc.arte.modo === 'paga' || doc.arte.modo === 'com_frete') linhas.push(`Criação da arte: ${brl(doc.arte.valor)}`)
   else if (doc.arte.modo === 'cliente') linhas.push('Arte: você envia pronta')
   if (doc.frete.modo === 'bike_gratis') linhas.push('Entrega: grátis na região central, em horário comercial')
+  else if (doc.frete.modo === 'correios') linhas.push(`Frete (Correios): ${brl(doc.frete.valor)}`)
   else if (doc.frete.modo === 'uber_cliente') linhas.push(`Entrega: Uber ou 99 Entrega por conta do cliente, saindo da Praça Sete${doc.frete.valor > 0 ? ` (valor de referência ${brl(doc.frete.valor)})` : ''}`)
   else linhas.push('Retirada: grátis no centro de BH, depois do pagamento')
   if (doc.desconto > 0) linhas.push(`Desconto: ${brl(doc.desconto)}`)

@@ -927,3 +927,6 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - Telas: valores do Dashboard sem corte no iPhone; checkout da loja com campos de 16px, sem estouro de largura e com código Pix quebrando linha.
 - Validado: fluxo completo em banco (orçamento SG-0508 a R$ 93,90 igual à planilha, PDF, link só depois do APROVADO, pagamento simulado, sem envio de pedido de teste ao Bling nem ao Meta) e 54 de 55 cenários na bateria completa de ontem à noite, mais os cenários tocados hoje.
 - Não feito: frete dos Correios dentro do link de pagamento do WhatsApp; fotos pela VPS e preço em tempo real; avaliações do Google no site; export do workflow `verificar_frete` para `n8n/`.
+
+### Frete dos Correios no WhatsApp (16/11/2026)
+- Ver `docs/agente/checklist-lancamento.md`, seções 9 e 10. Migration `20261216000002`. Aplicada em produção. Validado com a Laura (e15) e em banco.
