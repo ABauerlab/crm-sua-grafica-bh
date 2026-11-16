@@ -19,7 +19,7 @@ interface Pix { pagamento_id: string; copia_e_cola: string; qr_base64: string | 
 type Etapa = 1 | 2 | 3 | 'pix' | 'pago'
 
 const maskCep = (v: string) => v.replace(/\D/g, '').slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2')
-const campo = 'h-11 w-full rounded-lg border border-black/15 bg-white px-3'
+const campo = 'h-11 w-full min-w-0 rounded-lg border border-black/15 bg-white px-3 text-base'
 const PASSOS = ['Seus dados', 'Entrega', 'Pagamento']
 
 export function CheckoutCliente() {
@@ -218,11 +218,11 @@ export function CheckoutCliente() {
         <div className="mt-5 space-y-4 rounded-xl2 bg-white p-5 text-center shadow-sm">
           {pix.qr_base64
             // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={`data:image/png;base64,${pix.qr_base64}`} alt="QR Code do Pix" className="mx-auto h-56 w-56" />
+            ? <img src={`data:image/png;base64,${pix.qr_base64}`} alt="QR Code do Pix" className="mx-auto h-auto w-full max-w-[14rem]" />
             : <QrCode className="mx-auto h-24 w-24 text-black/30" aria-hidden />}
           <div>
             <label htmlFor="copia" className="text-xs font-bold uppercase tracking-wide text-black/60">Pix copia e cola</label>
-            <textarea id="copia" readOnly value={pix.copia_e_cola} rows={3} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-lg border border-black/15 bg-papel p-2 text-xs" />
+            <textarea id="copia" readOnly value={pix.copia_e_cola} rows={4} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full break-all rounded-lg border border-black/15 bg-papel p-2 text-base" />
           </div>
           <button onClick={copiar} className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-amarelo font-bold text-tinta hover:bg-amarelo-escuro">
             {copiado ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}{copiado ? 'Código copiado!' : 'Copiar código Pix'}
@@ -247,9 +247,9 @@ export function CheckoutCliente() {
 
   const passo = etapa as 1 | 2 | 3
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_380px]">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8 [&>*]:min-w-0">
       <div className="space-y-5">
-        <ol className="flex items-center gap-2 text-sm" aria-label="Etapas">
+        <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label="Etapas">
           {PASSOS.map((p, i) => (
             <li key={p} className={`flex items-center gap-2 font-bold ${passo === i + 1 ? 'text-tinta' : passo > i + 1 ? 'text-green-700' : 'text-black/35'}`} aria-current={passo === i + 1 ? 'step' : undefined}>
               <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs ${passo === i + 1 ? 'bg-amarelo' : passo > i + 1 ? 'bg-green-600 text-white' : 'bg-black/10'}`}>{passo > i + 1 ? <Check className="h-4 w-4" aria-hidden /> : i + 1}</span>
