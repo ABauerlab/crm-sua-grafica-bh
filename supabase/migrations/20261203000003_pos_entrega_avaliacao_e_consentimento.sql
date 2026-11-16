@@ -1,6 +1,10 @@
 -- PENDENTE DE APLICAR (o Supabase pede confirmação para o update em massa): pós-entrega com agradecimento, avaliação no Google e consentimento.
 -- Quem recebe o pedido passa a constar como opted_in (origem 'pos_entrega'), exceto quem já pediu PARAR. A mensagem avisa como sair.
 -- Template da Meta: pos_venda_avaliacao (MARKETING, enviado para revisão; só funciona fora da janela de 24 h depois de aprovado).
+-- A lista de origens do consentimento não aceitava 'pos_entrega' (descoberto ao aplicar em 16/11/2026).
+alter table public.contacts drop constraint if exists contacts_marketing_consent_source_check;
+alter table public.contacts add constraint contacts_marketing_consent_source_check check (marketing_consent_source = any (array['whatsapp','manual','formulario','loja','outro','pos_entrega']));
+
 create or replace function private.orders_entregue_consentimento() returns trigger language plpgsql security definer set search_path = ''
 as $$
 begin

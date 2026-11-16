@@ -42,3 +42,14 @@ O cron dispara 5 cenários por minuto e se desliga sozinho. Leia o resultado em 
 - Em 15/11 foram rodadas quatro baterias e vários reenvios: a maior parte do gasto do dia foi de teste (17 rodadas de clientes reais custaram 0,39 na estimativa).
 - Trava criada: o disparador `private.suite_disparar()` dispara no máximo 60 cenários por dia e se desliga sozinho. Nenhum agendamento de teste fica ativo.
 - Regra: rodar a bateria completa só quando o dono pedir, no máximo uma vez por dia, e reexecutar só os cenários afetados.
+
+
+## 8. Rodada de 16/11/2026 (com o dono no PC)
+- Aplicadas em produção: apagar conversa e contato (`20261202000002`) e pós-entrega com avaliação e consentimento (`20261203000003`, com ajuste na lista de origens do consentimento). 3 clientes já entregues passaram a constar como autorizados.
+- Contatos e conversas de teste apagados (22 com número fictício e o 3132232356). Restam só contatos reais.
+- "Assistente virtual": só aparecia nas mensagens de 15/11 antes das 13h UTC. Depois da correção: 0 em produção e 0 nas 55 execuções de teste.
+- Envio para fora de BH: `verificar_frete` agora cota PAC e SEDEX pelo SuperFrete (função `loja-frete`) e devolve a cidade do CEP para a Laura confirmar. Em teste com Ubatuba: PAC e SEDEX com prazo, "envia para todo o Brasil" e confirmação da cidade. O frete é pago à parte, antes do envio (ainda não entra no link de pagamento do WhatsApp; o site já embute).
+- Regras 32 a 36 no prompt: confirmar CEP antes de corrigir, envio para todo o Brasil, não reperguntar arte dita de forma indireta, confirmar dados da nota fiscal antes do link e enviar fotos sem precisar pedir.
+- Adesivo: a busca entende "5 cm" e traz o adesivo de 53 x 53 mm (R$ 91,90 a R$ 109,90) em vez de R$ 1.137,90. Banner 80 x 120 já batia com a planilha.
+- Dashboard no iPhone: valores em reais sem corte. Checkout da loja: campos com fonte de 16px (iOS não dá mais zoom), colunas sem estouro e código Pix quebrando linha.
+- Fluxo completo validado em banco com pedido de teste: orçamento SG-0508 a R$ 93,90 (igual à planilha), PDF marcado como enviado, link recusado antes do "APROVADO" e liberado depois, pagamento simulado levou o pedido a "pago" com evento e alerta; pedido de teste não foi ao Bling nem ao Meta.

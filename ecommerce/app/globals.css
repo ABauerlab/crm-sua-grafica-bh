@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* iOS dá zoom ao focar campo com fonte menor que 16px: mantém 16px em todos os campos */
+input, select, textarea { font-size: 16px; }
+body { overflow-x: clip; }
 body { @apply bg-papel text-tinta antialiased; }
 @keyframes pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.45); } 50% { box-shadow: 0 0 0 12px rgba(37, 211, 102, 0); } }
