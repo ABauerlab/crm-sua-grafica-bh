@@ -930,3 +930,8 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 
 ### Frete dos Correios no WhatsApp (16/11/2026)
 - Ver `docs/agente/checklist-lancamento.md`, seções 9 e 10. Migration `20261216000002`. Aplicada em produção. Validado com a Laura (e15) e em banco.
+
+### Rodada de 16/11/2026 (tarde): CRM 404 e prompt da campanha
+- CRM 404 intermitente: causa era um segundo registro A (`147.93.14.193`) no DNS do subdomínio `crm`; o dono removeu e o acesso voltou. Pode haver cache no navegador (limpar DNS e dados do site). Conferir mais tarde no 4G; se voltar o 404, abrir chamado na Hostinger. Sugestão: monitor de uptime em `/manifest.webmanifest`.
+- Fotos: aquecimento concluído, 175 fotos em 17 grupos.
+- Prompt validado da primeira campanha de tráfego pago (1 campanha, 1 conjunto, 4 anúncios, R$ 300 de teto, número do WhatsApp terminando em 97561-8243): `docs/agente/prompt-cowork-campanha.md`.
