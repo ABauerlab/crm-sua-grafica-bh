@@ -1,5 +1,14 @@
 # Progresso do agente de IA
 
+## 17/11/2026: Financeiro como conta (saldo que bate com o Mercado Pago)
+- **Regras do dono**: todo pedido pago entra sozinho no saldo pelo valor BRUTO e a taxa do Mercado Pago sai sozinha (o MP deposita o líquido); o custo do pedido só sai do saldo quando o dono marca "Paguei" (ou "Já estava pago", sem mexer no saldo); o **imposto só conta para pedidos com nota emitida** (`orders.nf_emitida`), pedido sem nota fica fora e a tela mostra quanto; pagamentos de imposto registrados abatem o "imposto a pagar".
+- **Abertura**: saldo do Mercado Pago em 17/11/2026 = R$ 1.516,13 (lançamento `abertura`, `app_settings.financeiro.inicio_automatico`). Pedidos pagos antes disso NÃO entram de novo; seus custos aparecem como pendentes para o dono baixar.
+- **Banco** (migration `20261217000028`, aplicada): `financeiro_lancamentos.origem/order_id`, `financeiro_custos`, `financeiro_impostos_pagos`, `private.financeiro_sync_pedido` (gatilho em `orders`, nunca bloqueia o pagamento) e agendamento `financeiro-sincronizar` (10 min), `financeiro_painel`, `financeiro_custo_baixar/reabrir`, `financeiro_imposto_pagar/excluir`, `financeiro_resumo` (imposto só de nota emitida; lançamentos manuais separados dos automáticos). Simulação com rollback conferiu: 1.516,13 + venda 78,90 - taxa 0,78 - custo 14,99 = 1.579,26.
+- **Tela** (`ContaFinanceira`): saldo e conferência com o saldo informado do Mercado Pago, custos a pagar, imposto (devido, pago, a pagar, aviso de pedidos sem nota, por mês) e extrato com origem; lançamentos automáticos não são editáveis.
+- **Bling e NF**: cards de notas emitidas e não emitidas, com motivo automático (não enviado ao Bling, rejeitada, ainda não gerada) e campo de anotação do dono (`nf_motivo`, `nf_motivo_salvar`).
+- Números de hoje: 6 notas emitidas (imposto devido R$ 79,63); 3 pedidos pagos sem nota (R$ 2.760,80 bruto, imposto estimado R$ 165,64 fora do cálculo); 8 custos pendentes (R$ 2.329,24).
+- Painel e Campanhas ainda usam o lucro líquido do pedido com imposto de todos os pedidos (`order_financials`); só o Financeiro segue a regra de nota emitida.
+
 ## 17/11/2026: Meta sozinha e NF automática
 - **Meta**: agendamento `meta-ads-sync-15min` (a cada 15 min, últimos 3 dias) além do diário de 7 dias; a tela de Campanhas relê sozinha a cada minuto e o botão virou "Atualizar agora".
 - **NF automática**: `bling-integracao` (ação `conferir_nf`, agendamento `bling-nf-conferir` a cada 10 min e botão "Conferir no Bling agora") lê a nota do pedido no Bling e grava número, tipo, situação e chave (`nf_registrar_bling`, migration `20261217000027`, aplicada; função na versão 14). As notas do dono são **NFC-e** (pedido.notaFiscal.id é o id da NFC-e; `/nfce/{id}`, com `/nfe/{id}` como reserva). O Bling é a fonte da verdade: nota rejeitada, denegada ou cancelada volta o pedido para pendente. O marcador "faltam dados da NF" some quando a nota já foi emitida.
