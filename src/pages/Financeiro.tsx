@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { ContaFinanceira } from '@/features/financeiro/ContaFinanceira'
 import { useAuth } from '@/auth/AuthProvider'
 import Payments from '@/pages/Payments'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,16 +18,16 @@ import { formatBRL, parseMoney } from '@/lib/money'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
-type SaldoManual = { receitas: number; despesas: number; saldo: number; saldo_mp: number | null; saldo_mp_em: string | null }
 type Resumo = {
-  pedidos: { pedidos: number; faturamento: number; custo: number; impostos: number; taxas: number; lucro: number }
+  pedidos: { pedidos: number; faturamento: number; custo: number; impostos: number; taxas: number; lucro: number; sem_nota: number }
   manual: { receitas: number; despesas: number }
   categorias: { categoria: string; tipo: 'receita' | 'despesa'; total: number }[]
   meses: { mes: string; lucro_pedidos: number; receitas: number; despesas: number }[]
   resultado: number
 }
-type Lancamento = { id: string; tipo: 'receita' | 'despesa'; categoria: string; descricao: string | null; valor: number; data: string; pago: boolean }
+type Lancamento = { origem: string; id: string; tipo: 'receita' | 'despesa'; categoria: string; descricao: string | null; valor: number; data: string; pago: boolean }
 
+const ROTULO_ORIGEM: Record<string, string> = { pedido: 'automático', taxa: 'automático', estorno: 'automático', custo: 'custo pago', imposto: 'imposto pago', abertura: 'abertura' }
 const CATEGORIAS_DESPESA = ['Fornecedor', 'Frete e entrega', 'Anúncios', 'Ferramentas e sistemas', 'Impostos', 'Salários e pró-labore', 'Aluguel e contas', 'Outros']
 const CATEGORIAS_RECEITA = ['Venda no balcão', 'Serviço de arte', 'Marketplace', 'Outros']
 
@@ -71,23 +72,6 @@ function ResumoFinanceiro() {
       if (error) throw new Error(error.message)
       return (data ?? []) as Lancamento[]
     },
-  })
-  const saldoManual = useQuery({
-    queryKey: ['financeiro', 'saldo-manual'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('financeiro_saldo_manual')
-      if (error) throw new Error(error.message)
-      return data as SaldoManual
-    },
-  })
-  const [saldoMp, setSaldoMp] = useState('')
-  const informarSaldo = useMutation({
-    mutationFn: async (valor: number) => {
-      const { error } = await supabase.rpc('financeiro_saldo_informar', { p_valor: valor })
-      if (error) throw new Error(error.message)
-    },
-    onSuccess: () => { setSaldoMp(''); qc.invalidateQueries({ queryKey: ['financeiro'] }); toast('ok', 'Saldo do Mercado Pago registrado.') },
-    onError: (e: Error) => toast('error', e.message),
   })
   const refresh = () => qc.invalidateQueries({ queryKey: ['financeiro'] })
 
@@ -142,37 +126,14 @@ function ResumoFinanceiro() {
               <Tile label="Faturamento (pedidos pagos)" value={formatBRL(r.pedidos.faturamento)}><p className="text-xs text-muted-foreground">{r.pedidos.pedidos} pedido(s)</p></Tile>
               <Tile label="Recebido líquido" value={formatBRL(r.pedidos.faturamento - r.pedidos.taxas)} tone="bom"><p className="text-xs text-muted-foreground">pedidos pagos menos a taxa do Mercado Pago ({formatBRL(r.pedidos.taxas)})</p></Tile>
               <Tile label="Custo dos pedidos" value={formatBRL(r.pedidos.custo)} />
-              <Tile label="Impostos" value={formatBRL(r.pedidos.impostos)} />
+              <Tile label="Impostos (só notas emitidas)" value={formatBRL(r.pedidos.impostos)}><p className="text-xs text-muted-foreground">{r.pedidos.sem_nota > 0 ? `${r.pedidos.sem_nota} pedido(s) sem nota ficam fora` : 'todos os pedidos têm nota'}</p></Tile>
               <Tile label="Lucro líquido dos pedidos" value={formatBRL(r.pedidos.lucro)} tone="bom" />
               <Tile label="Outras receitas" value={formatBRL(r.manual.receitas)} />
               <Tile label="Despesas lançadas" value={formatBRL(r.manual.despesas)} tone={r.manual.despesas > 0 ? 'ruim' : undefined} />
               <Tile label="Resultado do período" value={formatBRL(r.resultado)} tone={r.resultado >= 0 ? 'bom' : 'ruim'}><p className="text-xs text-muted-foreground">lucro dos pedidos + receitas - despesas</p></Tile>
             </section>
 
-            <section aria-label="Saldo manual" className="rounded-md border bg-card p-4">
-              <h2 className="text-base font-black">Saldo e conferência (manual)</h2>
-              <p className="mb-3 text-xs text-muted-foreground">Só entra aqui o que você lança em Receita e Despesa. Lance até o saldo abaixo bater com o saldo do Mercado Pago.</p>
-              {saldoManual.data && (() => {
-                const m = saldoManual.data
-                const dif = m.saldo_mp === null ? null : Math.round((m.saldo - m.saldo_mp) * 100) / 100
-                return (
-                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    <Tile label="Saldo pelos lançamentos" value={formatBRL(m.saldo)} tone={m.saldo >= 0 ? 'bom' : 'ruim'}><p className="text-xs text-muted-foreground">entradas {formatBRL(m.receitas)} - despesas {formatBRL(m.despesas)}</p></Tile>
-                    <Tile label="Saldo no Mercado Pago" value={m.saldo_mp === null ? '—' : formatBRL(m.saldo_mp)}><p className="text-xs text-muted-foreground">{m.saldo_mp_em ? `informado em ${new Date(m.saldo_mp_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'informe abaixo'}</p></Tile>
-                    <Tile label="Diferença" value={dif === null ? '—' : formatBRL(dif)} tone={dif === null ? undefined : dif === 0 ? 'bom' : 'ruim'}>
-                      <p className="text-xs text-muted-foreground">{dif === null ? 'sem saldo informado' : dif === 0 ? 'conferido: bate certinho' : dif > 0 ? 'falta uma despesa ou sobra uma entrada lançada' : 'falta lançar uma entrada'}</p>
-                    </Tile>
-                    <form className="flex flex-col justify-end gap-1.5 rounded-md border bg-card p-3" onSubmit={(e: FormEvent) => { e.preventDefault(); const v = parseMoney(saldoMp); if (Number.isFinite(v)) informarSaldo.mutate(v) }}>
-                      <Label htmlFor="saldo-mp" className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Saldo de hoje no Mercado Pago</Label>
-                      <div className="flex gap-2">
-                        <Input id="saldo-mp" inputMode="decimal" placeholder="0,00" value={saldoMp} onChange={(e) => setSaldoMp(e.target.value)} />
-                        <Button type="submit" size="sm" disabled={!saldoMp.trim() || informarSaldo.isPending}>Salvar</Button>
-                      </div>
-                    </form>
-                  </div>
-                )
-              })()}
-            </section>
+            <ContaFinanceira />
 
             <section aria-label="Últimos meses" className="rounded-md border bg-card p-4">
               <h2 className="mb-3 text-base font-black">Resultado nos últimos 6 meses</h2>
@@ -194,7 +155,7 @@ function ResumoFinanceiro() {
 
             {r.categorias.length > 0 && (
               <section aria-label="Por categoria" className="rounded-md border bg-card p-4">
-                <h2 className="mb-2 text-base font-black">Lançamentos por categoria</h2>
+                <h2 className="mb-2 text-base font-black">Lançamentos manuais por categoria</h2>
                 <ul className="divide-y text-sm">
                   {r.categorias.map((c) => (
                     <li key={`${c.tipo}-${c.categoria}`} className="flex items-center justify-between gap-2 py-1.5">
@@ -209,7 +170,7 @@ function ResumoFinanceiro() {
         )}
 
         <section aria-label="Lançamentos">
-          <h2 className="mb-2 text-base font-black">Lançamentos do período</h2>
+          <h2 className="mb-2 text-base font-black">Extrato do período (todas as entradas e saídas)</h2>
           {lancamentos.isLoading ? (
             <Skeleton className="h-24" />
           ) : (lancamentos.data ?? []).length === 0 ? (
@@ -219,13 +180,17 @@ function ResumoFinanceiro() {
               {lancamentos.data!.map((l) => (
                 <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
                   <div className="min-w-0">
-                    <p className="font-semibold">{l.categoria}{l.descricao ? ` · ${l.descricao}` : ''}</p>
+                    <p className="font-semibold">{l.categoria}{l.descricao ? ` · ${l.descricao}` : ''}{l.origem !== 'manual' && <span className="ml-2 rounded-sm bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{ROTULO_ORIGEM[l.origem] ?? l.origem}</span>}</p>
                     <p className="text-xs text-muted-foreground">{new Date(l.data + 'T12:00').toLocaleDateString('pt-BR')} · {l.tipo === 'receita' ? 'Receita' : 'Despesa'}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className={cn('mr-2 font-bold tabular', l.tipo === 'despesa' && 'text-brand-red')}>{l.tipo === 'despesa' ? '-' : '+'}{formatBRL(l.valor)}</span>
-                    <Button size="icon" variant="ghost" aria-label="Editar lançamento" onClick={() => setForm({ id: l.id, tipo: l.tipo, categoria: l.categoria, descricao: l.descricao ?? '', valor: String(l.valor).replace('.', ','), data: l.data })}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="Excluir lançamento" onClick={() => { if (window.confirm('Excluir este lançamento?')) excluir.mutate(l.id) }}><Trash2 className="h-4 w-4" /></Button>
+                    {l.origem === 'manual' && (
+                      <>
+                      <Button size="icon" variant="ghost" aria-label="Editar lançamento" onClick={() => setForm({ id: l.id, tipo: l.tipo, categoria: l.categoria, descricao: l.descricao ?? '', valor: String(l.valor).replace('.', ','), data: l.data })}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" aria-label="Excluir lançamento" onClick={() => { if (window.confirm('Excluir este lançamento?')) excluir.mutate(l.id) }}><Trash2 className="h-4 w-4" /></Button>
+                                          </>
+                    )}
                   </div>
                 </li>
               ))}
