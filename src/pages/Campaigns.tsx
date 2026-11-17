@@ -47,8 +47,8 @@ function Goal({ state, children }: { state: GoalState; children: React.ReactNode
 function Tile({ label, value, sub, state }: { label: string; value: string; sub?: string; state?: GoalState }) {
   return (
     <div className={cn('min-w-0 rounded-md border bg-card p-3 sm:p-4', state === 'good' && 'border-l-4 border-l-brand-green', state === 'bad' && 'border-l-4 border-l-brand-red')}>
-      <p className="truncate text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-2xl font-black leading-none tabular">{value}</p>
+      <p className="break-words text-[11px] font-medium uppercase leading-tight tracking-[0.1em] text-muted-foreground">{label}</p>
+      <p className="mt-1 break-words text-xl font-black leading-none tabular sm:text-2xl">{value}</p>
       {sub && <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   )

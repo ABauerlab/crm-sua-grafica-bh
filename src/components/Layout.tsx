@@ -294,7 +294,9 @@ export default function Layout() {
   }, [location.pathname, location.search])
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return localStorage.getItem('sgbh.nav.collapsed') === '1'
+      const guardado = localStorage.getItem('sgbh.nav.collapsed')
+      // sem preferência salva: em tablet e notebook pequeno o menu começa recolhido para dar espaço ao conteúdo
+      return guardado === null ? window.innerWidth < 1280 : guardado === '1'
     } catch {
       return false
     }
