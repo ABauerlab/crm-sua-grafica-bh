@@ -300,3 +300,9 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Contato: usa o documento quando existe; senão o nome provisório "Cliente WhatsApp <final do telefone>" e o código `SG-xxxx`; se o Bling disser que o código já existe, o contato é reaproveitado pela pesquisa do código.
 - Envio idempotente: antes de criar, consulta `GET /pedidos/vendas?numerosLojas[]=<número>` e só reaproveita se o `numeroLoja` for exatamente igual.
 - Celular: sem o 55, 10 ou 11 dígitos (`celularBling`).
+
+
+## Rodada de 17/11/2026
+- Banco: `agente_pode_enviar_rodada`, `private.resumo_composto`, `alternativa_lote_maior` e `orientacao_quantidade` em `buscar_produto`, regras de follow-up `Q1` e `Q2` (`referencia = conversa_parada`), `mp_movimentos`, `mp_saldo_historico`, `financeiro_mp`, `mp_movimentos_vincular`, cron `mp-extrato-sync` (5 min).
+- Funções: `mp-extrato` (dono, service role ou `x-cron-secret`). Telas: Financeiro com extrato do Mercado Pago.
+- n8n: WF1 usa `agente_pode_enviar_rodada` e espera a rodada em andamento; WF2 tem o nó `Regras adicionais (rodada 17/11)`.

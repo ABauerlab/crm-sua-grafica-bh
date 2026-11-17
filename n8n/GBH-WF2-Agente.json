@@ -1484,6 +1484,20 @@
         }
       },
       "notes": "Ao repetir o agente, os limites de chamadas por rodada (agente_execucoes.ferramentas) precisam voltar a zero; senao a 2a tentativa nasce bloqueada."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Regras adicionais da rodada de 17/11/2026 (lote mínimo, produto composto, uma pergunta por resposta, nome do produto).\nconst it = $input.first().json || {};\nconst regras = [\n  'REGRAS ADICIONAIS (valem junto com as de prioridade máxima):',\n  'A) MÍNIMO POR LOTE: quando a quantidade pedida for menor que o menor lote do produto (buscar_produto trouxe orientacao_quantidade ou alternativa_lote_maior), nunca responda só que o mínimo é tal quantidade. Explique em uma frase simples que o menor lote é de N unidades, diga o valor total e o valor por unidade que a ferramenta devolveu, que sobram peças para reposição, mostre as opções que existirem na quantidade dele e pergunte qual prefere. Use só os números da ferramenta, nunca calcule.',\n  'B) PRODUTO COMPOSTO (crachá com cordão, conjunto, kit): monte UM orçamento com todos os itens em montar_orcamento e apresente o resumo_composto que a ferramenta devolveu, neste formato: Os 5 crachás da forma que você pediu ficam em R$ X. O orçamento dos 5 cordões fica em R$ Y. Sendo assim, o total fica R$ Z (R$ W por conjunto). Copie os números de resumo_composto, nunca some nem divida de cabeça. Antes de orçar, confirme os dois itens escolhidos.',\n  'C) UMA PERGUNTA POR RESPOSTA E SEM REPETIR: cada resposta tem no máximo UMA pergunta. Se o cliente mandou várias mensagens seguidas, trate todas como uma só resposta e nunca pergunte de novo o que está nelas (quantidade, arte, frente e verso, cordão). Antes de perguntar, releia as últimas mensagens do cliente inteiras.',\n  'D) RESPOSTAS ENXUTAS: no máximo 2 mensagens curtas por resposta (1 quando for um valor ou uma pergunta). Não repita elogio, confirmação (Perfeito, Ótimo) nem a mesma explicação em mensagens seguidas.',\n  'E) NOME DO PRODUTO: chame o produto sempre pelo nome que o cliente usou (se ele pediu crachá, é crachá), nunca pelo nome interno do catálogo (por exemplo cartão fidelidade). Ao mandar foto, diga só que é para ele ver o acabamento do material.'\n];\nit.system = String(it.system || '') + '\\n\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+      },
+      "name": "Regras adicionais (rodada 17/11)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        192
+      ]
     }
   ],
   "connections": {
@@ -1491,7 +1505,7 @@
       "main": [
         [
           {
-            "node": "Agente de atendimento",
+            "node": "Regras adicionais (rodada 17/11)",
             "type": "main",
             "index": 0
           }
@@ -1810,6 +1824,17 @@
         [
           {
             "node": "Repetir a chamada ao agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (rodada 17/11)": {
+      "main": [
+        [
+          {
+            "node": "Agente de atendimento",
             "type": "main",
             "index": 0
           }
