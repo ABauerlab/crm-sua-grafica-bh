@@ -971,3 +971,7 @@ Pedido do dono: o agente tem de perceber o erro, voltar, pensar e resolver sozin
 - **Busca de crachá:** plástico/PVC passou a valer como crachá comum e lotes muito maiores que a quantidade pedida ficam por último (o Hudson pediu 2 crachás e recebeu credenciais de papel de 500 unidades).
 - Migration `20261217000006` (já aplicada em produção pelo conector).
 - **Fluxo maleável e brindes (pedido do dono):** cliente não segue roteiro, volta a itens antigos e muda de ideia. Regra Q do WF2 (lista viva de itens, responder primeiro a pergunta do momento, gerar orçamento novo quando algo muda, sem funil linear) e regra R (brindes são produtos que vendemos: canecas, chaveiros, canetas, squeezes, bottons, sacolas, agendas, calendários etc.; tirante é cordão de crachá). Sinônimos `tirante` e `lanyard` na busca.
+
+### 17/11/2026 (noite): crachá do Hudson e comparativo de lotes
+- Causa: a busca por "crachá" devolvia credenciais de papel de 500 unidades (categoria CREDENCIAIS) em vez do crachá PVC (categoria CRACHÁ, lotes de 1, 5, 10, 25 unidades). Corrigido: a categoria igual ao termo vem primeiro e a quantidade "exata" só vale na categoria certa (isso também corrigiu "cartão de visita 300", que voltava "não encontrado").
+- Comparativo de lotes no banco (`comparativo_lotes` e `orientacao_comparativo` em `buscar_produto`): para 2 crachás, "2 pacotes de 1 = R$ 157,90 ou 1 lote de 5 = R$ 86,90"; a Laura mostra as duas e recomenda a mais barata.
