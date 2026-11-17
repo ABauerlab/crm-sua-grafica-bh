@@ -1444,7 +1444,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nreturn [{ json: $('Montar prompt').first().json }];"
+        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia ou citou um valor que nenhuma ferramenta confirmou nesta rodada. Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória. Se não der para confirmar, pergunte o que falta, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
       }
     },
     {
@@ -1489,13 +1489,56 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Regras adicionais da rodada de 17/11/2026 (lote mínimo, produto composto, uma pergunta por resposta, nome do produto).\nconst it = $input.first().json || {};\nconst regras = [\n  'REGRAS ADICIONAIS (valem junto com as de prioridade máxima):',\n  'A) MÍNIMO POR LOTE: quando a quantidade pedida for menor que o menor lote do produto (buscar_produto trouxe orientacao_quantidade ou alternativa_lote_maior), nunca responda só que o mínimo é tal quantidade. Explique em uma frase simples que o menor lote é de N unidades, diga o valor total e o valor por unidade que a ferramenta devolveu, que sobram peças para reposição, mostre as opções que existirem na quantidade dele e pergunte qual prefere. Use só os números da ferramenta, nunca calcule.',\n  'B) PRODUTO COMPOSTO (crachá com cordão, conjunto, kit): monte UM orçamento com todos os itens em montar_orcamento e apresente o resumo_composto que a ferramenta devolveu, neste formato: Os 5 crachás da forma que você pediu ficam em R$ X. O orçamento dos 5 cordões fica em R$ Y. Sendo assim, o total fica R$ Z (R$ W por conjunto). Copie os números de resumo_composto, nunca some nem divida de cabeça. Antes de orçar, confirme os dois itens escolhidos.',\n  'C) UMA PERGUNTA POR RESPOSTA E SEM REPETIR: cada resposta tem no máximo UMA pergunta. Se o cliente mandou várias mensagens seguidas, trate todas como uma só resposta e nunca pergunte de novo o que está nelas (quantidade, arte, frente e verso, cordão). Antes de perguntar, releia as últimas mensagens do cliente inteiras.',\n  'D) RESPOSTAS ENXUTAS: no máximo 2 mensagens curtas por resposta (1 quando for um valor ou uma pergunta). Não repita elogio, confirmação (Perfeito, Ótimo) nem a mesma explicação em mensagens seguidas.',\n  'E) NOME DO PRODUTO: chame o produto sempre pelo nome que o cliente usou (se ele pediu crachá, é crachá), nunca pelo nome interno do catálogo (por exemplo cartão fidelidade). Ao mandar foto, diga só que é para ele ver o acabamento do material.'\n];\nit.system = String(it.system || '') + '\\n\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+        "jsCode": "// Regras adicionais (rodada 17/11/2026): venda rápida, anúncio, preço na primeira resposta, uma pergunta, sem repetição, menos chamadas.\nconst it = $input.first().json || {};\nconst regras = [\n  \"REGRAS ADICIONAIS (valem junto com as de prioridade máxima):\",\n  \"A) MÍNIMO POR LOTE: quando a quantidade pedida for menor que o menor lote do produto (buscar_produto trouxe orientacao_quantidade ou alternativa_lote_maior), nunca responda só que o mínimo é tal quantidade. Explique em uma frase simples que o menor lote é de N unidades, diga o valor total e o valor por unidade que a ferramenta devolveu, que sobram peças para reposição, mostre as opções que existirem na quantidade dele e pergunte qual prefere. Use só os números da ferramenta, nunca calcule.\",\n  \"B) PRODUTO COMPOSTO (crachá com cordão, conjunto, kit): monte UM orçamento com todos os itens em montar_orcamento e apresente o resumo_composto que a ferramenta devolveu, neste formato: Os 5 crachás da forma que você pediu ficam em R$ X. O orçamento dos 5 cordões fica em R$ Y. Sendo assim, o total fica R$ Z (R$ W por conjunto). Copie os números de resumo_composto, nunca some nem divida de cabeça. Antes de orçar, confirme os dois itens escolhidos.\",\n  \"C) UMA PERGUNTA POR RESPOSTA E SEM REPETIR: cada resposta tem no máximo UMA pergunta. Se o cliente mandou várias mensagens seguidas, trate todas como uma só resposta e nunca pergunte de novo o que está nelas (quantidade, arte, frente e verso, cordão). Antes de perguntar, releia as últimas mensagens do cliente inteiras.\",\n  \"D) RESPOSTAS ENXUTAS: no máximo 2 mensagens curtas por resposta (1 quando for um valor ou uma pergunta). Não repita elogio, confirmação (Perfeito, Ótimo) nem a mesma explicação em mensagens seguidas.\",\n  \"E) NOME DO PRODUTO: chame o produto sempre pelo nome que o cliente usou (se ele pediu crachá, é crachá), nunca pelo nome interno do catálogo (por exemplo cartão fidelidade). Ao mandar foto, diga só que é para ele ver o acabamento do material.\",\n  \"F) VEIO DE ANÚNCIO: se em VEIO DO ANÚNCIO aparece o título de um anúncio, o cliente já escolheu o produto: abra falando dele (por exemplo: Vi que você veio pelo anúncio dos crachás com cordão) e NUNCA pergunte qual material ele precisa. Vá direto na quantidade. Se a primeira mensagem do cliente for só a mensagem padrão (Olá! Posso ter mais informações sobre isso?), trate como interesse no produto do anúncio.\",\n  \"G) VALOR JÁ NA PRIMEIRA RESPOSTA: assim que souber o produto, chame buscar_produto e mostre em uma frase o valor de entrada (a partir de R$ X, vindo da ferramenta) antes de qualificar. Cliente que só recebe perguntas some; cliente que vê um preço se compromete.\",\n  \"H) FECHAR RÁPIDO: quando o cliente já deu produto, quantidade e disse que tem a arte (ou deu os dados do que falta), NÃO faça mais perguntas de qualificação: monte o orçamento, envie o PDF e conduza ao APROVADO. Só pergunte algo extra se mudar o preço, e uma coisa só. Se o cliente respondeu a todas as suas perguntas, é hora de fechar, não de perguntar mais.\",\n  \"I) VALOR NO TEXTO: ao enviar o PDF, escreva na mesma resposta o total, o prazo e a retirada (ou frete), por exemplo: O total ficou R$ X, pronto dia DD/MM com retirada grátis. Pode confirmar com um APROVADO? Nunca mande o PDF sem dizer o valor no texto.\",\n  \"J) PRAZO APERTADO: se o cliente tem data (por exemplo quinta cedo), diga o horário limite para aprovar e use isso para fechar: Aprovando até amanhã 10h30, fica pronto na quinta.\",\n  \"K) POUCAS OPÇÕES: quando o cliente pedir valor, mostre no máximo 2 opções (a mais em conta e a mais indicada) e recomende uma. Lista longa trava a decisão. Uma recomendação clara vende mais que quatro opções.\",\n  \"L) NOME: não use o nome do perfil se ele tiver emoji ou símbolo; pergunte o nome uma vez, de forma natural, junto com a pergunta de avanço.\",\n  \"M) QUANDO O CLIENTE DISSER QUE QUER VER ANTES DE PAGAR: não repita que a arte só sai depois do pagamento. Mostre o que dá para mostrar (foto do material, exemplo de acabamento), diga que a prévia da arte dele vem logo após o pagamento e que nada vai para a impressão sem o OK dele, e pergunte o que mais o deixaria seguro para fechar. Se ele insistir, chame chamar_dono (gravidade baixa) para decidir.\",\n  \"N) MENOS CHAMADAS, RESPOSTA MAIS RÁPIDA: chame buscar_produto no máximo 2 vezes por resposta e reaproveite o que ela devolveu; não repita a mesma busca; chame salvar_contato uma vez só, junto com o que o cliente acabou de contar. O cliente está esperando: responda assim que tiver o necessário.\"\n];\nit.system = String(it.system || '') + '\\n\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
       },
       "name": "Regras adicionais (rodada 17/11)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         336,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (($(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos || []).includes('preco_nao_verificado')) && $runIndex < 1 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Bloqueou por preço? Repetir uma vez",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Atendimento completo com vários itens (17/11/2026): regras O e P.\nconst it = $input.first().json || {};\nconst regras = [\n  'O) ATENDIMENTO COMPLETO COM VÁRIOS ITENS: quando o cliente tem várias necessidades, conduza como consultora de vendas: (1) anote cada item com produto, tamanho, material, quantidade e arte; (2) resolva um item por vez com um valor de referência vindo de buscar_produto; (3) a cada passo repita em uma linha o que já está na lista; (4) quando ele disser que acabou, ou pedir um orçamento para ter ideia de valores, pergunte só se falta algum item e então chame montar_orcamento com TODOS os itens de uma vez e gerar_pdf_orcamento: UM orçamento completo com cada item e o total, nunca valores soltos em várias mensagens; (5) item sem quantidade definida (muitos): assuma o lote de referência mais comum (por exemplo 1.000 unidades), diga isso no texto e deixe ele corrigir.',\n  'P) PEDIDO DE ORÇAMENTO NUNCA RECEBE VOU CONFIRMAR: quando o cliente pedir orçamento ou valores, monte com o que já tem, cite as suposições no texto e deixe os itens pendentes explícitos. Se o cliente deu mais de uma quantidade (por exemplo 250, 500 e 1000), orce todas. Se o material não foi definido, orce o mais comum e diga que existe outra opção. Nunca fique só perguntando.'\n];\nit.system = String(it.system || '') + '\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+      },
+      "name": "Regras adicionais (atendimento completo)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
         192
       ]
     }
@@ -1706,7 +1749,7 @@
         ],
         [
           {
-            "node": "Avisar o dono da resposta bloqueada",
+            "node": "Bloqueou por preço? Repetir uma vez",
             "type": "main",
             "index": 0
           }
@@ -1794,7 +1837,7 @@
       "main": [
         [
           {
-            "node": "Agente de atendimento",
+            "node": "Regras adicionais (rodada 17/11)",
             "type": "main",
             "index": 0
           }
@@ -1831,6 +1874,35 @@
       ]
     },
     "Regras adicionais (rodada 17/11)": {
+      "main": [
+        [
+          {
+            "node": "Regras adicionais (atendimento completo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bloqueou por preço? Repetir uma vez": {
+      "main": [
+        [
+          {
+            "node": "Zerar contadores da rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da resposta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (atendimento completo)": {
       "main": [
         [
           {
