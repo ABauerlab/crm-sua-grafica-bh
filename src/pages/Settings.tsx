@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { Select } from '@/components/ui/select'
 import { lazy, Suspense } from 'react'
 import { Download, Plus, Trash2 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -523,30 +524,40 @@ function DataTab() {
   )
 }
 
+const ABAS_CONFIG: [string, string][] = [
+  ['empresa', 'Empresa'],
+  ['precos', 'Preços'],
+  ['descontos', 'Política de desconto'],
+  ['kanban', 'Kanban'],
+  ['respostas', 'Respostas rápidas'],
+  ['etiquetas', 'Etiquetas'],
+  ['prazos', 'Prazos e feriados'],
+  ['metas', 'Metas'],
+  ['whatsapp', 'WhatsApp e templates'],
+  ['notificacoes', 'Notificações'],
+  ['agente', 'Agente de IA'],
+  ['followups', 'Follow-ups'],
+  ['conhecimento', 'Conhecimento'],
+  ['personas', 'Personas e política'],
+  ['testes', 'Números de teste'],
+  ['dados', 'Dados'],
+]
+
 export default function Settings() {
+  const [aba, setAba] = useState('empresa')
   return (
     <div className="flex h-full flex-col">
       <header className="border-b px-4 py-3">
         <h1 className="text-xl font-black">Configurações</h1>
       </header>
-      <Tabs defaultValue="empresa" className="flex min-h-0 flex-1 flex-col">
-        <TabsList>
-          <TabsTrigger value="empresa">Empresa</TabsTrigger>
-          <TabsTrigger value="precos">Preços</TabsTrigger>
-          <TabsTrigger value="descontos">Política de desconto</TabsTrigger>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
-          <TabsTrigger value="respostas">Respostas rápidas</TabsTrigger>
-          <TabsTrigger value="etiquetas">Etiquetas</TabsTrigger>
-          <TabsTrigger value="prazos">Prazos e feriados</TabsTrigger>
-          <TabsTrigger value="metas">Metas</TabsTrigger>
-          <TabsTrigger value="whatsapp">WhatsApp e templates</TabsTrigger>
-          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
-          <TabsTrigger value="agente">Agente de IA</TabsTrigger>
-          <TabsTrigger value="followups">Follow-ups</TabsTrigger>
-          <TabsTrigger value="conhecimento">Conhecimento</TabsTrigger>
-          <TabsTrigger value="personas">Personas e política</TabsTrigger>
-          <TabsTrigger value="testes">Números de teste</TabsTrigger>
-          <TabsTrigger value="dados">Dados</TabsTrigger>
+      <Tabs value={aba} onValueChange={setAba} className="flex min-h-0 flex-1 flex-col">
+        <div className="border-b p-3 md:hidden">
+          <Select aria-label="Seção das configurações" value={aba} onChange={(e) => setAba(e.target.value)}>
+            {ABAS_CONFIG.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </Select>
+        </div>
+        <TabsList className="hidden md:flex">
+          {ABAS_CONFIG.map(([v, l]) => <TabsTrigger key={v} value={v}>{l}</TabsTrigger>)}
         </TabsList>
         <TabsContent value="empresa"><CompanyTab /></TabsContent>
         <TabsContent value="precos"><PricingTab /></TabsContent>

@@ -1,5 +1,13 @@
 # Progresso do agente de IA
 
+## 17/11/2026: primeira passada de visual e responsividade
+Conferida com prints reais em celular (390), tablet (820) e desktop (1440):
+- Menu lateral começa recolhido (só ícones) em telas menores que 1280 px quando não há preferência salva; o chat no tablet ganhou espaço.
+- Campo de mensagem do chat quebra linha em painel estreito (antes ficava com ~96 px) e o cabeçalho do chat não corta mais os botões.
+- Cartões de Campanhas no celular não cortam mais rótulo nem valor (antes "R$ 1.410,…").
+- Configurações no celular usa um seletor de seção (antes as 16 abas ficavam escondidas na rolagem lateral).
+- Próximos candidatos: Kanban no celular, tabelas de Pedidos e Catálogo, Painel, padronizar cabeçalhos de página.
+
 ## 17/11/2026: aprovação da arte
 - Botão **Arte** no chat (ao lado do NF): coloca no campo a mensagem de aprovação ("responda APROVADO; depois disso entra em produção e não dá mais para corrigir"); o atendente anexa a arte e envia (o texto vai de legenda). Resposta rápida `/arte` com o mesmo texto (migration `20261217000025`, aplicada).
 - Template da Meta `aprovacao_arte` (utilidade, 1 variável) registrado em `AGENT_TEMPLATES` (agora 12). **Ainda não submetido à Meta**: falta o dono escolher a conta do WhatsApp Business (há Sua Gráfica BH e Bauerlab). Fora da janela de 24 h o botão fica desativado; depois de aprovado, usar Enviar template.

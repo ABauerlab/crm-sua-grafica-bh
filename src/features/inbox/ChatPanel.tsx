@@ -378,7 +378,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
             {conversation.contact.name?.trim() && <p className="whitespace-nowrap text-xs text-muted-foreground">{formatPhone(conversation.contact.wa_id)}</p>}
           </div>
           {/* Desktop: todas as ações à vista */}
-          <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-2 md:flex">
             <span className={cn('flex items-center gap-1 rounded-sm px-2 py-1 text-xs font-bold', ai ? 'bg-brand-blue text-white' : 'bg-ink/10 text-ink')}>
               {ai ? <Bot className="h-3.5 w-3.5" aria-hidden /> : <User className="h-3.5 w-3.5" aria-hidden />}
               {ai ? 'IA atendendo' : 'Humano atendendo'}
@@ -609,9 +609,9 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                 ))}
               </ul>
             )}
-            <div className="flex items-end gap-2">
+            <div className="flex flex-wrap items-end gap-2">
               {mode === 'reply' && (
-                <>
+                <div className="flex gap-2">
                   <input
                     ref={fileInput}
                     type="file"
@@ -635,7 +635,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                   <Button type="button" variant={gravando ? 'destructive' : 'outline'} size="icon" aria-label={gravando ? 'Parar gravação' : 'Gravar áudio'} title={gravando ? `Gravando ${segundos}s. Clique para parar.` : 'Gravar áudio'} disabled={sendFile.isPending || !win.open} onClick={() => void alternarGravacao()}>
                     {gravando ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
-                </>
+                </div>
               )}
               <Textarea
                 ref={taRef}
@@ -650,7 +650,7 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                   }
                 }}
                 rows={text.includes('\n') ? 5 : 1}
-                className={cn('min-h-11 resize-none py-2.5 md:min-h-[60px] md:py-2', mode === 'note' && 'border-brand-yellow bg-brand-yellow/10')}
+                className={cn('min-h-11 min-w-[14rem] flex-1 basis-[14rem] resize-none py-2.5 md:min-h-[60px] md:py-2', mode === 'note' && 'border-brand-yellow bg-brand-yellow/10')}
                 placeholder={mode === 'note' ? 'Nota só para você (o cliente não recebe)' : 'Digite uma mensagem ou / para respostas rápidas'}
                 aria-label={mode === 'note' ? 'Nota interna' : 'Mensagem'}
               />
