@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 17/11/2026: NF "não será emitida"
+- Terceiro estado da nota em Bling e NF: o dono marca **"Nota não será emitida"** (com motivo no campo de anotação) e o pedido sai de pendente. Filtro e card próprios ("Notas não emitidas", com os motivos) e o card de pendentes ficou só com o que aguarda nota. A conferência com o Bling ignora pedido dispensado; se a nota for emitida (manual ou pelo Bling), o estado desfaz. Migration `20261217000029` (aplicada): `orders.nf_dispensada`, `nf_dispensar`. Para o imposto do Financeiro, nota não emitida continua fora do cálculo.
+
 ## 17/11/2026: Financeiro como conta (saldo que bate com o Mercado Pago)
 - **Regras do dono**: todo pedido pago entra sozinho no saldo pelo valor BRUTO e a taxa do Mercado Pago sai sozinha (o MP deposita o líquido); o custo do pedido só sai do saldo quando o dono marca "Paguei" (ou "Já estava pago", sem mexer no saldo); o **imposto só conta para pedidos com nota emitida** (`orders.nf_emitida`), pedido sem nota fica fora e a tela mostra quanto; pagamentos de imposto registrados abatem o "imposto a pagar".
 - **Abertura**: saldo do Mercado Pago em 17/11/2026 = R$ 1.516,13 (lançamento `abertura`, `app_settings.financeiro.inicio_automatico`). Pedidos pagos antes disso NÃO entram de novo; seus custos aparecem como pendentes para o dono baixar.
