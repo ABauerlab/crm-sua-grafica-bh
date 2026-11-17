@@ -3,7 +3,9 @@ import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shar
 import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, extrairCodigo, ncmSugerido, textoErroBling } from '../_shared/bling-envio.ts'
 
 // Bling API v3: autorização (OAuth), fila de pedidos pagos e envio. Tokens ficam em app_segredos (nunca no front nem em log).
-// Ações: status, url_autorizacao, trocar_codigo, descobrir_loja, ativar, enviar, processar.
+// Ações: status, url_autorizacao, trocar_codigo, descobrir_loja, ativar, enviar, processar, anuncios_enfileirar, anuncios_processar.
+// Anúncios de marketplace (Mercado Livre e Shopee): fila em marketplace_anuncios; cada linha cria ou atualiza o vínculo produto x loja (POST/PUT /produtos/lojas)
+// com o preço do canal (marketplace_preco_sku, lucro líquido mínimo configurável) e grava os dias de preparação (crossdocking) no produto.
 const API = 'https://api.bling.com.br/Api/v3'
 const OAUTH = 'https://www.bling.com.br/Api/v3/oauth'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -199,6 +201,53 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
   return { ok: false, erro }
 }
 
+const CANAIS = ['mercado_livre', 'shopee'] as const
+
+async function vincularAnuncio(db: SupabaseClient, a: { id: string; sku: string; canal: string; bling_produto_id: number; preco: number; dias_preparacao: number }): Promise<{ ok: boolean; vinculo_id?: number; erro?: string; aviso?: string }> {
+  const cfg = await cfgBling(db)
+  const lojaId = Number(cfg.lojas_marketplace?.[a.canal])
+  if (!lojaId) return { ok: false, erro: `Loja do canal ${a.canal} não configurada em app_settings.bling.lojas_marketplace.` }
+  let aviso: string | undefined
+  // dias de preparação = crossdocking do produto (o marketplace usa como prazo de postagem)
+  const dias = await bling(db, 'PATCH', `/produtos/${a.bling_produto_id}`, { estoque: { crossdocking: a.dias_preparacao } })
+  if (dias.status !== 200 && dias.status !== 204) aviso = `dias de preparação não gravados: ${textoErroBling(dias)}`
+  const corpo = { codigo: a.sku, preco: a.preco, produto: { id: a.bling_produto_id }, loja: { id: lojaId } }
+  const existente = await bling(db, 'GET', `/produtos/lojas?idProduto=${a.bling_produto_id}&idLoja=${lojaId}`)
+  const idVinculo = existente.status === 200 ? existente.data?.data?.[0]?.id : null
+  const r = idVinculo ? await bling(db, 'PUT', `/produtos/lojas/${idVinculo}`, corpo) : await bling(db, 'POST', '/produtos/lojas', corpo)
+  if (r.status === 200 || r.status === 201 || r.status === 204) return { ok: true, vinculo_id: Number(r.data?.data?.id ?? idVinculo ?? 0) || undefined, aviso }
+  return { ok: false, erro: textoErroBling(r) }
+}
+
+async function anunciosEnfileirar(db: SupabaseClient, itens: { sku: string; bling_produto_id: number }[]) {
+  const linhas: Record<string, unknown>[] = []
+  const falhas: string[] = []
+  for (const it of itens) {
+    for (const canal of CANAIS) {
+      const { data } = await db.rpc('marketplace_preco_sku', { p_sku: it.sku, p_canal: canal })
+      if (!data?.preco) { falhas.push(`${it.sku}/${canal}: ${data?.erro ?? 'sem preço'}`); continue }
+      linhas.push({ sku: it.sku, canal, bling_produto_id: it.bling_produto_id, preco: data.preco, dias_preparacao: data.dias_preparacao, status: 'pendente', erro: null, tentativas: 0, atualizado_em: new Date().toISOString() })
+    }
+  }
+  if (linhas.length) await db.from('marketplace_anuncios').upsert(linhas, { onConflict: 'sku,canal' })
+  return { ok: true, enfileirados: linhas.length, falhas }
+}
+
+async function anunciosProcessar(db: SupabaseClient, limite = 12) {
+  const resumo = { ok: true, vinculados: 0, falhas: 0, erros: [] as string[] }
+  if (!(await token(db))) return { ...resumo, ok: false, erros: ['Bling não conectado.'] }
+  const { data: fila } = await db.from('marketplace_anuncios').select('*').eq('status', 'pendente').lt('tentativas', 3).order('atualizado_em').limit(limite)
+  for (const a of (fila ?? []) as { id: string; sku: string; canal: string; bling_produto_id: number; preco: number; dias_preparacao: number; tentativas: number }[]) {
+    const r = await vincularAnuncio(db, a)
+    if (r.ok) resumo.vinculados++
+    else { resumo.falhas++; resumo.erros.push(`${a.sku}/${a.canal}: ${String(r.erro).slice(0, 140)}`) }
+    const tent = a.tentativas + 1
+    await db.from('marketplace_anuncios').update({ status: r.ok ? 'ok' : tent >= 3 ? 'erro' : 'pendente', vinculo_id: r.vinculo_id ?? null, tentativas: tent, erro: r.ok ? (r.aviso ?? null) : String(r.erro).slice(0, 400), atualizado_em: new Date().toISOString() }).eq('id', a.id)
+    await espera(400) // limite do Bling: 3 chamadas por segundo
+  }
+  return resumo
+}
+
 async function processar(db: SupabaseClient) {
   const cfg = await cfgBling(db)
   if (!cfg.ativo) return { ok: true, ativo: false, enviados: 0 }
@@ -219,6 +268,7 @@ async function processar(db: SupabaseClient) {
     }
     await espera(400)
   }
+  resumo.anuncios = await anunciosProcessar(db, 6)
   return resumo
 }
 
@@ -232,11 +282,13 @@ Deno.serve(async (req) => {
   const quem = doCron ? 'cron' : await requireOwnerOrServer(req, db)
   if (!quem) return json({ error: 'Não autorizado.' }, 401)
 
-  const input = (await req.json().catch(() => ({}))) as { acao?: string; code?: string; order_id?: string; ativo?: boolean }
+  const input = (await req.json().catch(() => ({}))) as { acao?: string; code?: string; order_id?: string; ativo?: boolean; itens?: { sku: string; bling_produto_id: number }[] }
   const acao = String(input.acao ?? '')
   if (quem === 'cron' && acao !== 'processar') return json({ error: 'Ação não permitida pelo agendador.' }, 403)
 
   if (acao === 'processar') return json(await processar(db))
+  if (acao === 'anuncios_enfileirar') return json(await anunciosEnfileirar(db, (input.itens ?? []).slice(0, 200)))
+  if (acao === 'anuncios_processar') return json(await anunciosProcessar(db))
 
   if (acao === 'status') {
     const cfg = await cfgBling(db)
