@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## 17/11/2026: atribuição de anúncio nos pedidos (Campanhas)
+- **Bug**: pedido pago do Marcos (#407, anúncio "Crachá com Cordão") não aparecia em Campanhas. `ad_performance` cruza por `orders.origin_ad_id`, mas só o pedido manual do front gravava esse campo; pedidos da Laura e do site ficavam sem origem (#407, #408 e #410 afetados).
+- **Correção** (migration `20261217000021`, aplicada): gatilho `orders_herdar_origem_anuncio` (BEFORE INSERT) copia `source_id`, título e URL do `first_referral` do contato em qualquer caminho de criação; backfill dos pedidos existentes; `ad_performance` passou a ignorar pedido/contato de teste e pedido excluído e a contar o dia em horário de Brasília.
+- **Conferido**: 30 dias = 7 conversas (bate com o painel), 1 venda paga de R$ 78,90 (lucro líquido R$ 58,39) no anúncio "Crachá com Cordão".
+- Regra de atribuição: último contato por anúncio NÃO vale; vale o primeiro anúncio do contato (`first_referral`), igual ao funil de conversas.
+
 ## Fase 3, rodada 4 (15/11/2026): CRM responsivo, Financeiro e Bling
 - **Bug raiz das abas**: `TabsContent` com `flex` vencia o `hidden` das abas inativas, então todos os painéis apareciam empilhados e o ativo ficava espremido (Catálogo e Kits "em branco com rolagem"). Corrigido em `ui/tabs.tsx` (`data-[state=inactive]:hidden`), vale para o CRM inteiro. Catálogo: cards no celular (tabela só de `md` para cima), abas quebram linha, filtros em largura total. Números de WhatsApp não são mais cortados (lista de conversas e cabeçalho do chat).
 - **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
