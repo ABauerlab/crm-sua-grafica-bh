@@ -22,7 +22,7 @@ BATCHES_FILE = STATE / "batches_state.json"
 
 
 def load_config():
-    cfg = {"canal": os.environ.get("HARVEST_CHANNEL", ""), "idiomas": ["pt", "pt-BR", "en"],
+    cfg = {"canal": os.environ.get("HARVEST_CHANNEL", ""), "idiomas": ["pt", "pt-BR", "en"], "cookies_do_navegador": "auto",
            "whisper_modelo": "small", "tamanho_lote": 15}
     p = ROOT / "config.local.json"
     if p.exists():
@@ -53,11 +53,30 @@ COOKIES = []  # preenchido por main() a partir de "cookies_do_navegador" (ex.: "
 
 def run(cmd, timeout=600):
     if cmd and cmd[0] == "yt-dlp":
-        cmd = cmd[:1] + COOKIES + cmd[1:]
+        cmd = [sys.executable, "-m", "yt_dlp"] + COOKIES + cmd[1:]
     return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
 
 
 # ---------------------------------------------------------------- índice
+def escolher_cookies(cfg):
+    """Tenta os cookies de cada navegador; se todos falharem (fechado/bloqueado), segue sem cookies."""
+    pref = cfg.get("cookies_do_navegador", "auto")
+    if pref in ("", "nenhum"):
+        return
+    nav = ["chrome", "edge", "firefox", "brave", "safari", "chromium"] if pref == "auto" else [pref]
+    for b in nav:
+        try:
+            r = run([sys.executable, "-m", "yt_dlp", "--cookies-from-browser", b, "--simulate", "--quiet",
+                     "--flat-playlist", "--playlist-end", "1", f"{cfg['canal']}/videos"], 90)
+        except Exception:
+            continue
+        if r.returncode == 0:
+            COOKIES[:] = ["--cookies-from-browser", b]
+            print(f"[cookies] usando os cookies do navegador: {b}")
+            return
+    print("[cookies] nenhum navegador utilizável (feche o Chrome/Edge e rode de novo se o YouTube bloquear); seguindo sem cookies")
+
+
 def indexar(cfg, limites):
     index = load_json(INDEX_FILE, {})
     for tipo, aba in (("video", "videos"), ("short", "shorts")):
@@ -269,8 +288,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     a = ap.parse_args()
     cfg = load_config()
-    if cfg.get("cookies_do_navegador"):  # só se o YouTube pedir "confirm you're not a bot"
-        COOKIES[:] = ["--cookies-from-browser", cfg["cookies_do_navegador"]]
+    escolher_cookies(cfg)
     index = indexar(cfg, {"video": a.limit_videos, "short": a.limit_shorts})
     alvo = [v for v in index.values() if v["status"] in ("indexed", "failed")]
     if a.limit_videos or a.limit_shorts:  # modo teste: só os dois recortes pedidos

@@ -18,9 +18,22 @@ BATCHES_FILE = STATE / "batches_state.json"
 BACKUP = STATE / "backup_last_good"
 OUT = ROOT / "output" / "conhecimento_grafica"
 PROGRESSO = OUT / "PROGRESSO_ESTUDO.md"
-ARQUIVOS = ["01_PLAYBOOK_VENDAS_E_ARGUMENTOS.md", "02_GUIA_PAPEL_E_ACABAMENTOS.md",
-            "03_MANUAL_FECHAMENTO_DE_ARQUIVO.md", "04_CATALOGO_APLICACOES_PRODUTOS.md",
-            "00_CONSCIENCIA_MESTRE_AGENTE.md", "PROGRESSO_ESTUDO.md"]
+TEMAS = {
+    "LEIA_PRIMEIRO_INDICE.md": ("Leia primeiro: índice do conhecimento", "Mapa de todos os arquivos, com o que cada um contém."),
+    "01_PLAYBOOK_VENDAS_E_ARGUMENTOS.md": ("Playbook de vendas: visão geral", "Mentalidade e princípios do vendedor mestre de gráfica."),
+    "02_GUIA_PAPEL_E_ACABAMENTOS.md": ("Guia de papéis e acabamentos", "Gramaturas, papéis e enobrecimentos em linguagem comercial."),
+    "03_MANUAL_FECHAMENTO_DE_ARQUIVO.md": ("Manual de fechamento de arquivo", "Regras de pré-impressão e exportação."),
+    "04_CATALOGO_APLICACOES_PRODUTOS.md": ("Catálogo de aplicações de produtos", "Ficha consultiva de cada produto gráfico."),
+    "05_PROSPECCAO_E_NICHOS.md": ("Prospecção e nichos de cliente", "Como abordar cada nicho e o que oferecer a ele."),
+    "06_KITS_E_COMBOS.md": ("Kits e combos de produtos", "Kits por ocasião e por nicho, como montar e apresentar."),
+    "07_VALOR_E_OBJECOES.md": ("Argumentação de valor e quebra de objeções", "Vender valor em vez de preço e contornar objeções."),
+    "08_UPSELL_E_CROSS_SELL.md": ("Upsell e cross-sell", "Como aumentar o pedido com acabamento e produtos complementares."),
+    "09_ATENDIMENTO_E_FECHAMENTO.md": ("Atendimento, follow-up e fechamento", "Abordagem, qualificação, orçamento consultivo, follow-up, fechamento e pós-venda."),
+    "10_CAPTACAO_E_MARKETING.md": ("Captação de clientes e marketing", "Funil, anúncios, conteúdo e relacionamento para atrair clientes."),
+    "00_CONSCIENCIA_MESTRE_AGENTE.md": ("Consciência mestre do agente", "Versão consolidada e densa de tudo."),
+    "PROGRESSO_ESTUDO.md": ("Progresso do estudo", "Diário incremental. Cada lote vira uma seção `## batch_XXX`."),
+}
+ARQUIVOS = list(TEMAS)
 TIMEOUT_LOTE = 45 * 60
 ESPERAS_SEM_HORARIO = [15, 30, 60]  # minutos; depois repete 60
 MARGEM_MIN = 2
@@ -28,19 +41,12 @@ MAX_FALHAS_GENERICAS = 3
 
 # Termos que nunca podem aparecer no conhecimento (white-label e regras do projeto).
 PROIBIDOS = [r"zap\s*gr[aá]fica", r"\bzap\b", r"zap\s*go", r"parque\s+gr[aá]fico", r"checagem\s+garantida",
-             r"zapgrafica", "—", "–"]
+             r"zapgrafica", r"\bhubz\b", "—", "–"]
 
 RATE_RE = re.compile(r"rate.?limit|usage.?limit|limit reached|limit will reset|resets?\s+(at|in)|too many requests|"
                      r"\b429\b|overloaded|quota|try again (in|later)|5-hour limit|weekly limit", re.I)
 
-SEED = {
-    "01_PLAYBOOK_VENDAS_E_ARGUMENTOS.md": "# Playbook de vendas e argumentos\n\n(gatilhos, indicação por nicho, upsell de acabamentos, quebra de objeções)\n",
-    "02_GUIA_PAPEL_E_ACABAMENTOS.md": "# Guia de papéis e acabamentos\n\n(gramaturas, papéis, enobrecimentos)\n",
-    "03_MANUAL_FECHAMENTO_DE_ARQUIVO.md": "# Manual de fechamento de arquivo\n\n(regras de pré-impressão)\n",
-    "04_CATALOGO_APLICACOES_PRODUTOS.md": "# Catálogo de aplicações de produtos\n\n(fichas consultivas)\n",
-    "00_CONSCIENCIA_MESTRE_AGENTE.md": "# Consciência mestre do agente\n\n(versão consolidada)\n",
-    "PROGRESSO_ESTUDO.md": "# Progresso do estudo\n\nDiário incremental. Cada lote vira uma seção `## batch_XXX`.\n",
-}
+SEED = {n: f"# {t}\n\n{d}\n" for n, (t, d) in TEMAS.items()}
 
 
 # ------------------------------------------------------------ rate limit
@@ -130,26 +136,28 @@ def restaurar():
 
 # ------------------------------------------------------------ prompt e validação
 def montar_prompt(batch, extra=""):
-    return f"""Você é o consultor especialista em gráfica rápida da Sua Gráfica BH (Belo Horizonte) e está estudando material para treinar o agente de WhatsApp da empresa.
+    lista = "\n".join(f"- {n}: {d}" for n, (t, d) in TEMAS.items() if n != "PROGRESSO_ESTUDO.md")
+    return f"""Você é um vendedor mestre de gráfica rápida e consultor especialista da Sua Gráfica BH (Belo Horizonte). Está estudando um material para treinar o agente de WhatsApp da empresa a vender como um profissional de alto nível.
 
-TAREFA: leia o arquivo data/batches/{batch}.md (use a ferramenta Read; se for grande, leia em partes). Cada item é um vídeo ou Short com título, descrição, capítulos e transcrição. Itens com "## Frames-chave" listam imagens em data/frames/: abra-as com Read para entender o que o vídeo mostra.
-Depois atualize de forma INCREMENTAL, com Read/Edit/Write, os arquivos em output/conhecimento_grafica/:
-- 01_PLAYBOOK_VENDAS_E_ARGUMENTOS.md: gatilhos comerciais, produtos por nicho de cliente, upsell de acabamentos, quebra de objeções.
-- 02_GUIA_PAPEL_E_ACABAMENTOS.md: gramaturas (90g, 115g, 150g, 250g, 300g), papéis (couché, supremo, offset, reciclato, kraft, adesivos, lonas) e enobrecimentos (laminação fosca/brilho/soft touch, verniz localizado, hot stamping, corte especial, furo, dobra), em linguagem prática e comercial.
-- 03_MANUAL_FECHAMENTO_DE_ARQUIVO.md: pré-impressão (sangria, margem de segurança, CMYK vs RGB, fontes em curvas, preto calçado vs 100% K, 300 dpi, exportação no Canva, CorelDRAW, Illustrator e PDF/X-1a).
-- 04_CATALOGO_APLICACOES_PRODUTOS.md: ficha consultiva de cada produto gráfico abordado.
-- 00_CONSCIENCIA_MESTRE_AGENTE.md: versão consolidada, enxuta e densa dos quatro arquivos, pronta para injetar no agente. Reescreva-a ao final do lote, mantendo tudo que já havia e somando o novo.
-- PROGRESSO_ESTUDO.md: acrescente no FIM uma seção que comece exatamente com a linha `## {batch}`, com data, lista dos títulos lidos e os novos aprendizados absorvidos.
+TAREFA: leia o arquivo data/batches/{batch}.md (ferramenta Read; se for grande, leia em partes). Cada item é um vídeo ou Short com título, descrição, capítulos e transcrição. Itens com "## Frames-chave" listam imagens em data/frames/: abra-as com Read.
+Depois atualize de forma INCREMENTAL (Read/Edit/Write) os arquivos de output/conhecimento_grafica/, um tema por arquivo:
+{lista}
+
+FOCO: ABSORVER 100% DO CONTEÚDO DE VENDAS. O material ensina o revendedor a vender material gráfico ao cliente dele: prospectar nichos (restaurantes, clínicas, eventos, lojas, imobiliárias etc.), montar kits, argumentar valor em vez de preço, fazer upsell e cross-sell, contornar objeções, conduzir o atendimento e fechar pedidos. Quando o vídeo ensina o revendedor a vender, a técnica vale INTEGRALMENTE para a Sua Gráfica BH vendendo ao seu cliente: absorva tudo, sem descartar nada comercial por "ser para revendedor". Só ignore a divulgação da plataforma ou da marca do canal e instruções de como usar as ferramentas dele.
+Capture o máximo de detalhe útil: o passo a passo de cada técnica, as perguntas de qualificação, exemplos de frases e mensagens de WhatsApp (adapte para o tom da Sua Gráfica BH), os argumentos por nicho, os kits (o que entra em cada um e para quem), as respostas para cada objeção, os gatilhos de upsell e cross-sell, o momento certo de cada passo.
+
+FORMATO (o dono vai ler e revisar tudo antes de usar): cada arquivo organizado por temas com títulos `##` claros, bullets curtos, e quando fizer sentido os rótulos "Quando usar:", "Como fazer:" e "Exemplo de fala:". Português do Brasil, simples e direto. No topo de cada arquivo mantenha um resumo de poucas linhas. Mantenha o LEIA_PRIMEIRO_INDICE.md com a lista dos arquivos e o que há em cada seção.
+- 00_CONSCIENCIA_MESTRE_AGENTE.md: reescreva ao final do lote, consolidando o melhor de todos os arquivos, enxuto e denso, sem perder nada que já havia.
+- PROGRESSO_ESTUDO.md: acrescente no FIM uma seção que comece exatamente com a linha `## {batch}`, com data, títulos lidos e novos aprendizados.
 
 REGRAS DE ATUALIZAÇÃO
-- Não apague o que já foi aprendido e não duplique tópicos: se o assunto já existe, complemente a seção existente.
-- Se o lote não trouxer nada útil para uma área, deixe o arquivo como está, mas registre o lote no PROGRESSO_ESTUDO.md assim mesmo.
-- Escreva em português do Brasil, tom de consultor da Sua Gráfica BH atendendo o cliente final. Converta qualquer fala voltada a revendedor, parceiro de gráfica ou plataforma em orientação ao cliente final.
+- Não apague o que já foi aprendido e não duplique tópicos: se o assunto existe, complemente a seção existente. Se o lote não trouxer nada para um tema, deixe o arquivo como está, mas registre o lote no PROGRESSO_ESTUDO.md.
+- Tom de consultor da Sua Gráfica BH atendendo o cliente final. Troque qualquer menção ao canal, marca ou plataforma de origem por linguagem neutra ou "a Sua Gráfica BH".
 
 HIGIENE OBRIGATÓRIA (o lote é rejeitado se violar)
-- Nunca escreva o nome do canal, da marca, da plataforma ou do software de onde o vídeo veio, nem "Zap", "Zap Gráfica", "Zap GO", "Parque Gráfico" ou "Checagem Garantida". Descreva só o conhecimento.
+- Nunca escreva "Zap", "Zap Gráfica", "Zap GO", "Parque Gráfico", "Checagem Garantida" nem o nome do canal ou da plataforma de origem.
 - Nunca use travessão (— ou –). Use vírgula, ponto ou dois-pontos.
-- Não registre preços, prazos, fretes, descontos nem margens citados nos vídeos: isso é decidido pelo sistema da empresa. Não cite SKU, fornecedor, endereço de fábrica nem concorrentes.
+- Registre a TÉCNICA, mas não copie valores em reais, prazos, fretes, percentuais de desconto ou margens citados nos vídeos: preço, prazo, frete e desconto são decididos só pelo sistema da empresa. Não cite SKU, fornecedor, endereço de fábrica nem concorrentes pelo nome.
 - Nunca diga que o atendente é robô, IA ou assistente virtual.
 {extra}
 Ao terminar, responda apenas "OK {batch}" e uma linha de resumo."""
@@ -180,9 +188,13 @@ def validar(batch, antes_progresso):
 
 # ------------------------------------------------------------ execução
 def rodar_claude(prompt):
-    cmd = ["claude", "-p", prompt, "--allowedTools", "Read,Write,Edit", "--permission-mode", "acceptEdits"]
+    exe = shutil.which("claude")
+    if not exe:
+        return 127, "", "comando claude não encontrado no PATH"
+    cmd = [exe, "-p", "--allowedTools", "Read,Write,Edit", "--permission-mode", "acceptEdits"]
     try:
-        r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=TIMEOUT_LOTE)
+        r = subprocess.run(cmd, cwd=ROOT, input=prompt, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=TIMEOUT_LOTE)
         return r.returncode, r.stdout, r.stderr
     except subprocess.TimeoutExpired as e:
         return 124, (e.stdout or ""), (e.stderr or "") + "\ntimeout"
