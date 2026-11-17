@@ -16,7 +16,7 @@ import type { OrcamentoStatus } from '@/lib/orcamentos'
 import { DEFAULT_PRICING, type PricingRules } from '@/lib/pricing'
 
 const ORDER_SELECT =
-  '*, contact:contacts(id,name,wa_id), conversation:conversations(id,ai_handled,unread_count,last_inbound_at), items:order_items(description,qty,code), orcamentos(status,criado_em)'
+  '*, nf_faltantes, contact:contacts(id,name,wa_id), conversation:conversations(id,ai_handled,unread_count,last_inbound_at), items:order_items(description,qty,code), orcamentos(status,criado_em)'
 
 export function useOrders() {
   return useQuery({

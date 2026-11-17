@@ -140,7 +140,8 @@ assert.equal(cepLimpo('30160-040'), '30160040')
 assert.equal(cepLimpo('123'), null)
 assert.equal(lerEnderecoCep('30160040', { erro: true }), null, 'ViaCEP responde erro:true para CEP inexistente')
 assert.deepEqual(lerEnderecoCep('30130010', { logradouro: 'Avenida Afonso Pena', bairro: 'Centro', localidade: 'Belo Horizonte', uf: 'MG' }),
-  { cep: '30130010', logradouro: 'Avenida Afonso Pena', bairro: 'Centro', cidade: 'Belo Horizonte', uf: 'MG' })
+  { cep: '30130010', logradouro: 'Avenida Afonso Pena', bairro: 'Centro', cidade: 'Belo Horizonte', uf: 'MG', codigo_ibge: null })
+assert.equal(lerEnderecoCep('30130010', { logradouro: 'Avenida Afonso Pena', bairro: 'Centro', localidade: 'Belo Horizonte', uf: 'MG', ibge: '3106200' })?.codigo_ibge, '3106200', 'ViaCEP traz o código IBGE')
 assert.equal(lerEnderecoCep('30130010', { street: 'Rua A', neighborhood: 'Savassi', city: 'Belo Horizonte', state: 'mg' })?.bairro, 'Savassi', 'formato da BrasilAPI')
 {
   const junto = juntarPacotes([{ peso_kg: 1, altura_cm: 5, largura_cm: 11, comprimento_cm: 16 }, { peso_kg: 2, altura_cm: 7, largura_cm: 20, comprimento_cm: 30 }])

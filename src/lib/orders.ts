@@ -131,6 +131,8 @@ export interface OrderCard extends Order {
   conversation: { id: string; ai_handled: boolean; unread_count: number; last_inbound_at: string | null } | null
   items: { description: string; qty: number; code: string | null }[]
   fin: OrderFinancials
+  /** Dados que faltam para emitir a NF (só em pedido pago): nome, documento, email, cep, numero, endereco */
+  nf_faltantes?: string[] | null
   /** Status do orçamento mais recente do pedido (null quando não há orçamento) */
   orcamento_status?: import('./orcamentos').OrcamentoStatus | null
 }

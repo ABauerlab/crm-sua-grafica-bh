@@ -38,6 +38,7 @@ import { ART_LABELS, blockReason, formatDuration, hoursInStage, ORDER_STAGES, me
 import { ProductPicker } from '@/features/catalog/KitsTab'
 import { OrcamentosTab } from '@/features/orders/OrcamentosTab'
 import { SituacaoOrcamento } from '@/features/orders/SituacaoOrcamento'
+import { NotaFiscalAviso } from '@/features/orders/NotaFiscalAviso'
 import { PerderPedido } from '@/features/orders/PerderPedido'
 import { MOTIVO_PERDA, type MotivoPerda } from '@/lib/orcamentos'
 import { DEFAULT_PRICING, previewNetProfit, priceAlerts, unitFloor, type PriceAlert } from '@/lib/pricing'
@@ -897,6 +898,7 @@ export default function OrderDrawer({ orderId, onClose }: { orderId: string; onC
       ) : (
         <>
         <SituacaoOrcamento order={order} />
+        <div className="px-4 pt-2 empty:hidden"><NotaFiscalAviso order={order} /></div>
         <Tabs defaultValue="resumo" className="flex min-h-0 flex-1 flex-col">
           <TabsList>
             <TabsTrigger value="resumo">Resumo</TabsTrigger>

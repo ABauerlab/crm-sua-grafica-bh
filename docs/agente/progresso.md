@@ -1,5 +1,17 @@
 # Progresso do agente de IA
 
+## 17/11/2026: botão NF no chat
+- Botão "NF" ao lado do microfone em `ChatPanel`: coloca no campo a mensagem curta (`src/lib/nota-fiscal.ts`) pedindo nome/razão social, CPF/CNPJ, CEP, rua, número, bairro, cidade/UF e e-mail. O atendente confere e envia (só com a janela de 24 h aberta; fora dela, usar template). O código IBGE não é pedido ao cliente: deve sair do CEP.
+- **Atualização**: a mensagem do botão NF pede só 5 itens (nome, CPF/CNPJ, CEP, número, e-mail). Rua, bairro, cidade, UF e IBGE saem do CEP pela função `contato-cep-completar` (deployada; só preenche campos vazios do contato).
+- **Marcador "Faltam dados da NF"**: migration `20261217000022` (aplicada) cria `contato_nf_faltantes` e a coluna calculada `nf_faltantes` no pedido pago (não cancelado, excluído nem de teste). Aparece no card do Kanban e no topo do pedido, com o botão "Completar pelo CEP". Os 9 pedidos pagos de hoje estão todos com dados faltando.
+- Pendente: chamar `contato-cep-completar` automaticamente quando a Laura salvar o CEP; template de NF para janela fechada.
+
+## 17/11/2026: atribuição de anúncio nos pedidos (Campanhas)
+- **Bug**: pedido pago do Marcos (#407, anúncio "Crachá com Cordão") não aparecia em Campanhas. `ad_performance` cruza por `orders.origin_ad_id`, mas só o pedido manual do front gravava esse campo; pedidos da Laura e do site ficavam sem origem (#407, #408 e #410 afetados).
+- **Correção** (migration `20261217000021`, aplicada): gatilho `orders_herdar_origem_anuncio` (BEFORE INSERT) copia `source_id`, título e URL do `first_referral` do contato em qualquer caminho de criação; backfill dos pedidos existentes; `ad_performance` passou a ignorar pedido/contato de teste e pedido excluído e a contar o dia em horário de Brasília.
+- **Conferido**: 30 dias = 7 conversas (bate com o painel), 1 venda paga de R$ 78,90 (lucro líquido R$ 58,39) no anúncio "Crachá com Cordão".
+- Regra de atribuição: último contato por anúncio NÃO vale; vale o primeiro anúncio do contato (`first_referral`), igual ao funil de conversas.
+
 ## Fase 3, rodada 4 (15/11/2026): CRM responsivo, Financeiro e Bling
 - **Bug raiz das abas**: `TabsContent` com `flex` vencia o `hidden` das abas inativas, então todos os painéis apareciam empilhados e o ativo ficava espremido (Catálogo e Kits "em branco com rolagem"). Corrigido em `ui/tabs.tsx` (`data-[state=inactive]:hidden`), vale para o CRM inteiro. Catálogo: cards no celular (tabela só de `md` para cima), abas quebram linha, filtros em largura total. Números de WhatsApp não são mais cortados (lista de conversas e cabeçalho do chat).
 - **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
