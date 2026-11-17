@@ -25,6 +25,7 @@ type Linha = {
   nf_tipo: string | null
   nf_situacao: string | null
   nf_motivo: string | null
+  nf_dispensada: boolean
   nf_conferido_em: string | null
   nf_emitida_em: string | null
   bling_pedido_id: string | null
@@ -34,7 +35,7 @@ type Linha = {
   total: number
 }
 
-const SELECT = 'id, number, paid_at, created_at, nf_emitida, nf_identificador, nf_tipo, nf_situacao, nf_motivo, nf_conferido_em, nf_emitida_em, bling_pedido_id, bling_erro, nf_faltantes, contact:contacts(name, wa_id)'
+const SELECT = 'id, number, paid_at, created_at, nf_emitida, nf_identificador, nf_tipo, nf_situacao, nf_motivo, nf_dispensada, nf_conferido_em, nf_emitida_em, bling_pedido_id, bling_erro, nf_faltantes, contact:contacts(name, wa_id)'
 
 function useNotasFiscais() {
   return useQuery({
@@ -67,6 +68,11 @@ function LinhaNf({ o }: { o: Linha }) {
     onError: (e: Error) => toast('error', e.message),
   })
   const falta = resumoNfFaltando(o.nf_faltantes)
+  const dispensar = useMutation({
+    mutationFn: async (v: { dispensada: boolean; motivo: string }) => { const { error } = await supabase.rpc('nf_dispensar', { p_order: o.id, p_dispensada: v.dispensada, p_motivo: v.motivo }); if (error) throw new Error(error.message) },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['nf-checklist'] }),
+    onError: (e: Error) => toast('error', e.message),
+  })
   const [motivo, setMotivo] = useState(o.nf_motivo ?? '')
   const salvarMotivo = useMutation({
     mutationFn: async (m: string) => { const { error } = await supabase.rpc('nf_motivo_salvar', { p_order: o.id, p_motivo: m }); if (error) throw new Error(error.message) },
@@ -85,7 +91,9 @@ function LinhaNf({ o }: { o: Linha }) {
             {formatBRL(o.total)} · pago em {dia(o.paid_at)} · {o.bling_pedido_id ? 'enviado ao Bling' : 'ainda não enviado ao Bling'}
           </p>
         </div>
-        {o.nf_emitida ? (
+        {o.nf_dispensada ? (
+          <Badge className="bg-ink/10 text-ink">NF não será emitida</Badge>
+        ) : o.nf_emitida ? (
           <Badge className="bg-brand-green/10 text-brand-green">{o.nf_tipo === 'nfe' ? 'NF-e' : 'NFC-e'}{o.nf_identificador ? ` nº ${o.nf_identificador}` : ''} · {o.nf_situacao ?? 'emitida'}</Badge>
         ) : o.nf_situacao ? (
           <Badge className="bg-brand-red/10 text-brand-red">{o.nf_tipo === 'nfe' ? 'NF-e' : 'NFC-e'}{o.nf_identificador ? ` nº ${o.nf_identificador}` : ''} · {o.nf_situacao}</Badge>
@@ -94,8 +102,10 @@ function LinhaNf({ o }: { o: Linha }) {
         )}
       </div>
       {o.bling_erro && <p className="mt-1 text-xs font-semibold text-brand-red">Erro no envio ao Bling: {o.bling_erro}</p>}
-      {!o.nf_emitida && <p className="mt-1 text-xs font-semibold text-brand-red">Motivo: {motivoNaoEmitida(o)}</p>}
-      {falta && !o.nf_emitida && <p className="mt-1 text-xs font-semibold">{falta}</p>}
+      {o.nf_dispensada ? (
+        <p className="mt-1 text-xs font-semibold">Motivo: {o.nf_motivo || 'não informado'}</p>
+      ) : !o.nf_emitida && <p className="mt-1 text-xs font-semibold text-brand-red">Motivo: {motivoNaoEmitida(o)}</p>}
+      {falta && !o.nf_emitida && !o.nf_dispensada && <p className="mt-1 text-xs font-semibold">{falta}</p>}
       {!o.nf_emitida && (
         <Input
           className="mt-2 h-11 md:h-9"
@@ -116,6 +126,17 @@ function LinhaNf({ o }: { o: Linha }) {
             onChange={(e) => salvar.mutate({ emitida: e.target.checked, ident })}
           />
           Nota fiscal emitida
+        </label>
+        <label className="flex min-h-11 items-center gap-2 text-sm font-semibold md:min-h-9">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-[#52525b]"
+            checked={o.nf_dispensada}
+            disabled={dispensar.isPending || o.nf_emitida}
+            title={o.nf_emitida ? 'Desmarque "emitida" antes' : 'Tira o pedido de pendente. Anote o motivo no campo acima.'}
+            onChange={(e) => dispensar.mutate({ dispensada: e.target.checked, motivo })}
+          />
+          Nota não será emitida
         </label>
         <Input
           className="h-11 w-full min-w-0 flex-1 md:h-9 md:max-w-xs"
@@ -140,34 +161,45 @@ function ChecklistNf() {
     onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['nf-checklist'] }); toast(r.ok ? 'ok' : 'error', r.ok ? `Conferido no Bling: ${r.com_nota ?? 0} nota(s) encontrada(s) em ${r.conferidas ?? 0} pedido(s).` : r.erro ?? 'Não foi possível conferir.') },
     onError: (e: Error) => toast('error', e.message),
   })
-  const [filtro, setFiltro] = useState<'pendentes' | 'emitidas' | 'todas'>('pendentes')
-  const lista = useMemo(() => (data ?? []).filter((o) => (filtro === 'todas' ? true : filtro === 'emitidas' ? o.nf_emitida : !o.nf_emitida)), [data, filtro])
+  const [filtro, setFiltro] = useState<'pendentes' | 'emitidas' | 'dispensadas' | 'todas'>('pendentes')
+  const lista = useMemo(() => (data ?? []).filter((o) => (filtro === 'todas' ? true : filtro === 'emitidas' ? o.nf_emitida : filtro === 'dispensadas' ? o.nf_dispensada : !o.nf_emitida && !o.nf_dispensada)), [data, filtro])
   if (isLoading) return <Skeleton className="h-64 w-full" />
   if (error) return <ErrorState message={(error as Error).message} />
-  const naoEmitidas = (data ?? []).filter((o) => !o.nf_emitida)
-  const pend = naoEmitidas.length
-  const emit = (data ?? []).length - pend
-  const porMotivo = new Map<string, number>()
-  for (const o of naoEmitidas) {
-    const m = o.nf_motivo?.trim() || motivoNaoEmitida(o).replace(/ nº \d+/, '').replace(/: corrigir e emitir de novo/, '')
-    porMotivo.set(m, (porMotivo.get(m) ?? 0) + 1)
-  }
+  const lista0 = data ?? []
+  const pendentes = lista0.filter((o) => !o.nf_emitida && !o.nf_dispensada)
+  const dispensadas = lista0.filter((o) => o.nf_dispensada)
+  const emitidas = lista0.filter((o) => o.nf_emitida)
+  const pend = pendentes.length
+  const emit = emitidas.length
+  const contar = (l: string[]) => { const m = new Map<string, number>(); for (const k of l) m.set(k, (m.get(k) ?? 0) + 1); return [...m.entries()] }
+  const porMotivo = contar(pendentes.map((o) => o.nf_motivo?.trim() || motivoNaoEmitida(o).replace(/ nº \d+/, '').replace(/: corrigir e emitir de novo/, '')))
+  const porMotivoDisp = contar(dispensadas.map((o) => o.nf_motivo?.trim() || 'sem motivo informado'))
   const somaTotal = (l: Linha[]) => l.reduce((n, o) => n + o.total, 0)
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-lg border border-brand-green/40 bg-brand-green/5 p-3">
           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Notas emitidas</p>
           <p className="text-2xl font-black tabular">{emit}</p>
-          <p className="text-xs text-muted-foreground tabular">{formatBRL(somaTotal((data ?? []).filter((o) => o.nf_emitida)))} em vendas com nota</p>
+          <p className="text-xs text-muted-foreground tabular">{formatBRL(somaTotal(emitidas))} em vendas com nota</p>
         </div>
         <div className={cn('rounded-lg border p-3', pend > 0 ? 'border-brand-red/40 bg-brand-red/5' : 'border-brand-green/40 bg-brand-green/5')}>
-          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Notas não emitidas</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Notas pendentes</p>
           <p className={cn('text-2xl font-black tabular', pend > 0 && 'text-brand-red')}>{pend}</p>
-          <p className="text-xs text-muted-foreground tabular">{formatBRL(somaTotal(naoEmitidas))} em vendas sem nota</p>
-          {porMotivo.size > 0 && (
+          <p className="text-xs text-muted-foreground tabular">{formatBRL(somaTotal(pendentes))} aguardando nota</p>
+          {porMotivo.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-xs" aria-label="Motivos das notas pendentes">
+              {porMotivo.map(([m, n]) => <li key={m}><strong className="tabular">{n}</strong> · {m}</li>)}
+            </ul>
+          )}
+        </div>
+        <div className="rounded-lg border border-ink/20 bg-ink/5 p-3">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Notas não emitidas</p>
+          <p className="text-2xl font-black tabular">{dispensadas.length}</p>
+          <p className="text-xs text-muted-foreground tabular">{formatBRL(somaTotal(dispensadas))} em vendas sem nota (decisão sua)</p>
+          {porMotivoDisp.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-xs" aria-label="Motivos das notas não emitidas">
-              {[...porMotivo.entries()].map(([m, n]) => <li key={m}><strong className="tabular">{n}</strong> · {m}</li>)}
+              {porMotivoDisp.map(([m, n]) => <li key={m}><strong className="tabular">{n}</strong> · {m}</li>)}
             </ul>
           )}
         </div>
@@ -177,7 +209,7 @@ function ChecklistNf() {
         <Button size="sm" variant="outline" disabled={conferir.isPending} onClick={() => conferir.mutate()}>{conferir.isPending ? 'Conferindo…' : 'Conferir no Bling agora'}</Button>
       </div>
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtro de notas">
-        {([['pendentes', `Pendentes (${pend})`], ['emitidas', `Emitidas (${emit})`], ['todas', `Todas (${pend + emit})`]] as const).map(([v, l]) => (
+        {([['pendentes', `Pendentes (${pend})`], ['emitidas', `Emitidas (${emit})`], ['dispensadas', `Não emitidas (${dispensadas.length})`], ['todas', `Todas (${lista0.length})`]] as const).map(([v, l]) => (
           <button key={v} role="tab" aria-selected={filtro === v} onClick={() => setFiltro(v)} className={cn('min-h-11 rounded-md border px-3 text-sm font-bold md:min-h-9', filtro === v ? 'border-ink bg-ink text-white' : 'bg-background hover:bg-secondary')}>
             {l}
           </button>
