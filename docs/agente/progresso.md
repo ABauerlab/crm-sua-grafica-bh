@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## 17/11/2026: área Bling e NF + forma de pagamento no pedido do Bling
+- **Forma de pagamento**: o pedido ia ao Bling com `formaPagamento.id = 0` (conferido nos pedidos reais). Agora `bling-integracao` consulta `/formas-pagamentos`, escolhe a forma pelo nome (Pix, cartão de crédito/débito, dinheiro, transferência) e, se não achar, pelo tipo da NF-e, e manda na parcela (a NF-e herda). Se não achar nenhuma, vai sem forma e o aviso do pedido diz para escolher na NF. Deploy da função feito (versão 13). Vale só para pedidos novos; os já enviados continuam como estão.
+- **Indicador de presença**: não é enviado pelo CRM. O CRM cria o pedido de venda; a nota é gerada no Bling, onde o indicador (1, operação presencial) fica na configuração da nota. Não consegui confirmar pela API se o pedido aceita esse campo.
+- **Bling e NF** (`/bling`, item novo no menu): checklist de NF por pedido pago (marcar emitida + identificador da nota), filtros Pendentes/Emitidas/Todas, faltas de dados e erro de envio. A conexão do Bling saiu de Configurações e virou a aba Integração dessa página. Migration `20261217000023` (aplicada): `orders.nf_emitida`, `nf_identificador`, `nf_emitida_em` e `nf_marcar`.
+- A API do Bling não mostrou NF emitida em novembro, então o checklist começou todo pendente para o dono marcar.
+- Pendente (próximas etapas do pedido do dono): Financeiro (recebido líquido só de pedidos pagos, saldo do Mercado Pago manual, Pagamentos dentro de Financeiro), Templates dentro de Campanhas, Fila de arte dentro de Pedidos, template de aprovação de arte, melhorias de UI e responsividade.
+
 ## 17/11/2026: botão NF no chat
 - Botão "NF" ao lado do microfone em `ChatPanel`: coloca no campo a mensagem curta (`src/lib/nota-fiscal.ts`) pedindo nome/razão social, CPF/CNPJ, CEP, rua, número, bairro, cidade/UF e e-mail. O atendente confere e envia (só com a janela de 24 h aberta; fora dela, usar template). O código IBGE não é pedido ao cliente: deve sair do CEP.
 - **Atualização**: a mensagem do botão NF pede só 5 itens (nome, CPF/CNPJ, CEP, número, e-mail). Rua, bairro, cidade, UF e IBGE saem do CEP pela função `contato-cep-completar` (deployada; só preenche campos vazios do contato).

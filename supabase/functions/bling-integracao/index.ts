@@ -1,6 +1,6 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
-import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, extrairCodigo, ncmSugerido, textoErroBling } from '../_shared/bling-envio.ts'
+import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, escolherFormaPagamento, extrairCodigo, ncmSugerido, parcelasComForma, textoErroBling, type FormaBling } from '../_shared/bling-envio.ts'
 
 // Bling API v3: autorização (OAuth), fila de pedidos pagos e envio. Tokens ficam em app_segredos (nunca no front nem em log).
 // Ações: status, url_autorizacao, trocar_codigo, descobrir_loja, ativar, enviar, processar.
@@ -178,20 +178,26 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
     if (!prod.id) { await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: null, p_contato_id: null, p_erro: prod.erro }); return { ok: false, erro: prod.erro } }
     itens.push({ codigo: it.codigo, descricao: it.descricao, unidade: it.unidade ?? 'UN', quantidade: it.quantidade, valor: it.valor, produto: { id: Number(prod.id) } })
   }
+  // Forma de pagamento que o cliente usou (Pix, cartão...): vai na parcela e daí para a NF-e
+  const { data: pg } = await db.from('orders').select('payment_method, parcelas').eq('id', orderId).maybeSingle()
+  const fr = await bling(db, 'GET', '/formas-pagamentos?limite=100')
+  const formaId = fr.status === 200 ? escolherFormaPagamento((fr.data?.data ?? []) as FormaBling[], pg?.payment_method) : undefined
+  const metodoTexto = `${pg?.payment_method ?? 'método não informado'}${pg?.parcelas && pg.parcelas > 1 ? ` em ${pg.parcelas}x` : ''}`
+  const avisoForma = formaId ? '' : `Forma de pagamento (${pg?.payment_method ?? 'não informada'}) não encontrada no Bling: escolher na NF`
   const soma = itens.reduce((s, i) => s + Number(i.quantidade) * Number(i.valor), 0)
   const total = Number(p.pedido?.parcelas?.[0]?.valor ?? soma)
   const diff = Math.round((total - soma) * 100) / 100
   const corpo: Record<string, unknown> = {
     numeroLoja: p.pedido.numeroLoja, data: p.pedido.data, contato: { id: Number(contato.id) }, loja: { id: Number(cfg.loja_id ?? (await cfgBling(db)).loja_id) },
-    itens, parcelas: p.pedido.parcelas, observacoes: p.pedido.observacoes,
-    observacoesInternas: [p.pedido.observacoesInternas, aviso].filter(Boolean).join(' | ') || undefined,
+    itens, parcelas: parcelasComForma((p.pedido.parcelas ?? []) as Record<string, any>[], formaId, metodoTexto), observacoes: p.pedido.observacoes,
+    observacoesInternas: [p.pedido.observacoesInternas, aviso, avisoForma].filter(Boolean).join(' | ') || undefined,
   }
   if (diff > 0) corpo.transporte = { frete: diff }
   if (diff < 0) corpo.desconto = { valor: -diff, unidade: 'REAL' }
   const r = await bling(db, 'POST', '/pedidos/vendas', corpo)
   const id = r.data?.data?.id
   if ((r.status === 200 || r.status === 201) && id) {
-    await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: String(id), p_contato_id: contato.id, p_erro: null, p_aviso: aviso || null })
+    await db.rpc('bling_resultado', { p_order: orderId, p_pedido_id: String(id), p_contato_id: contato.id, p_erro: null, p_aviso: [aviso, avisoForma].filter(Boolean).join(' | ') || null })
     return { ok: true, bling_pedido_id: String(id), aviso: aviso || undefined }
   }
   const erro = `pedido: ${textoErroBling(r)}`
@@ -202,7 +208,7 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
 async function processar(db: SupabaseClient) {
   const cfg = await cfgBling(db)
   if (!cfg.ativo) return { ok: true, ativo: false, enviados: 0 }
-  if (!(await token(db))) return { ok: false, ativo: true, erro: 'Bling não conectado. Autorize em Configurações > Bling.', enviados: 0 }
+  if (!(await token(db))) return { ok: false, ativo: true, erro: 'Bling não conectado. Autorize em Bling e NF > Integração.', enviados: 0 }
   const { data: fila } = await db.rpc('bling_pendentes', { p_limite: 8 })
   const resumo: Record<string, unknown> = { ok: true, ativo: true, enviados: 0, falhas: 0, erros: [] as string[] }
   for (const linha of (fila ?? []) as { order_id: string }[]) {

@@ -12,7 +12,7 @@ type Status = { ok: boolean; configurado: boolean; conectado: boolean; loja_id: 
 type Linha = { id: string; numero: number; cliente: string; pago_em: string; bling_pedido_id: string | null; enviado_em: string | null; erro: string | null; aviso: string | null; tentativas: number; teste: boolean }
 type Painel = { ativo: boolean; loja_id: string | null; loja_nome: string | null; pedidos: Linha[] }
 
-/** Configurações > Bling: conectar a conta, ligar o envio automático e acompanhar cada pedido pago. */
+/** Bling e NF > Integração: conectar a conta, ligar o envio automático e acompanhar cada pedido pago. */
 export default function BlingTab() {
   const toast = useToast()
   const qc = useQueryClient()

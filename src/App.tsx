@@ -20,6 +20,7 @@ const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
 const Catalog = lazy(() => import('@/pages/Catalog'))
 const Campaigns = lazy(() => import('@/pages/Campaigns'))
 const Payments = lazy(() => import('@/pages/Payments'))
+const Bling = lazy(() => import('@/pages/Bling'))
 const Financeiro = lazy(() => import('@/pages/Financeiro'))
 const Tasks = lazy(() => import('@/pages/Tasks'))
 const PaymentThanks = lazy(() => import('@/pages/PaymentThanks'))
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/catalogo" element={<Catalog />} />
             <Route path="/campanhas" element={<Campaigns />} />
             <Route path="/pagamentos" element={<Payments />} />
+            <Route path="/bling" element={<Bling />} />
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/configuracoes" element={<Settings />} />

@@ -11,6 +11,7 @@ import {
   Palette,
   ChevronsRight,
   CreditCard,
+  FileCheck2,
   Wallet,
   FileText,
   KanbanSquare,
@@ -54,6 +55,7 @@ const NAV: { to: string; label: string; icon: LucideIcon; admin?: boolean }[] = 
   { to: '/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet, admin: true },
+  { to: '/bling', label: 'Bling e NF', icon: FileCheck2 },
   { to: '/tarefas', label: 'Tarefas', icon: ListChecks },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
