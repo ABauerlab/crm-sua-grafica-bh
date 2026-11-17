@@ -29,6 +29,9 @@ export interface Contact {
   company?: string | null
   segment?: 'barbearia' | 'delivery' | 'loja' | 'outro' | null
   address?: string | null
+  status_lead?: string | null
+  motivo_perda?: string | null
+  perdido_em?: string | null
   created_at: string
 }
 

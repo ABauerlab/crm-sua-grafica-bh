@@ -15,6 +15,14 @@ import { formatPhone } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import type { ConversationWithContact } from '@/lib/types'
 
+const MOTIVOS_PERDA: Record<string, string> = {
+  preco: 'achou o preço alto',
+  quantidade_minima: 'quantidade mínima maior que a necessária',
+  prazo: 'prazo não atende',
+  concorrente: 'fechou com outra gráfica',
+  sem_motivo: 'não informou o motivo',
+}
+
 export function ContactPanel({ conversation }: { conversation: ConversationWithContact }) {
   const qc = useQueryClient()
   const navigate = useNavigate()
@@ -56,6 +64,11 @@ export function ContactPanel({ conversation }: { conversation: ConversationWithC
 
   return (
     <div className="h-full space-y-5 overflow-y-auto p-4">
+      {contact.status_lead === 'perdido' && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+          <strong>Lead perdido:</strong> {MOTIVOS_PERDA[contact.motivo_perda ?? ''] ?? 'não informou o motivo'}.
+        </div>
+      )}
       <Button
         className="w-full"
         disabled={create.isPending}
