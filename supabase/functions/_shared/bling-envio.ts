@@ -139,3 +139,18 @@ export function parcelasComForma(parcelas: Record<string, any>[], formaId: numbe
     observacoes: `Pago pelo Mercado Pago (${metodoTexto})`,
   }))
 }
+
+const SITUACAO_NOTA: Record<number, string> = { 1: 'Pendente', 2: 'Cancelada', 3: 'Aguardando recibo', 4: 'Rejeitada', 5: 'Autorizada', 6: 'Emitida DANFE', 7: 'Registrada', 8: 'Aguardando protocolo', 9: 'Denegada', 10: 'Consultando situação', 11: 'Bloqueada' }
+export const rotuloSituacaoNota = (n: number) => SITUACAO_NOTA[n] ?? `Situação ${n}`
+/** Nota emitida de verdade: autorizada ou com DANFE emitida. */
+export const notaEmitida = (n: number) => n === 5 || n === 6
+
+/** Resposta de /nfce/{id} ou /nfe/{id} do Bling -> número (sem zeros à esquerda), situação e chave de acesso. */
+export function lerNota(resp: { data?: Record<string, any> } | null | undefined): { numero: string; situacao: number; chave: string | null } | null {
+  const d = resp?.data
+  const numero = String(d?.numero ?? '').replace(/\D/g, '').replace(/^0+/, '')
+  const situacao = Number(d?.situacao)
+  if (!numero || !Number.isFinite(situacao)) return null
+  const chave = String(d?.chaveAcesso ?? '').replace(/\D/g, '')
+  return { numero, situacao, chave: chave.length === 44 ? chave : null }
+}

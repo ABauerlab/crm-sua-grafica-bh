@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## 17/11/2026: Meta sozinha e NF automática
+- **Meta**: agendamento `meta-ads-sync-15min` (a cada 15 min, últimos 3 dias) além do diário de 7 dias; a tela de Campanhas relê sozinha a cada minuto e o botão virou "Atualizar agora".
+- **NF automática**: `bling-integracao` (ação `conferir_nf`, agendamento `bling-nf-conferir` a cada 10 min e botão "Conferir no Bling agora") lê a nota do pedido no Bling e grava número, tipo, situação e chave (`nf_registrar_bling`, migration `20261217000027`, aplicada; função na versão 14). As notas do dono são **NFC-e** (pedido.notaFiscal.id é o id da NFC-e; `/nfce/{id}`, com `/nfe/{id}` como reserva). O Bling é a fonte da verdade: nota rejeitada, denegada ou cancelada volta o pedido para pendente. O marcador "faltam dados da NF" some quando a nota já foi emitida.
+- Conferido com dados reais: 219 (nº 74), 220 (72), 224 (73), 294 (77), 295 (76), 296 (75) autorizadas; **407 (Marcos) nº 71 Rejeitada**; 293 (TEIA) sem nota no Bling; 23 sem pedido no Bling.
+
 ## 17/11/2026: template de arte enviado e extrato do Mercado Pago pausado
 - Template `aprovacao_arte` (utilidade, conta Sua Gráfica BH) submetido à Meta (id 1546120117357833, em análise). Depois de aprovado, sincronizar em Configurações > WhatsApp e templates; então o botão Arte pode ser usado também por template fora da janela de 24 h.
 - Agendamento `mp-extrato-sync` (a cada 5 min) pausado (migration `20261217000026`, aplicada). `mp-saldo` nunca teve agendamento. Funções e tabelas continuam como histórico; para religar: `cron.alter_job(job_id, active := true)`.

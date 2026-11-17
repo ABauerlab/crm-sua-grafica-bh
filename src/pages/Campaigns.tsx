@@ -65,6 +65,7 @@ function CampanhasPainel() {
 
   const perf = useQuery({
     queryKey: ['ad-performance', from, to],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('ad_performance', { p_from: from, p_to: to })
       if (error) throw new Error(error.message)
@@ -94,6 +95,7 @@ function CampanhasPainel() {
 
   const lastSync = useQuery({
     queryKey: ['ad-last-sync'],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data } = await supabase.from('ad_entities').select('updated_at').order('updated_at', { ascending: false }).limit(1)
       return (data?.[0]?.updated_at as string | undefined) ?? null
@@ -168,7 +170,7 @@ function CampanhasPainel() {
         <div>
           <h1 className="text-xl font-black">Campanhas</h1>
           <p className="text-xs text-muted-foreground">
-            {lastSync.data ? `Última sincronização com a Meta: ${new Date(lastSync.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Ainda não sincronizado com a Meta.'}
+            {lastSync.data ? `Atualiza sozinho a cada 15 minutos · última leitura da Meta: ${new Date(lastSync.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Ainda não sincronizado com a Meta.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +181,7 @@ function CampanhasPainel() {
             <option value="month">Este mês</option>
           </Select>
           <Button variant="outline" onClick={() => sync.mutate()} disabled={sync.isPending}>
-            <RefreshCw className={cn('h-4 w-4', sync.isPending && 'animate-spin')} /> {sync.isPending ? 'Sincronizando…' : 'Sincronizar com a Meta'}
+            <RefreshCw className={cn('h-4 w-4', sync.isPending && 'animate-spin')} /> {sync.isPending ? 'Atualizando…' : 'Atualizar agora'}
           </Button>
         </div>
       </header>

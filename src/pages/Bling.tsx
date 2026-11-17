@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/components/ui/toast'
 import BlingTab from '@/features/bling/BlingTab'
+import { Button } from '@/components/ui/button'
+import { invokeFunction } from '@/lib/api'
 import { formatBRL } from '@/lib/money'
 import { resumoNfFaltando } from '@/lib/nota-fiscal'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +22,8 @@ type Linha = {
   created_at: string
   nf_emitida: boolean
   nf_identificador: string | null
+  nf_tipo: string | null
+  nf_situacao: string | null
   nf_emitida_em: string | null
   bling_pedido_id: string | null
   bling_erro: string | null
@@ -28,7 +32,7 @@ type Linha = {
   total: number
 }
 
-const SELECT = 'id, number, paid_at, created_at, nf_emitida, nf_identificador, nf_emitida_em, bling_pedido_id, bling_erro, nf_faltantes, contact:contacts(name, wa_id)'
+const SELECT = 'id, number, paid_at, created_at, nf_emitida, nf_identificador, nf_tipo, nf_situacao, nf_emitida_em, bling_pedido_id, bling_erro, nf_faltantes, contact:contacts(name, wa_id)'
 
 function useNotasFiscais() {
   return useQuery({
@@ -73,9 +77,16 @@ function LinhaNf({ o }: { o: Linha }) {
             {formatBRL(o.total)} · pago em {dia(o.paid_at)} · {o.bling_pedido_id ? 'enviado ao Bling' : 'ainda não enviado ao Bling'}
           </p>
         </div>
-        {o.nf_emitida ? <Badge className="bg-brand-green/10 text-brand-green">NF emitida{o.nf_emitida_em ? ` em ${dia(o.nf_emitida_em)}` : ''}</Badge> : <Badge className="bg-brand-yellow/30 text-ink">NF pendente</Badge>}
+        {o.nf_emitida ? (
+          <Badge className="bg-brand-green/10 text-brand-green">{o.nf_tipo === 'nfe' ? 'NF-e' : 'NFC-e'}{o.nf_identificador ? ` nº ${o.nf_identificador}` : ''} · {o.nf_situacao ?? 'emitida'}</Badge>
+        ) : o.nf_situacao ? (
+          <Badge className="bg-brand-red/10 text-brand-red">{o.nf_tipo === 'nfe' ? 'NF-e' : 'NFC-e'}{o.nf_identificador ? ` nº ${o.nf_identificador}` : ''} · {o.nf_situacao}</Badge>
+        ) : (
+          <Badge className="bg-brand-yellow/30 text-ink">NF pendente</Badge>
+        )}
       </div>
       {o.bling_erro && <p className="mt-1 text-xs font-semibold text-brand-red">Erro no envio ao Bling: {o.bling_erro}</p>}
+      {!o.nf_emitida && o.nf_situacao && <p className="mt-1 text-xs font-semibold text-brand-red">A nota está {o.nf_situacao.toLowerCase()} no Bling: corrija e emita de novo.</p>}
       {falta && !o.nf_emitida && <p className="mt-1 text-xs font-semibold">{falta}</p>}
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <label className="flex min-h-11 items-center gap-2 text-sm font-semibold md:min-h-9">
@@ -104,6 +115,13 @@ function LinhaNf({ o }: { o: Linha }) {
 
 function ChecklistNf() {
   const { data, isLoading, error } = useNotasFiscais()
+  const toast = useToast()
+  const qc = useQueryClient()
+  const conferir = useMutation({
+    mutationFn: () => invokeFunction<{ ok: boolean; conferidas?: number; com_nota?: number; erro?: string }>('bling-integracao', { acao: 'conferir_nf' }),
+    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['nf-checklist'] }); toast(r.ok ? 'ok' : 'error', r.ok ? `Conferido no Bling: ${r.com_nota ?? 0} nota(s) encontrada(s) em ${r.conferidas ?? 0} pedido(s).` : r.erro ?? 'Não foi possível conferir.') },
+    onError: (e: Error) => toast('error', e.message),
+  })
   const [filtro, setFiltro] = useState<'pendentes' | 'emitidas' | 'todas'>('pendentes')
   const lista = useMemo(() => (data ?? []).filter((o) => (filtro === 'todas' ? true : filtro === 'emitidas' ? o.nf_emitida : !o.nf_emitida)), [data, filtro])
   if (isLoading) return <Skeleton className="h-64 w-full" />
@@ -112,6 +130,10 @@ function ChecklistNf() {
   const emit = (data ?? []).length - pend
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">O número e a situação da nota são preenchidos sozinhos a partir do Bling, a cada 10 minutos.</p>
+        <Button size="sm" variant="outline" disabled={conferir.isPending} onClick={() => conferir.mutate()}>{conferir.isPending ? 'Conferindo…' : 'Conferir no Bling agora'}</Button>
+      </div>
       <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtro de notas">
         {([['pendentes', `Pendentes (${pend})`], ['emitidas', `Emitidas (${emit})`], ['todas', `Todas (${pend + emit})`]] as const).map(([v, l]) => (
           <button key={v} role="tab" aria-selected={filtro === v} onClick={() => setFiltro(v)} className={cn('min-h-11 rounded-md border px-3 text-sm font-bold md:min-h-9', filtro === v ? 'border-ink bg-ink text-white' : 'bg-background hover:bg-secondary')}>
