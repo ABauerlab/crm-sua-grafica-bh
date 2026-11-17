@@ -1444,7 +1444,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nreturn [{ json: $('Montar prompt').first().json }];"
+        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia ou citou um valor que nenhuma ferramenta confirmou nesta rodada. Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória. Se não der para confirmar, pergunte o que falta, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
       }
     },
     {
@@ -1496,6 +1496,49 @@
       "typeVersion": 2,
       "position": [
         336,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (($(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos || []).includes('preco_nao_verificado')) && $runIndex < 1 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Bloqueou por preço? Repetir uma vez",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1900,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Atendimento completo com vários itens (17/11/2026): regras O e P.\nconst it = $input.first().json || {};\nconst regras = [\n  'O) ATENDIMENTO COMPLETO COM VÁRIOS ITENS: quando o cliente tem várias necessidades, conduza como consultora de vendas: (1) anote cada item com produto, tamanho, material, quantidade e arte; (2) resolva um item por vez com um valor de referência vindo de buscar_produto; (3) a cada passo repita em uma linha o que já está na lista; (4) quando ele disser que acabou, ou pedir um orçamento para ter ideia de valores, pergunte só se falta algum item e então chame montar_orcamento com TODOS os itens de uma vez e gerar_pdf_orcamento: UM orçamento completo com cada item e o total, nunca valores soltos em várias mensagens; (5) item sem quantidade definida (muitos): assuma o lote de referência mais comum (por exemplo 1.000 unidades), diga isso no texto e deixe ele corrigir.',\n  'P) PEDIDO DE ORÇAMENTO NUNCA RECEBE VOU CONFIRMAR: quando o cliente pedir orçamento ou valores, monte com o que já tem, cite as suposições no texto e deixe os itens pendentes explícitos. Se o cliente deu mais de uma quantidade (por exemplo 250, 500 e 1000), orce todas. Se o material não foi definido, orce o mais comum e diga que existe outra opção. Nunca fique só perguntando.'\n];\nit.system = String(it.system || '') + '\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+      },
+      "name": "Regras adicionais (atendimento completo)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
         192
       ]
     }
@@ -1706,7 +1749,7 @@
         ],
         [
           {
-            "node": "Avisar o dono da resposta bloqueada",
+            "node": "Bloqueou por preço? Repetir uma vez",
             "type": "main",
             "index": 0
           }
@@ -1794,7 +1837,7 @@
       "main": [
         [
           {
-            "node": "Agente de atendimento",
+            "node": "Regras adicionais (rodada 17/11)",
             "type": "main",
             "index": 0
           }
@@ -1831,6 +1874,35 @@
       ]
     },
     "Regras adicionais (rodada 17/11)": {
+      "main": [
+        [
+          {
+            "node": "Regras adicionais (atendimento completo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bloqueou por preço? Repetir uma vez": {
+      "main": [
+        [
+          {
+            "node": "Zerar contadores da rodada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da resposta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (atendimento completo)": {
       "main": [
         [
           {
