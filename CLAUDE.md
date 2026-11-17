@@ -92,6 +92,7 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `blog-pautas` | não (dono, service role ou `x-cron-secret`) | Fase 8: lê feeds do setor (NewsAPI opcional, `NEWSAPI_KEY`), filtra o assunto, pede ao Gemini um texto próprio, confere (crédito à fonte, sem cópia, sem preço, links só internos) e publica até 3 posts por dia em `blog_posts`. Detalhes em `docs/blog.md` |
 | `loja-frete` | não (público) | Fase 9: CEP -> bairro (ViaCEP, cache `cep_bairros`), frete grátis só nos 7 bairros centrais e cotação de envio no SuperFrete (`SUPERFRETE_TOKEN`; sem ele nada é inventado) |
 | `loja-arquivo` | não (público; confere o pedido do site e a assinatura do PDF) | Recebe o PDF da arte no checkout (só PDF, até 50 MB), guarda em `order-files` e registra em `order_files` |
+| `mp-extrato` | não (dono, service role ou `x-cron-secret`) | Financeiro ao vivo: lê os pagamentos do Mercado Pago (bruto, taxa real, líquido, estornos) e o saldo a cada 5 min, grava em `mp_movimentos` e `mp_saldo_historico` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -181,6 +182,7 @@ supabase functions deploy loja-checkout --no-verify-jwt
 supabase functions deploy bling-webhook --no-verify-jwt
 supabase functions deploy meta-conversions-api --no-verify-jwt
 supabase functions deploy blog-pautas --no-verify-jwt
+supabase functions deploy mp-extrato --no-verify-jwt
 supabase functions deploy loja-frete --no-verify-jwt
 supabase db push        # migrations
 ```

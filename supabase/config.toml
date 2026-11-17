@@ -100,3 +100,6 @@ verify_jwt = false
 
 [functions.mp-saldo]
 verify_jwt = false
+
+[functions.mp-extrato]
+verify_jwt = false

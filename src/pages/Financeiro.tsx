@@ -23,6 +23,13 @@ type Resumo = {
 }
 type Lancamento = { id: string; tipo: 'receita' | 'despesa'; categoria: string; descricao: string | null; valor: number; data: string; pago: boolean }
 type Saldo = { ok: boolean; disponivel?: number; a_liberar?: number; total?: number; error?: string; modo?: string }
+type ExtratoResumo = {
+  recebimentos: number; bruto: number; taxas: number; liquido: number; estornos: number; sem_pedido: number; pendentes: number
+  ultima_atualizacao: string | null
+  saldo: { disponivel: number; a_liberar: number; total: number; capturado_em: string } | null
+}
+type Movimento = { mp_payment_id: string; tipo: 'recebimento' | 'estorno' | 'contestacao' | 'pendente' | 'recusado'; status: string; data: string; bruto: number; taxa: number; liquido: number | null; estornado: number; metodo: string | null; referencia: string | null; order_id: string | null }
+const ROTULO_TIPO: Record<Movimento['tipo'], string> = { recebimento: 'Recebido', estorno: 'Estornado', contestacao: 'Contestado', pendente: 'Em análise', recusado: 'Recusado' }
 
 const CATEGORIAS_DESPESA = ['Fornecedor', 'Frete e entrega', 'Anúncios', 'Ferramentas e sistemas', 'Impostos', 'Salários e pró-labore', 'Aluguel e contas', 'Outros']
 const CATEGORIAS_RECEITA = ['Venda no balcão', 'Serviço de arte', 'Marketplace', 'Outros']
@@ -70,6 +77,31 @@ export default function Financeiro() {
     },
   })
   const saldo = useQuery({ queryKey: ['financeiro', 'saldo'], queryFn: () => invokeFunction<Saldo>('mp-saldo'), staleTime: 60_000, retry: false })
+  // Extrato do Mercado Pago: atualizado sozinho no servidor (a cada 5 min) e relido aqui a cada minuto.
+  const extrato = useQuery({
+    queryKey: ['financeiro', 'extrato', de, ate],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('financeiro_mp', { p_de: de, p_ate: ate })
+      if (error) throw new Error(error.message)
+      return data as ExtratoResumo
+    },
+  })
+  const movimentos = useQuery({
+    queryKey: ['financeiro', 'movimentos', de, ate],
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('mp_movimentos').select('mp_payment_id, tipo, status, data, bruto, taxa, liquido, estornado, metodo, referencia, order_id')
+        .gte('data', `${de}T00:00:00-03:00`).lte('data', `${ate}T23:59:59-03:00`).order('data', { ascending: false }).limit(100)
+      if (error) throw new Error(error.message)
+      return (data ?? []) as Movimento[]
+    },
+  })
+  const atualizarExtrato = useMutation({
+    mutationFn: () => invokeFunction<{ ok: boolean; lidos?: number; saldo_indisponivel?: string }>('mp-extrato', { dias: 7 }),
+    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['financeiro'] }); toast('ok', `Extrato atualizado (${r.lidos ?? 0} pagamento(s) lidos).`) },
+    onError: (e: Error) => toast('error', e.message),
+  })
   const refresh = () => qc.invalidateQueries({ queryKey: ['financeiro'] })
 
   const salvar = useMutation({
@@ -128,11 +160,51 @@ export default function Financeiro() {
               <Tile label="Outras receitas" value={formatBRL(r.manual.receitas)} />
               <Tile label="Despesas lançadas" value={formatBRL(r.manual.despesas)} tone={r.manual.despesas > 0 ? 'ruim' : undefined} />
               <Tile label="Resultado do período" value={formatBRL(r.resultado)} tone={r.resultado >= 0 ? 'bom' : 'ruim'}><p className="text-xs text-muted-foreground">lucro dos pedidos + receitas - despesas</p></Tile>
-              <Tile label="Saldo no Mercado Pago" value={saldo.data?.ok ? formatBRL(saldo.data.disponivel) : '—'}>
+              <Tile label="Saldo no Mercado Pago" value={saldo.data?.ok ? formatBRL(saldo.data.disponivel) : extrato.data?.saldo ? formatBRL(extrato.data.saldo.disponivel) : '—'}>
                 <p className="text-xs text-muted-foreground">
-                  {saldo.isLoading ? 'Consultando…' : saldo.data?.ok ? `a liberar ${formatBRL(saldo.data.a_liberar)}${saldo.data.modo === 'teste' ? ' (modo teste)' : ''}` : saldo.data?.error ?? 'Indisponível agora'}
+                  {saldo.isLoading ? 'Consultando…' : saldo.data?.ok ? `a liberar ${formatBRL(saldo.data.a_liberar)}${saldo.data.modo === 'teste' ? ' (modo teste)' : ''}` : extrato.data?.saldo ? `a liberar ${formatBRL(extrato.data.saldo.a_liberar)} · lido em ${new Date(extrato.data.saldo.capturado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : saldo.data?.error ?? 'Indisponível agora'}
                 </p>
               </Tile>
+            </section>
+
+            <section aria-label="Extrato do Mercado Pago" className="rounded-md border bg-card p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-black">Extrato do Mercado Pago</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Atualiza sozinho a cada 5 minutos
+                    {extrato.data?.ultima_atualizacao ? ` · última leitura ${new Date(extrato.data.ultima_atualizacao).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" disabled={atualizarExtrato.isPending} onClick={() => atualizarExtrato.mutate()}>
+                  {atualizarExtrato.isPending ? 'Atualizando…' : 'Atualizar agora'}
+                </Button>
+              </div>
+              {extrato.data && (
+                <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <Tile label="Recebido (líquido)" value={formatBRL(extrato.data.liquido)}><p className="text-xs text-muted-foreground">{extrato.data.recebimentos} pagamento(s), bruto {formatBRL(extrato.data.bruto)}</p></Tile>
+                  <Tile label="Taxas do Mercado Pago" value={formatBRL(extrato.data.taxas)} />
+                  <Tile label="Estornos" value={formatBRL(extrato.data.estornos)} tone={extrato.data.estornos > 0 ? 'ruim' : undefined} />
+                  <Tile label="Sem pedido no CRM" value={String(extrato.data.sem_pedido)} tone={extrato.data.sem_pedido > 0 ? 'ruim' : undefined}>
+                    <p className="text-xs text-muted-foreground">{extrato.data.sem_pedido > 0 ? 'recebimento sem pedido ligado: confira' : `${extrato.data.pendentes} em análise`}</p>
+                  </Tile>
+                </div>
+              )}
+              {(movimentos.data ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum movimento neste período.</p>
+              ) : (
+                <ul className="divide-y text-sm">
+                  {movimentos.data!.map((m) => (
+                    <li key={m.mp_payment_id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{ROTULO_TIPO[m.tipo]}{m.referencia ? ` · ${m.referencia}` : ''}{m.metodo ? ` · ${m.metodo}` : ''}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(m.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}{m.taxa > 0 ? ` · taxa ${formatBRL(m.taxa)}` : ''}{m.tipo === 'recebimento' && !m.order_id ? ' · sem pedido' : ''}</p>
+                      </div>
+                      <span className={cn('font-bold tabular', (m.tipo === 'estorno' || m.tipo === 'contestacao') && 'text-brand-red')}>{formatBRL(m.tipo === 'recebimento' ? (m.liquido ?? m.bruto - m.taxa) : m.bruto)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             <section aria-label="Últimos meses" className="rounded-md border bg-card p-4">

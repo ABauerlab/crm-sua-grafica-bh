@@ -1337,13 +1337,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_pode_enviar",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/agente_pode_enviar_rodada",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id } }}",
+        "jsonBody": "={{ { p_conversation: $(\"Conferir se o agente deve responder\").first().json.conversation_id, p_message: $(\"Entrada normalizada\").first().json.message_id } }}",
         "options": {
           "timeout": 15000
         }
@@ -1739,7 +1739,7 @@
         ],
         [
           {
-            "node": "Registrar: conversa ocupada, rodada descartada",
+            "node": "Esperar a rodada em andamento",
             "type": "main",
             "index": 0
           }
