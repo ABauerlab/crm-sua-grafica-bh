@@ -8,7 +8,8 @@ Uso:
   python3 study_loop.py --max-batches 3
   python3 study_loop.py --selftest      # testa o detector de rate limit
 """
-import argparse, json, re, shutil, subprocess, sys, time
+import runtime
+import argparse, json, signal, re, shutil, subprocess, sys, time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -91,6 +92,7 @@ def extrair_reset(texto, agora=None):
 
 
 def pausa(destino, batch, motivo="RATE LIMIT"):
+    runtime.escrever(estado="aguardando_limite" if motivo == "RATE LIMIT" else "retentativa", lote=batch, retoma_as=destino.timestamp())
     print(f"\n[PAUSA {motivo}] Limite da assinatura atingido no {batch}. Retomando automaticamente às {destino:%H:%M}...", flush=True)
     while True:
         falta = (destino - datetime.now()).total_seconds()
@@ -212,6 +214,7 @@ def processar_lote(batch, st):
         st[batch]["status"] = "processing"; st[batch]["tentativas"] = st[batch].get("tentativas", 0) + 1
         save_state(st)
         antes = len(PROGRESSO.read_text(encoding="utf-8"))
+        runtime.escrever(estado="estudando", lote=batch, retoma_as=None, itens=st[batch].get("titulos", []))
         print(f"\n[{datetime.now():%H:%M:%S}] Estudando {batch} (tentativa {st[batch]['tentativas']})...", flush=True)
         rc, out, err = rodar_claude(montar_prompt(batch, extra))
         saida = f"{out}\n{err}"
@@ -266,6 +269,7 @@ def main():
     if not st:
         sys.exit("Nenhum lote encontrado. Rode harvester.py primeiro.")
     garantir_saida()
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     if any(b["status"] == "processing" for b in st.values()):  # queda anterior no meio do lote
         restaurar()
         for b in st.values():
@@ -284,6 +288,7 @@ def main():
             if b["status"] == "processing": b["status"] = "pending"
         save_state(st); sys.exit(130)
     res = {s: sum(1 for b in st.values() if b["status"] == s) for s in ("completed", "pending", "failed")}
+    runtime.escrever(estado="concluido", lote=None, retoma_as=None)
     print(f"\n[FIM] {res}")
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Um clique: prepara tudo e roda coleta + estudo do canal inteiro. Chamado por RODAR_TUDO.bat / rodar_tudo.sh."""
+"""Um clique: prepara tudo e abre o painel em http://localhost:8585. Chamado por RODAR_TUDO.bat / rodar_tudo.sh."""
 import json, shutil, subprocess, sys, os
 from pathlib import Path
 
@@ -27,7 +27,7 @@ def rodar(args):
 
 def main():
     manter_pc_acordado()
-    passo("1/4 Configuração")
+    passo("1/3 Configuração")
     cfg = ROOT / "config.local.json"
     if not cfg.exists():
         cfg.write_text(json.dumps({"canal": CANAL_PADRAO, "idiomas": ["pt", "pt-BR", "en"],
@@ -37,7 +37,7 @@ def main():
     else:
         print("config.local.json já existe.")
 
-    passo("2/4 Dependências")
+    passo("2/3 Dependências")
     marca = ROOT / "state" / ".deps_ok"
     if not marca.exists():
         if rodar(["-m", "pip", "install", "-r", "requirements.txt"]) != 0:
@@ -46,19 +46,13 @@ def main():
     else:
         print("já instaladas.")
     if not shutil.which("claude"):
-        sys.exit("O comando 'claude' (Claude Code) não foi encontrado. Instale e faça login uma vez (abra o terminal e digite: claude).")
+        print("Aviso: o Claude Code não foi encontrado. O painel abre, mas o estudo só inicia depois de instalar e fazer login (digite: claude).")
     if not shutil.which("ffmpeg"):
         print("Aviso: ffmpeg não encontrado. Vídeos sem legenda ficarão sem transcrição por áudio. Instale o ffmpeg para cobrir tudo.")
 
-    passo("3/4 Coleta do canal inteiro (vídeos e Shorts)")
-    if rodar(["harvester.py"]) != 0:
-        print("A coleta terminou com avisos; seguindo para o estudo com o que foi coletado.")
-
-    passo("4/4 Estudo com o Claude (espera sozinho se o limite da assinatura acabar)")
-    code = rodar(["study_loop.py"])
-    passo("FIM" if code == 0 else "ENCERRADO")
-    print("Resultado em: output/conhecimento_grafica/  (comece por LEIA_PRIMEIRO_INDICE.md)")
-    sys.exit(code)
+    passo("3/3 Abrindo o painel")
+    import app
+    app.main(abrir=True)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ Esteira local em duas fases que transforma um canal do YouTube em base de conhec
 - Windows: dê dois cliques em `RODAR_TUDO.bat`
 - Mac/Linux: `./rodar_tudo.sh`
 
-Cria o `config.local.json` sozinho, usa os cookies do navegador quando possível, instala as dependências na primeira vez, coleta o canal inteiro e estuda todos os lotes, esperando sozinho o limite da assinatura. Pode fechar e abrir de novo: retoma de onde parou.
+Abre o painel em http://localhost:8585 (botão Iniciar / Pausar, status em tempo real, abas para ler o conhecimento, download .md e PDF). Cria o `config.local.json` sozinho, usa os cookies do navegador quando possível e instala as dependências na primeira vez. Se o limite da assinatura acabar, espera sozinho. Pode fechar e abrir de novo: retoma de onde parou.
 
 ## Estado e saídas
 - `state/videos_index.json` e `state/batches_state.json` (ignorados pelo git)

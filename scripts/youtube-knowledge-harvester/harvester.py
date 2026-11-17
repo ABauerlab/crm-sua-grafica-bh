@@ -7,6 +7,7 @@ Uso:
 O canal vem de config.local.json (ignorado pelo git, por causa do sigilo do fornecedor)
 ou da variável HARVEST_CHANNEL.
 """
+import runtime
 import argparse, json, os, re, shutil, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -289,6 +290,7 @@ def main():
     a = ap.parse_args()
     cfg = load_config()
     escolher_cookies(cfg)
+    runtime.escrever(estado="coletando", detalhe="Procurando vídeos e Shorts no canal...")
     index = indexar(cfg, {"video": a.limit_videos, "short": a.limit_shorts})
     alvo = [v for v in index.values() if v["status"] in ("indexed", "failed")]
     if a.limit_videos or a.limit_shorts:  # modo teste: só os dois recortes pedidos
@@ -302,6 +304,7 @@ def main():
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         for i, r in enumerate(ex.map(lambda it: processar(it, cfg), alvo), 1):
             index[r["video_id"]] = r
+            runtime.escrever(estado="coletando", detalhe=f"Baixando transcrições: {i} de {len(alvo)}")
             print(f"  [{i}/{len(alvo)}] {r['video_id']} {r['status']} ({r.get('fonte')})")
             if i % 10 == 0:
                 save_json(INDEX_FILE, index)
