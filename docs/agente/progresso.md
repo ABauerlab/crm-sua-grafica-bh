@@ -957,3 +957,9 @@ Foram lidas as 8 conversas reais (Beatriz, 😎 rótulo, Hudson, Marcos Junio, F
 - **Lentidão:** mediana de 63 s por rodada (p90 109 s). `buscar_produto` foi chamada 150 vezes em 39 rodadas (cerca de 4 por resposta) e 3 rodadas bateram o detector de loop (14 a 16 chamadas). Regra N (no máximo 2 buscas por resposta) e atraso de digitação reduzido para 1 a 3 s no WF1.
 - Testes novos: `e17-03-cartao-urgente-fecha` e `e17-04-rotulo-direto`.
 - **Decisões do dono pendentes:** (1) oferecer prévia rápida da arte antes do pagamento para primeira compra? (2) reduzir `produto-opcoes` de 4 para 2 opções (hoje está fixo em 4 na função).
+
+### 17/11/2026 (tarde): crédito do Gemini esgotado e recuperação automática
+- Às 08:32 o Gemini passou a responder "Payment required" (sem crédito). O cliente Felipe ficou parado em "PVC" com a frase "Recebi sua mensagem e já volto" e o dono recebeu o alerta. A bateria de testes que rodei hoje consome o mesmo crédito: evitar rodar a suíte inteira sem necessidade.
+- **Recuperação automática** (`private.agente_retomar_travadas`, cron `agente-retomar-travadas` a cada 3 min, migration `20261217000005`): conversa em modo IA cuja última mensagem do cliente ficou sem resposta (ou só com a frase neutra) há mais de 4 min, nas últimas 6 h, é reprocessada pelo WF1 (até 6 tentativas, uma a cada 10 min). A URL do WF1 fica em `app_segredos` (`n8n_wf1_entrada_url`), fora do repositório. Desligar: `app_settings.agent_retomada = {"enabled": false}`.
+- **Trava de saída:** valores já confirmados por ferramenta na conversa (12 h) passam a valer (migration `20261217000004`), e quando o valor não é verificado o WF2 repete a resposta uma vez com aviso antes de mandar a frase neutra.
+- **Pendente de validação (sem crédito):** cenários `e17-04-rotulo-direto` e `e17-05-felipe-varios-itens` (atendimento completo com vários itens) devem ser rodados depois que o crédito voltar.
