@@ -37,7 +37,7 @@ begin
     delete from public.agente_execucoes where message_id = r.msg;
     insert into public.agent_logs (conversation_id, actor, action, detail, result, workflow)
     values (r.conv, 'sistema', 'retomada', jsonb_build_object('message_id', r.msg), 'ok', 'private.agente_retomar_travadas');
-    perform net.http_post(url := v_url, headers := '{"Content-Type": "application/json"}'::jsonb, body := jsonb_build_object('message_id', r.msg));
+    perform net.http_post(url := v_url, headers := '{"Content-Type": "application/json", "x-gbh-token": "retomada"}'::jsonb, body := jsonb_build_object('message_id', r.msg));
     v_n := v_n + 1;
   end loop;
   return v_n;
