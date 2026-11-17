@@ -275,8 +275,6 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
       {
         onSuccess: () => {
           void logAction('assumiu_conversa', 'Assumido pelo dono')
-          // aviso ao cliente uma única vez, só na passagem IA -> humano; sai por whatsapp-send (a API da Meta só é chamada nas Edge Functions)
-          send.mutate({ text: 'Um de nossos consultores humanos acabou de assumir este atendimento para cuidar dos detalhes finais do seu pedido. Só um instante que já daremos continuidade!' })
         },
         onSettled: () => { assumindoRef.current = false },
       },
