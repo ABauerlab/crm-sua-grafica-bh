@@ -1114,7 +1114,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { p_conversation: $(\"Montar prompt\").first().json.conversation_id, p_motivo: \"Resposta do agente bloqueada pela trava de saída (\" + ($(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos || []).join(\", \") + \"). O cliente recebeu uma frase neutra.\", p_gravidade: \"alta\", p_tipo: \"saida_bloqueada\" } }}",
+        "jsonBody": "={{ { p_conversation: $(\"Montar prompt\").first().json.conversation_id, p_motivo: \"Resposta do agente bloqueada pela trava de saída (\" + (($(\"Trava de saída (estilo, vazamento, valor)\").first().json || {}).motivos || []).join(\", \") + \"). O cliente recebeu uma frase neutra e a conversa será retomada sozinha.\", p_gravidade: ((($(\"Trava de saída (estilo, vazamento, valor)\").first().json || {}).soft_only === true) ? \"baixa\" : \"alta\"), p_tipo: \"saida_bloqueada\" } }}",
         "options": {
           "timeout": 15000
         }
@@ -1140,7 +1140,7 @@
             {
               "id": "b1",
               "name": "texto",
-              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto_seguro || \"Deixa eu confirmar isso certinho aqui e já te respondo, tá?\" }}",
+              "value": "={{ (($(\"Trava de saída (estilo, vazamento, valor)\").first().json || {}).texto_seguro) || \"Deixa eu confirmar isso certinho aqui e já te respondo, tá?\" }}",
               "type": "string"
             },
             {
@@ -1419,7 +1419,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ ($json.resposta_vazia === true || $json.falhou === true || /^\\s*Calling tools?\\s*:/i.test(String($json.texto || ''))) && $runIndex < 2 }}",
+              "leftValue": "={{ ($json.resposta_vazia === true || $json.falhou === true || /^\\s*Calling tools?\\s*:/i.test(String($json.texto || ''))) && $runIndex < 4 }}",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -1444,7 +1444,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia ou citou um valor que nenhuma ferramenta confirmou nesta rodada. Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória. Se não der para confirmar, pergunte o que falta, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
+        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia, citou um valor que nenhuma ferramenta confirmou nesta rodada ou prometeu desconto, brinde ou benefício que só a ferramenta pode dar. Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória, e sem prometer desconto ou brinde. Se não der para confirmar um valor, mostre o que já foi confirmado e faça a próxima pergunta de avanço, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
       }
     },
     {
@@ -1509,7 +1509,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ (($(\"Trava de saída (estilo, vazamento, valor)\").first().json.motivos || []).includes('preco_nao_verificado')) && $runIndex < 1 }}",
+              "leftValue": "={{ (($(\"Trava de saída (estilo, vazamento, valor)\").first().json || {}).soft_only === true) && $runIndex < 1 }}",
               "operator": {
                 "type": "boolean",
                 "operation": "true",
@@ -1540,6 +1540,75 @@
       "position": [
         448,
         192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!(($(\"Trava de saída (estilo, vazamento, valor)\").first().json || {}).texto_saneado) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Tem texto saneado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "texto",
+              "value": "={{ $(\"Trava de saída (estilo, vazamento, valor)\").first().json.texto_saneado }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "bloqueado",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "s3",
+              "name": "erro",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "s4",
+              "name": "execucao_id",
+              "value": "={{ $(\"Montar prompt\").first().json.execucao_id }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Resposta saneada (sem as frases barradas)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2300,
+        340
       ]
     }
   ],
@@ -1895,7 +1964,7 @@
         ],
         [
           {
-            "node": "Avisar o dono da resposta bloqueada",
+            "node": "Tem texto saneado?",
             "type": "main",
             "index": 0
           }
@@ -1907,6 +1976,24 @@
         [
           {
             "node": "Agente de atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem texto saneado?": {
+      "main": [
+        [
+          {
+            "node": "Resposta saneada (sem as frases barradas)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Avisar o dono da resposta bloqueada",
             "type": "main",
             "index": 0
           }
