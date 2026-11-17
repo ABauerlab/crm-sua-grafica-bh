@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## 17/11/2026: Financeiro com saldo manual e Pagamentos dentro dele
+- **Recebido líquido** agora vem só dos pedidos pagos (faturamento menos a taxa do Mercado Pago, `financeiro_resumo`). O extrato automático do Mercado Pago (que contava saídas como movimentação) e o saldo automático saíram da tela; as funções `mp-extrato` e `mp-saldo` e as tabelas `mp_movimentos` e `mp_saldo_historico` continuam no servidor, sem uso na interface.
+- **Saldo manual**: só o que o dono lança em Receita e Despesa. O dono informa o saldo de hoje do Mercado Pago e a tela mostra a diferença para o saldo dos lançamentos (migration `20261217000024`, aplicada: `financeiro_saldo_manual` e `financeiro_saldo_informar`, só admin).
+- **Pagamentos** virou aba de Financeiro (`/financeiro?aba=pagamentos`; `/pagamentos` redireciona). Financeiro deixou de ser só do admin: atendente vê só a aba Pagamentos.
+
 ## 17/11/2026: área Bling e NF + forma de pagamento no pedido do Bling
 - **Forma de pagamento**: o pedido ia ao Bling com `formaPagamento.id = 0` (conferido nos pedidos reais). Agora `bling-integracao` consulta `/formas-pagamentos`, escolhe a forma pelo nome (Pix, cartão de crédito/débito, dinheiro, transferência) e, se não achar, pelo tipo da NF-e, e manda na parcela (a NF-e herda). Se não achar nenhuma, vai sem forma e o aviso do pedido diz para escolher na NF. Deploy da função feito (versão 13). Vale só para pedidos novos; os já enviados continuam como estão.
 - **Indicador de presença**: não é enviado pelo CRM. O CRM cria o pedido de venda; a nota é gerada no Bling, onde o indicador (1, operação presencial) fica na configuração da nota. Não consegui confirmar pela API se o pedido aceita esse campo.

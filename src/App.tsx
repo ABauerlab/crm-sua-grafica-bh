@@ -19,7 +19,6 @@ const Team = lazy(() => import('@/pages/Team'))
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
 const Catalog = lazy(() => import('@/pages/Catalog'))
 const Campaigns = lazy(() => import('@/pages/Campaigns'))
-const Payments = lazy(() => import('@/pages/Payments'))
 const Bling = lazy(() => import('@/pages/Bling'))
 const Financeiro = lazy(() => import('@/pages/Financeiro'))
 const Tasks = lazy(() => import('@/pages/Tasks'))
@@ -69,7 +68,8 @@ export default function App() {
             <Route path="/contatos" element={<Contacts />} />
             <Route path="/catalogo" element={<Catalog />} />
             <Route path="/campanhas" element={<Campaigns />} />
-            <Route path="/pagamentos" element={<Payments />} />
+            <Route path="/pagamentos" element={<Navigate to="/financeiro?aba=pagamentos" replace />} />
+            <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/bling" element={<Bling />} />
             <Route path="/tarefas" element={<Tasks />} />
             <Route path="/templates" element={<Templates />} />
@@ -77,7 +77,6 @@ export default function App() {
             <Route path="/funil" element={<Navigate to="/kanban" replace />} />
             <Route element={<RequireAdmin />}>
               <Route path="/atendentes" element={<Team />} />
-              <Route path="/financeiro" element={<Financeiro />} />
             </Route>
           </Route>
         </Route>
