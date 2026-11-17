@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## 17/11/2026: aprovação da arte
+- Botão **Arte** no chat (ao lado do NF): coloca no campo a mensagem de aprovação ("responda APROVADO; depois disso entra em produção e não dá mais para corrigir"); o atendente anexa a arte e envia (o texto vai de legenda). Resposta rápida `/arte` com o mesmo texto (migration `20261217000025`, aplicada).
+- Template da Meta `aprovacao_arte` (utilidade, 1 variável) registrado em `AGENT_TEMPLATES` (agora 12). **Ainda não submetido à Meta**: falta o dono escolher a conta do WhatsApp Business (há Sua Gráfica BH e Bauerlab). Fora da janela de 24 h o botão fica desativado; depois de aprovado, usar Enviar template.
+
 ## 17/11/2026: menu agrupado
 - **Templates** viraram aba de Campanhas (`/campanhas?aba=templates`) e **Fila da arte** virou aba de Pedidos (`/pedidos?aba=arte`). `/templates` e `/arte` redirecionam. O menu lateral caiu de 15 para 12 itens (Painel, Laura, Kanban, Pedidos, Conversas, Contatos, Catálogo, Campanhas, Financeiro, Bling e NF, Tarefas, Configurações).
 
