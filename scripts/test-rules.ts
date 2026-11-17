@@ -205,9 +205,9 @@ assert.deepEqual(pdfMap, { code: 0, category: 1, description: 2, colors: 3, weig
 const pdfBuilt = buildProducts(parsed.rows, 0, pdfMap)
 assert.deepEqual(pdfBuilt.items.map((i) => [i.sku, i.custo]), [['CFV02', 75.99], ['CFV02D', 1143.99], [null, 99.9], ['ADV01', 38.5]])
 
-// Templates do agente: 11 templates, nomes únicos e regras da Meta para o corpo (sem variável no começo ou no fim)
-assert.equal(AGENT_TEMPLATES.length, 11)
-assert.equal(new Set(AGENT_TEMPLATES.map((t) => t.name)).size, 11, 'nomes únicos')
+// Templates do agente: 12 templates, nomes únicos e regras da Meta para o corpo (sem variável no começo ou no fim)
+assert.equal(AGENT_TEMPLATES.length, 12)
+assert.equal(new Set(AGENT_TEMPLATES.map((t) => t.name)).size, 12, 'nomes únicos')
 for (const t of AGENT_TEMPLATES) assert.deepEqual(templateProblems(t), [], `template ${t.name}`)
 assert.deepEqual(templateProblems({ ...AGENT_TEMPLATES[0], body: '{{1}} começou com variável' }).slice(0, 1), ['começa com variável'])
 assert.deepEqual(AGENT_TEMPLATES.filter((t) => t.category === 'MARKETING').map((t) => t.name).sort(),

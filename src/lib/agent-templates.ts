@@ -11,6 +11,13 @@ export interface AgentTemplate {
 
 export const AGENT_TEMPLATES: AgentTemplate[] = [
   {
+    name: 'aprovacao_arte',
+    category: 'UTILITY',
+    body: 'Oi, {{1}}! Sua arte está pronta e segue aqui para aprovação.\n\nConfira com calma textos, nomes, telefones, cores e tamanho.\n\nSe estiver tudo certo, responda *APROVADO*. Depois disso a arte entra em produção e não dá mais para corrigir. Se tiver qualquer ajuste, me fala agora.',
+    vars: ['nome'],
+    use: 'Pedido de aprovação da arte (botão Arte no chat; fora da janela de 24 h sai como template)',
+  },
+  {
     name: 'pedido_pago_dono',
     category: 'UTILITY',
     body: 'Pedido pago por {{1}}. Itens: {{2}}. Valor: {{3}}. Lucro líquido: {{4}}. Previsão: {{5}}. Abra o pedido no CRM: {{6}} para dar atenção agora.',
