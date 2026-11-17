@@ -9,7 +9,7 @@ import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
 import { parsePdfPages, type PdfItem } from '../src/lib/catalog-pdf.ts'
 import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
-import { mensagemNotaFiscal } from '../src/lib/nota-fiscal.ts'
+import { mensagemNotaFiscal, resumoNfFaltando } from '../src/lib/nota-fiscal.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts'
 import { conferirLinhas, linhasDaPlanilha } from '../src/lib/planilha-precos.ts'
@@ -285,6 +285,9 @@ console.log('OK: regras de preço, transições do kanban, pedidos parados, logi
   const m = mensagemNotaFiscal('Marcos Silva')
   assert.ok(m.startsWith('Oi, Marcos!'))
   assert.ok(m.includes('1. Nome completo') && m.includes('CPF ou CNPJ') && m.includes('CEP') && m.includes('E-mail'))
+  assert.ok(!/Rua|Bairro|Cidade|IBGE/.test(m))
+  assert.equal(resumoNfFaltando(['documento', 'endereco']), 'Faltam dados da NF: CPF/CNPJ, endereço (completar pelo CEP)')
+  assert.equal(resumoNfFaltando([]), '')
   assert.ok(!/[—–]/.test(m) && m.length < 400)
   assert.ok(mensagemNotaFiscal(null).startsWith('Oi, tudo bem!'))
 }

@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { AlertTriangle, Bot, Clock, MessageSquare, MoreHorizontal, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
+import { resumoNfFaltando } from '@/lib/nota-fiscal'
 import { StatusPedido } from './StatusPedido'
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { formatBRL, formatPct } from '@/lib/money'
@@ -101,6 +102,10 @@ export function OrderCardView({
           {order.items.slice(0, 3).map((i, n) => <SkuBadge key={`${i.code}-${n}`} sku={i.code} />)}
           {order.items.length > 3 && <span className="text-[11px] text-muted-foreground">+{order.items.length - 3}</span>}
         </div>
+      )}
+
+      {resumoNfFaltando(order.nf_faltantes) && (
+        <p className="mt-1.5 rounded-sm bg-brand-yellow/20 px-1.5 py-0.5 text-[11px] font-bold" title={resumoNfFaltando(order.nf_faltantes)}>NF: faltam dados</p>
       )}
 
       <div className="mt-2 flex items-end justify-between gap-2">

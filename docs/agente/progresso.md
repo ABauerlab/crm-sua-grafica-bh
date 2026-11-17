@@ -2,7 +2,9 @@
 
 ## 17/11/2026: botão NF no chat
 - Botão "NF" ao lado do microfone em `ChatPanel`: coloca no campo a mensagem curta (`src/lib/nota-fiscal.ts`) pedindo nome/razão social, CPF/CNPJ, CEP, rua, número, bairro, cidade/UF e e-mail. O atendente confere e envia (só com a janela de 24 h aberta; fora dela, usar template). O código IBGE não é pedido ao cliente: deve sair do CEP.
-- Pendente: preencher IBGE e logradouro automaticamente pelo CEP (ViaCEP) ao salvar o contato.
+- **Atualização**: a mensagem do botão NF pede só 5 itens (nome, CPF/CNPJ, CEP, número, e-mail). Rua, bairro, cidade, UF e IBGE saem do CEP pela função `contato-cep-completar` (deployada; só preenche campos vazios do contato).
+- **Marcador "Faltam dados da NF"**: migration `20261217000022` (aplicada) cria `contato_nf_faltantes` e a coluna calculada `nf_faltantes` no pedido pago (não cancelado, excluído nem de teste). Aparece no card do Kanban e no topo do pedido, com o botão "Completar pelo CEP". Os 9 pedidos pagos de hoje estão todos com dados faltando.
+- Pendente: chamar `contato-cep-completar` automaticamente quando a Laura salvar o CEP; template de NF para janela fechada.
 
 ## 17/11/2026: atribuição de anúncio nos pedidos (Campanhas)
 - **Bug**: pedido pago do Marcos (#407, anúncio "Crachá com Cordão") não aparecia em Campanhas. `ad_performance` cruza por `orders.origin_ad_id`, mas só o pedido manual do front gravava esse campo; pedidos da Laura e do site ficavam sem origem (#407, #408 e #410 afetados).

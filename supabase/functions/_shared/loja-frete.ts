@@ -1,6 +1,6 @@
 // E-commerce Fase 9: CEP, bairro e cotação do SuperFrete. Funções puras (testadas em Node: npm run test:loja).
 
-export interface EnderecoCep { cep: string; logradouro: string | null; bairro: string | null; cidade: string | null; uf: string | null }
+export interface EnderecoCep { cep: string; logradouro: string | null; bairro: string | null; cidade: string | null; uf: string | null; codigo_ibge?: string | null }
 export interface Pacote { peso_kg: number; altura_cm: number; largura_cm: number; comprimento_cm: number }
 export interface OpcaoEnvio { servico: 'pac' | 'sedex' | 'mini'; nome: string; valor: number; prazo_dias: number | null }
 
@@ -17,7 +17,8 @@ export function lerEnderecoCep(cep: string, j: Record<string, unknown> | null): 
   const cidade = s(j.localidade) ?? s(j.city)
   const uf = (s(j.uf) ?? s(j.state))?.toUpperCase().slice(0, 2) ?? null
   if (!cidade && !bairro) return null
-  return { cep, logradouro: s(j.logradouro) ?? s(j.street), bairro, cidade, uf }
+  const ibge = typeof j.ibge === 'string' || typeof j.ibge === 'number' ? String(j.ibge).replace(/\D/g, '') : ''
+  return { cep, logradouro: s(j.logradouro) ?? s(j.street), bairro, cidade, uf, codigo_ibge: /^[0-9]{7}$/.test(ibge) ? ibge : null }
 }
 
 /** Junta os pacotes de cada produto em um só (empilhados): soma peso e altura, usa o maior comprimento e a maior largura. */
