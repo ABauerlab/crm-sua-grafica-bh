@@ -1,6 +1,8 @@
 import { Download, PackageCheck, Search, Truck } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import ArteQueue from '@/pages/ArteQueue'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SkuBadge } from '@/components/SkuBadge'
 import { Button } from '@/components/ui/button'
 import { ErrorState } from '@/components/ui/empty-state'
@@ -135,7 +137,7 @@ function ListaFornecedor({ onClose }: { onClose: () => void }) {
   )
 }
 
-export default function Orders() {
+function PedidosLista() {
   const toast = useToast()
   const { profile } = useAuth()
   const dono = profile?.role === 'admin'
@@ -220,7 +222,7 @@ export default function Orders() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
-        <h1 className="text-xl font-black">Pedidos</h1>
+        <h2 className="text-base font-black">Lista de pedidos</h2>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setFornecedor((v) => !v)}><PackageCheck className="mr-1 h-4 w-4" aria-hidden /> Lista para o fornecedor</Button>
           <Button variant="outline" onClick={exportar}><Download className="mr-1 h-4 w-4" aria-hidden /> Exportar CSV</Button>
@@ -328,6 +330,25 @@ export default function Orders() {
           </table>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Pedidos: lista de pedidos e, na outra aba, a fila da arte (pedidos pagos esperando a arte). */
+export default function Orders() {
+  const [params, setParams] = useSearchParams()
+  const aba = params.get('aba') === 'arte' ? 'arte' : 'pedidos'
+  return (
+    <div className="flex h-full flex-col">
+      <header className="px-4 pt-3"><h1 className="text-xl font-black">Pedidos</h1></header>
+      <Tabs value={aba} onValueChange={(v) => setParams(v === 'pedidos' ? {} : { aba: v }, { replace: true })} className="flex min-h-0 flex-1 flex-col">
+        <TabsList>
+          <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+          <TabsTrigger value="arte">Fila da arte</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pedidos" className="p-0"><PedidosLista /></TabsContent>
+        <TabsContent value="arte" className="p-0"><ArteQueue /></TabsContent>
+      </Tabs>
     </div>
   )
 }
