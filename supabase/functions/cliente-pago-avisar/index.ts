@@ -72,13 +72,17 @@ function montarConfirmacaoCliente(i: {
   entrega?: string | null
   persona?: string | null
   artigo?: string | null
+  faltaNota?: string[]
 }): string {
   const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona} da Sua Gráfica BH! ` : ''
   const prazo = i.prazo_manual ? `Prazo combinado: ${i.previsao}.` : `Previsão de ficar pronto: ${i.previsao}.`
   const saida = i.entrega === 'uber'
     ? 'Quando estiver prontinho, combinamos a entrega por aqui.'
     : 'Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete.'
-  return `Oi, ${i.nome}! ${quem}Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo} ${saida}`
+  const nota = i.faltaNota && i.faltaNota.length
+    ? ` Pra emitir a sua nota fiscal, me passa por aqui: ${i.faltaNota.join(', ')}.`
+    : ''
+  return `Oi, ${i.nome}! ${quem}Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo} ${saida}${nota}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
@@ -198,7 +202,14 @@ Deno.serve(async (req) => {
   let envio = { ok: false, wa_message_id: undefined as string | undefined, erro: undefined as string | undefined }
 
   if (janelaAberta(r.janela_ate)) {
-    corpo = montarConfirmacaoCliente(dados)
+    const { data: ct } = await db.from('conversations').select('contacts(name, document, email, cep, address)').eq('id', r.conversation_id).maybeSingle()
+    const c = ((ct as { contacts?: Record<string, string | null> } | null)?.contacts ?? {}) as Record<string, string | null>
+    const faltaNota: string[] = []
+    if (!String(c.document ?? '').trim()) faltaNota.push('CPF ou CNPJ')
+    if (!String(c.name ?? '').trim()) faltaNota.push('nome completo ou razão social')
+    if (!String(c.email ?? '').trim()) faltaNota.push('e-mail')
+    if (!String(c.cep ?? '').trim() || !String(c.address ?? '').trim()) faltaNota.push('endereço com CEP')
+    corpo = montarConfirmacaoCliente({ ...dados, faltaNota })
     const x = await enviarTexto(env, r.wa_id, corpo)
     envio = { ok: x.ok, wa_message_id: x.wa_message_id, erro: x.erro }
   }
