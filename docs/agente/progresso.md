@@ -977,3 +977,9 @@ Pedido do dono: o agente tem de perceber o erro, voltar, pensar e resolver sozin
 - Comparativo de lotes no banco (`comparativo_lotes` e `orientacao_comparativo` em `buscar_produto`): para 2 crachás, "2 pacotes de 1 = R$ 157,90 ou 1 lote de 5 = R$ 86,90"; a Laura mostra as duas e recomenda a mais barata.
 - **Regra T (pedido do dono): quantidade primeiro, o banco manda.** A Laura só fala de material, lote ou tamanho depois de saber a quantidade, chama `buscar_produto` com ela e oferece só o que a ferramenta devolveu; nunca cita mínimo ou material de memória (o "mínimo de 60 crachás" do Edson veio de outro produto). Valores do banco para crachá: categoria CRACHÁ (PVC 0,75 mm) tem lotes de 1 (R$ 78,90), 5 (R$ 86,90), 10 (R$ 102,90), 25 e mais; pouca quantidade existe.
 - **Orçamento escolhe o lote mais barato:** `montar_orcamento` troca N pacotes pequenos pelo lote maior do mesmo produto quando ele custa menos (aviso `lote_maior_mais_barato`; regra U do WF2 manda explicar ao cliente). Exemplo: 2 crachás PVC saem R$ 86,90 (lote de 5) em vez de R$ 157,90.
+
+### 17/11/2026 (noite): a Laura não repete pergunta já respondida
+- **Causa (caso Hudson):** o modelo só enxerga as últimas mensagens e repetia a pergunta da quantidade depois de o cliente ter dito "2 de início". Regras no prompt sozinhas não seguram.
+- **Ficha da conversa inteira:** `private.ficha_respostas` monta os pares pergunta/resposta e a quantidade informada (`agente_contexto.ficha`); o WF2 coloca a ficha no prompt (nó "Ficha do que o cliente já respondeu", regra V).
+- **Trava de saída:** se a resposta pergunta a quantidade de novo (e a quantidade foi informada nas últimas 36 h), o motivo leve `pergunta_repetida:quantidade` faz a Laura refazer a resposta com a ficha; se ainda repetir, vai a resposta sem a frase repetida. Perguntas sobre outro item (cordão, tirante, brinde) não contam.
+- Teste novo: `e17-07-nao-repete-quantidade`.

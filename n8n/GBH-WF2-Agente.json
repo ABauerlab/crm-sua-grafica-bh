@@ -1444,7 +1444,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia, citou um valor que nenhuma ferramenta confirmou nesta rodada ou prometeu desconto, brinde ou benefício que só a ferramenta pode dar. Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória, e sem prometer desconto ou brinde. Se não der para confirmar um valor, mostre o que já foi confirmado e faça a próxima pergunta de avanço, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
+        "jsCode": "await new Promise((resolve) => setTimeout(resolve, 3500));\nconst j = $('Montar prompt').first().json;\nconst aviso = '\\n\\nATENÇÃO (repetição): a sua resposta anterior não pôde ser enviada porque veio vazia, citou um valor que nenhuma ferramenta confirmou nesta rodada, prometeu desconto, brinde ou benefício que só a ferramenta pode dar, ou repetiu uma pergunta que o cliente já respondeu (veja a ficha do que o cliente já respondeu). Chame buscar_produto ou montar_orcamento agora e escreva SOMENTE os valores que elas devolverem, sem somar, arredondar nem usar valor de memória, e sem prometer desconto ou brinde. Use a quantidade e as respostas que o cliente já deu e vá direto para o que falta: valor, opção ou orçamento. Se não der para confirmar um valor, mostre o que já foi confirmado e faça a próxima pergunta de avanço, sem citar valor.';\nreturn [{ json: { ...j, system: String(j.system || '') + aviso } }];"
       }
     },
     {
@@ -1622,6 +1622,20 @@
       "typeVersion": 2,
       "position": [
         560,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Ficha montada pelo banco com a conversa inteira: perguntas já feitas e o que o cliente respondeu (17/11/2026).\nconst it = $input.first().json || {};\nlet f = {};\ntry { f = (($('Adaptar contexto').first().json || {}).contexto || {}).ficha || {}; } catch (e) { f = {}; }\nconst linhas = [];\nif (f.quantidade_informada) linhas.push('QUANTIDADE que o cliente JÁ informou: ' + f.quantidade_informada + ' unidade(s). NÃO pergunte a quantidade de novo: use essa e siga (só mude se o cliente corrigir ou pedir outro produto).');\nfor (const p of (Array.isArray(f.respostas) ? f.respostas : [])) linhas.push('- Você perguntou: \"' + String(p.pergunta || '') + '\" | o cliente respondeu: \"' + String(p.resposta || '') + '\"');\nif (linhas.length) {\n  it.system = String(it.system || '') + '\\nV) ANTES DE PERGUNTAR QUALQUER COISA, consulte a ficha abaixo, que vem da conversa inteira (não só das últimas mensagens). Se a pergunta já foi respondida, use a resposta e vá para o que ainda falta. Repetir pergunta já respondida faz o cliente desistir.\\nO QUE O CLIENTE JÁ RESPONDEU NESTA CONVERSA:\\n' + linhas.join('\\n') + '\\n';\n}\nreturn [{ json: it }];"
+      },
+      "name": "Ficha do que o cliente já respondeu",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
         192
       ]
     }
@@ -2015,6 +2029,17 @@
       ]
     },
     "Regras adicionais (fluxo maleavel e brindes)": {
+      "main": [
+        [
+          {
+            "node": "Ficha do que o cliente já respondeu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ficha do que o cliente já respondeu": {
       "main": [
         [
           {
