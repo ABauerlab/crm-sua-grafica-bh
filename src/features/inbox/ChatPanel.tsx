@@ -26,6 +26,7 @@ import { MessageBubble } from './MessageBubble'
 import { MessageInfo } from './MessageInfo'
 import { limparVariavel, primeiroNome, TEMPLATE_AVISO } from '@/lib/aviso-operacional'
 import { TemplatePicker } from './TemplatePicker'
+import { mensagemNotaFiscal } from '@/lib/nota-fiscal'
 
 const PAGE = 60
 
@@ -623,6 +624,9 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                   />
                   <Button type="button" variant="outline" size="icon" aria-label="Anexar arquivo" title="Anexar foto, vídeo, áudio ou documento (até 16 MB). Também dá para arrastar e soltar ou colar uma imagem." disabled={sendFile.isPending || !win.open} onClick={() => fileInput.current?.click()}>
                     <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" className="text-xs font-black" aria-label="Pedir dados da nota fiscal" title="Coloca no campo a mensagem pedindo os dados da nota fiscal. Confira e envie." disabled={!win.open || send.isPending} onClick={() => { setText(mensagemNotaFiscal(conversation.contact.name)); taRef.current?.focus() }}>
+                    NF
                   </Button>
                   <Button type="button" variant={gravando ? 'destructive' : 'outline'} size="icon" aria-label={gravando ? 'Parar gravação' : 'Gravar áudio'} title={gravando ? `Gravando ${segundos}s. Clique para parar.` : 'Gravar áudio'} disabled={sendFile.isPending || !win.open} onClick={() => void alternarGravacao()}>
                     {gravando ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}

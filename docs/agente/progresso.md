@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## 17/11/2026: botão NF no chat
+- Botão "NF" ao lado do microfone em `ChatPanel`: coloca no campo a mensagem curta (`src/lib/nota-fiscal.ts`) pedindo nome/razão social, CPF/CNPJ, CEP, rua, número, bairro, cidade/UF e e-mail. O atendente confere e envia (só com a janela de 24 h aberta; fora dela, usar template). O código IBGE não é pedido ao cliente: deve sair do CEP.
+- Pendente: preencher IBGE e logradouro automaticamente pelo CEP (ViaCEP) ao salvar o contato.
+
 ## 17/11/2026: atribuição de anúncio nos pedidos (Campanhas)
 - **Bug**: pedido pago do Marcos (#407, anúncio "Crachá com Cordão") não aparecia em Campanhas. `ad_performance` cruza por `orders.origin_ad_id`, mas só o pedido manual do front gravava esse campo; pedidos da Laura e do site ficavam sem origem (#407, #408 e #410 afetados).
 - **Correção** (migration `20261217000021`, aplicada): gatilho `orders_herdar_origem_anuncio` (BEFORE INSERT) copia `source_id`, título e URL do `first_referral` do contato em qualquer caminho de criação; backfill dos pedidos existentes; `ad_performance` passou a ignorar pedido/contato de teste e pedido excluído e a contar o dia em horário de Brasília.
