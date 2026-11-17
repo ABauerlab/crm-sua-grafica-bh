@@ -1,0 +1,6 @@
+# Conteúdo de terceiros e estado local: nunca vai ao repositório
+data/
+state/
+config.local.json
+__pycache__/
+*.pyc

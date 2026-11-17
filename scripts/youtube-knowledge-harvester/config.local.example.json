@@ -1,0 +1,6 @@
+{
+  "canal": "https://www.youtube.com/@SEU_CANAL",
+  "idiomas": ["pt", "pt-BR", "en"],
+  "whisper_modelo": "small",
+  "tamanho_lote": 15
+}
