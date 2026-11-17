@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## Em andamento (17/11/2026): marketplaces pelo Bling, piloto Tag Kraft 250g com furo
+- **Feito:** gerador de imagens `scripts/gerar-imagens-marketplace.cjs` (5 fotos 1200x1200, sem contato, URL, SKU nem fornecedor; a capa é fundo branco puro); bucket público `marketplace-images` (migration `20261217000001`); 5 imagens do piloto em `marketplace-images/tag-kraft-250g-furo/`; produto pai `SGBH-TAG-KRAFT-FURO` (id Bling 16736524705) com 6 variações (SKUs TDK050CC, TDK0100CC, TDK0250CC, TDK0500CC, TDK01000C2, TDK02000C2; ids 16736524710 a 16736524715). Bling e CRM usam a mesma conta (Kodara e Sua Gráfica BH).
+- **Preço do Bling = preço do Mercado Livre** (lucro líquido alvo R$ 65 depois de 17% de comissão, 6% de imposto e frete estimado de R$ 22 a R$ 32; o frete é ESTIMATIVA e precisa de conferência). Shopee usa preço menor (20% + R$ 4, sem frete).
+- **Falta:** o MCP do Bling não cria o vínculo com as lojas (`/produtos/lojas`): vincular ML (206359728) e Shopee (206359841) no painel ou estender `bling-integracao`; webhook Bling para o CRM (`bling-webhook` só grava `bling_eventos`; criar pedidos com `canal` mercado_livre/shopee); conferir `piso` acima de `preco_venda` nos SKUs `TDK*`; liberar os outros 129 SKUs só depois da validação.
+- Arquivos tocados: `scripts/gerar-imagens-marketplace.cjs`, `supabase/migrations/20261217000001_marketplace_images_bucket.sql`.
+
 ## Fase 3, rodada 4 (15/11/2026): CRM responsivo, Financeiro e Bling
 - **Bug raiz das abas**: `TabsContent` com `flex` vencia o `hidden` das abas inativas, então todos os painéis apareciam empilhados e o ativo ficava espremido (Catálogo e Kits "em branco com rolagem"). Corrigido em `ui/tabs.tsx` (`data-[state=inactive]:hidden`), vale para o CRM inteiro. Catálogo: cards no celular (tabela só de `md` para cima), abas quebram linha, filtros em largura total. Números de WhatsApp não são mais cortados (lista de conversas e cabeçalho do chat).
 - **Financeiro** (`/financeiro`, só admin): resumo do período (faturamento, custo, impostos, taxas e lucro líquido dos pedidos pagos), receitas e despesas lançadas à mão (criar, editar, excluir), evolução de 6 meses, saldo do Mercado Pago (`mp-saldo`, depende de permissão do token) e um bloco "Resultado do mês" no Painel. Migration `20261204000001` (aplicada).
