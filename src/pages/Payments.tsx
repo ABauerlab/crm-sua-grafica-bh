@@ -44,7 +44,7 @@ function PedidosTab() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-        <h1 className="text-xl font-black">Pagamentos</h1>
+        <h2 className="text-base font-black">Pagamentos por pedido</h2>
         <div className="flex flex-wrap items-center gap-2">
           <Select aria-label="Período" className="w-44" value={period} onChange={(e) => setPeriod(e.target.value as typeof period)}>
             <option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="month">Este mês</option><option value="all">Todo o período</option>
