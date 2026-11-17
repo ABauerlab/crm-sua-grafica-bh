@@ -962,7 +962,7 @@ begin
 end;
 $function$;
 
--- ==== public.followup_reservar (md5 b61b2fd30ad1d3cb47f5fa233915eccc) ====
+-- ==== public.followup_reservar (md5 3e56b3f71e55d7631fb2c861c4f5c103) ====
 CREATE OR REPLACE FUNCTION public.followup_reservar(p_familia text, p_limite integer DEFAULT 20, p_agora timestamp with time zone DEFAULT now())
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -1000,6 +1000,9 @@ begin
     elsif v_cadencia and f.regra_codigo ~ '^PAG_' and not exists (
         select 1 from public.pagamentos p where p.order_id = f.order_id and p.eh_link and p.link_ativo and p.status = 'pendente' and (p.expira_em is null or p.expira_em > p_agora)) then v_motivo := 'link_inativo';
     elsif v_cadencia and f.regra_codigo ~ '^Q[1-2]$' and cv.last_inbound_at > f.criado_em then v_motivo := 'cliente_respondeu'; /* conversa_parada */
+    elsif v_cadencia and f.regra_codigo ~ '^Q[1-2]$' and exists (
+        select 1 from (select m.body from public.messages m where m.conversation_id = cv.id and m.direction = 'in' and m.body is not null and m.deleted_at is null order by m.created_at desc limit 2) z
+         where z.body ~* '(n[aã]o,? *(n[aã]o|obrigad[oa]|valeu)|^\W*obrigad[oa]\W*$|^\W*valeu\W*$|n[aã]o (quero|preciso|tenho interesse|faz sentido|vou (querer|seguir|fechar|precisar))|sem interesse|deixa (pra l[aá]|quieto|assim)|desist|j[aá] (fechei|resolvi|comprei|contratei)|era s[oó] isso)') then v_motivo := 'cliente_recusou'; /* cliente_recusou */
     elsif v_cadencia and f.regra_codigo ~ '^Q[1-2]$' and exists (select 1 from public.orders xo where xo.contact_id = f.contact_id and xo.excluido_em is null and xo.created_at > p_agora - interval '10 days') then v_motivo := 'pedido_existente'; /* q_sem_pedido */
     elsif v_cadencia and f.regra_codigo = 'Q2' and exists (select 1 from public.followup_fila x where x.contact_id = f.contact_id and x.regra_codigo = 'Q1' and x.status in ('enviado', 'reservado') and coalesce(x.enviado_em, x.reservado_em) > p_agora - interval '6 hours') then v_motivo := 'q1_recente';
     elsif v_cadencia and f.regra_codigo ~ '^Q[1-2]$' and (cv.last_inbound_at is null or cv.last_inbound_at + interval '24 hours' < p_agora) then v_motivo := 'janela_fechada';
