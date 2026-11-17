@@ -36,6 +36,7 @@ import { DEFAULTS, useSaveSetting, useSetting } from '@/hooks/settings'
 import { setSoundEnabled, soundEnabled } from '@/lib/notify'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
+import { NovaVersao } from '@/components/NovaVersao'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 
@@ -360,6 +361,7 @@ export default function Layout() {
           <Outlet />
         </main>
         {mostrarBarra && <BottomNav onMore={() => setMobileOpen(true)} />}
+        <NovaVersao />
       </div>
     </div>
   )

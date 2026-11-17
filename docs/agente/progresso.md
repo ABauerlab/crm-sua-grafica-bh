@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 17/11/2026: aviso de versão nova do CRM
+- Aba aberta antes do deploy continuava na versão antiga (o dono achou que o merge não tinha entrado; o servidor já tinha). Agora `NovaVersao` confere a cada 5 min e ao voltar para a aba se o arquivo principal publicado mudou e mostra "Tem uma versão nova do CRM" com botão "Atualizar agora". `sw.js`, `manifest.webmanifest` e `offline.html` passaram a `no-cache` no `.htaccess`.
+
 ## 17/11/2026: NF "não será emitida"
 - Terceiro estado da nota em Bling e NF: o dono marca **"Nota não será emitida"** (com motivo no campo de anotação) e o pedido sai de pendente. Filtro e card próprios ("Notas não emitidas", com os motivos) e o card de pendentes ficou só com o que aguarda nota. A conferência com o Bling ignora pedido dispensado; se a nota for emitida (manual ou pelo Bling), o estado desfaz. Migration `20261217000029` (aplicada): `orders.nf_dispensada`, `nf_dispensar`. Para o imposto do Financeiro, nota não emitida continua fora do cálculo.
 
