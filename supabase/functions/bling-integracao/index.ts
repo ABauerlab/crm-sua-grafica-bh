@@ -201,12 +201,12 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
   return { ok: false, erro }
 }
 
-const CANAIS = ['mercado_livre', 'shopee'] as const
+const CANAIS = ['site', 'mercado_livre', 'shopee'] as const
 
 async function vincularAnuncio(db: SupabaseClient, a: { id: string; sku: string; canal: string; bling_produto_id: number; preco: number; dias_preparacao: number }): Promise<{ ok: boolean; vinculo_id?: number; erro?: string; aviso?: string }> {
   const cfg = await cfgBling(db)
-  const lojaId = Number(cfg.lojas_marketplace?.[a.canal])
-  if (!lojaId) return { ok: false, erro: `Loja do canal ${a.canal} não configurada em app_settings.bling.lojas_marketplace.` }
+  const lojaId = Number(a.canal === 'site' ? cfg.loja_id : cfg.lojas_marketplace?.[a.canal])
+  if (!lojaId) return { ok: false, erro: `Loja do canal ${a.canal} não configurada em app_settings.bling.` }
   let aviso: string | undefined
   // dias de preparação = crossdocking do produto (o marketplace usa como prazo de postagem)
   const dias = await bling(db, 'PATCH', `/produtos/${a.bling_produto_id}`, { estoque: { crossdocking: a.dias_preparacao } })
@@ -248,6 +248,15 @@ async function anunciosProcessar(db: SupabaseClient, limite = 12) {
   return resumo
 }
 
+// Diagnóstico somente leitura (cron ou dono): vínculos de um produto e acesso ao mapeamento de categorias das lojas.
+async function diagnostico(db: SupabaseClient) {
+  const lojas = await bling(db, 'GET', '/lojas')
+  const vinc = await bling(db, 'GET', '/produtos/lojas?idProduto=16736524710')
+  const cats = await bling(db, 'GET', '/categorias/lojas?limite=5')
+  const raw = (x: any) => JSON.stringify(x?.data ?? x).slice(0, 1800)
+  return { lojas: raw(lojas.data), vinculos_primeira_variacao: raw(vinc.data), categorias_lojas: { status: cats.status, corpo: raw(cats.data) } }
+}
+
 async function processar(db: SupabaseClient) {
   const cfg = await cfgBling(db)
   if (!cfg.ativo) return { ok: true, ativo: false, enviados: 0 }
@@ -284,9 +293,10 @@ Deno.serve(async (req) => {
 
   const input = (await req.json().catch(() => ({}))) as { acao?: string; code?: string; order_id?: string; ativo?: boolean; itens?: { sku: string; bling_produto_id: number }[] }
   const acao = String(input.acao ?? '')
-  if (quem === 'cron' && acao !== 'processar') return json({ error: 'Ação não permitida pelo agendador.' }, 403)
+  if (quem === 'cron' && !['processar', 'diagnostico'].includes(acao)) return json({ error: 'Ação não permitida pelo agendador.' }, 403)
 
   if (acao === 'processar') return json(await processar(db))
+  if (acao === 'diagnostico') return json(await diagnostico(db))
   if (acao === 'anuncios_enfileirar') return json(await anunciosEnfileirar(db, (input.itens ?? []).slice(0, 200)))
   if (acao === 'anuncios_processar') return json(await anunciosProcessar(db))
 
