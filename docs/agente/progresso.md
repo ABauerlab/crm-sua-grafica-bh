@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## 17/11/2026: template de arte enviado e extrato do Mercado Pago pausado
+- Template `aprovacao_arte` (utilidade, conta Sua Gráfica BH) submetido à Meta (id 1546120117357833, em análise). Depois de aprovado, sincronizar em Configurações > WhatsApp e templates; então o botão Arte pode ser usado também por template fora da janela de 24 h.
+- Agendamento `mp-extrato-sync` (a cada 5 min) pausado (migration `20261217000026`, aplicada). `mp-saldo` nunca teve agendamento. Funções e tabelas continuam como histórico; para religar: `cron.alter_job(job_id, active := true)`.
+
 ## 17/11/2026: primeira passada de visual e responsividade
 Conferida com prints reais em celular (390), tablet (820) e desktop (1440):
 - Menu lateral começa recolhido (só ícones) em telas menores que 1280 px quando não há preferência salva; o chat no tablet ganhou espaço.
