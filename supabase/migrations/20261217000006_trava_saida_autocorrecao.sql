@@ -43,3 +43,7 @@ end;$q$);
     execute v_new;
   end if;
 end $mig$;
+
+-- Tirante é cordão de crachá (lanyard): a busca entende os dois nomes.
+insert into public.sinonimos (grupo, termo) values ('cordao', 'cordao'), ('cordao', 'cordao para cracha'), ('cordao', 'tirante'), ('cordao', 'lanyard'), ('cordao', 'cordao de pescoco')
+on conflict do nothing;

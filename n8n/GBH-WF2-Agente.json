@@ -1610,6 +1610,20 @@
         2300,
         340
       ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Fluxo maleável e brindes (17/11/2026).\nconst it = $input.first().json || {};\nconst regras = [\n  'Q) FLUXO MALEÁVEL: o cliente não segue roteiro. Ele pergunta de vários produtos, volta ao que ficou para trás, muda a quantidade, acrescenta ou tira item e pede valor do que ainda não decidiu. Acompanhe como uma consultora: (1) mantenha a lista viva de itens (produto, tamanho, material, quantidade, arte e valor de referência) e confirme em uma linha de vez em quando; (2) responda primeiro a pergunta do momento, mesmo que seja sobre um item antigo, e depois retome o que estava em aberto sem recomeçar; (3) se o cliente mudar algo, atualize a lista e, se já existe orçamento, gere um novo, nunca insista no antigo; (4) não trate a conversa como funil linear e nunca peça para ele voltar ao assunto; (5) ofereça a próxima venda natural com uma pergunta (itens que combinam) e não force o fechamento enquanto ele ainda está explorando.',\n  'R) BRINDES E TIRANTES: brindes são produtos que a gente VENDE para o cliente dar de presente ou usar em eventos e ações: canecas, copos e taças, garrafas e squeezes, chaveiros e abridores, canetas promocionais, bottons e pins, sacolas, agendas e cadernos, calendários, pulseiras, almofadas e bloco de post-it. Quando o cliente pedir brindes, descubra o público, a verba e a quantidade e busque com buscar_produto pela categoria; nunca diga que não temos brindes. Tirante é o mesmo que cordão de crachá (lanyard): busque como cordão para crachá ou lanyard.'\n];\nit.system = String(it.system || '') + '\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+      },
+      "name": "Regras adicionais (fluxo maleavel e brindes)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        192
+      ]
     }
   ],
   "connections": {
@@ -1975,7 +1989,7 @@
       "main": [
         [
           {
-            "node": "Agente de atendimento",
+            "node": "Regras adicionais (fluxo maleavel e brindes)",
             "type": "main",
             "index": 0
           }
@@ -1994,6 +2008,17 @@
         [
           {
             "node": "Avisar o dono da resposta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (fluxo maleavel e brindes)": {
+      "main": [
+        [
+          {
+            "node": "Agente de atendimento",
             "type": "main",
             "index": 0
           }
