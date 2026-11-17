@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createHash, createHmac } from 'node:crypto'
 import { corpoMeta, eventoMeta, sha256 } from '../supabase/functions/_shared/meta.ts'
-import { escolherFormaPagamento, parcelasComForma, bloqueios, celularBling, corpoContato, ehServicoDeArte, ncmSugerido, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
+import { lerNota, notaEmitida, rotuloSituacaoNota, escolherFormaPagamento, parcelasComForma, bloqueios, celularBling, corpoContato, ehServicoDeArte, ncmSugerido, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
 import { assinaturaBlingValida, descricaoMarketplace, resumoEventoBling, tituloMarketplace } from '../supabase/functions/_shared/bling.ts'
 
 const segredo = 'segredo-de-teste'
@@ -91,4 +91,16 @@ console.log('OK: envio ao Bling (bloqueios, corpos, código de autorização, er
   const par = parcelasComForma([{ valor: 78.9, dataVencimento: '2026-11-17' }], 4, 'pix')
   assert.deepEqual(par[0].formaPagamento, { id: 4 })
   assert.equal(parcelasComForma([{ valor: 1 }], undefined, 'pix')[0].formaPagamento, undefined, 'sem forma achada não manda id 0')
+}
+
+// ---- nota fiscal do pedido lida do Bling (NFC-e ou NF-e)
+{
+  const n = lerNota({ data: { numero: '000071', situacao: 5, chaveAcesso: '31261158481181000103650010000000711384476170' } })
+  assert.deepEqual(n, { numero: '71', situacao: 5, chave: '31261158481181000103650010000000711384476170' }, 'número sem zeros à esquerda')
+  assert.equal(lerNota({ data: { numero: '', situacao: 5 } }), null, 'sem número não é nota')
+  assert.equal(lerNota(null), null)
+  assert.equal(lerNota({ data: { numero: '12', situacao: 6, chaveAcesso: 'curta' } })?.chave, null, 'chave inválida é ignorada')
+  assert.equal(notaEmitida(5) && notaEmitida(6), true)
+  assert.equal(notaEmitida(4) || notaEmitida(1) || notaEmitida(2) || notaEmitida(9), false, 'rejeitada, pendente, cancelada e denegada não contam como emitida')
+  assert.equal(rotuloSituacaoNota(4), 'Rejeitada')
 }

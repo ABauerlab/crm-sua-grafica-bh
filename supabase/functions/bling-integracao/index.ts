@@ -1,6 +1,6 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
-import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, escolherFormaPagamento, extrairCodigo, ncmSugerido, parcelasComForma, textoErroBling, type FormaBling } from '../_shared/bling-envio.ts'
+import { bloqueios, corpoContato, corpoProduto, ehServicoDeArte, escolherFormaPagamento, extrairCodigo, lerNota, notaEmitida, rotuloSituacaoNota, ncmSugerido, parcelasComForma, textoErroBling, type FormaBling } from '../_shared/bling-envio.ts'
 
 // Bling API v3: autorização (OAuth), fila de pedidos pagos e envio. Tokens ficam em app_segredos (nunca no front nem em log).
 // Ações: status, url_autorizacao, trocar_codigo, descobrir_loja, ativar, enviar, processar.
@@ -205,6 +205,32 @@ async function enviarPedido(db: SupabaseClient, orderId: string): Promise<{ ok: 
   return { ok: false, erro }
 }
 
+/** Procura no Bling a nota (NFC-e ou NF-e) de cada pedido pago e grava número, situação e chave. Roda a cada 10 minutos e no botão da tela. */
+async function conferirNotas(db: SupabaseClient, orderId?: string) {
+  if (!(await token(db))) return { ok: false, erro: 'Bling não conectado.', conferidas: 0, com_nota: 0 }
+  const { data: fila } = await db.rpc('nf_pendentes_bling', { p_limite: 12, p_order: orderId ?? null })
+  let conferidas = 0, comNota = 0
+  for (const row of (fila ?? []) as { order_id: string; bling_pedido_id: string }[]) {
+    conferidas++
+    const ped = await bling(db, 'GET', `/pedidos/vendas/${encodeURIComponent(row.bling_pedido_id)}`)
+    const notaId = ped.status === 200 ? Number(ped.data?.data?.notaFiscal?.id ?? 0) : 0
+    let nota = null as ReturnType<typeof lerNota>
+    let tipo = 'nfce'
+    if (notaId > 0) {
+      const a = await bling(db, 'GET', `/nfce/${notaId}`)
+      nota = a.status === 200 ? lerNota(a.data) : null
+      if (!nota) { const b = await bling(db, 'GET', `/nfe/${notaId}`); nota = b.status === 200 ? lerNota(b.data) : null; tipo = 'nfe' }
+    }
+    if (nota) comNota++
+    await db.rpc('nf_registrar_bling', {
+      p_order: row.order_id, p_numero: nota?.numero ?? null, p_tipo: nota ? tipo : null, p_situacao: nota?.situacao ?? null,
+      p_rotulo: nota ? rotuloSituacaoNota(nota.situacao) : null, p_emitida: nota ? notaEmitida(nota.situacao) : false, p_chave: nota?.chave ?? null,
+    })
+    await espera(400)
+  }
+  return { ok: true, conferidas, com_nota: comNota }
+}
+
 async function processar(db: SupabaseClient) {
   const cfg = await cfgBling(db)
   if (!cfg.ativo) return { ok: true, ativo: false, enviados: 0 }
@@ -240,9 +266,10 @@ Deno.serve(async (req) => {
 
   const input = (await req.json().catch(() => ({}))) as { acao?: string; code?: string; order_id?: string; ativo?: boolean }
   const acao = String(input.acao ?? '')
-  if (quem === 'cron' && acao !== 'processar') return json({ error: 'Ação não permitida pelo agendador.' }, 403)
+  if (quem === 'cron' && acao !== 'processar' && acao !== 'conferir_nf') return json({ error: 'Ação não permitida pelo agendador.' }, 403)
 
   if (acao === 'processar') return json(await processar(db))
+  if (acao === 'conferir_nf') return json(await conferirNotas(db, UUID.test(String(input.order_id ?? '')) ? input.order_id : undefined))
 
   if (acao === 'status') {
     const cfg = await cfgBling(db)
