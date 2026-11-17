@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { createHash, createHmac } from 'node:crypto'
 import { corpoMeta, eventoMeta, sha256 } from '../supabase/functions/_shared/meta.ts'
-import { bloqueios, celularBling, corpoContato, ehServicoDeArte, ncmSugerido, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
+import { escolherFormaPagamento, parcelasComForma, bloqueios, celularBling, corpoContato, ehServicoDeArte, ncmSugerido, corpoProduto, extrairCodigo, textoErroBling } from '../supabase/functions/_shared/bling-envio.ts'
 import { assinaturaBlingValida, descricaoMarketplace, resumoEventoBling, tituloMarketplace } from '../supabase/functions/_shared/bling.ts'
 
 const segredo = 'segredo-de-teste'
@@ -71,3 +71,24 @@ assert.equal(ncmSugerido('Serviço qualquer'), undefined)
 assert.equal(ehServicoDeArte('Criação de arte básica'), true)
 assert.equal(ehServicoDeArte('Placa Mr Barbosa'), false)
 console.log('OK: envio ao Bling (bloqueios, corpos, código de autorização, erros)')
+
+// ---- forma de pagamento do pedido no Bling (vai na parcela e daí para a NF-e)
+{
+  const formas = [
+    { id: 1, descricao: 'Dinheiro', tipoPagamento: 1, situacao: 1 },
+    { id: 2, descricao: 'Cartão de Crédito', tipoPagamento: 3, situacao: 1 },
+    { id: 3, descricao: 'Cartão de Débito', tipoPagamento: 4, situacao: 1 },
+    { id: 4, descricao: 'PIX', tipoPagamento: 17, situacao: 1 },
+    { id: 5, descricao: 'Pix antigo', tipoPagamento: 17, situacao: 0 },
+  ]
+  assert.equal(escolherFormaPagamento(formas, 'pix'), 4, 'Pix pelo nome, ignorando forma inativa')
+  assert.equal(escolherFormaPagamento(formas, 'cartao_credito'), 2)
+  assert.equal(escolherFormaPagamento(formas, 'cartao'), 2, 'método antigo "cartao" vale crédito')
+  assert.equal(escolherFormaPagamento(formas, 'cartao_debito'), 3)
+  assert.equal(escolherFormaPagamento([{ id: 9, descricao: 'Outros meios', tipoPagamento: 17, situacao: 1 }], 'pix'), 9, 'sem nome claro, cai no tipo da NF-e')
+  assert.equal(escolherFormaPagamento(formas, 'outro'), undefined)
+  assert.equal(escolherFormaPagamento([], 'pix'), undefined)
+  const par = parcelasComForma([{ valor: 78.9, dataVencimento: '2026-11-17' }], 4, 'pix')
+  assert.deepEqual(par[0].formaPagamento, { id: 4 })
+  assert.equal(parcelasComForma([{ valor: 1 }], undefined, 'pix')[0].formaPagamento, undefined, 'sem forma achada não manda id 0')
+}

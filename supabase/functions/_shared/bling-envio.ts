@@ -104,3 +104,38 @@ export function ncmSugerido(descricao: string): string | undefined {
   for (const [re, ncm] of regras) if (re.test(d)) return ncm
   return undefined
 }
+
+export interface FormaBling { id: number; descricao?: string; tipoPagamento?: number; situacao?: number }
+
+const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+// Código de tPag da NF-e, usado quando o nome da forma no Bling não ajuda
+const TIPO_NFE: Record<string, number> = { dinheiro: 1, cartao_credito: 3, cartao_debito: 4, pix: 17, transferencia: 18, outro: 99 }
+const NOME_FORMA: Record<string, RegExp> = {
+  pix: /\bpix\b/,
+  cartao_credito: /credito|cart.*cred/,
+  cartao_debito: /debito|cart.*deb/,
+  dinheiro: /dinheiro/,
+  transferencia: /transfer|\bted\b/,
+}
+
+/** Forma de pagamento do Bling para o método do pedido: primeiro pelo nome, depois pelo tipo da NF-e. Só formas ativas. */
+export function escolherFormaPagamento(formas: FormaBling[], metodo: string | null | undefined): number | undefined {
+  const m = metodo === 'cartao' ? 'cartao_credito' : String(metodo ?? '')
+  if (!m || m === 'outro') return undefined
+  const ativas = formas.filter((f) => f && Number(f.id) > 0 && (f.situacao === undefined || f.situacao === 1))
+  const re = NOME_FORMA[m]
+  const porNome = re ? ativas.find((f) => re.test(norm(String(f.descricao ?? '')))) : undefined
+  if (porNome) return Number(porNome.id)
+  const tipo = TIPO_NFE[m]
+  const porTipo = tipo ? ativas.find((f) => Number(f.tipoPagamento) === tipo) : undefined
+  return porTipo ? Number(porTipo.id) : undefined
+}
+
+/** Parcela do pedido com a forma de pagamento que o cliente usou (vai para a NF-e). */
+export function parcelasComForma(parcelas: Record<string, any>[], formaId: number | undefined, metodoTexto: string): Record<string, any>[] {
+  return parcelas.map((x) => ({
+    ...x,
+    ...(formaId ? { formaPagamento: { id: formaId } } : {}),
+    observacoes: `Pago pelo Mercado Pago (${metodoTexto})`,
+  }))
+}
