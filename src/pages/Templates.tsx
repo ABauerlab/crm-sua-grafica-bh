@@ -31,7 +31,7 @@ export default function Templates() {
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div>
-          <h1 className="text-lg font-semibold">Templates</h1>
+          <h2 className="text-base font-black">Templates do WhatsApp</h2>
           <p className="text-xs text-muted-foreground">
             {lastSync ? `Última sincronização: ${new Date(lastSync).toLocaleString('pt-BR')}` : 'Ainda não sincronizado.'}
           </p>

@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight, Megaphone, RefreshCw, Trash2 } from 'lucide-react'
 import { Fragment, useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import Templates from '@/pages/Templates'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
@@ -52,7 +54,7 @@ function Tile({ label, value, sub, state }: { label: string; value: string; sub?
   )
 }
 
-export default function Campaigns() {
+function CampanhasPainel() {
   const qc = useQueryClient()
   const toast = useToast()
   const { data: goals } = useSetting('campaign_goals')
@@ -336,6 +338,24 @@ export default function Campaigns() {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Campanhas: desempenho dos anúncios e, na outra aba, os templates do WhatsApp (usados nas campanhas e avisos). */
+export default function Campaigns() {
+  const [params, setParams] = useSearchParams()
+  const aba = params.get('aba') === 'templates' ? 'templates' : 'campanhas'
+  return (
+    <div className="flex h-full flex-col">
+      <Tabs value={aba} onValueChange={(v) => setParams(v === 'campanhas' ? {} : { aba: v }, { replace: true })} className="flex min-h-0 flex-1 flex-col">
+        <TabsList>
+          <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="campanhas" className="p-0"><CampanhasPainel /></TabsContent>
+        <TabsContent value="templates" className="p-0"><Templates /></TabsContent>
+      </Tabs>
     </div>
   )
 }

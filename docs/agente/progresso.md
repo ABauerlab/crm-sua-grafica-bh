@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 17/11/2026: menu agrupado
+- **Templates** viraram aba de Campanhas (`/campanhas?aba=templates`) e **Fila da arte** virou aba de Pedidos (`/pedidos?aba=arte`). `/templates` e `/arte` redirecionam. O menu lateral caiu de 15 para 12 itens (Painel, Laura, Kanban, Pedidos, Conversas, Contatos, Catálogo, Campanhas, Financeiro, Bling e NF, Tarefas, Configurações).
+
 ## 17/11/2026: Financeiro com saldo manual e Pagamentos dentro dele
 - **Recebido líquido** agora vem só dos pedidos pagos (faturamento menos a taxa do Mercado Pago, `financeiro_resumo`). O extrato automático do Mercado Pago (que contava saídas como movimentação) e o saldo automático saíram da tela; as funções `mp-extrato` e `mp-saldo` e as tabelas `mp_movimentos` e `mp_saldo_historico` continuam no servidor, sem uso na interface.
 - **Saldo manual**: só o que o dono lança em Receita e Despesa. O dono informa o saldo de hoje do Mercado Pago e a tela mostra a diferença para o saldo dos lançamentos (migration `20261217000024`, aplicada: `financeiro_saldo_manual` e `financeiro_saldo_informar`, só admin).

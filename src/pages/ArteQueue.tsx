@@ -90,7 +90,7 @@ export default function ArteQueue() {
   })
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4">
-      <header><h1 className="text-xl font-bold">Fila da arte</h1><p className="text-sm text-muted-foreground">Pedidos pagos com arquivo ou briefing recebido. O assistente aguarda você; ao marcar a arte aprovada, a automação continua.</p></header>
+      <header><h2 className="text-base font-black">Fila da arte</h2><p className="text-sm text-muted-foreground">Pedidos pagos com arquivo ou briefing recebido. O assistente aguarda você; ao marcar a arte aprovada, a automação continua.</p></header>
       {isLoading ? <Skeleton className="h-40 w-full" /> : !data?.length ? (
         <EmptyState icon={Palette} title="Nenhuma arte esperando você">Quando um cliente enviar a arte ou o briefing depois de pagar, o pedido aparece aqui e você recebe o alerta.</EmptyState>
       ) : (

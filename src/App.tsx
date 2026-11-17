@@ -10,10 +10,8 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const Laura = lazy(() => import('@/pages/Laura'))
 const Kanban = lazy(() => import('@/pages/Kanban'))
 const Orders = lazy(() => import('@/pages/Orders'))
-const ArteQueue = lazy(() => import('@/pages/ArteQueue'))
 const Inbox = lazy(() => import('@/pages/Inbox'))
 const Contacts = lazy(() => import('@/pages/Contacts'))
-const Templates = lazy(() => import('@/pages/Templates'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const Team = lazy(() => import('@/pages/Team'))
 const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
@@ -63,7 +61,7 @@ export default function App() {
             <Route path="/laura" element={<Laura />} />
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/pedidos" element={<Orders />} />
-            <Route path="/arte" element={<ArteQueue />} />
+            <Route path="/arte" element={<Navigate to="/pedidos?aba=arte" replace />} />
             <Route path="/inbox/:conversationId?" element={<Inbox />} />
             <Route path="/contatos" element={<Contacts />} />
             <Route path="/catalogo" element={<Catalog />} />
@@ -72,7 +70,7 @@ export default function App() {
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/bling" element={<Bling />} />
             <Route path="/tarefas" element={<Tasks />} />
-            <Route path="/templates" element={<Templates />} />
+            <Route path="/templates" element={<Navigate to="/campanhas?aba=templates" replace />} />
             <Route path="/configuracoes" element={<Settings />} />
             <Route path="/funil" element={<Navigate to="/kanban" replace />} />
             <Route element={<RequireAdmin />}>
