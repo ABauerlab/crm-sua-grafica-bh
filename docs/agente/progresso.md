@@ -945,3 +945,15 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Financeiro ao vivo:** função `mp-extrato` (a cada 5 min e botão "Atualizar agora") grava pagamentos do Mercado Pago (bruto, taxa real, líquido, estornos) em `mp_movimentos` e o saldo em `mp_saldo_historico`; a tela Financeiro mostra o extrato, a conferência com os pedidos ("sem pedido no CRM") e relê a cada minuto. **Pendente:** o token de produção não tem permissão para ler o saldo (a leitura de pagamentos funciona); precisa de uma credencial com a permissão de saldo do Mercado Pago.
 - **Foto com nome de outro produto:** a legenda sugerida usa o nome do grupo do catálogo (por exemplo, "cartões fidelidade" para crachá PVC). Regra E do WF2 manda chamar pelo nome do cliente; a legenda em si (`_shared/fotos.ts`) fica para a próxima rodada.
 - Testes novos: `e17-01-cracha-pvc-5-fragmentado` e `e17-02-cracha-mais-cordao-composto`.
+
+### 17/11/2026 (tarde): análise das conversas de 16 e 17/11 com olhar de vendedor
+Foram lidas as 8 conversas reais (Beatriz, 😎 rótulo, Hudson, Marcos Junio, Flávia, Brenda, Edson, Adinilson). Vendas perdidas e causas:
+- **O anúncio de origem não chegava à Laura.** A Meta devolve `headline` e `body`, o prompt lia `titulo` e `texto`; os três leads de anúncio (Hudson, Adinilson, 😎) foram atendidos como se não soubéssemos o produto ("qual material você precisa?"). Corrigido em `agente_contexto` (migration `20261217000003`) e regra F.
+- **Só perguntas, sem valor.** Hudson, Beatriz, Adinilson e Edson receberam duas ou três perguntas e nenhum preço, e sumiram. Regra G (valor de entrada já na primeira resposta).
+- **Cliente com tudo respondido e a Laura perguntando mais.** Marcos Junio (250 cartões para quinta, tem arte, frente e verso) recebeu 4 opções com 4 fotos e uma terceira pergunta, e sumiu por 17 h. Regras H, J e K (fechar quando já respondeu, citar o horário limite, no máximo 2 opções).
+- **PDF sem o valor no texto** (Flávia): regra I.
+- **Cliente que quer ver antes de pagar** (Brenda): regra M manda não repetir a política e chamar o dono se insistir. Decisão pendente do dono (ver abaixo).
+- **Lembrete de conversa parada** com texto de "faltou um detalhe" mesmo quando já tinha passado preço e com nome de perfil em emoji: textos novos e `private.fu_nome` só com letras.
+- **Lentidão:** mediana de 63 s por rodada (p90 109 s). `buscar_produto` foi chamada 150 vezes em 39 rodadas (cerca de 4 por resposta) e 3 rodadas bateram o detector de loop (14 a 16 chamadas). Regra N (no máximo 2 buscas por resposta) e atraso de digitação reduzido para 1 a 3 s no WF1.
+- Testes novos: `e17-03-cartao-urgente-fecha` e `e17-04-rotulo-direto`.
+- **Decisões do dono pendentes:** (1) oferecer prévia rápida da arte antes do pagamento para primeira compra? (2) reduzir `produto-opcoes` de 4 para 2 opções (hoje está fixo em 4 na função).
