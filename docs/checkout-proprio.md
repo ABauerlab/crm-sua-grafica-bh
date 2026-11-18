@@ -28,7 +28,7 @@ mp-webhook e mp-conferir continuam valendo (aviso duplicado é ignorado).
 
 ## Mais upsell e pedido sempre atualizado
 - **Quantidade**: card "Leve mais e pague menos por unidade" com as tiragens do mesmo produto e versão (`private.checkout_quantidades`, `checkout_trocar_quantidade`); preço sempre de `calcular_preco`.
-- Até 5 sugestões de outros produtos (mais combinações por categoria) e até 5 itens extras.
+- **Sugestões variadas (19/11/2026)**: 5 a 6 cards por pedido, SEMPRE de produtos diferentes e coerentes com o tipo do produto principal. As combinações ficam na tabela `checkout_combinacoes` (tipo de produto de origem, categoria sugerida, motivo e pontos; o admin edita). Pedido sem regra própria recebe sugestões gerais (cartão, adesivo, tags, sacolas, canetas, calendário, ímã). O item de cada categoria é escolhido por faixa de preço (complemento acessível, perto de 35% do pedido, entre R$ 50 e R$ 400), com variação entre pedidos, e nunca repete o material do item principal. Antes, o checkout sugeria sempre o mesmo cartão PVC. Até 5 itens extras.
 - **Toda mudança** (arte, quantidade, item) atualiza na hora: itens do pedido, orçamento e PDF (`private.checkout_sincronizar_orcamento`), valor do link ativo e histórico do pedido. Um Pix pendente com o valor antigo é cancelado no Mercado Pago. Teste: `supabase/tests/checkout_melhorias.sql` (termina em "OK").
 - Sem banner de cookies na página de pagamento.
 

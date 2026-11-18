@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## 19/11/2026: sugestões do checkout variadas por tipo de produto
+- **Problema**: o checkout mostrava sempre o mesmo produto (Cartões de Visita PVC Cristal) porque só havia 6 regras de categoria e o resto caía num fallback fixo (pedidos de crachá, canvas e outros).
+- **Correção** (migration `20261218000014`, aplicada): tabela `checkout_combinacoes` (origem por tipo de produto, destino, motivo, pontos) com 80 combinações, 5 a 6 sugestões diferentes por pedido, escolha por faixa de preço e variação entre pedidos. Conferido em 8 pedidos reais: crachá recebe cordão, porta-documentos, caneta, botton, agenda; canvas recebe ímã, postal, calendário; adesivo recebe sacola, tags, cartão fidelidade.
+- **Sugestão**: tela em Configurações para o admin editar `checkout_combinacoes` sem SQL; medir quais sugestões o cliente mais adiciona (`checkout_eventos` tipo `item_adicionado`).
+
 ## 18/11/2026 (noite, 2): melhorias do checkout depois do teste real do Pix
 - Pix testado pelo dono e funcionando. Ajustes pedidos: sem banner de cookies em `/pagar`; cartão em até 12x (até 2x sem juros, de 3x a 12x com juros do Mercado Pago); mais upsell (troca de quantidade, até 5 sugestões, até 5 extras); toda mudança atualiza pedido, orçamento, link e Pix pendente; lembrete PAG_CHK (15 min depois de abrir o checkout); atividade do checkout na aba Pagamento do pedido. Migration `20261218000013` (aplicada), funções `checkout-dados` e `checkout-mp-processar` redeployadas. Detalhes em `docs/checkout-proprio.md`.
 - Apple Pay e Google Pay: não vão no Payment Brick; Apple Pay precisa de conta Apple Developer (ver doc). Não implementado.

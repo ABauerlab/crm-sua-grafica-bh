@@ -15,6 +15,9 @@ begin
   r := public.checkout_carregar(tok);
   q := r -> 'quantidades';
   if (r #>> '{pagamento,max_parcelas}')::int <> 12 or (r #>> '{pagamento,parcelas_sem_juros}')::int <> 2 then raise exception 'FALHA: parcelas %', r -> 'pagamento'; end if;
+  -- sugestões variadas: pelo menos 5, todas de produtos diferentes
+  if jsonb_array_length(r -> 'sugestoes') < 5 then raise exception 'FALHA: menos de 5 sugestões (%)', jsonb_array_length(r -> 'sugestoes'); end if;
+  if (select count(distinct x ->> 'titulo') from jsonb_array_elements(r -> 'sugestoes') x) <> jsonb_array_length(r -> 'sugestoes') then raise exception 'FALHA: sugestões repetidas'; end if;
   select count(*) into n from public.followup_fila where order_id = oid and regra_codigo = 'PAG_CHK' and status = 'pendente';
   if n <> 1 then raise exception 'FALHA: lembrete PAG_CHK não agendado (%)', n; end if;
   select id into fid from public.followup_fila where order_id = oid and regra_codigo = 'PAG_CHK';
