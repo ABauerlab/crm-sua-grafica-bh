@@ -60,5 +60,10 @@ for (const marca of ['fiscal_extrair', 'condicao_fora_padrao_trg', 'saida_travas
   if (!mig18.includes(marca)) falhas.push(`migration da rodada 18/11 perdeu ${marca}`)
 }
 
+// Botão Responder com IA: gatilho de rascunho no WF1, regra do modo rascunho no WF2 (voz da Laura, nunca João Victor) e função do servidor
+const wf1 = readFileSync(join(n8n, 'GBH-WF1-Entrada-e-roteamento.json'), 'utf8')
+for (const no of ['Rascunho: receber pedido', 'Rascunho: chamar o agente', 'Rascunho: extrair o texto', 'Rascunho: salvar para o atendente']) if (!wf1.includes(no)) falhas.push(`WF1 perdeu o nó do botão Responder com IA: ${no}`)
+if (!wf2.includes('MODO RASCUNHO') || !/NUNCA assine nem se apresente como Joao Victor/.test(wf2)) falhas.push('WF2 perdeu a regra do modo rascunho (voz da Laura, nunca João Victor)')
+if (!existsSync(join(raiz, 'supabase/functions/ia-rascunho/index.ts'))) falhas.push('Edge Function ia-rascunho não existe')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)

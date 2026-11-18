@@ -106,3 +106,7 @@ verify_jwt = false
 
 [functions.mp-extrato]
 verify_jwt = false
+
+# Botão Responder com IA: só atendente logado (a função confere o perfil)
+[functions.ia-rascunho]
+verify_jwt = true
