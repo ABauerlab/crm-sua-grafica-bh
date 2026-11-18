@@ -108,6 +108,9 @@ Observações e riscos:
 - Testes: `npm run gate` verde e `supabase/tests/rodada18_atendimento.sql` (rodado com rollback, resultado OK). Nenhum cenário `e5-*`, `mvp-*`, `e12-*` ou `e17-*` foi rodado.
 
 
+### 18/11/2026: estudos do dono aplicados (conhecimento e postura da Laura)
+Detalhes, ajustes e o veredito sobre urgência e escassez em `docs/agente/estudos-do-dono-18-11.md`. Resumo: 33 trechos novos em `public.conhecimento` (papéis, gramaturas, acabamentos, arquivo, upsell por nicho, kits por segmento, fichas de produto, objeções), 5 regras novas no WF2 (X a AB), 5 trechos antigos corrigidos de 12h para 10h30. Urgência só honesta (corte, validade, condição liberada pela ferramenta, data do evento do cliente); escassez não usada. Nenhum teste com Gemini. Para acompanhar: `usos` dos trechos novos e conversas com sugestão de complemento (uma por pedido) e sem frase de escassez.
+
 ---
 
 ## Backlog de melhorias

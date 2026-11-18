@@ -48,6 +48,19 @@ assert.match(trechoProblemas({ titulo: 't', quando_usar: 'q', proximo_passo: 'p'
 assert.equal(words('  duas   palavras '), 2)
 assert.deepEqual(trechoPalavras({ titulo: 't', quando_usar: 'a b', resposta_pronta: 'c d e', fatos: 'f', proximo_passo: 'g' }), { resposta: 3, fatos: 1, total: 7 })
 assert.equal(KNOWLEDGE_LIMITS.total, 120)
+// Rodada 18/11: trechos adaptados dos estudos do dono (docs/agente/conhecimento_rodada18.json) passam no mesmo lint
+{
+  const novos: (Trecho & { id: string })[] = JSON.parse(readFileSync(`${root}docs/agente/conhecimento_rodada18.json`, 'utf8'))
+  const f18: string[] = []
+  for (const t of novos) for (const m of trechoProblemas({ ...t, slug: t.id })) f18.push(`${t.id}: ${m}`)
+  assert.deepEqual(f18, [], `trechos da rodada 18/11 com problema:\n${f18.join('\n')}`)
+  assert.equal(new Set(novos.map((t) => t.id)).size, novos.length, 'ids únicos na rodada 18/11')
+  assert.ok(novos.length >= 30, 'a rodada 18/11 trouxe os trechos esperados')
+  for (const id of ['urgencia_honesta_usar', 'escassez_nao_usar', 'urgencia_evento_data']) assert.ok(novos.some((t) => t.id === id), `trecho de urgência ausente: ${id}`)
+  const escassez = novos.find((t) => t.id === 'escassez_nao_usar')!
+  assert.match(escassez.fatos ?? '', /Nunca inventar escassez/, 'escassez só como regra de não usar')
+}
+
 
 // As mensagens que vão ao cliente (templates do WhatsApp) também não vazam custo, margem, piso nem fornecedor
 const proibidas = /\b(custo|margem|piso|fornecedor)\b/i
