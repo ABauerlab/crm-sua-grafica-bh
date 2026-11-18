@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 18/11/2026 (fechamento): lembrete de pagamento sem conversa
+- **Causa**: pedido manual cujo contato não tem conversa de WhatsApp gerava lembretes PAG que falhavam com "conversation_id inválido" (5 casos, 2 pedidos). Migration `20261218000011` (aplicada): `followup_agendar` só agenda PAG quando o contato tem conversa, `followup_montar` pula com motivo `sem_conversa` se chegar algum sem conversa, e as linhas que já tinham falhado viraram `pulado` (`sem_conversa`). Conferido: nenhum erro restante e o agendamento rodou sem criar linha nova para esses pedidos.
+
 ## 18/11/2026 (fim do dia): kit sem desconto e lembrete rápido depois do link
 - **Decisão do dono**: o foco é lucrar; o kit crachá + cordão é só praticidade de consulta e orçamento. Migration `20261218000010` (aplicada): `kits_agregados.abate_preco` (padrão `false`), então o kit só marca o orçamento (`kit_agregado_id`, `kit_abatimento = 0`) e o preço fica o da planilha. Nenhum orçamento real tinha recebido abatimento. Regra AF do WF2 corrigida (sem falar em desconto de kit). Para religar o abatimento (não recomendado), `update kits_agregados set abate_preco = true`.
 - **Lembrete depois do link sem pagamento**: já existiam PAG_1H, PAG_6H e PAG_24H (cancelam quando o cliente responde ou paga). Agora: nova regra `PAG_20M` (20 min, cita Pix de qualquer banco e cartão em até 2x sem juros), PAG_1H desligada (ficava colada), PAG_6H e PAG_24H mantidas, e o F1 (10 min depois do PDF) não cutuca quem já recebeu o link (`coberto_pelo_link`). Horário de envio 8h às 20h, janela fechada usa o template `pagamento_pendente`.
