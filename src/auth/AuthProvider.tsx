@@ -27,7 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.session) setLoading(false)
     })
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s)
+      // renovação de token e foco da aba disparam o evento com o mesmo usuário: não troca o objeto à toa (evita re-render e piscada)
+      setSession((atual) => (atual && s && atual.user.id === s.user.id && atual.access_token === s.access_token ? atual : s))
       if (!s) {
         setProfile(null)
         setLoading(false)
@@ -41,16 +42,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!userId) return
     let cancelled = false
     setLoading(true)
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled) return
-        setProfile((data as Profile | null) ?? null)
-        setLoading(false)
-      })
+    let tentativa = 0
+    const buscar = () => {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (cancelled) return
+          // falha de rede NÃO pode virar "sem acesso" (derrubava o atendente para o login): tenta de novo
+          if (error && tentativa < 3) {
+            tentativa += 1
+            setTimeout(buscar, 800 * tentativa)
+            return
+          }
+          if (!error) setProfile((data as Profile | null) ?? null)
+          setLoading(false)
+        })
+    }
+    buscar()
     return () => {
       cancelled = true
     }
