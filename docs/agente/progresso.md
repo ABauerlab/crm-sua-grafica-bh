@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 18/11/2026: botão "Responder com IA" no chat
+- Em conversa em modo humano, o botão (faíscas, ao lado de NF e Arte) faz a IA escrever uma sugestão de resposta no campo do chat; o atendente revisa e envia. A IA nunca envia. Voz sempre da Laura (nunca João Victor, que só atende depois do pagamento). No modo rascunho PDF, link, foto, condição especial, lembrete, arte e chamar o dono ficam bloqueados. Detalhes em `docs/agente/ia-responder-botao.md`; migration `20261218000006`, função `ia-rascunho`, gatilho de rascunho no WF1 e regra no WF2. Uma execução real de verificação (46 s, texto correto) na conversa do Thiago.
+
 ## 18/11/2026: estudos do dono adaptados ao conhecimento da Laura
 - 33 trechos novos em `public.conhecimento` (migration `20261218000004`, fonte `docs/agente/conhecimento_rodada18.json`, gerador `scripts/gerar-conhecimento-rodada18.ts` com lint), todos `revisar = true`; 5 regras novas no WF2 (X a AB, publicado); cinco trechos antigos corrigidos de corte 12h para 10h30. Urgência só honesta, escassez não usada. Veredito, ajustes e itens `[CONFIRMAR]` em `docs/agente/estudos-do-dono-18-11.md`. Nenhum cenário do Gemini rodado.
 

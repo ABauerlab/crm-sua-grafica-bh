@@ -1503,6 +1503,150 @@
         "jsCode": "const items = $input.all();\nfor (const it of items) {\n  const b = it.binary && it.binary.data;\n  if (b) { b.fileName = 'audio.ogg'; b.fileExtension = 'ogg'; b.mimeType = 'audio/ogg'; }\n}\nreturn items;"
       },
       "notes": "O WhatsApp entrega o audio como oga sem nome de arquivo; o Groq recusa (unsupported_audio_format). Aqui o arquivo ganha nome e extensao .ogg antes da transcricao."
+    },
+    {
+      "id": "97b84b0d-3dd9-4c05-aa31-f91703b75463",
+      "name": "Rascunho: receber pedido",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        1500
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gbh-wf1-rascunho-77f32a14f781153bc10be566c651a258",
+        "authentication": "none",
+        "responseMode": "onReceived",
+        "options": {
+          "onlyRunIf": "={{ !!$json.headers['x-gbh-token'] && !!$json.body && !!$json.body.rascunho_id }}",
+          "noResponseBody": true
+        }
+      }
+    },
+    {
+      "id": "c1dd5695-d2ce-4815-b3ea-dea5aecd38fc",
+      "name": "Rascunho: chamar o agente",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        1500
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "mode": "once",
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "NKN7RgAJmRWZXRIT"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": true,
+          "value": {
+            "execucao_id": "={{ $json.body.execucao_id }}",
+            "conversation_id": "={{ $json.body.conversation_id }}",
+            "contact_id": "={{ $json.body.contact_id }}",
+            "texto_cliente": "={{ $json.body.texto_cliente }}",
+            "contexto": "={{ $json.body.contexto }}",
+            "modelo": "={{ $json.body.modelo }}",
+            "teste": "false",
+            "nome_atendente": "={{ $json.body.nome_atendente }}"
+          },
+          "schema": [
+            {
+              "id": "execucao_id",
+              "displayName": "execucao_id",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "type": "string"
+            },
+            {
+              "id": "contact_id",
+              "displayName": "contact_id",
+              "type": "string"
+            },
+            {
+              "id": "texto_cliente",
+              "displayName": "texto_cliente",
+              "type": "string"
+            },
+            {
+              "id": "contexto",
+              "displayName": "contexto",
+              "type": "object"
+            },
+            {
+              "id": "modelo",
+              "displayName": "modelo",
+              "type": "string"
+            },
+            {
+              "id": "teste",
+              "displayName": "teste",
+              "type": "string"
+            },
+            {
+              "id": "nome_atendente",
+              "displayName": "nome_atendente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "0979fab1-e0ed-4aca-96a1-d2a4fcf32e89",
+      "name": "Rascunho: extrair o texto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        1500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first() ? ($input.first().json || {}) : {};\nconst pedido = $('Rascunho: receber pedido').first().json.body || {};\nconst erro = !!(r.erro || r.error);\nconst texto = erro ? '' : String(r.texto || r.output || r.text || '').trim();\nreturn [{ json: { rascunho_id: pedido.rascunho_id, texto: texto, erro: erro || !texto ? String(r.erro || r.error || 'A IA não conseguiu escrever uma resposta agora.') : null } }];"
+      }
+    },
+    {
+      "id": "e1215b16-4ba5-4ca1-8067-8a9d1f28c54f",
+      "name": "Rascunho: salvar para o atendente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        1500
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "g3WlIOkLdfsc4XIJ",
+          "name": "Supabase account"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/ia_rascunho_salvar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_rascunho: $json.rascunho_id, p_texto: $json.texto, p_erro: $json.erro } }}",
+        "options": {
+          "timeout": 20000
+        }
+      }
     }
   ],
   "connections": {
@@ -2214,6 +2358,39 @@
         [
           {
             "node": "Transcrever (Groq whisper-large-v3-turbo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rascunho: receber pedido": {
+      "main": [
+        [
+          {
+            "node": "Rascunho: chamar o agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rascunho: chamar o agente": {
+      "main": [
+        [
+          {
+            "node": "Rascunho: extrair o texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rascunho: extrair o texto": {
+      "main": [
+        [
+          {
+            "node": "Rascunho: salvar para o atendente",
             "type": "main",
             "index": 0
           }

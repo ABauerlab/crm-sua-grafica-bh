@@ -313,3 +313,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Estudos do dono (18/11/2026)
 33 trechos de conhecimento (papéis, acabamentos, arquivo, upsell, kits por segmento, fichas, objeções e urgência honesta) e regras X a AB do WF2. Só banco de conhecimento e prompt; nenhuma função de preço, prazo, frete ou pagamento mudou. Ver `docs/agente/estudos-do-dono-18-11.md`.
+
+## Botão Responder com IA (18/11/2026)
+`ia_rascunhos` (leitura só para a equipe), `agente_execucoes.rascunho`, `ia_rascunho_preparar` e `ia_rascunho_salvar`, função `ia-rascunho` (JWT da equipe), gatilho de rascunho no WF1 e regra do modo rascunho no WF2. Ver `docs/agente/ia-responder-botao.md`.

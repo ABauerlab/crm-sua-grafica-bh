@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bot, FileText, Info, Link2, Lock, Mic, MoreVertical, Paperclip, Send, Square, StickyNote, User, X } from 'lucide-react'
+import { ArrowLeft, Bot, FileText, Info, Link2, Loader2, Lock, Mic, MoreVertical, Paperclip, Send, Sparkles, Square, StickyNote, User, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useAuth } from '@/auth/AuthProvider'
 import { Link, useNavigate } from 'react-router-dom'
@@ -92,6 +92,30 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
       bottomRef.current?.scrollIntoView({ block: 'end' })
     }
   }, [count, conversation.id, limit])
+
+  // Botão "Responder com IA": a IA escreve uma sugestão (voz da Laura) no campo; o atendente revisa e envia. Nada é enviado ao cliente.
+  const conversaAtual = useRef(conversation.id)
+  conversaAtual.current = conversation.id
+  const rascunhoIA = useMutation({
+    mutationFn: async () => {
+      const r = await invokeFunction<{ rascunho_id: string }>('ia-rascunho', { conversation_id: conversation.id })
+      const inicio = Date.now()
+      while (Date.now() - inicio < 240000) {
+        await new Promise((ok) => setTimeout(ok, 2500))
+        const { data } = await supabase.from('ia_rascunhos').select('status, texto, erro').eq('id', r.rascunho_id).maybeSingle()
+        if (data?.status === 'pronto' && data.texto) return { texto: data.texto as string, conversa: conversation.id }
+        if (data?.status === 'erro') throw new Error(String(data.erro ?? 'A IA não conseguiu responder agora.'))
+      }
+      throw new Error('A IA demorou demais. Tente de novo em instantes.')
+    },
+    onSuccess: ({ texto, conversa }) => {
+      if (conversa !== conversaAtual.current) return
+      setText((atual) => (atual.trim() ? `${atual.trim()}\n\n${texto}` : texto))
+      taRef.current?.focus()
+      toast('ok', 'Sugestão da IA no campo. Revise e envie.')
+    },
+    onError: (e: Error) => toast('error', e.message),
+  })
 
   const send = useMutation({
     mutationFn: (body: Record<string, unknown>) => invokeFunction('whatsapp-send', { conversation_id: conversation.id, ...body }),
@@ -625,6 +649,9 @@ export function ChatPanel({ conversation, onDetails }: { conversation: Conversat
                   />
                   <Button type="button" variant="outline" size="icon" aria-label="Anexar arquivo" title="Anexar foto, vídeo, áudio ou documento (até 16 MB). Também dá para arrastar e soltar ou colar uma imagem." disabled={sendFile.isPending || !win.open} onClick={() => fileInput.current?.click()}>
                     <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" aria-label="Responder com IA" title="A IA lê a conversa e escreve uma sugestão de resposta no campo. Nada é enviado: revise e envie." disabled={!win.open || send.isPending || rascunhoIA.isPending} onClick={() => rascunhoIA.mutate()}>
+                    {rascunhoIA.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   </Button>
                   <Button type="button" variant="outline" size="icon" className="text-xs font-black" aria-label="Pedir dados da nota fiscal" title="Coloca no campo a mensagem pedindo os dados da nota fiscal. Confira e envie." disabled={!win.open || send.isPending} onClick={() => { setText(mensagemNotaFiscal(conversation.contact.name)); taRef.current?.focus() }}>
                     NF
