@@ -35,7 +35,8 @@ export function Resumo({ c, onRemover, ocupado }: { c: Checkout; onRemover: (id:
         <p className="font-bold">Como você pode pagar</p>
         <ul className="mt-1 space-y-0.5 text-black/75">
           <li><b>Pix</b> de qualquer banco: {brl(c.pagamento.pix)}</li>
-          <li><b>Cartão de crédito</b>: 1x de {brl(c.pagamento.parcelas[0].valor)} ou {c.pagamento.max_parcelas}x de {brl(c.pagamento.parcelas[1].valor)} <b>sem juros</b></li>
+          <li><b>Cartão de crédito</b>: 1x de {brl(c.pagamento.parcelas[0].valor)} ou {c.pagamento.parcelas_sem_juros}x de {brl(c.pagamento.parcelas[1].valor)} <b>sem juros</b></li>
+          <li className="text-xs text-black/55">Em 3x até {c.pagamento.max_parcelas}x o Mercado Pago aplica juros, informados antes de pagar.</li>
         </ul>
       </div>
       <ul className="mt-3 space-y-2 text-sm text-black/75">

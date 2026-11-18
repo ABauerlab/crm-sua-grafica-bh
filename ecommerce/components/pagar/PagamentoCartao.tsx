@@ -7,10 +7,10 @@ import { brl } from '@/lib/site'
 declare global { interface Window { MP_DEVICE_SESSION_ID?: string } }
 let iniciado: string | null = null
 
-interface Props { token: string; total: number; email: string | null; chavePublica: string; maxParcelas: number; onAprovado: () => void; onAnalise: () => void; onErro: (m: string | null) => void }
+interface Props { token: string; total: number; email: string | null; chavePublica: string; maxParcelas: number; semJuros: number; onAprovado: () => void; onAnalise: () => void; onErro: (m: string | null) => void }
 
 /** Payment Brick oficial só com cartão de crédito (o Pix é nosso, acima). Parcelas limitadas a 2x; valor e cobrança são do servidor. */
-export default function PagamentoCartao({ token, total, email, chavePublica, maxParcelas, onAprovado, onAnalise, onErro }: Props) {
+export default function PagamentoCartao({ token, total, email, chavePublica, maxParcelas, semJuros, onAprovado, onAnalise, onErro }: Props) {
   const [pronto, setPronto] = useState(false)
   const montado = useRef(true)
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function PagamentoCartao({ token, total, email, chavePublica, max
           throw new Error('recusado')
         }}
       />
-      <p className="mt-3 text-center text-xs text-black/55">À vista {brl(total)} ou {maxParcelas}x de {brl(Math.round((total / maxParcelas) * 100) / 100)} sem juros.</p>
+      <p className="mt-3 text-center text-xs text-black/60">À vista {brl(total)} ou <b>{semJuros}x de {brl(Math.round((total / semJuros) * 100) / 100)} sem juros</b>. Em 3x ou mais (até {maxParcelas}x) o Mercado Pago aplica juros, e você vê o total certinho antes de pagar.</p>
     </div>
   )
 }

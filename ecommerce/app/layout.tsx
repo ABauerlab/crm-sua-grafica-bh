@@ -49,7 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ChromeLoja><Header /></ChromeLoja>
         <main id="conteudo">{children}</main>
         <ChromeLoja><Footer /><WhatsAppButton /></ChromeLoja>
-        <Consentimento />
+        <ChromeLoja><Consentimento /></ChromeLoja>
         <Suspense fallback={null}><MetaPixel /></Suspense>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>

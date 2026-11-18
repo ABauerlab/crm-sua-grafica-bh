@@ -89,7 +89,9 @@ Deno.serve(async (req) => {
   ])
   const valorCents = toCents(Number(fin?.total ?? 0))
   if (valorCents <= 0 || !itens?.length) return erro(422, 'O pedido precisa ter itens e valor maior que zero.')
-  const maxParcelas = Math.min(Math.max(Number(pc?.parcelas_sem_juros_max ?? 2), 1), 2)
+  // Até 2x sem juros (a conta absorve); de 3x a 12x o Mercado Pago cobra os juros do cliente e mostra o total no formulário
+  const semJuros = Math.min(Math.max(Number(pc?.parcelas_sem_juros_max ?? 2), 1), 2)
+  const maxParcelas = 12
 
   const entrada = lerEntrada(b.form, maxParcelas)
   if (!entrada.ok) return erro(400, entrada.mensagem)
@@ -160,7 +162,7 @@ Deno.serve(async (req) => {
   await evento(db, token, r.status === 'approved' ? 'cartao_aprovado' : r.status === 'in_process' ? 'cartao_em_analise' : 'cartao_recusado', { mp: String(p.id), detalhe: p.status_detail ?? null, parcelas: entrada.parcelas })
   if (r.status === 'approved') {
     await cancelarPixPendentes(db, o.id, cfg.token, cfg.modo)
-    const juros = pagouComJuros(p)
+    const juros = entrada.parcelas <= semJuros ? pagouComJuros(p) : null
     if (juros) await alertar(db, o, `Pedido ${referencia} pago em ${entrada.parcelas}x COM JUROS para o cliente (R$ ${juros.juros.toFixed(2).replace('.', ',')} a mais). Ative o parcelamento sem juros na conta do Mercado Pago.`, `chk_juros:${p.id}`, { juros: juros.juros })
   } else if (r.status === 'rejected') {
     const { count } = await db.from('checkout_eventos').select('id', { count: 'exact', head: true }).eq('order_id', o.id).eq('tipo', 'cartao_recusado').gt('criado_em', new Date(Date.now() - 30 * 60_000).toISOString())

@@ -13,6 +13,7 @@ import { Estado } from './Estados'
 import { LogoCarregando } from './LogoCarregando'
 import { PagamentoPix } from './PagamentoPix'
 import { Resumo } from './Resumo'
+import { Quantidades } from './Quantidades'
 import { Sugestoes } from './Sugestoes'
 
 // O SDK do Mercado Pago só roda no navegador
@@ -104,6 +105,7 @@ export function CheckoutCliente({ token }: { token: string }) {
           <div className="space-y-5">
             {aviso && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{aviso}</p>}
             <DadosCliente key={dadosOk ? 'ok' : 'falta'} token={token} c={c} onSalvo={() => void carregar(true)} />
+            <Quantidades itens={c.quantidades} ocupado={ocupado} onTrocar={(item, ref) => acao({ acao: 'trocar', item, ref })} />
             <ArteUpsell c={c} ocupado={ocupado} onEscolher={(a: OpcaoArte['codigo']) => acao({ acao: 'arte', arte: a })} />
 
             <section aria-labelledby="pag-t" className="rounded-xl2 bg-white p-5 shadow-sm">
@@ -116,13 +118,13 @@ export function CheckoutCliente({ token }: { token: string }) {
                 <>
                   <div role="tablist" aria-label="Forma de pagamento" className="mt-3 flex gap-2">
                     <button role="tab" aria-selected={aba === 'pix'} type="button" onClick={() => setAba('pix')} className={aba_cls(aba === 'pix')}><QrCode className="h-5 w-5" aria-hidden />Pix<span className="hidden rounded-full bg-[#0E8A3E] px-2 py-0.5 text-[10px] text-white sm:inline">na hora</span></button>
-                    <button role="tab" aria-selected={aba === 'cartao'} type="button" onClick={() => setAba('cartao')} className={aba_cls(aba === 'cartao')}><CreditCard className="h-5 w-5" aria-hidden />Cartão<span className="hidden rounded-full bg-amarelo px-2 py-0.5 text-[10px] text-tinta sm:inline">até 2x sem juros</span></button>
+                    <button role="tab" aria-selected={aba === 'cartao'} type="button" onClick={() => setAba('cartao')} className={aba_cls(aba === 'cartao')}><CreditCard className="h-5 w-5" aria-hidden />Cartão<span className="hidden rounded-full bg-amarelo px-2 py-0.5 text-[10px] text-tinta sm:inline">2x sem juros · até {c.pagamento.max_parcelas}x</span></button>
                   </div>
                   {erroPag && <p role="alert" className="entra mt-3 rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{erroPag}</p>}
                   <div className="mt-4" role="tabpanel">
                     {aba === 'pix' && <PagamentoPix key={Math.round(c.total * 100)} token={token} total={c.total} onErro={setErroPag} />}
                     {aba === 'cartao' && (chave
-                      ? <PagamentoCartao token={token} total={c.total} email={c.cliente.email} chavePublica={chave} maxParcelas={c.pagamento.max_parcelas} onAprovado={() => void carregar(true)} onAnalise={() => { setAnalise(true); void carregar(true) }} onErro={setErroPag} />
+                      ? <PagamentoCartao token={token} total={c.total} email={c.cliente.email} chavePublica={chave} maxParcelas={c.pagamento.max_parcelas} semJuros={c.pagamento.parcelas_sem_juros} onAprovado={() => void carregar(true)} onAnalise={() => { setAnalise(true); void carregar(true) }} onErro={setErroPag} />
                       : <p className="rounded-lg bg-papel p-4 text-sm text-black/70">O pagamento no cartão está indisponível agora. Pague no Pix ou <a className="font-bold text-magenta underline" href={linkWhatsApp(MENSAGENS_WHATSAPP.checkout)} target="_blank" rel="noopener">fale com a gente</a>.</p>)}
                   </div>
                 </>

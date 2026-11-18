@@ -21,10 +21,25 @@ mp-webhook e mp-conferir continuam valendo (aviso duplicado é ignorado).
 - Carregamento com a logo animada (círculos ciano, magenta e amarelo se encontrando), respeitando `prefers-reduced-motion`.
 - 1. Dados: nome, e-mail e CPF/CNPJ (só pede o que falta; salva em `contacts`; o documento salvo volta só com 3 dígitos).
 - 2. Arte (prioridade do upsell): já tenho pronta / conferir e ajustar (R$ 14,90) / criar a arte (R$ 39,90). Muda o pedido e o total na hora (`checkout_definir_arte`); a arte não tem custo de fornecedor, então só soma lucro. Arte inclusa por condição especial não é alterada.
-- 3. Pagamento: aba Pix primeiro (QR Code + copia e cola + "Copiar código", reaproveita o Pix pendente do mesmo valor) e aba Cartão (Payment Brick oficial só com crédito, máximo 2 parcelas). Cartão aprovado cancela Pix pendente do pedido.
+- 3. Pagamento: aba Pix primeiro (QR Code + copia e cola + "Copiar código", reaproveita o Pix pendente do mesmo valor) e aba Cartão (Payment Brick oficial só com crédito, até 12x). **Até 2x sem juros** (a conta do Mercado Pago absorve); de 3x a 12x o Mercado Pago cobra os juros do cliente e mostra o total no formulário (decisão do dono, 18/11/2026). O alerta de "pago com juros" só vale até 2x. Cartão aprovado cancela Pix pendente do pedido.
 - Cross-sell "Aproveite e leve junto": até 3 cards por pedido, vindos de `private.checkout_sugestoes` (categoria do pedido, conversa dos últimos 30 dias, histórico de compras pagas e quantidade parecida). Adicionar usa `calcular_preco` (planilha, com piso) e atualiza orçamento e PDF; só os itens do checkout podem ser removidos.
 - Resumo completo: itens, subtotal, desconto, frete grátis, total, entrega, previsão, validade do link e como pagar (Pix, 1x ou 2x sem juros).
 - Confirmação: atualiza sozinha (consulta o status a cada 4 s), mostra "Pagamento confirmado!", forma (Pix ou 2x de R$ X sem juros) e o próximo passo da arte com botão de WhatsApp. A mensagem de confirmação no WhatsApp continua sendo a do `cliente-pago-avisar` (WF5).
+
+## Mais upsell e pedido sempre atualizado
+- **Quantidade**: card "Leve mais e pague menos por unidade" com as tiragens do mesmo produto e versão (`private.checkout_quantidades`, `checkout_trocar_quantidade`); preço sempre de `calcular_preco`.
+- Até 5 sugestões de outros produtos (mais combinações por categoria) e até 5 itens extras.
+- **Toda mudança** (arte, quantidade, item) atualiza na hora: itens do pedido, orçamento e PDF (`private.checkout_sincronizar_orcamento`), valor do link ativo e histórico do pedido. Um Pix pendente com o valor antigo é cancelado no Mercado Pago. Teste: `supabase/tests/checkout_melhorias.sql` (termina em "OK").
+- Sem banner de cookies na página de pagamento.
+
+## Lembrete no WhatsApp
+Regra `PAG_CHK` (`followup_regras`, referência `checkout_aberto`): quando o cliente abre o checkout e passa 15 minutos sem pagar, a fila de follow-up manda uma mensagem no WhatsApp dele (texto livre na janela de 24 h, template `pagamento_pendente` fora dela; só das 8h às 20h; some se o cliente responder ou pagar). Um por pedido; substitui o PAG_20M pendente e não roda se outro lembrete de pagamento saiu nos últimos 30 minutos.
+
+## CRM
+Aba Pagamento do pedido: "Atividade do cliente no checkout" (abriu, preencheu, escolheu arte, trocou quantidade, gerou Pix, cartão aprovado ou recusado, erro técnico).
+
+## Apple Pay e Google Pay
+Não entram no Payment Brick automaticamente. O Apple Pay do Mercado Pago (Brasil) é um Brick à parte e exige conta Apple Developer, verificação do domínio e certificado de comerciante (feitos pelo dono); o Google Pay não consta na documentação do Mercado Pago para o Brasil. Fica como próxima etapa quando o dono tiver a conta Apple Developer.
 
 ## Alertas ao dono (popup no app e WhatsApp)
 Tudo entra em `alerta_criar('pagamento_problema', 'alta')`, que já faz push e WhatsApp mesmo no silêncio:

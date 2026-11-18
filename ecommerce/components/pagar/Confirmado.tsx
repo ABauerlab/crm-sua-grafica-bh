@@ -5,7 +5,8 @@ import { dataCurta, type Checkout } from '@/lib/pagar'
 /** Tela de pagamento confirmado: valor, forma de pagamento (com parcelas) e o que fazer com a arte. */
 export function Confirmado({ c }: { c: Checkout }) {
   const parcelas = c.pagamento.parcelas_pagas ?? 1
-  const metodo = c.pagamento.metodo_pago === 'pix' ? 'Pix' : parcelas > 1 ? `Cartão de crédito em ${parcelas}x de ${brl(Math.round((c.total / parcelas) * 100) / 100)} sem juros` : 'Cartão de crédito à vista'
+  const semJuros = c.pagamento.parcelas_sem_juros ?? 2
+  const metodo = c.pagamento.metodo_pago === 'pix' ? 'Pix' : parcelas > semJuros ? `Cartão de crédito em ${parcelas}x (com juros do Mercado Pago)` : parcelas > 1 ? `Cartão de crédito em ${parcelas}x de ${brl(Math.round((c.total / parcelas) * 100) / 100)} sem juros` : 'Cartão de crédito à vista'
   const arte = c.arte.atual
   const passo = arte === 'criacao'
     ? 'Nossa equipe vai chamar você no WhatsApp para entender a sua marca e criar a arte. Se já tiver logo, cores ou referências, é só mandar lá.'

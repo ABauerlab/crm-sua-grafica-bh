@@ -57,7 +57,7 @@ export function lerEntrada(form: FormBrick | null | undefined, maxParcelas: numb
   if (!/^[a-z0-9_]{2,30}$/.test(metodo)) return { ok: false, mensagem: 'Forma de pagamento inválida.' }
   const parcelas = Number(form?.installments ?? 1)
   if (!Number.isInteger(parcelas) || parcelas < 1) return { ok: false, mensagem: 'Número de parcelas inválido.' }
-  if (parcelas > maxParcelas) return { ok: false, mensagem: `Parcelamos em até ${maxParcelas}x sem juros.` }
+  if (parcelas > maxParcelas) return { ok: false, mensagem: `Parcelamos em até ${maxParcelas}x no cartão.` }
   const issuer = form?.issuer_id != null && /^\d{1,10}$/.test(String(form.issuer_id)) ? String(form.issuer_id) : null
   return { ok: true, tipo: 'cartao', cardToken, metodo, issuer, parcelas }
 }
