@@ -316,3 +316,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Botão Responder com IA (18/11/2026)
 `ia_rascunhos` (leitura só para a equipe), `agente_execucoes.rascunho`, `ia_rascunho_preparar` e `ia_rascunho_salvar`, função `ia-rascunho` (JWT da equipe), gatilho de rascunho no WF1 e regra do modo rascunho no WF2. Ver `docs/agente/ia-responder-botao.md`.
+
+
+## Kits agregados e link automático (18/11/2026)
+`kits_agregados` + `kits_agregados_componentes` (crachá + cordão), `orcamentos.kit_agregado_id/kit_abatimento`, `private.kit_agregado_aplicar`, `public.montar_orcamento` (wrapper de `montar_orcamento_pre_kit`). `orcamento-pdf` envia o link de pagamento em mensagem separada depois do PDF (`link_enviado`). `preparar_link_pagamento` não exige mais aprovação do cliente. UI: `src/features/catalog/KitsAgregados.tsx` (aba Kits do Catálogo). Detalhes em `docs/agente/progresso.md`.

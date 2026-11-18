@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { SkuBadge } from '@/components/SkuBadge'
+import { KitsAgregados } from './KitsAgregados'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -182,6 +183,7 @@ export function KitsTab() {
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      <KitsAgregados />
       <div className="mb-3 flex justify-end">
         <Button size="sm" onClick={() => setEditing({ name: '', segment: '', description: '', items: [] })}><Plus className="h-4 w-4" /> Novo kit</Button>
       </div>

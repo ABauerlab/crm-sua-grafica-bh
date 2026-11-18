@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { notifyInbound } from '@/lib/notify'
 import type { Contact, ConversationWithContact, Message, Profile, Template } from '@/lib/types'
@@ -7,6 +7,7 @@ import type { Contact, ConversationWithContact, Message, Profile, Template } fro
 export function useConversations() {
   return useQuery({
     queryKey: ['conversations'],
+    placeholderData: keepPreviousData,
     // rede de segurança: se o Realtime cair, a lista ainda se atualiza sozinha (pausa com a aba em segundo plano)
     refetchInterval: 10_000,
     queryFn: async () => {
@@ -25,6 +26,8 @@ export function useMessages(conversationId: string | undefined, limit = 60) {
   return useQuery({
     queryKey: ['messages', conversationId, limit],
     enabled: !!conversationId,
+    // ao carregar mais mensagens a lista não some e volta (piscada)
+    placeholderData: keepPreviousData,
     // rede de segurança para a conversa aberta: mesmo sem Realtime, a mensagem aparece em poucos segundos
     refetchInterval: 8_000,
     queryFn: async () => {

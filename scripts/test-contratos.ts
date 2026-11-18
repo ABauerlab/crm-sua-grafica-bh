@@ -50,7 +50,7 @@ for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_falta
 }
 
 // Rodada 18/11: regras do diário do tráfego pago e travas no banco
-for (const r of ['O) ENCERRAMENTO', 'P) PAGAMENTO VALE COMO APROVACAO', 'Q) CONDICAO FORA DO PADRAO', 'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU', 'S) NOTA FISCAL', 'T) CRACHA E CORDAO', 'W) CLIENTE DIZ QUE VOLTA', 'X) CURIOSO OU DECIDIDO', 'Y) PAPEL E ACABAMENTO EM UMA FRASE', 'Z) PAR NATURAL UMA VEZ', 'AA) ARQUIVO CONFERIDO COMO VALOR', 'AB) URGENCIA SO HONESTA']) {
+for (const r of ['O) ENCERRAMENTO', 'P) PEDIU O LINK', 'AC) LINK DEPOIS DO PDF', 'AF) CRACHA COM CORDAO', 'AH) MENSAGEM CITADA', 'Q) CONDICAO FORA DO PADRAO', 'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU', 'S) NOTA FISCAL', 'T) CRACHA E CORDAO', 'W) CLIENTE DIZ QUE VOLTA', 'X) CURIOSO OU DECIDIDO', 'Y) PAPEL E ACABAMENTO EM UMA FRASE', 'Z) PAR NATURAL UMA VEZ', 'AA) ARQUIVO CONFERIDO COMO VALOR', 'AB) URGENCIA SO HONESTA']) {
   if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra da rodada 18/11 "${r}"`)
 }
 const mig18c = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000003_orcamento_alinhado_ao_chat_e_motivo_de_perda.sql'), 'utf8')

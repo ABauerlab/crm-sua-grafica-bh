@@ -206,7 +206,7 @@ ${alternativas}${arredonda}
 <section class="cols">
   <div>
     <p class="sec">Pagamento</p>
-    <p class="nota">Pix ou cartão, pelo link que enviamos no WhatsApp depois da sua aprovação. O pedido só entra em produção depois da confirmação do pagamento e da aprovação da arte.</p>
+    <p class="nota">Pix ou cartão em até 2x sem juros, pelo link que enviamos no WhatsApp logo depois deste PDF. O pedido só entra em produção depois da confirmação do pagamento e da aprovação da arte.</p>
   </div>
   <div>
     <p class="sec">Retirada e entrega</p>
@@ -214,7 +214,7 @@ ${alternativas}${arredonda}
   </div>
 </section>
 <section class="passos"><p class="sec">Como fechar seu pedido</p><ol>
-  <li><b>Aprove e pague</b>Responda APROVADO no WhatsApp, receba o link e pague no Pix ou cartão.</li>
+  <li><b>Pague</b>Use o link que enviamos logo depois deste PDF: Pix ou cartão em até 2x sem juros.</li>
   <li><b>Envie a arte</b>${d.arte.modo === 'paga' || d.arte.modo === 'com_frete' ? 'Ou aprove a que criamos para você.' : 'Pronta para impressão, até o horário de corte.'}</li>
   <li><b>Receba ou retire</b>Avisamos assim que estiver pronto.</li>
 </ol></section>
