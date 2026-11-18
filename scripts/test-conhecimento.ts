@@ -58,7 +58,8 @@ assert.equal(KNOWLEDGE_LIMITS.total, 120)
   assert.ok(novos.length >= 30, 'a rodada 18/11 trouxe os trechos esperados')
   for (const id of ['urgencia_honesta_usar', 'escassez_nao_usar', 'urgencia_evento_data']) assert.ok(novos.some((t) => t.id === id), `trecho de urgência ausente: ${id}`)
   const escassez = novos.find((t) => t.id === 'escassez_nao_usar')!
-  assert.match(escassez.fatos ?? '', /Nunca inventar escassez/, 'escassez só como regra de não usar')
+  assert.match(escassez.fatos ?? '', /nunca prometer vaga limitada/, 'escassez só como regra de não usar')
+  assert.ok(novos.every((t) => !/\[CONFIRMAR\]/.test(t.fatos ?? '')), 'dono confirmou tudo: sem [CONFIRMAR] nos trechos da rodada 18/11')
 }
 
 

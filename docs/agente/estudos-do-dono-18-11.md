@@ -14,7 +14,7 @@ Material de origem: anotações de estudo sobre vendas em gráficas (`atualizaca
 | 5. Upsell, cross-sell e kits por nicho | `par_natural_impressos`, `par_natural_embalagem`, `kit_gastronomia`, `kit_saude`, `kit_varejo`, `kit_escritorio`, `kit_eventos`, `kit_sazonal` | 8 trechos |
 | 6. Fichas de produto | `ficha_sacolas`, `ficha_adesivos_rotulos`, `ficha_comunicacao_visual`, `ficha_textil`, `ficha_brindes`, `ficha_calendarios_agendas` | 6 trechos |
 
-Total: 33 trechos novos em `public.conhecimento` (fonte "Estudos do dono (18/11/2026)", todos com `revisar = true` para você aprovar na tela Configurações > Conhecimento). Fonte editável: `docs/agente/conhecimento_rodada18.json`; a migration `20261218000004` é gerada por `scripts/gerar-conhecimento-rodada18.ts` (que roda o lint de tamanho, tom e vazamento antes). Vetores `gte-small` gerados pela função `conhecimento` (modelo do Supabase, não usa o Gemini).
+Total: 33 trechos novos em `public.conhecimento` (fonte "Estudos do dono (18/11/2026)", aprovados pelo dono em 18/11). Fonte editável: `docs/agente/conhecimento_rodada18.json`; a migration `20261218000004` é gerada por `scripts/gerar-conhecimento-rodada18.ts` (que roda o lint de tamanho, tom e vazamento antes). Vetores `gte-small` gerados pela função `conhecimento` (modelo do Supabase, não usa o Gemini).
 
 Nada existente foi sobrescrito: os trechos novos complementam os antigos (por exemplo `obj_caro_valor_incluso` complementa `obj_caro`).
 
@@ -36,18 +36,18 @@ Nada existente foi sobrescrito: os trechos novos complementam os antigos (por ex
 
 **Urgência: sim, mas só a real.** Funciona porque a gráfica tem fatos verdadeiros para usar: o horário de corte da produção (10h30 em dias úteis), a validade do orçamento, a condição especial que a ferramenta libera com validade, e a data do evento do cliente (a mais forte: "pra chegar no dia X precisa aprovar até tal hora"). Já existiam o follow-up com desconto relâmpago e o selo de urgência no CRM. Entrou a regra AB e o trecho `urgencia_honesta_usar`.
 
-**Escassez: não.** A gráfica produz sob encomenda, não existe "últimas unidades" nem "estoque acabando". Inventar escassez quebra a confiança (o mesmo problema que você apontou com preço divergente) e o público de tráfego pago é de ticket baixo e decisão rápida, então o risco é maior que o ganho. Entrou o trecho `escassez_nao_usar` e a regra AB proíbe. Única exceção possível: fila cheia em datas de pico (fim de ano), só se você confirmar que é verdade (`[CONFIRMAR]` no trecho).
+**Escassez: não.** A gráfica produz sob encomenda, não existe "últimas unidades" nem "estoque acabando". Inventar escassez quebra a confiança (o mesmo problema que você apontou com preço divergente) e o público de tráfego pago é de ticket baixo e decisão rápida, então o risco é maior que o ganho. Entrou o trecho `escassez_nao_usar` e a regra AB proíbe. Em datas de pico (fim de ano) vale dizer a verdade de que entra muito pedido (prova social), confirmado pelo dono.
 
-## Para você confirmar (marcado com [CONFIRMAR] nos trechos, só em "fatos", nunca vai ao cliente)
-1. A conferência do arquivo cobre sangria e corte em todos os pedidos? (`arq_regras_ouro`, `arq_conferencia_valor`)
-2. Em fim de ano existe fila cheia que justifique dizer "aprove cedo pra garantir a data"? (`escassez_nao_usar`)
-3. Os itens citados nas fichas e kits existem no catálogo? A Laura só os sugere se `buscar_produto` achar, então um item que não existe simplesmente não aparece.
+## Confirmações do dono (18/11/2026)
+1. A conferência do arquivo cobre sangria e corte em todos os pedidos: **sim**. Os trechos `arq_regras_ouro` e `arq_conferencia_valor` e a regra AA do WF2 passaram a afirmar isso.
+2. Fim de ano: o argumento é **mostrar que tem muito pedido**, não escassez. O trecho virou "Escassez não, volume de pedidos sim" (`escassez_nao_usar`) e a regra AB permite dizer que entra muito pedido em fim de ano e datas de pico (aprovar cedo ajuda a garantir a data), mantendo proibido inventar estoque acabando, últimas unidades, vaga limitada ou promoção que acaba.
+3. Todos os 33 trechos foram marcados como revisados (`revisar = false`, `revisado_em` preenchido). Nenhum `[CONFIRMAR]` restante.
+4. Itens de fichas e kits que não existirem no catálogo não aparecem: a Laura só sugere o que `buscar_produto` achar.
 
 ## Como conferir nas inspeções
 - Trechos usados: `select slug, usos, ultimo_uso_em from conhecimento where fonte = 'Estudos do dono (18/11/2026)' order by usos desc`.
 - Lacunas que a Laura não soube responder: tabela `conhecimento_lacunas`.
 - Nas conversas: curioso recebe pergunta de uso; decidido recebe orçamento direto; opções com papéis diferentes trazem uma frase de diferença; um único complemento sugerido por pedido; nenhuma frase de escassez.
-- Revisão: aprovar os trechos na tela de Conhecimento tirando o `revisar`.
 
 ## Não feito, de propósito
 - Nenhuma lógica de preço, prazo, frete, margem, condição especial ou Mercado Pago foi alterada.
