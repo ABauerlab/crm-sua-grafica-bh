@@ -185,3 +185,32 @@ export function resumoConferencia(r: ResumoConferencia): string {
   if (r.alertas) partes.push(`${r.alertas} alerta(s)`)
   return partes.join(', ') + '.'
 }
+
+export interface CheckoutEvento { id: string; tipo: string; detalhe: Record<string, unknown>; criado_em: string }
+
+export const CHECKOUT_EVENTO_LABEL: Record<string, string> = {
+  aberto: 'Abriu o link de pagamento',
+  dados_salvos: 'Confirmou os dados (nome, e-mail e CPF/CNPJ)',
+  arte_definida: 'Escolheu a opção de arte',
+  item_adicionado: 'Acrescentou um item ao pedido',
+  item_removido: 'Removeu um item do pedido',
+  quantidade_trocada: 'Trocou a quantidade',
+  pix_gerado: 'Gerou o Pix',
+  cartao_aprovado: 'Cartão aprovado',
+  cartao_em_analise: 'Cartão em análise',
+  cartao_recusado: 'Cartão recusado',
+  erro_tecnico: 'Erro técnico ao pagar',
+}
+
+/** Atividade do cliente no checkout próprio (abriu, preencheu, tentou pagar, recusa, erro). */
+export function useCheckoutEventos(orderId: string) {
+  return useQuery({
+    queryKey: ['checkout-eventos', orderId],
+    refetchInterval: 20_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('checkout_eventos').select('id, tipo, detalhe, criado_em').eq('order_id', orderId).order('criado_em', { ascending: false }).limit(40)
+      if (error) throw error
+      return data as CheckoutEvento[]
+    },
+  })
+}

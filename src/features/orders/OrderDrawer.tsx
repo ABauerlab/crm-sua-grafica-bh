@@ -30,7 +30,7 @@ import {
   useSettings,
   useUpdateOrder,
 } from '@/hooks/orders'
-import { resumoConferencia, useConferir, useConfirmarManual, useCriarLink, useMpStatus } from '@/hooks/payments'
+import { CHECKOUT_EVENTO_LABEL, resumoConferencia, useCheckoutEventos, useConferir, useConfirmarManual, useCriarLink, useMpStatus } from '@/hooks/payments'
 import { invokeFunction } from '@/lib/api'
 import { contactLabel, formatPhone } from '@/lib/format'
 import { formatBRL, formatPct, parseMoney } from '@/lib/money'
@@ -498,6 +498,7 @@ function PaymentTab({ order }: { order: OrderCard }) {
   const confirmar = useConfirmarManual()
   const conferir = useConferir()
   const { data: mp } = useMpStatus()
+  const { data: checkoutEventos } = useCheckoutEventos(order.id)
   const gerar = (novo: boolean) =>
     criar.mutate(
       { pedidoId: order.id, novo, horas: Number(horas) !== 48 ? Number(horas) : undefined },
@@ -575,6 +576,26 @@ function PaymentTab({ order }: { order: OrderCard }) {
           Pedido de teste (só ele muda de etapa em modo teste)
         </label>
       </fieldset>
+
+      {checkoutEventos && checkoutEventos.length > 0 && (
+        <fieldset className="space-y-2 rounded-md border p-3">
+          <legend className="px-1 text-xs font-bold uppercase tracking-wide">Atividade do cliente no checkout</legend>
+          <ul className="space-y-1.5 text-sm">
+            {checkoutEventos.map((e) => {
+              const d = e.detalhe ?? {}
+              const extra = e.tipo === 'arte_definida' ? ` (${({ pronta: 'arte pronta', conferencia: 'conferir o arquivo', criacao: 'criar a arte' } as Record<string, string>)[String(d.arte)] ?? String(d.arte ?? '')})`
+                : e.tipo.startsWith('cartao_') && d.parcelas ? ` (${String(d.parcelas)}x)` : e.tipo === 'cartao_recusado' && d.detalhe ? ` (${String(d.detalhe)})` : ''
+              const ruim = e.tipo === 'cartao_recusado' || e.tipo === 'erro_tecnico'
+              return (
+                <li key={e.id} className="flex items-baseline justify-between gap-3">
+                  <span className={cn(ruim && 'font-bold text-brand-red', e.tipo === 'cartao_aprovado' && 'font-bold text-brand-green')}>{CHECKOUT_EVENTO_LABEL[e.tipo] ?? e.tipo}{extra}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular">{dt(e.criado_em)}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </fieldset>
+      )}
 
       <Field label="Link de pagamento">
         <div className="flex gap-2">

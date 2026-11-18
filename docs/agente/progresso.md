@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## 18/11/2026 (noite, 2): melhorias do checkout depois do teste real do Pix
+- Pix testado pelo dono e funcionando. Ajustes pedidos: sem banner de cookies em `/pagar`; cartão em até 12x (até 2x sem juros, de 3x a 12x com juros do Mercado Pago); mais upsell (troca de quantidade, até 5 sugestões, até 5 extras); toda mudança atualiza pedido, orçamento, link e Pix pendente; lembrete PAG_CHK (15 min depois de abrir o checkout); atividade do checkout na aba Pagamento do pedido. Migration `20261218000013` (aplicada), funções `checkout-dados` e `checkout-mp-processar` redeployadas. Detalhes em `docs/checkout-proprio.md`.
+- Apple Pay e Google Pay: não vão no Payment Brick; Apple Pay precisa de conta Apple Developer (ver doc). Não implementado.
+- Verificação feita em transação com rollback sobre um pedido real: pedido, orçamento, itens e valor do link ficaram iguais depois de trocar quantidade e adicionar item; lembrete agendado e texto montado.
+
 ## 18/11/2026 (noite): checkout próprio em /pagar/<token> (Pix + cartão 2x sem juros no nosso domínio)
 - **Motivo**: o Checkout Pro abria o app do Mercado Pago no celular (Paulo Moreira não conseguiu pagar) e o dono não recebia aviso de falhas que nunca chegavam ao Mercado Pago. Detalhes completos, fluxo, alertas e ordem de publicação em `docs/checkout-proprio.md`.
 - **Banco** (migration `20261218000012`, aplicada): `orders.checkout_token`, `order_items.checkout_extra`, `checkout_eventos`, funções `checkout_carregar/status/salvar_dados/definir_arte/adicionar_produto/remover_item/registrar_evento` (só service role) e `private.checkout_sugestoes`. Teste de banco rodado em transação com rollback: `supabase/tests/checkout_proprio.sql`.

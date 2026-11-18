@@ -2,6 +2,8 @@
 export interface ItemPedido { id: string | null; descricao: string; quantidade: number; unitario: number; subtotal: number; extra: boolean; tipo: 'arte' | 'produto' }
 export interface OpcaoArte { codigo: 'pronta' | 'conferencia' | 'criacao'; titulo: string; texto: string; valor: number }
 export interface Sugestao { ref: string; slug: string | null; titulo: string; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis: number | null; foto: string | null; motivo: string; selo: string }
+export interface OpcaoQuantidade { ref: string; quantidade: number; preco: number; unitario: number; atual: boolean }
+export interface Quantidade { item_id: string; descricao: string; opcoes: OpcaoQuantidade[] }
 export interface Checkout {
   ok: true
   estado: 'aberto' | 'em_analise' | 'pago' | 'expirado' | 'cancelado'
@@ -13,9 +15,10 @@ export interface Checkout {
   validade_ate: string | null
   cliente: { nome: string | null; email: string | null; documento_final: string | null; tem_documento: boolean; whatsapp_final: string }
   faltando: ('nome' | 'email' | 'documento')[]
-  pagamento: { pix: number; max_parcelas: number; parcelas: { n: number; valor: number }[]; metodo_pago: string | null; parcelas_pagas: number | null }
+  pagamento: { pix: number; max_parcelas: number; parcelas_sem_juros: number; parcelas: { n: number; valor: number }[]; metodo_pago: string | null; parcelas_pagas: number | null }
   arte: { atual: OpcaoArte['codigo']; inclusa: boolean; opcoes: OpcaoArte[] }
   sugestoes: Sugestao[]
+  quantidades: Quantidade[]
   whatsapp: string
   mp: { chave_publica: string | null; modo: 'teste' | 'producao' | null }
 }
