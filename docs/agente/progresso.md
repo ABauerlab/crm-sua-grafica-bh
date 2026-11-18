@@ -918,7 +918,7 @@ No CRM: Configurações > WhatsApp e templates mostra os 11 templates do agente 
 - **Edge `orcamento-pdf`:** se a Meta recusar o PDF, manda resumo e link assinado em texto (`enviado_como: 'link'`). Com a janela de 24 h fechada, cria o alerta `janela_fechada_orcamento` (gravidade alta), marca a conversa com a tag `reabrir_janela` e responde `status: 'janela_fechada'`.
 - **Edge `agente-enviar`:** texto acima de 1.500 caracteres é quebrado automaticamente em mensagens sequenciais, até 6.000 caracteres por envio. Acima disso, responde 400 claro.
 - **Diretrizes (`AGENTS.md` e `CLAUDE.md`):** antes do pagamento, o agente pode citar a localização de referência (hipercentro de BH, próximo à Praça Sete). O endereço fabril completo continua proibido antes do pagamento. Fluxo de fechamento padrão: PDF formal, aceite "APROVADO", link do Mercado Pago com Pix.
-- **Pendências:** deploy das Edge Functions `orcamento-pdf` e `agente-enviar`; o prompt do WF2 no n8n ainda diz que o endereço só vai depois do pagamento (mudar pelo MCP do n8n); aplicar a migration de custos m² só após confirmação do dono.
+- **Pendências:** deploy da Edge Function `orcamento-pdf` (`agente-enviar` já publicada em 18/11/2026, versão 16, com `semNegrito`); o prompt do WF2 no n8n ainda diz que o endereço só vai depois do pagamento (mudar pelo MCP do n8n); aplicar a migration de custos m² só após confirmação do dono.
 
 ## Sincronização e telemetria da Laura (10/11/2026)
 
