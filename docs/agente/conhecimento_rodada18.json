@@ -1,0 +1,595 @@
+[
+  {
+    "id": "mql_uso_negocio",
+    "titulo": "Cliente curioso: perguntar o uso",
+    "categoria": "qualificacao",
+    "quando_usar": "Mensagem genérica, sem produto, quantidade ou data.",
+    "resposta_pronta": "Fazemos sim! Me conta rapidinho: é pra qual tipo de negócio ou uso? Assim já te indico o material que funciona melhor pro seu caso.",
+    "fatos": "Cliente curioso faz pergunta aberta. Acolha rápido e pergunte o uso ou o segmento antes de perguntas técnicas. Uma pergunta por mensagem. Não cite preço antes de saber produto e quantidade.",
+    "proximo_passo": "Descobrir quantidade e se já tem arte, depois chamar buscar_produto.",
+    "tags": [
+      "vocês fazem adesivo",
+      "faz panfleto",
+      "quanto fica cartão",
+      "quanto custa banner",
+      "só pesquisando",
+      "queria saber",
+      "tem como fazer",
+      "fazem"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "sql_comprador_pronto",
+    "titulo": "Cliente decidido: ir direto ao orçamento",
+    "categoria": "qualificacao",
+    "quando_usar": "Cliente já trouxe produto, quantidade e data.",
+    "resposta_pronta": "Perfeito, já tenho o que preciso! Vou conferir no sistema e já te passo as opções certinhas com o dia em que fica pronto.",
+    "fatos": "Cliente decidido não precisa de pergunta extra que não muda o preço. Consulte as ferramentas na hora e mostre no máximo duas opções: a mais em conta e a mais indicada, recomendando uma. Valores e prazo só da ferramenta.",
+    "proximo_passo": "buscar_produto, montar_orcamento, enviar o PDF e conduzir ao APROVADO.",
+    "tags": [
+      "preciso de mil cartões",
+      "quero 500 panfletos",
+      "preciso pra sexta",
+      "já sei o que quero",
+      "quero fechar",
+      "é urgente"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "espelhar_tom",
+    "titulo": "Espelhar o jeito do cliente",
+    "categoria": "qualificacao",
+    "quando_usar": "Durante toda a conversa, para criar conexão.",
+    "resposta_pronta": "Combinado! Já separei aqui. Se quiser, te explico rapidinho a diferença entre as opções antes de escolher. Qual quantidade vc prefere?",
+    "fatos": "Mensagem curta e direta pede resposta curta e objetiva, focada no valor e na rapidez. Cliente que conta a história do negócio ou manda áudio longo valoriza acolhimento e uma frase sobre qual papel ou acabamento valoriza mais a marca.",
+    "proximo_passo": "Conduzir para a escolha da opção do orçamento.",
+    "tags": [
+      "áudio longo",
+      "conto a história",
+      "sou novo no ramo",
+      "minha marca",
+      "projeto novo"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "obj_caro_valor_incluso",
+    "titulo": "Tá caro: mostrar o que está incluso",
+    "categoria": "objecoes",
+    "quando_usar": "Cliente compara preço depois de receber o orçamento.",
+    "resposta_pronta": "Entendo! Vale conferir se a outra cotação tem o mesmo papel e se revisa o arquivo antes de imprimir, pra não sair cortado. Posso te mostrar uma opção mais em conta. Quer ver?",
+    "fatos": "Complementa obj_caro. Não entrar em leilão nem inventar desconto. Destaque papel e gramatura, conferência do arquivo e prazo cumprido. Se persistir perto do fechamento, usar oferecer_condicao_especial e comunicar só o que a ferramenta devolver.",
+    "proximo_passo": "Oferecer opção mais simples ou chamar oferecer_condicao_especial se elegível.",
+    "tags": [
+      "achei mais barato",
+      "tá caro",
+      "muito caro",
+      "outra gráfica fez por menos",
+      "concorrente mais barato",
+      "preço alto"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "obj_pensar_pdf_socio",
+    "titulo": "Vou pensar ou falar com o sócio",
+    "categoria": "objecoes",
+    "quando_usar": "Cliente adia a decisão depois do PDF.",
+    "resposta_pronta": "Combinado, sem pressa! Te mandei o PDF completinho pra mostrar pra quem precisar. O orçamento vale até {{validade}}. Quer que eu te lembre antes de vencer?",
+    "fatos": "Complementa obj_pensar e obj_socio. Sem pressionar. A data de entrega depende do horário de aprovação e vem da ferramenta. O PDF serve de apoio para o sócio. Agendar lembrete.",
+    "proximo_passo": "agendar_followup e salvar a situação no contato.",
+    "tags": [
+      "vou pensar",
+      "vou falar com meu sócio",
+      "preciso conversar",
+      "deixa eu ver",
+      "depois eu te falo",
+      "vou consultar"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "urgencia_evento_data",
+    "titulo": "Urgência real: data do evento do cliente",
+    "categoria": "prazos",
+    "quando_usar": "Cliente pede prazo menor ou diz que tem evento com data marcada.",
+    "resposta_pronta": "Entendi a correria! É pra algum evento com data marcada? Me diz o dia limite que eu confiro no sistema o que dá certo.",
+    "fatos": "Separe urgência real (evento, feira, inauguração) de pressa comum. Nunca prometa prazo menor que o da ferramenta. Se a data não servir, mostre uma alternativa que a busca trouxer ou chame o dono. Selo de urgência só ordena a fila.",
+    "proximo_passo": "Consultar o prazo na ferramenta e registrar a urgência no pedido.",
+    "tags": [
+      "preciso pra hoje",
+      "preciso pra amanhã",
+      "tenho evento",
+      "inauguração",
+      "feira dia",
+      "quanto antes",
+      "urgente"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "urgencia_honesta_usar",
+    "titulo": "Como usar urgência sem pressionar",
+    "categoria": "objecoes",
+    "quando_usar": "Cliente com orçamento na mão e sem data, na hora de conduzir ao fechamento.",
+    "resposta_pronta": "Aprovando até o horário de corte de hoje, a contagem do prazo já começa hoje. Depois disso, começa no próximo dia útil. Quer fechar agora?",
+    "fatos": "Urgência honesta só com fatos reais: horário de corte da produção (10h30 em dias úteis), validade do orçamento, condição especial que a ferramenta liberou com validade e a data do evento do cliente. Diga o ganho de decidir agora, nunca ameaça. Não usar em todo atendimento.",
+    "proximo_passo": "Voltar ao fechamento usando só prazo, validade ou condição real.",
+    "tags": [
+      "até que horas",
+      "horário de corte",
+      "quando começa a produção",
+      "se eu fechar agora",
+      "começa hoje"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "escassez_nao_usar",
+    "titulo": "Escassez: não usar",
+    "categoria": "objecoes",
+    "quando_usar": "Quando surgir a ideia de dizer últimas unidades, estoque acabando ou promoção acabando.",
+    "resposta_pronta": "Pra garantir a sua data, o ideal é aprovar a arte até o horário de corte. Assim a produção começa já e fica tudo certinho pra vc.",
+    "fatos": "A gráfica produz sob encomenda, então não existe estoque acabando. Nunca inventar escassez, últimas unidades ou promoção que vai acabar: isso quebra a confiança. Em datas de pico como fim de ano, só falar de fila cheia se o dono confirmar [CONFIRMAR].",
+    "proximo_passo": "Voltar ao fechamento usando só prazo, validade ou condição real.",
+    "tags": [
+      "últimas unidades",
+      "acabando",
+      "promoção acaba",
+      "fim de ano fila",
+      "garantir a data"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "brinde_valor_percebido",
+    "titulo": "Brindes: argumento de valor",
+    "categoria": "upsell",
+    "quando_usar": "Cliente em dúvida se vale investir em brinde ou personalizado.",
+    "resposta_pronta": "O legal desse item é que fica na mesa ou na mão do seu cliente todo dia, então sua marca é lembrada o ano inteiro. Quantas unidades vc pensa em fazer?",
+    "fatos": "Panfleto divulga uma ação rápida. Brinde útil acompanha a rotina do cliente e tem valor percebido alto, além de ser menos comparado só por preço. Falar apenas de produto que buscar_produto trouxer.",
+    "proximo_passo": "Qualificar a quantidade e buscar o produto.",
+    "tags": [
+      "vale a pena brinde",
+      "brinde personalizado",
+      "caneta personalizada",
+      "ímã de geladeira",
+      "chaveiro",
+      "copo térmico"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "guia_papeis",
+    "titulo": "Papéis: como explicar em uma frase",
+    "categoria": "guia",
+    "quando_usar": "Cliente pergunta qual papel escolher ou a diferença entre as opções.",
+    "resposta_pronta": "Te explico rapidinho: o couchê deixa as cores bem vivas e nítidas, o supremo é mais firme na mão e o reciclato passa uma imagem sustentável. Qual combina mais com o seu uso?",
+    "fatos": "Couchê brilho ou fosco: cor viva, versátil. Supremo: encorpado, bom para cartão. Reciclato: natural e ecológico. Kraft: marrom natural, cores claras somem, preferir arte escura. Apergaminhado: clássico, convites e certificados. Offset: aceita caneta e carimbo. Citar só o que a ferramenta trouxe.",
+    "proximo_passo": "Filtrar o produto pelo papel escolhido.",
+    "tags": [
+      "qual papel",
+      "diferença entre os papéis",
+      "o que é couchê",
+      "papel kraft",
+      "reciclato",
+      "papel supremo",
+      "apergaminhado",
+      "offset"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "guia_gramaturas",
+    "titulo": "Gramaturas: grossura do papel",
+    "categoria": "guia",
+    "quando_usar": "Cliente tem dúvida sobre 90g, 115g, 150g, 250g ou 300g.",
+    "resposta_pronta": "A gramatura é a grossura do papel. Mais leve é ótimo pra panfleto e bloco, e as mais encorpadas, como 250g e 300g, são ideais pra cartão e tag. Quer ver a mais em conta e a mais encorpada?",
+    "fatos": "De 75g a 90g: folha leve, timbrado, receituário e panfleto econômico. De 115g a 150g: folha intermediária, flyer e folder. De 250g a 300g: papel cartão firme, usado em cartão de visita, tag, capa e pasta.",
+    "proximo_passo": "Apresentar duas opções variando a gramatura.",
+    "tags": [
+      "o que é gramatura",
+      "250g",
+      "300g",
+      "papel grosso",
+      "papel fino",
+      "qual a espessura"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "guia_acabamentos",
+    "titulo": "Acabamentos: como vender o diferencial",
+    "categoria": "guia",
+    "quando_usar": "Valorizar a opção mais completa de cartão, tag, pasta, embalagem ou rótulo.",
+    "resposta_pronta": "Pra dar um destaque a mais, a laminação fosca com verniz localizado deixa o cartão com toque aveludado e brilho só na logo. Quer ver a diferença entre o simples e o completo?",
+    "fatos": "Laminação fosca ou soft touch: toque aveludado e proteção. Laminação brilho: realça cor e resiste mais. Holográfica: efeito colorido. Verniz localizado: brilho só em pontos da arte. Hot stamping: detalhe metalizado de luxo. Faca especial e canto arredondado: formato diferente. Oferecer só se existir no catálogo.",
+    "proximo_passo": "Comparar a versão simples com a de acabamento.",
+    "tags": [
+      "laminação",
+      "verniz localizado",
+      "hot stamping",
+      "soft touch",
+      "canto arredondado",
+      "acabamento especial",
+      "dourado"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "guia_digital_tiragem",
+    "titulo": "Impressão digital e tiragem maior",
+    "categoria": "guia",
+    "quando_usar": "Cliente estranha o preço por unidade de quantidades diferentes.",
+    "resposta_pronta": "Pra poucas unidades a impressão digital resolve bem e rápido. Em quantidades maiores o valor por unidade costuma cair bastante. Quer que eu compare a sua quantidade com uma faixa maior?",
+    "fatos": "Digital roda tiragem pequena direto. Em tiragem grande o valor unitário diminui. Nunca prometer preço ou prazo sem a ferramenta, nem oferecer produção que a busca não trouxe. Sem a quantidade pedida, dizer a menor tiragem e mostrar o mais próximo.",
+    "proximo_passo": "Cotar a quantidade pedida e uma faixa maior com buscar_produto.",
+    "tags": [
+      "por que 1000 sai mais barato",
+      "quantidade mínima",
+      "tiragem",
+      "digital ou offset",
+      "quanto mais compro"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_regras_ouro",
+    "titulo": "Arquivo: sangria, área segura e corte",
+    "categoria": "arte",
+    "quando_usar": "Cliente diz que já tem a arte ou pergunta como enviar o arquivo.",
+    "resposta_pronta": "Se vc já tem a arte, o ideal é PDF em CMYK, com textos em curvas e o fundo passando um pouco da borda pra não ficar filete branco. Evite moldura rente à beirada, que no corte pode ficar torta.",
+    "fatos": "Sangria: sobra do fundo além do corte. Área segura: texto, QR code e logo afastados da borda. Moldura rente à borda parece torta porque o corte varia cerca de 1 mm. Arquivo com 300 dpi, CMYK e fontes em curvas. A equipe confere o arquivo antes de imprimir [CONFIRMAR o alcance].",
+    "proximo_passo": "Confirmar se envia o arquivo depois do pagamento ou prefere a arte pela equipe.",
+    "tags": [
+      "sangria",
+      "como enviar o arquivo",
+      "cmyk",
+      "fonte em curvas",
+      "300 dpi",
+      "moldura na borda",
+      "arte pronta",
+      "qual formato"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_canva",
+    "titulo": "Arte feita no Canva",
+    "categoria": "arte",
+    "quando_usar": "Cliente diz que criou a arte no Canva.",
+    "resposta_pronta": "Fez no Canva? Tranquilo! Na hora de baixar, escolha PDF para impressão e marque achatar PDF. Se não tiver certeza da medida, a equipe pode ajustar a arte pra vc. Quer isso?",
+    "fatos": "Erros comuns do Canva: exportar PNG ou JPG pequeno, não achatar transparências e esquecer a camada separada de verniz, hot stamping ou faca. O Canva gratuito sai em RGB e a cor pode variar um pouco. O serviço de arte usa o valor da variável {{arte_basica}}.",
+    "proximo_passo": "Seguir o orçamento com ou sem arte pela equipe.",
+    "tags": [
+      "fiz no canva",
+      "fiz a arte no canva",
+      "canva",
+      "baixei do canva",
+      "não sei se a medida está certa"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_frente_verso",
+    "titulo": "Frente e verso e dobras",
+    "categoria": "arte",
+    "quando_usar": "Cartão 4x4, panfleto frente e verso, folder, cardápio ou mala direta.",
+    "resposta_pronta": "Como tem frente e verso, o verso precisa estar na orientação certa do gabarito pra não sair de cabeça pra baixo. Depois do pedido a equipe valida isso com vc.",
+    "fatos": "Em frente e verso e em dobras, o giro da folha define a orientação do verso. Livretos e catálogos pedem número de páginas múltiplo do formato. Vale para cartão 4x4, panfleto, folder, cardápio e mala direta.",
+    "proximo_passo": "Seguir o orçamento e passar a validação para a equipe de arte.",
+    "tags": [
+      "frente e verso",
+      "verso de cabeça pra baixo",
+      "folder com dobra",
+      "cardápio dobrado",
+      "4x4"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_enobrecimento",
+    "titulo": "Verniz, hot stamping, faca e tinta branca",
+    "categoria": "arte",
+    "quando_usar": "Cliente escolhe produto com verniz localizado, hot stamping, corte especial ou base branca.",
+    "resposta_pronta": "Pro brilho localizado ou o metalizado ficarem certinhos, a parte do efeito precisa vir marcada em vetor separado. Se o seu designer não fez isso, a equipe prepara pra vc.",
+    "fatos": "A área de verniz, hot stamping ou tinta branca vem em vetor separado, em preto sólido e sem degradê. A linha da faca não pode ficar misturada na imagem. Se o cliente não tiver o vetor, destacar a opção de arte no orçamento.",
+    "proximo_passo": "Incluir a opção de arte no orçamento.",
+    "tags": [
+      "verniz uv",
+      "arquivo com hot stamping",
+      "faca especial",
+      "tinta branca",
+      "vetor separado"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_laser",
+    "titulo": "Gravação a laser: logo em vetor",
+    "categoria": "arte",
+    "quando_usar": "Orçamento de brinde gravado a laser.",
+    "resposta_pronta": "Na gravação a laser a logo precisa estar em vetor limpo e em curvas, porque o laser lê todas as linhas do desenho. Vc já tem a logo em vetor ou quer que a equipe ajuste?",
+    "fatos": "O laser grava até linhas ocultas, brancas ou sobrepostas. Arte 100% vetor, fontes em curvas e objetos unidos sem linhas internas sobrando. Vale para copos, garrafas, canetas e chaveiros.",
+    "proximo_passo": "Saber se tem vetor e montar o orçamento do brinde.",
+    "tags": [
+      "gravação a laser",
+      "logo em vetor",
+      "corel",
+      "illustrator",
+      "gravar garrafa",
+      "gravar copo"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "arq_conferencia_valor",
+    "titulo": "Conferência do arquivo como argumento",
+    "categoria": "arte",
+    "quando_usar": "Cliente inseguro com a arte ou achando outra gráfica mais barata.",
+    "resposta_pronta": "Aqui a equipe confere o arquivo antes de imprimir e avisa se algo estiver fora, pra não sair cortado ou com cor diferente. Isso evita prejuízo pra vc. Quer mandar a arte pra gente olhar?",
+    "fatos": "Usar como valor, nunca como ataque ao concorrente. A conferência existe no fluxo de aprovação: a equipe avisa se notar problema e a impressão só segue com o ok do cliente. [CONFIRMAR] se cobre sangria e corte em todos os casos.",
+    "proximo_passo": "Receber o arquivo e seguir o fluxo de aprovação.",
+    "tags": [
+      "não sei se está certo",
+      "vão conferir a arte",
+      "e se sair cortado",
+      "medida certa",
+      "arte errada"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "par_natural_impressos",
+    "titulo": "Par natural: impressos e comunicação",
+    "categoria": "upsell",
+    "quando_usar": "Item principal definido, antes do link de pagamento.",
+    "resposta_pronta": "Já deixei o orçamento do seu item pronto! Uma dica que muita gente do seu ramo pede junto é incluir [complemento], porque sai tudo no mesmo padrão e na mesma entrega. Quer ver como fica?",
+    "fatos": "Sugerir um complemento só. Cartão: adesivo, panfleto ou acabamento. Panfleto: wind banner. Banner: roll-up ou cavalete. Bloco e receituário: carimbo ou pasta. Cardápio: adesivo de lacre. Só item que buscar_produto achar. Recusou, não insistir.",
+    "proximo_passo": "Se aceitar, buscar o item e atualizar o orçamento. Se recusar, seguir ao fechamento.",
+    "tags": [
+      "o que mais combina",
+      "tem mais alguma sugestão",
+      "além disso",
+      "complemento"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "par_natural_embalagem",
+    "titulo": "Par natural: embalagem, crachá e brindes",
+    "categoria": "upsell",
+    "quando_usar": "Item principal definido, antes do link de pagamento.",
+    "resposta_pronta": "Pra completar a experiência, muita gente leva junto [complemento]: já sai tudo combinando e aproveita a mesma entrega. Quer que eu te mostre como fica?",
+    "fatos": "Sacola: tag, lacre ou mini cartão de agradecimento. Rótulo: tag ou lacre. Crachá: cordão, oferecido uma vez só e nunca depois de recusado. Caneca ou garrafa: tag, caixa ou sacola. Agenda: calendário e caneta. Photobook: case. Só o que a busca trouxer.",
+    "proximo_passo": "Buscar o complemento e atualizar o orçamento, ou seguir ao fechamento.",
+    "tags": [
+      "sacola personalizada",
+      "tag",
+      "lacre",
+      "cordão para crachá",
+      "caixa para presente"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_gastronomia",
+    "titulo": "Kit por segmento: gastronomia e delivery",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é restaurante, hamburgueria, confeitaria ou bar, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: cardápio, embalagem ou saco de delivery, adesivo de lacre, panfleto promocional, ímã de geladeira e porta-copo. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "restaurante",
+      "hamburgueria",
+      "delivery",
+      "lanchonete",
+      "confeitaria",
+      "bar"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_saude",
+    "titulo": "Kit por segmento: saúde e clínicas",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é clínica, consultório, dentista, estética ou veterinária, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: receituário, bloco de agendamento, cartão de visita em couchê fosco ou reciclato, pasta com bolsa, envelope, papel timbrado e carimbo. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "clínica",
+      "consultório",
+      "dentista",
+      "estética",
+      "psicologia",
+      "veterinária"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_varejo",
+    "titulo": "Kit por segmento: varejo e moda",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é loja física, moda ou presentes, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: sacola personalizada, tag de preço ou roupa, adesivo de lacre, cartão de agradecimento, móbile de teto e wind banner de calçada. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "loja de roupa",
+      "boutique",
+      "loja física",
+      "presentes",
+      "calçados"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_escritorio",
+    "titulo": "Kit por segmento: escritórios e imobiliárias",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é advocacia, contabilidade, escritório ou imobiliária, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: cartão de visita encorpado com verniz, pasta, papel timbrado, envelope e caneta executiva gravada; para imobiliária, placa de polionda e calendário de ímã. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "advogado",
+      "contabilidade",
+      "escritório",
+      "imobiliária",
+      "corretor"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_eventos",
+    "titulo": "Kit por segmento: eventos e feiras",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é evento, feira, congresso ou festa, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: credencial com cordão, pulseira de identificação, certificado em papel apergaminhado, roll-up ou wind banner, totem de polionda e copo do evento. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "evento",
+      "feira",
+      "congresso",
+      "festa",
+      "formatura",
+      "casamento"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "kit_sazonal",
+    "titulo": "Kit por data sazonal",
+    "categoria": "kits",
+    "quando_usar": "Cliente conta que é Dia das Mães, Páscoa, Black Friday, Natal, Carnaval ou festa junina, ou a conversa indica esse segmento.",
+    "resposta_pronta": "Como é pra esse segmento, muita gente fecha o conjunto completo pra padronizar tudo de uma vez. Quer o orçamento só do primeiro item ou já olho o conjunto também?",
+    "fatos": "Ideias de itens para sugerir: no fim de ano, calendários, agendas e brindes a laser; no Carnaval e festas, abadá, pulseira, tirante, copo e ventarola. Sugerir uma vez, só itens que buscar_produto achar. Se o cliente recusar, seguir com o item principal.",
+    "proximo_passo": "Buscar os itens no catálogo e chamar montar_orcamento.",
+    "tags": [
+      "natal",
+      "fim de ano",
+      "páscoa",
+      "dia das mães",
+      "carnaval",
+      "black friday"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_sacolas",
+    "titulo": "Ficha: sacolas personalizadas",
+    "categoria": "guia",
+    "quando_usar": "Lojas de roupas, calçados, presentes, óticas, cosméticos e feiras.",
+    "resposta_pronta": "A sacola personalizada vira vitrine da sua loja andando pela rua! Pra indicar o tamanho e o material certos, me conta: o que vai dentro dela e quantas unidades vc pensa em fazer?",
+    "fatos": "Sacola é mídia ambulante. Kraft passa visual sustentável e resistente. Papel com laminação brilho ou fosca parece luxo e aguenta mais peso. Plástica com alça fita é prática no varejo de moda. Perguntar o que vai dentro, o material e a quantidade.",
+    "proximo_passo": "Chamar buscar_produto com tamanho e material compatíveis.",
+    "tags": [
+      "sacola",
+      "sacola de papel",
+      "sacola kraft",
+      "sacola para loja",
+      "embalagem personalizada"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_adesivos_rotulos",
+    "titulo": "Ficha: adesivos, rótulos e DTF UV",
+    "categoria": "guia",
+    "quando_usar": "Alimentos, bebidas, cosméticos, marmitas, velas, lacres e brindes rígidos.",
+    "resposta_pronta": "Pra eu indicar o adesivo certo sem risco de descolar: onde vc vai aplicar? Vai pegar geladeira, água ou gordura, ou é embalagem seca? Me passa também o tamanho e a quantidade.",
+    "fatos": "Geladeira, água ou gordura pedem vinil ou BOPP. Embalagem seca aceita papel couchê. Rótulo em bobina serve para volume e aceita acabamento como hot stamping. Adesivo DTF UV aplica a logo com relevo em copo, garrafa, vidro, metal e acrílico, mesmo em poucas unidades.",
+    "proximo_passo": "Chamar buscar_produto filtrando papel ou vinil na medida desejada.",
+    "tags": [
+      "rótulo",
+      "adesivo para garrafa",
+      "adesivo para geladeira",
+      "adesivo resistente à água",
+      "dtf uv",
+      "etiqueta para marmita",
+      "adesivo de lacre"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_comunicacao_visual",
+    "titulo": "Ficha: banners, wind banner, roll-up e placas",
+    "categoria": "guia",
+    "quando_usar": "Fachada, calçada, feira, evento, imobiliária e ponto de venda.",
+    "resposta_pronta": "Fica com uma presença visual excelente! Pra eu ver o modelo ideal: vai ficar em área interna ou na rua, pegando sol e vento? E qual tamanho ou quantidade vc precisa?",
+    "fatos": "Wind banner chama atenção na calçada e é fácil de montar. Roll-up é retrátil, ótimo para feira e recepção, e dá para trocar só a lona. Polionda serve para placa e totem leves. Lonas frontlight, backlight e dupla face para fachada. Letra caixa em MDF, PVC ou acrílico.",
+    "proximo_passo": "Buscar o item em comunicação visual.",
+    "tags": [
+      "wind banner",
+      "roll up",
+      "banner de lona",
+      "placa de polionda",
+      "letra caixa",
+      "fachada",
+      "faixa"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_textil",
+    "titulo": "Ficha: camisetas, dry fit e abadás",
+    "categoria": "guia",
+    "quando_usar": "Uniforme, corrida, evento, academia, ação promocional e bloco de Carnaval.",
+    "resposta_pronta": "A gente tem a linha dry fit, que é fresquinha pra evento e esporte, e também algodão pra uniforme! São quantas peças no total e a estampa vai só na frente ou frente e costas?",
+    "fatos": "Dry fit é leve e seca rápido, ideal para esporte, feira ao ar livre e equipe de promoção. Algodão serve para uniforme, com estampa em silk para tiragens maiores ou impressão digital para poucas peças coloridas. Termocolante aplica a estampa com calor.",
+    "proximo_passo": "Consultar buscar_produto na categoria têxtil.",
+    "tags": [
+      "camiseta personalizada",
+      "uniforme",
+      "dry fit",
+      "abadá",
+      "colete",
+      "camisa de corrida",
+      "estampa"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_brindes",
+    "titulo": "Ficha: brindes, copos térmicos e linha laser",
+    "categoria": "guia",
+    "quando_usar": "Presente de fim de ano, boas-vindas, evento corporativo e fidelização.",
+    "resposta_pronta": "Temos desde opções ótimas pra distribuir em quantidade, como canetas, chaveiros e copos, até linha premium com gravação a laser em garrafas e copos térmicos. É pra ação em volume ou presente especial?",
+    "fatos": "Linha térmica e laser mantém a bebida gelada ou quente com gravação durável. Canecas: porcelana, preta com janela e mágica. Kits executivos para clientes especiais. Volume: canetas, chaveiros, mousepad, ecobag e porta-copo. Perguntar público e quantidade.",
+    "proximo_passo": "Buscar os itens da faixa escolhida e apresentar até duas opções.",
+    "tags": [
+      "brinde corporativo",
+      "copo térmico",
+      "caneca personalizada",
+      "garrafa personalizada",
+      "kit churrasco",
+      "caneta personalizada",
+      "ecobag"
+    ],
+    "revisar": true
+  },
+  {
+    "id": "ficha_calendarios_agendas",
+    "titulo": "Ficha: calendários, agendas e cardápios",
+    "categoria": "guia",
+    "quando_usar": "Fim de ano, escolas, cursos e restaurantes.",
+    "resposta_pronta": "O calendário deixa sua marca visível o ano inteiro! Vc prefere de mesa, de parede ou ímã de geladeira? E são pra quantas unidades?",
+    "fatos": "Calendário de mesa serve escritório e consultório, e ímã de geladeira serve delivery, gás, farmácia e comércio de bairro. Mostrar duas ou três opções conforme o uso. Cardápio de uso intenso pede wire-o com plastificação rígida. Apostila: perguntar páginas e unidades.",
+    "proximo_passo": "Chamar buscar_produto com o modelo e a quantidade.",
+    "tags": [
+      "calendário",
+      "agenda personalizada",
+      "planner",
+      "apostila",
+      "cardápio plastificado",
+      "calendário de mesa",
+      "ímã de geladeira"
+    ],
+    "revisar": true
+  }
+]

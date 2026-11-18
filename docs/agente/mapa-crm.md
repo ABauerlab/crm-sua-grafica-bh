@@ -310,3 +310,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Diário do tráfego pago (18/11/2026)
 `docs/agente/diario-trafego-pago.md` guarda a avaliação diária das conversas reais do anúncio (números, gargalos, melhorias e backlog). Em 18/11 a primeira rodada de correções entrou: `private.followup_orcamentos_abertos` (cron 10 min), `private.fiscal_extrair` (gatilho em `messages`), `private.condicao_fora_padrao_trg`, `private.saida_travas_extra`, `private.saida_repeticao`, aprovação por pagamento em `preparar_link_pagamento`, `agente_config` 6/16 e regras O a W no WF2. Migrations `20261218000001` e `20261218000002`.
+
+## Estudos do dono (18/11/2026)
+33 trechos de conhecimento (papéis, acabamentos, arquivo, upsell, kits por segmento, fichas, objeções e urgência honesta) e regras X a AB do WF2. Só banco de conhecimento e prompt; nenhuma função de preço, prazo, frete ou pagamento mudou. Ver `docs/agente/estudos-do-dono-18-11.md`.
