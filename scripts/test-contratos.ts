@@ -49,5 +49,14 @@ for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_falta
   if (!wf2.includes(chave)) falhas.push(`WF2 não lê mais a chave de contexto ${chave}`)
 }
 
+// Rodada 18/11: regras do diário do tráfego pago e travas no banco
+for (const r of ['O) ENCERRAMENTO', 'P) PAGAMENTO VALE COMO APROVACAO', 'Q) CONDICAO FORA DO PADRAO', 'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU', 'S) NOTA FISCAL', 'T) CRACHA E CORDAO', 'W) CLIENTE DIZ QUE VOLTA']) {
+  if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra da rodada 18/11 "${r}"`)
+}
+const mig18 = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000002_atendimento_rodada_18.sql'), 'utf8')
+for (const marca of ['fiscal_extrair', 'condicao_fora_padrao_trg', 'saida_travas_extra', 'saida_repeticao', 'dedupe_orientacao', 'aprov_pagamento_v2']) {
+  if (!mig18.includes(marca)) falhas.push(`migration da rodada 18/11 perdeu ${marca}`)
+}
+
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)

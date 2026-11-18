@@ -7,8 +7,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405)
   const db = serviceClient()
-  const staff = await requireStaff(req, db)
-  if (!staff && !(await requireOwnerOrServer(req, db))) return json({ error: 'Não autorizado.' }, 401)
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  const sent = req.headers.get('x-cron-secret')
+  const doCron = !!cronSecret && !!sent && sent.length === cronSecret.length && sent === cronSecret
+  const staff = doCron ? null : await requireStaff(req, db)
+  if (!doCron && !staff && !(await requireOwnerOrServer(req, db))) return json({ error: 'Não autorizado.' }, 401)
 
   let input: { contact_id?: string }
   try { input = await req.json() } catch { return json({ error: 'Corpo da requisição inválido.' }, 400) }

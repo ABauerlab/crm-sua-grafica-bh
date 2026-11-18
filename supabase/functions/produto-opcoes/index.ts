@@ -1,16 +1,84 @@
-import { corsHeaders, json, requireEnv, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
 // Opções com foto para o agente (uma mensagem por opção): "opcoes: <produto>; <quantidade>".
 // A legenda é montada AQUI a partir de buscar_produto (preço de calcular_preco, ficha traduzida, prazo): o modelo não escreve nada,
 // então custo, margem, piso, fornecedor, SKU e origem das imagens nunca aparecem. Sem foto da opção, vai só o texto.
+// 18/11/2026: com a quantidade exata, só ela; sem ela, a abertura diz a verdade (não "para N unidades") e lote enorme fica de fora.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+function serviceClient(): SupabaseClient {
+  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+function requireEnv(...names: string[]): Record<string, string> | null {
+  const out: Record<string, string> = {}
+  for (const n of names) {
+    const v = Deno.env.get(n)
+    if (!v) {
+      console.error(`Segredo ausente: ${n}`)
+      return null
+    }
+    out[n] = v
+  }
+  return out
+}
+
+async function ehServiceRole(token: string): Promise<boolean> {
+  const url = Deno.env.get('SUPABASE_URL')
+  if (!url || token.length < 20) return false
+  try {
+    const res = await fetch(`${url}/auth/v1/admin/users?page=1&per_page=1`, { headers: { apikey: token, Authorization: `Bearer ${token}` } })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+async function requireOwnerOrServer(req: Request, db: SupabaseClient): Promise<'dono' | 'servidor' | null> {
+  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+  if (!token) return null
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (serviceKey && token.length === serviceKey.length && token === serviceKey) return 'servidor'
+  const { data: userData, error } = await db.auth.getUser(token)
+  if (error || !userData.user) return (await ehServiceRole(token)) ? 'servidor' : null
+  const { data: profile } = await db.from('profiles').select('id').eq('id', userData.user.id).maybeSingle()
+  if (!profile) return null
+  const { data: owner } = await db.from('app_settings').select('value').eq('key', 'owner').maybeSingle()
+  const ownerEmail = String((owner?.value as { email?: string } | null)?.email ?? '').toLowerCase()
+  if (ownerEmail && (userData.user.email ?? '').toLowerCase() !== ownerEmail) return null
+  return 'dono'
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const GRAPH = 'https://graph.facebook.com/v21.0'
 const WINDOW_MS = 24 * 60 * 60 * 1000
 const BUCKET = 'produto-fotos'
 
-interface Opcao { sku: string; descricao_curta?: string; em_palavras?: string; quantidade: number; preco: number; prazo_dias_uteis?: number; vendavel?: boolean }
+interface Opcao {
+  sku: string
+  descricao_curta?: string
+  em_palavras?: string
+  quantidade: number
+  preco: number
+  prazo_dias_uteis?: number
+  vendavel?: boolean
+}
 
 const brl = (n: number) => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios)
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -38,79 +106,130 @@ Deno.serve(async (req) => {
   const { data: lim } = await db.rpc('foto_limites', { p_conversation: conv.id, p_contact: conv.contact_id })
   let restantesHoje = Math.max(0, 10 - Number(lim?.imagens_hoje ?? 0))
 
-  const { data: bp } = await db.rpc('buscar_produto', { p_termo: m[1], p_quantidade: Number(m[2]), p_filtros: {} })
-  const ops = ((bp?.opcoes ?? []) as Opcao[]).filter((o) => o.vendavel !== false).slice(0, 4)
+  const qtdPedida = Number(m[2])
+  const { data: bp } = await db.rpc('buscar_produto', { p_termo: m[1], p_quantidade: qtdPedida, p_filtros: {} })
+  const todas = ((bp?.opcoes ?? []) as Opcao[]).filter((o) => o.vendavel !== false)
+  const exatas = todas.filter((o) => Number(o.quantidade) === qtdPedida)
+  // Com a quantidade exata, só ela. Sem ela, descarta lote enorme (mais de 12x o pedido) quando há alternativa menor.
+  const razoaveis = todas.filter((o) => Number(o.quantidade) <= Math.max(qtdPedida * 12, 30))
+  const ops = (exatas.length ? exatas : razoaveis.length ? razoaveis : todas).slice(0, 4)
+  const semExata = !exatas.length
+  const menorLote = ops.length ? Math.min(...ops.map((o) => Number(o.quantidade))) : 0
   if (!ops.length) return json({ enviadas: 0, orientacao: 'Não achei opções com esses termos. Tente outros termos em buscar_produto ou chame o dono.' })
 
   const base = Deno.env.get('SUPABASE_URL') ?? ''
   const auth = req.headers.get('Authorization') ?? ''
-  // abertura ANTES das fotos (a resposta do modelo sempre chega depois das ferramentas)
-  const produto = m[1].replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 60)
-  const intro = `Separei ${ops.length} opções de ${produto} para ${m[2]} unidades. Olha só:`
-  try {
-    const ri = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, { method: 'POST', headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: intro } }) })
-    const oi = await ri.json().catch(() => ({}))
-    if (ri.ok) {
-      const agora = new Date().toISOString()
-      await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: oi?.messages?.[0]?.id ?? null, direction: 'out', type: 'text', body: intro, status: 'sent', created_at: agora })
+
+  const enviarTexto = async (corpo: Record<string, unknown>, textoLog: string, tipoLog: string, preview: string): Promise<boolean> => {
+    let r: Response
+    try {
+      r = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      })
+    } catch {
+      return false
     }
-  } catch { /* segue sem a abertura */ }
+    const out = await r.json().catch(() => ({}))
+    if (!r.ok) {
+      console.error('Erro da Meta ao enviar opção:', out?.error?.code)
+      return false
+    }
+    const agora = new Date().toISOString()
+    await db.from('messages').insert({
+      conversation_id: conv.id,
+      wa_message_id: out?.messages?.[0]?.id ?? null,
+      direction: 'out',
+      type: tipoLog,
+      body: textoLog,
+      status: 'sent',
+      created_at: agora,
+    })
+    await db.from('conversations').update({ last_message_at: agora, last_message_preview: preview }).eq('id', conv.id)
+    return true
+  }
+
+  // Abertura antes das fotos (honesta: sem a quantidade exata, diz a menor tiragem em vez de "para N unidades")
+  const produto = m[1].replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 60)
+  const intro = semExata
+    ? `Não tenho exatamente ${qtdPedida} ${plural(qtdPedida, 'unidade', 'unidades')} desse modelo; a menor tiragem que consigo é de ${menorLote} ${plural(menorLote, 'unidade', 'unidades')}. Separei ${ops.length} ${plural(ops.length, 'opção', 'opções')} de ${produto} pra você ver. Olha só:`
+    : `Separei ${ops.length} ${plural(ops.length, 'opção', 'opções')} de ${produto} para ${qtdPedida} ${plural(qtdPedida, 'unidade', 'unidades')}. Olha só:`
+  await enviarTexto({ messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: intro } }, intro, 'text', 'Opções')
   await new Promise((res) => setTimeout(res, 1200))
 
   let enviadas = 0
   let fotos = 0
   let bytes = 0
+  const fotosUsadasNestaRodada = new Set<string>()
+
   for (let i = 0; i < ops.length; i++) {
     const o = ops[i]
     const nome = String(o.descricao_curta ?? '').replace(/\s+\d[xX]\d\s+.*$/, '').trim()
     const linhas = [`Opção ${i + 1}: ${nome}`]
     if (o.em_palavras) linhas.push(String(o.em_palavras))
-    linhas.push(`${o.quantidade} unidades por ${brl(Number(o.preco))} (valor de referência)`)
+    linhas.push(`${o.quantidade} ${plural(Number(o.quantidade), 'unidade', 'unidades')}: ${brl(Number(o.preco))}`)
     if (o.prazo_dias_uteis) linhas.push(`Pronto em ${o.prazo_dias_uteis} dia(s) útil(eis) depois da arte aprovada`)
 
     let arquivo: string | null = null
-    let ilustrativa = false
     if (fotosLigadas && restantesHoje > 0) {
       try {
         const { data: rg } = await db.rpc('foto_resolver_grupo', { p_termo: o.sku })
         if (rg?.ok) {
           const grupo = rg.grupo as string
-          const ler = async () => ((await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: 1, p_sku: o.sku })).data ?? []) as { arquivo: string; bytes: number; aproximada: boolean }[]
+          const ler = async () => ((await db.rpc('foto_aprovadas', { p_grupo: grupo, p_quantidade: 3, p_sku: o.sku })).data ?? []) as { arquivo: string; bytes: number; aproximada: boolean }[]
           let l = await ler()
           if (!l.length) {
-            // guarda as fotos do grupo (não envia nada): ação "rebuscar" da função de fotos
             const ctl = new AbortController()
             const t = setTimeout(() => ctl.abort(), 40000)
-            try { await fetch(`${base}/functions/v1/produto-fotos`, { method: 'POST', headers: { Authorization: auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'rebuscar', grupo, termo_ou_sku: o.sku }), signal: ctl.signal }) } catch { /* segue só com texto */ } finally { clearTimeout(t) }
+            try {
+              await fetch(`${base}/functions/v1/produto-fotos`, {
+                method: 'POST',
+                headers: { Authorization: auth, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: 'rebuscar', grupo, termo_ou_sku: o.sku }),
+                signal: ctl.signal,
+              })
+            } catch {
+              /* segue sem imagem nova */
+            } finally {
+              clearTimeout(t)
+            }
             l = await ler()
           }
-          if (l[0]) { arquivo = l[0].arquivo; bytes += l[0].bytes; ilustrativa = l[0].aproximada }
+          // Garante que NUNCA repete a mesma foto em opções diferentes da mesma rodada
+          const candidatoInedito = l.find((f) => !fotosUsadasNestaRodada.has(f.arquivo))
+          if (candidatoInedito) {
+            arquivo = candidatoInedito.arquivo
+            bytes += candidatoInedito.bytes
+            fotosUsadasNestaRodada.add(candidatoInedito.arquivo)
+          }
         }
-      } catch (e) { console.error('foto da opção falhou', e instanceof Error ? e.message : 'erro') }
+      } catch (e) {
+        console.error('foto da opção falhou', e instanceof Error ? e.message : 'erro')
+      }
     }
-    if (arquivo && ilustrativa) linhas.push('Foto ilustrativa: o acabamento pode variar um pouco.')
+
     const legenda = linhas.join('\n').slice(0, 1000)
 
     let corpo: Record<string, unknown> | null = null
     if (arquivo) {
       const { data: signed } = await db.storage.from(BUCKET).createSignedUrl(arquivo, 300)
-      if (signed?.signedUrl) { corpo = { messaging_product: 'whatsapp', to: waId, type: 'image', image: { link: signed.signedUrl, caption: legenda } }; restantesHoje--; fotos++ }
+      if (signed?.signedUrl) {
+        corpo = { messaging_product: 'whatsapp', to: waId, type: 'image', image: { link: signed.signedUrl, caption: legenda } }
+        restantesHoje--
+        fotos++
+      }
     }
-    if (!corpo) corpo = { messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: legenda } }
-    let r: Response
-    try {
-      r = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, { method: 'POST', headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
-    } catch { continue }
-    const out = await r.json().catch(() => ({}))
-    if (!r.ok) { console.error('Erro da Meta ao enviar opção:', out?.error?.code); continue }
-    const agora = new Date().toISOString()
-    await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: out?.messages?.[0]?.id ?? null, direction: 'out', type: corpo.type === 'image' ? 'image' : 'text', body: corpo.type === 'image' ? `[foto] ${legenda}` : legenda, status: 'sent', created_at: agora })
-    await db.from('conversations').update({ last_message_at: agora, last_message_preview: `Opção ${i + 1}` }).eq('id', conv.id)
-    enviadas++
-    await new Promise((res) => setTimeout(res, 1200))
+    if (!corpo) {
+      corpo = { messaging_product: 'whatsapp', to: waId, type: 'text', text: { body: legenda } }
+    }
+    const ok = await enviarTexto(corpo, corpo.type === 'image' ? `[foto] ${legenda}` : legenda, corpo.type === 'image' ? 'image' : 'text', `Opção ${i + 1}`)
+    if (ok) {
+      enviadas++
+      await new Promise((res) => setTimeout(res, 1200))
+    }
   }
   if (!enviadas) return json({ error: 'Não foi possível enviar as opções agora. Descreva as opções por texto.' }, 502)
   if (fotos) await db.rpc('foto_registrar_envio', { p_conversation: conv.id, p_contact: conv.contact_id, p_grupo: null, p_quantidade: fotos, p_bytes: bytes, p_via: 'cache', p_resultado: 'enviada' })
-  // resposta mínima ao agente: nunca traz origem, URL, SKU nem nome de arquivo
   return json({ enviadas, ja_enviou_abertura: true, legenda_sugerida: '' })
 })

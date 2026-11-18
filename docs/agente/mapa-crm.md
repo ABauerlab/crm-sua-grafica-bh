@@ -307,3 +307,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 - Funções: `mp-extrato` (dono, service role ou `x-cron-secret`). Telas: Financeiro com extrato do Mercado Pago.
 - n8n: WF1 usa `agente_pode_enviar_rodada` e espera a rodada em andamento; WF2 tem o nó `Regras adicionais (rodada 17/11)`.
 - **Atenção (17/11/2026):** `public.agente_chamar_dono(uuid,text,text,text)` só liga `conversations.needs_human` e usa gravidade alta para reclamação, cancelamento, estorno/reembolso, defeito, pedido de pessoa ou pagamento não identificado. Falha do agente e trava de saída são avisos baixos e não travam. Migration `20261217000013_atencao_so_em_reclamacao.sql`.
+
+## Diário do tráfego pago (18/11/2026)
+`docs/agente/diario-trafego-pago.md` guarda a avaliação diária das conversas reais do anúncio (números, gargalos, melhorias e backlog). Em 18/11 a primeira rodada de correções entrou: `private.followup_orcamentos_abertos` (cron 10 min), `private.fiscal_extrair` (gatilho em `messages`), `private.condicao_fora_padrao_trg`, `private.saida_travas_extra`, `private.saida_repeticao`, aprovação por pagamento em `preparar_link_pagamento`, `agente_config` 6/16 e regras O a W no WF2. Migrations `20261218000001` e `20261218000002`.
