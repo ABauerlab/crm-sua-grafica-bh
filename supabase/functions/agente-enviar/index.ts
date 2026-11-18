@@ -1,4 +1,5 @@
 import { corsHeaders, json, requireEnv, requireServiceRole, serviceClient } from '../_shared/http.ts'
+import { semNegrito } from '../_shared/agente.ts'
 
 // Envio de texto do agente (n8n, service role). O token da Meta fica só aqui.
 // Antes de enviar, o banco confere (agente_pode_enviar): IA ligada, conversa em modo IA, sem pedido pago e sem optout.
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
   if (!env) return json({ error: 'Integração com o WhatsApp não configurada no servidor.' }, 500)
 
   const input = (await req.json().catch(() => ({}))) as { conversation_id?: string; text?: string }
-  const text = String(input.text ?? '').trim()
+  const text = semNegrito(String(input.text ?? '')).trim()
   if (!UUID.test(String(input.conversation_id ?? ''))) return json({ error: 'conversation_id inválido.' }, 400)
   if (!text) return json({ error: 'Texto vazio.' }, 400)
   if (text.length > LIMITE_TOTAL) return json({ error: `Texto longo demais para o agente (limite de ${LIMITE_TOTAL} caracteres).` }, 400)
