@@ -42,7 +42,7 @@ Só falta a chave PÚBLICA do aplicativo do Mercado Pago, como segredo da Edge F
 - Os demais segredos (`MP_ACCESS_TOKEN_*`, `MP_WEBHOOK_SECRET_*`, `MP_MODO`) já existem.
 
 ## Publicar (nesta ordem)
-1. Migration `20261218000011_checkout_proprio.sql` (já aplicada no banco).
+1. Migration `20261218000012_checkout_proprio.sql` (já aplicada no banco).
 2. Segredo `MP_PUBLIC_KEY_PRODUCAO`.
 3. Deploy das funções: `supabase functions deploy checkout-dados --no-verify-jwt`, `checkout-mp-processar --no-verify-jwt`.
 4. Merge na `main` para publicar a loja (a rota `/pagar/<token>` precisa estar no ar).
