@@ -30,3 +30,13 @@ export async function acionarAgente(
     clearTimeout(t)
   }
 }
+
+/**
+ * Decisão do dono: a Laura nunca usa negrito. Remove a marcação de ênfase (`*texto*`, `**texto**`, `***texto***`)
+ * mantendo o texto, e apaga asteriscos soltos em sequência. Um asterisco isolado (ex.: nota de rodapé) fica.
+ */
+export function semNegrito(texto: string): string {
+  return texto
+    .replace(/\*{1,3}([^*\n]+?)\*{1,3}/g, '$1')
+    .replace(/\*{2,}/g, '')
+}
