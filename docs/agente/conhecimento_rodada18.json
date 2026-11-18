@@ -17,7 +17,7 @@
       "tem como fazer",
       "fazem"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "sql_comprador_pronto",
@@ -35,7 +35,7 @@
       "quero fechar",
       "é urgente"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "espelhar_tom",
@@ -52,7 +52,7 @@
       "minha marca",
       "projeto novo"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "obj_caro_valor_incluso",
@@ -70,7 +70,7 @@
       "concorrente mais barato",
       "preço alto"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "obj_pensar_pdf_socio",
@@ -88,7 +88,7 @@
       "depois eu te falo",
       "vou consultar"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "urgencia_evento_data",
@@ -107,7 +107,7 @@
       "quanto antes",
       "urgente"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "urgencia_honesta_usar",
@@ -124,15 +124,15 @@
       "se eu fechar agora",
       "começa hoje"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "escassez_nao_usar",
-    "titulo": "Escassez: não usar",
+    "titulo": "Escassez não, volume de pedidos sim",
     "categoria": "objecoes",
-    "quando_usar": "Quando surgir a ideia de dizer últimas unidades, estoque acabando ou promoção acabando.",
-    "resposta_pronta": "Pra garantir a sua data, o ideal é aprovar a arte até o horário de corte. Assim a produção começa já e fica tudo certinho pra vc.",
-    "fatos": "A gráfica produz sob encomenda, então não existe estoque acabando. Nunca inventar escassez, últimas unidades ou promoção que vai acabar: isso quebra a confiança. Em datas de pico como fim de ano, só falar de fila cheia se o dono confirmar [CONFIRMAR].",
+    "quando_usar": "Quando surgir a ideia de dizer últimas unidades, estoque acabando ou promoção acabando, ou em datas de pico como fim de ano.",
+    "resposta_pronta": "Nessa época entra muito pedido, então aprovar cedo ajuda a garantir a sua data. Fechando agora, a produção já começa e fica tudo certinho pra vc.",
+    "fatos": "A gráfica produz sob encomenda: não existe estoque acabando nem últimas unidades, e nunca prometer vaga limitada. Pode dizer a verdade de que em fim de ano e datas de pico entra muito pedido, como prova social e motivo para aprovar cedo. Prazo sempre da ferramenta.",
     "proximo_passo": "Voltar ao fechamento usando só prazo, validade ou condição real.",
     "tags": [
       "últimas unidades",
@@ -141,7 +141,7 @@
       "fim de ano fila",
       "garantir a data"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "brinde_valor_percebido",
@@ -159,7 +159,7 @@
       "chaveiro",
       "copo térmico"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "guia_papeis",
@@ -179,7 +179,7 @@
       "apergaminhado",
       "offset"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "guia_gramaturas",
@@ -197,7 +197,7 @@
       "papel fino",
       "qual a espessura"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "guia_acabamentos",
@@ -216,7 +216,7 @@
       "acabamento especial",
       "dourado"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "guia_digital_tiragem",
@@ -233,7 +233,7 @@
       "digital ou offset",
       "quanto mais compro"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_regras_ouro",
@@ -241,7 +241,7 @@
     "categoria": "arte",
     "quando_usar": "Cliente diz que já tem a arte ou pergunta como enviar o arquivo.",
     "resposta_pronta": "Se vc já tem a arte, o ideal é PDF em CMYK, com textos em curvas e o fundo passando um pouco da borda pra não ficar filete branco. Evite moldura rente à beirada, que no corte pode ficar torta.",
-    "fatos": "Sangria: sobra do fundo além do corte. Área segura: texto, QR code e logo afastados da borda. Moldura rente à borda parece torta porque o corte varia cerca de 1 mm. Arquivo com 300 dpi, CMYK e fontes em curvas. A equipe confere o arquivo antes de imprimir [CONFIRMAR o alcance].",
+    "fatos": "Sangria: sobra do fundo além do corte. Área segura: texto, QR code e logo afastados da borda. Moldura rente à borda parece torta porque o corte varia cerca de 1 mm. Pedir 300 dpi, CMYK e fontes em curvas. A equipe confere sangria e corte em todos os pedidos.",
     "proximo_passo": "Confirmar se envia o arquivo depois do pagamento ou prefere a arte pela equipe.",
     "tags": [
       "sangria",
@@ -253,7 +253,7 @@
       "arte pronta",
       "qual formato"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_canva",
@@ -270,7 +270,7 @@
       "baixei do canva",
       "não sei se a medida está certa"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_frente_verso",
@@ -287,7 +287,7 @@
       "cardápio dobrado",
       "4x4"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_enobrecimento",
@@ -304,7 +304,7 @@
       "tinta branca",
       "vetor separado"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_laser",
@@ -322,15 +322,15 @@
       "gravar garrafa",
       "gravar copo"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "arq_conferencia_valor",
     "titulo": "Conferência do arquivo como argumento",
     "categoria": "arte",
     "quando_usar": "Cliente inseguro com a arte ou achando outra gráfica mais barata.",
-    "resposta_pronta": "Aqui a equipe confere o arquivo antes de imprimir e avisa se algo estiver fora, pra não sair cortado ou com cor diferente. Isso evita prejuízo pra vc. Quer mandar a arte pra gente olhar?",
-    "fatos": "Usar como valor, nunca como ataque ao concorrente. A conferência existe no fluxo de aprovação: a equipe avisa se notar problema e a impressão só segue com o ok do cliente. [CONFIRMAR] se cobre sangria e corte em todos os casos.",
+    "resposta_pronta": "Aqui a equipe confere sangria e corte do arquivo antes de imprimir e avisa se algo estiver fora, pra não sair cortado ou com cor diferente. Quer mandar a arte pra gente olhar?",
+    "fatos": "Usar como valor, nunca como ataque ao concorrente. A equipe confere sangria, área segura e corte em todos os pedidos, avisa se notar problema, e a impressão só segue com o ok do cliente.",
     "proximo_passo": "Receber o arquivo e seguir o fluxo de aprovação.",
     "tags": [
       "não sei se está certo",
@@ -339,7 +339,7 @@
       "medida certa",
       "arte errada"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "par_natural_impressos",
@@ -355,7 +355,7 @@
       "além disso",
       "complemento"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "par_natural_embalagem",
@@ -372,7 +372,7 @@
       "cordão para crachá",
       "caixa para presente"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_gastronomia",
@@ -390,7 +390,7 @@
       "confeitaria",
       "bar"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_saude",
@@ -408,7 +408,7 @@
       "psicologia",
       "veterinária"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_varejo",
@@ -425,7 +425,7 @@
       "presentes",
       "calçados"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_escritorio",
@@ -442,7 +442,7 @@
       "imobiliária",
       "corretor"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_eventos",
@@ -460,7 +460,7 @@
       "formatura",
       "casamento"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "kit_sazonal",
@@ -478,7 +478,7 @@
       "carnaval",
       "black friday"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_sacolas",
@@ -495,7 +495,7 @@
       "sacola para loja",
       "embalagem personalizada"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_adesivos_rotulos",
@@ -514,7 +514,7 @@
       "etiqueta para marmita",
       "adesivo de lacre"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_comunicacao_visual",
@@ -533,7 +533,7 @@
       "fachada",
       "faixa"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_textil",
@@ -552,7 +552,7 @@
       "camisa de corrida",
       "estampa"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_brindes",
@@ -571,7 +571,7 @@
       "caneta personalizada",
       "ecobag"
     ],
-    "revisar": true
+    "revisar": false
   },
   {
     "id": "ficha_calendarios_agendas",
@@ -590,6 +590,6 @@
       "calendário de mesa",
       "ímã de geladeira"
     ],
-    "revisar": true
+    "revisar": false
   }
 ]
