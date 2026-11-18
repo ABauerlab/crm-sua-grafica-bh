@@ -1,6 +1,6 @@
 -- Teste do kit agregado "Crachá + cordão" (18/11/2026). Roda como service_role e desfaz tudo no fim.
--- Esperado: orçamento com crachá + cordão sai com o cordão ajustado (abatimento > 0), total menor que a soma
--- dos itens sem kit, e validar_margem continua ok. O DO termina com exceção de propósito (rollback).
+-- Esperado (decisão do dono, 18/11: o foco é lucrar): o kit só marca o orçamento, NÃO baixa o preço (total igual à soma
+-- dos itens da planilha) e validar_margem continua ok. O DO termina com exceção de propósito (rollback).
 do $t$
 declare
   v_c uuid; v_res jsonb; v_sem numeric; v_com numeric; v_val jsonb;
@@ -12,9 +12,9 @@ begin
   select coalesce(sum(i.quantidade * c.preco_venda), 0) into v_sem from public.orcamento_itens i join public.catalogo c on c.sku = i.sku where i.orcamento_id = (v_res ->> 'orcamento_id')::uuid;
   v_com := (v_res ->> 'total')::numeric;
   if v_res -> 'kit' is null then raise exception 'o kit não foi aplicado'; end if;
-  if v_com >= v_sem then raise exception 'o kit deveria baixar o total (sem=% com=%)', v_sem, v_com; end if;
+  if v_com <> v_sem then raise exception 'o kit não pode mexer no preço (sem=% com=%)', v_sem, v_com; end if;
   v_val := public.validar_margem((v_res ->> 'orcamento_id')::uuid);
   if v_val ->> 'status' <> 'ok' then raise exception 'trava de lucro recusou o kit: %', v_val; end if;
-  raise exception 'OK (rollback): kit aplicado, total % contra % sem kit', v_com, v_sem;
+  raise exception 'OK (rollback): kit aplicado sem mexer no preço (total %)', v_com;
 end
 $t$;
