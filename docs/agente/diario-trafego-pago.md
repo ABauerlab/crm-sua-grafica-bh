@@ -84,23 +84,47 @@ Prioridade 3 (comercial e medição):
 
 ---
 
+## 18/11/2026: correções aplicadas a partir de 17/11
+
+O que foi mexido (tudo em produção, com migrations `20261218000001` e `20261218000002`, função `contato-cep-completar` v2 sem JWT e com `x-cron-secret`, `produto-opcoes` v14 e WF2 publicado com a regra nova):
+
+| Gargalo | O que mudou | Como conferir amanhã |
+|---|---|---|
+| G1711-2 e G1711-3 (lembrete insistente e depois de recusa) | Q1/Q2 respeitam intervalo mínimo de 2 h e teto de 2 por dia (`app_settings.followup.q_intervalo_min`, `q_max_dia`); esperam até 3 h quando o cliente avisa que volta; texto varia em 4 versões e cita o assunto; recusa ("por enquanto não", "vou ver depois") também cancela F1 a F4 | `followup_fila`: motivos `q_intervalo`, `q_limite_dia`, `cliente_recusou`; nenhum cliente com mais de 2 Q no dia |
+| G1711-7 (orçamento aberto sem lembrete) | `private.followup_orcamentos_abertos` (cron `followup-orcamentos-abertos`, 10 min) reativa F1 a F4 quando o cliente respondeu e silenciou 30 min; em modo humano cria alerta (a cada 6 h por orçamento) | Edson e Patrícia agora têm F1 a F4 pendentes (F1 sai às 08:00 de 18/11) |
+| G1711-6 (dados fiscais em modo humano) | Gatilho `trg_fiscal_extrair` lê CPF/CNPJ, CEP, e-mail, número e nome da mensagem do cliente depois de pago; CEP completa endereço por `contato-cep-completar` | `agent_logs` com `fiscal_extraido`; pedido #407 do Marcos ficou sem nenhuma falta de dados (a NFC-e nº 71 rejeitada ainda precisa ser reemitida) |
+| G1711-4 e G1711-5 (fechamento) | "Pagamento será pix", "pode mandar o link" e "Ok" depois do PDF liberam o link; pedido de 50%, pagar na retirada ou 3x ou mais gera alerta alto ao dono na hora | alertas `agente_chamado` com origem `condicao_fora_padrao` |
+| G1711-10 e G1711-12 (promessas e NF) | Trava de saída barra "entregamos em toda BH", prazo por dia da semana sem data da ferramenta e pergunta de NF antes de pagar (sai só a frase ruim, sem alertar o dono); frases repetidas em 90 min são removidas | `agente_saida_segura` com motivos `promessa:*` e `repeticao:frase` |
+| G1711-1 e G1711-8 (lentidão e produto errado) | Limite de ferramentas por rodada de 12/20 para 6/16 (o Hudson chegou a 9 buscas em uma rodada); `buscar_produto` não devolve a mesma opção só com a orientação trocada; `produto-opcoes` diz a verdade quando não há a quantidade pedida e deixa de fora lote enorme | `agente_execucoes`: rodadas acima de 90 s e tokens de entrada; `agent_logs.ferramenta='buscar_produto'` por execução |
+| WF2 (regras O a W) | Encerramento único, pagamento vale aprovação, condição fora do padrão chama o dono, sem promessa fora da ferramenta, sem NF antes de pagar, cordão opcional, sem duplicar frases | ler as conversas do dia |
+
+Observações e riscos:
+- A regra O (encerrar em uma mensagem) é exceção à diretriz "toda resposta termina com pergunta de avanço", só para recusa explícita.
+- "Ok", "sim" e afins só aprovam quando são a mensagem inteira e depois do PDF.
+- O limite de 2 Q por dia e 2 h de intervalo suaviza a decisão de 17/11 do dono (lembrete de 10 min para cliente quente): o primeiro lembrete continua em 10 min, os seguintes esperam.
+- Não feito: fotos em segundo plano (continuam sequenciais, a foto única por opção exige isso), preço do PDF igual ao dito no chat (G1711-11), balões: o corte de 2 mensagens segue só no prompt (regra D), criativo do anúncio de crachá (decisão do dono), pergunta do motivo da perda (G1711-15).
+- Testes: `npm run gate` verde e `supabase/tests/rodada18_atendimento.sql` (rodado com rollback, resultado OK). Nenhum cenário `e5-*`, `mvp-*`, `e12-*` ou `e17-*` foi rodado.
+
+
+---
+
 ## Backlog de melhorias
 
 | Código | Descrição curta | Origem | Status |
 |---|---|---|---|
-| M1711-1 | Cadência do Q1 (1 a cada 3 h, 2 por dia, respeitar "já te respondo") | G1711-2 | Proposta |
-| M1711-2 | Trava de recusa mais ampla e despedida única | G1711-3 | Proposta |
-| M1711-3 | Lembrete e alerta para orçamento aberto em modo humano | G1711-7 | Proposta |
-| M1711-4 | Salvar dados fiscais em modo humano | G1711-6 | Proposta |
-| M1711-5 | Intenção de pagamento vale como aprovação | G1711-4 | Proposta |
-| M1711-6 | Pedido fora do padrão chama o dono | G1711-5 | Proposta |
-| M1711-7 | Menos tokens e fotos em segundo plano | G1711-1 | Proposta |
-| M1711-8 | Correção de `buscar_produto` (família, quantidade, PVC) | G1711-8 | Proposta |
-| M1711-9 | Função de faixa de quantidade | G1711-9 | Proposta |
-| M1711-10 | Novas travas de saída (prazo, frete, NF) | G1711-10, G1711-12 | Proposta |
-| M1711-11 | Preço do PDF igual ao dito no chat | G1711-11 | Proposta |
-| M1711-12 | Máximo de 2 balões e anti-repetição | G1711-13 | Proposta |
-| M1711-13 | Criativo e preço do anúncio de crachá | G1711-14 | Proposta (decisão do dono) |
+| M1711-1 | Cadência do Q1 (1 a cada 2 h, 2 por dia, respeitar "já te respondo") | G1711-2 | Aplicada 18/11 (migrations `20261218000001` e `02`) |
+| M1711-2 | Trava de recusa mais ampla e despedida única | G1711-3 | Aplicada 18/11 (recusa vale também para F1 a F4; despedida única na regra O do WF2) |
+| M1711-3 | Lembrete e alerta para orçamento aberto em modo humano | G1711-7 | Aplicada 18/11 (`private.followup_orcamentos_abertos`, cron a cada 10 min) |
+| M1711-4 | Salvar dados fiscais em modo humano | G1711-6 | Aplicada 18/11 (`private.fiscal_extrair`, gatilho em `messages`, CEP completa pela função `contato-cep-completar`) |
+| M1711-5 | Intenção de pagamento vale como aprovação | G1711-4 | Aplicada 18/11 (`preparar_link_pagamento` + regra P do WF2) |
+| M1711-6 | Pedido fora do padrão chama o dono | G1711-5 | Aplicada 18/11 (alerta alto automático + regra Q do WF2) |
+| M1711-7 | Menos tokens e fotos em segundo plano | G1711-1 | Parcial 18/11 (limite de ferramentas 12/20 para 6/16, opções sem duplicata; fotos em segundo plano NÃO feito) |
+| M1711-8 | Correção de `buscar_produto` (família, quantidade, PVC) | G1711-8 | Parcial 18/11 (abertura honesta e sem lote enorme em `produto-opcoes` v14; causa exata da busca de credencial de papel do Hudson não reproduzida) |
+| M1711-9 | Função de faixa de quantidade | G1711-9 | Parcial 18/11 (regra U do WF2: só fala mínimo se vier da ferramenta; `buscar_produto` já devolve lote maior) |
+| M1711-10 | Novas travas de saída (prazo, frete, NF) | G1711-10, G1711-12 | Aplicada 18/11 (`private.saida_travas_extra`) |
+| M1711-11 | Preço do PDF igual ao dito no chat | G1711-11 | Proposta (não feito) |
+| M1711-12 | Máximo de 2 balões e anti-repetição | G1711-13 | Parcial 18/11 (anti-repetição em `private.saida_repeticao` e regra V; corte de balões já existia na regra D e o modelo a ignora) |
+| M1711-13 | Criativo e preço do anúncio de crachá | G1711-14 | Regra T aplicada (cordão opcional); criativo e kit dependem do dono |
 | M1711-14 | Motivo de perda na recusa | G1711-15 | Proposta |
 | M1711-15 | Primeira resposta já avança | geral | Proposta |
 

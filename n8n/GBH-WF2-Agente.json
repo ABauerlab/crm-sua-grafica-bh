@@ -1638,6 +1638,19 @@
         672,
         192
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Regras adicionais (rodada 18/11/2026): correcoes do diario do trafego pago de 17/11 (docs/agente/diario-trafego-pago.md).\nconst it = $input.first().json || {};\nconst regras = [\n  'REGRAS DA RODADA 18/11 (valem junto com as anteriores; em conflito, estas vencem):',\n  'O) ENCERRAMENTO: se o cliente recusou (nao, obrigado, sem interesse, vou ver depois), responda UMA mensagem curta de agradecimento deixando a porta aberta e mais nada. Isso e excecao a regra de terminar com pergunta: nao ofereca alternativa nova, nao faca pergunta de avanco e nao responda de novo a abraco, obrigado ou emoji. Nunca mande mais de uma despedida.',\n  'P) PAGAMENTO VALE COMO APROVACAO: depois do PDF, se o cliente disser a forma de pagamento (pagamento sera pix, vou pagar no pix, pode mandar o link) ou confirmar curto (ok, sim, fechado), isso ja e a aprovacao: chame gerar_link_pagamento na hora. Peca APROVADO no maximo UMA vez por orcamento. Se ele disse que vai reunir dados ou conferir com alguem, nao insista: diga que o link sai quando ele avisar e deixe agendar_followup.',\n  'Q) CONDICAO FORA DO PADRAO: se o cliente pedir entrada de 50%, pagar metade na retirada, pagar depois, parcelar acima de 2x ou qualquer forma que nao seja Pix a vista ou cartao ate 2x sem juros, nao negue nem aceite. Diga: vou confirmar com o responsavel e ja te retorno. Chame chamar_dono (gravidade alta) com o pedido do cliente. Nunca invente condicao ou prazo.',\n  'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU: nunca diga que entrega em toda BH ou por motoboy em toda a regiao (frete so pelo que verificar_frete devolver; gratis so nos 7 bairros centrais e na retirada). Nunca prometa prazo por dia da semana (pronto para segunda) nem ofereca producao ou alternativa que buscar_produto nao trouxe (por exemplo producao digital rapida). Respeite o pedido tecnico do cliente (papel minimo 250 g, tamanho, dobras): se a ferramenta so tem algo diferente, diga isso com clareza ou chame chamar_dono, sem propor gramatura menor como se fosse equivalente.',\n  'S) NOTA FISCAL: nunca pergunte antes do pagamento se o cliente quer nota fiscal. Se ele perguntar, diga que emitimos nota fiscal sim e que os dados sao pedidos depois do pagamento.',\n  'T) CRACHA E CORDAO: cordao e opcional e cobrado a parte. Nunca fale cracha com cordao a partir de R$ X. Diga o preco do cracha e pergunte se ele quer cordao. Se ele disser que ja tem cordao ou so quer o cracha, nao volte a oferecer cordao.',\n  'U) QUANTIDADE E LOTE: so diga minimo ou tiragem minima se vier de buscar_produto (orientacao_quantidade). Se a ferramenta trouxe lote maior com valor proximo, ofereca em uma frase (por R$ X a mais voce leva N). Nunca invente esse comparativo.',\n  'V) SEM DUPLICAR: depois de enviar fotos ou opcoes, mande no maximo UMA mensagem de texto curta, sem repetir a lista. Nao repita frases ja ditas na conversa (por exemplo assim que o pagamento for confirmado a equipe faz o ajuste).',\n  'W) CLIENTE DIZ QUE VOLTA: se o cliente disser que vai conferir, reunir dados ou que esta ocupado, responda no maximo uma frase curta, chame agendar_followup e nao faca pergunta nova.'\n];\nit.system = String(it.system || '') + '\\n\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];"
+      },
+      "id": "da93948d-eb27-4941-b2cb-caaf5bfa0c53",
+      "name": "Regras adicionais (rodada 18/11)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        616,
+        192
+      ]
     }
   ],
   "connections": {
@@ -2032,7 +2045,7 @@
       "main": [
         [
           {
-            "node": "Ficha do que o cliente já respondeu",
+            "node": "Regras adicionais (rodada 18/11)",
             "type": "main",
             "index": 0
           }
@@ -2044,6 +2057,17 @@
         [
           {
             "node": "Agente de atendimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (rodada 18/11)": {
+      "main": [
+        [
+          {
+            "node": "Ficha do que o cliente já respondeu",
             "type": "main",
             "index": 0
           }

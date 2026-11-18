@@ -89,7 +89,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.contato-cep-completar]
-verify_jwt = true
+verify_jwt = false
 
 # Upload do PDF da arte no checkout do site: público; valida a assinatura do PDF e o pedido do site
 [functions.loja-arquivo]
