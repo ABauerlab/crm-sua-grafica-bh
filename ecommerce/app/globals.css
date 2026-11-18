@@ -9,3 +9,23 @@ input, select, textarea { font-size: 16px; }
 body { overflow-x: clip; }
 body { @apply bg-papel text-tinta antialiased; }
 @keyframes pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.45); } 50% { box-shadow: 0 0 0 12px rgba(37, 211, 102, 0); } }
+
+/* Checkout próprio: logo animada (círculos C, M e Y se encontram como no símbolo da marca) */
+@keyframes logo-c { 0%, 100% { transform: translate(-22px, -16px) scale(0.82); } 45%, 60% { transform: translate(0, 0) scale(1); } }
+@keyframes logo-m { 0%, 100% { transform: translate(22px, -16px) scale(0.82); } 45%, 60% { transform: translate(0, 0) scale(1); } }
+@keyframes logo-y { 0%, 100% { transform: translate(0, 24px) scale(0.82); } 45%, 60% { transform: translate(0, 0) scale(1); } }
+@keyframes logo-brilho { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@keyframes entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes check-traco { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.logo-c, .logo-m, .logo-y { transform-box: fill-box; transform-origin: center; animation-duration: 2.2s; animation-iteration-count: infinite; animation-timing-function: cubic-bezier(.65, 0, .35, 1); mix-blend-mode: multiply; }
+.logo-c { animation-name: logo-c; } .logo-m { animation-name: logo-m; } .logo-y { animation-name: logo-y; }
+.barra-brilho { animation: logo-brilho 1.4s ease-in-out infinite; }
+.entra { animation: entra .35s ease-out both; }
+.check-traco { stroke-dasharray: 60; stroke-dashoffset: 60; animation: check-traco .6s .25s ease-out forwards; }
+.pop { animation: pop .5s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .logo-c, .logo-m, .logo-y, .barra-brilho, .entra, .pop { animation: none; }
+  .logo-c { transform: translate(-6px, -4px); } .logo-m { transform: translate(6px, -4px); } .logo-y { transform: translate(0, 7px); }
+  .check-traco { animation: none; stroke-dashoffset: 0; }
+}

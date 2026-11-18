@@ -110,3 +110,10 @@ verify_jwt = false
 # Botão Responder com IA: só atendente logado (a função confere o perfil)
 [functions.ia-rascunho]
 verify_jwt = true
+
+# Checkout próprio (/pagar/<token>): público, o token do pedido é o comprovante; a função confere tudo no banco
+[functions.checkout-dados]
+verify_jwt = false
+
+[functions.checkout-mp-processar]
+verify_jwt = false

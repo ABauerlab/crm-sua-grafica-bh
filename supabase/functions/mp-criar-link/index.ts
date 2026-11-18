@@ -1,6 +1,7 @@
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
 import { API, buildItems, buildPreference, formatReference, parseExpiraHoras, toCents } from '../_shared/mp.ts'
 import { mpConfig, webhookUrl } from '../_shared/mpconfig.ts'
+import { urlCheckout } from '../_shared/checkout.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
     return json({ error: (e as Error).message }, 400)
   }
 
-  const { data: order } = await db.from('orders').select('id, number, teste').eq('id', orderId).maybeSingle()
+  const { data: order } = await db.from('orders').select('id, number, teste, checkout_token').eq('id', orderId).maybeSingle()
   if (!order) return json({ error: 'Pedido não encontrado.' }, 404)
   if (cfg.modo === 'producao' && order.teste) return json({ error: 'Este é um pedido de teste e o servidor está em modo produção.' }, 422)
 
@@ -62,6 +63,53 @@ Deno.serve(async (req) => {
   let aviso: string | undefined
   const resposta = (l: { id: string; link: string | null; valor: number; expira_em: string | null }, reutilizado: boolean) =>
     json({ link: l.link, pagamento_id: l.id, valor: Number(l.valor), expira_em: l.expira_em, modo: cfg.modo, referencia: formatReference(order.number), reutilizado, ...(aviso ? { aviso } : {}) })
+
+  // Checkout próprio (padrão): o link é a página /pagar/<token> do nosso site, sem preferência do Mercado Pago.
+  // O token é fixo por pedido; renovar só estende a validade. CHECKOUT_PROPRIO=false volta ao Checkout Pro.
+  if ((Deno.env.get('CHECKOUT_PROPRIO') ?? 'true').toLowerCase() !== 'false') {
+    const url = urlCheckout(order.checkout_token, Deno.env.get('CHECKOUT_BASE_URL') ?? undefined)
+    const expira = new Date(Date.now() + horas * 3600_000).toISOString()
+    const { data: ativo } = await db.from('pagamentos').select('*').eq('order_id', orderId).eq('modo', cfg.modo).eq('eh_link', true).eq('link_ativo', true).maybeSingle()
+    if (ativo) {
+      const valido = ativo.expira_em && new Date(ativo.expira_em).getTime() > Date.now()
+      const mesmoValor = toCents(Number(ativo.valor)) === totalCents
+      if (valido && mesmoValor && !input.forcar_novo) {
+        // Mesmo link: só estende se o novo prazo for maior
+        if (new Date(expira).getTime() > new Date(ativo.expira_em).getTime() + 60_000) {
+          const { data: maior } = await db.from('pagamentos').update({ expira_em: expira, atualizado_em: new Date().toISOString() }).eq('id', ativo.id).select('*').single()
+          return resposta(maior ?? ativo, true)
+        }
+        return resposta(ativo, true)
+      }
+      if (!ativo.mp_payment_id) {
+        // Sem tentativa de pagamento presa a esta linha: atualiza valor e validade no mesmo link
+        const { data: atual } = await db.from('pagamentos').update({ valor: totalCents / 100, link: url, expira_em: expira, status: 'pendente', atualizado_em: new Date().toISOString() }).eq('id', ativo.id).select('*').single()
+        if (atual) {
+          await db.from('orders').update({ payment_link: url }).eq('id', orderId)
+          return resposta(atual, false)
+        }
+      } else {
+        await db.from('pagamentos').update({ link_ativo: false, atualizado_em: new Date().toISOString() }).eq('id', ativo.id)
+      }
+    }
+    const { data: novo, error: insErr } = await db.from('pagamentos').insert({
+      order_id: orderId, eh_link: true, link_ativo: true, link: url, valor: totalCents / 100, status: 'pendente', modo: cfg.modo, expira_em: expira,
+    }).select('*').single()
+    if (insErr) {
+      if (insErr.code === '23505') {
+        const { data: outro } = await db.from('pagamentos').select('*').eq('order_id', orderId).eq('modo', cfg.modo).eq('eh_link', true).eq('link_ativo', true).maybeSingle()
+        if (outro) return resposta(outro, true)
+      }
+      console.error('Falha ao gravar a cobrança', insErr.code)
+      return json({ error: 'Não foi possível gravar a cobrança.' }, 500)
+    }
+    await db.from('eventos_pagamento').insert({
+      chave: `link_criado:${novo.id}`, tipo: 'link_criado', order_id: orderId, pagamento_id: novo.id,
+      payload: { pedido_id: orderId, pedido_numero: order.number, referencia: formatReference(order.number), valor: totalCents / 100, modo: cfg.modo, expira_em: expira, teste: order.teste, checkout_proprio: true },
+    })
+    await db.from('orders').update({ payment_link: url }).eq('id', orderId)
+    return resposta(novo, false)
+  }
 
   // Mesmo pedido, mesmo valor, link ainda válido: devolve o mesmo link
   const { data: ativo } = await db.from('pagamentos').select('*').eq('order_id', orderId).eq('modo', cfg.modo).eq('eh_link', true).eq('link_ativo', true).maybeSingle()

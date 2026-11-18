@@ -37,7 +37,7 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
 export const checkout = (body: unknown) => urlFuncao('loja-checkout', body)
 
 /** Chama uma Edge Function pública da loja com a chave publicável. */
-export async function urlFuncao(nome: 'loja-checkout' | 'loja-frete', body: unknown): Promise<{ status: number; data: unknown }> {
+export async function urlFuncao(nome: 'loja-checkout' | 'loja-frete' | 'checkout-dados' | 'checkout-mp-processar', body: unknown): Promise<{ status: number; data: unknown }> {
   if (!URL_SUPABASE || !CHAVE) return { status: 503, data: { error: 'Loja em manutenção.' } }
   try {
     const res = await fetch(`${URL_SUPABASE}/functions/v1/${nome}`, {

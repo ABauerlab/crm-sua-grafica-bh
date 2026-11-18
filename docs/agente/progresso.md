@@ -1,5 +1,15 @@
 # Progresso do agente de IA
 
+## 18/11/2026 (noite): checkout próprio em /pagar/<token> (Pix + cartão 2x sem juros no nosso domínio)
+- **Motivo**: o Checkout Pro abria o app do Mercado Pago no celular (Paulo Moreira não conseguiu pagar) e o dono não recebia aviso de falhas que nunca chegavam ao Mercado Pago. Detalhes completos, fluxo, alertas e ordem de publicação em `docs/checkout-proprio.md`.
+- **Banco** (migration `20261218000011`, aplicada): `orders.checkout_token`, `order_items.checkout_extra`, `checkout_eventos`, funções `checkout_carregar/status/salvar_dados/definir_arte/adicionar_produto/remover_item/registrar_evento` (só service role) e `private.checkout_sugestoes`. Teste de banco rodado em transação com rollback: `supabase/tests/checkout_proprio.sql`.
+- **Edge Functions (no repositório, ainda NÃO deployadas)**: `checkout-dados`, `checkout-mp-processar` (novas) e `mp-criar-link` (devolve o link `/pagar/<token>`; `CHECKOUT_PROPRIO=false` volta ao Checkout Pro). Bundles em `docs/agente/funcoes/`.
+- **Loja** (`ecommerce/`): rota `/pagar/[token]`, sem cabeçalho nem rodapé da loja, banners desktop e celular, logo animada no carregamento, upsell de arte, cross-sell, Pix com QR e copia e cola, Payment Brick só de crédito (máx. 2x), confirmação em tempo real. Prints conferidos em 390 px e 1360 px com servidor simulado.
+- **Alertas ao dono**: recusa repetida, erro técnico, Pix sem código e parcelamento com juros viram `pagamento_problema` (push e WhatsApp).
+- **Falta o dono**: segredo `MP_PUBLIC_KEY_PRODUCAO`; deploy das 3 funções na ordem do doc; ativar 2x sem juros na conta do Mercado Pago; PR e merge (não abri PR).
+- **Não testado com dinheiro real**: Pix e cartão ao vivo dependem da chave pública e do deploy.
+- **Sugestões**: lembrete automático quando o checkout foi aberto e ficou 15 min sem pagar; mostrar `checkout_eventos` na aba Pagamento do pedido; Pix com desconto pequeno só por decisão do dono; Apple Pay e Google Pay no Brick.
+
 ## 18/11/2026 (fim do dia): kit sem desconto e lembrete rápido depois do link
 - **Decisão do dono**: o foco é lucrar; o kit crachá + cordão é só praticidade de consulta e orçamento. Migration `20261218000010` (aplicada): `kits_agregados.abate_preco` (padrão `false`), então o kit só marca o orçamento (`kit_agregado_id`, `kit_abatimento = 0`) e o preço fica o da planilha. Nenhum orçamento real tinha recebido abatimento. Regra AF do WF2 corrigida (sem falar em desconto de kit). Para religar o abatimento (não recomendado), `update kits_agregados set abate_preco = true`.
 - **Lembrete depois do link sem pagamento**: já existiam PAG_1H, PAG_6H e PAG_24H (cancelam quando o cliente responde ou paga). Agora: nova regra `PAG_20M` (20 min, cita Pix de qualquer banco e cartão em até 2x sem juros), PAG_1H desligada (ficava colada), PAG_6H e PAG_24H mantidas, e o F1 (10 min depois do PDF) não cutuca quem já recebeu o link (`coberto_pelo_link`). Horário de envio 8h às 20h, janela fechada usa o template `pagamento_pendente`.

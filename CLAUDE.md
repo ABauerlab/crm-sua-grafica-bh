@@ -93,6 +93,8 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `loja-frete` | não (público) | Fase 9: CEP -> bairro (ViaCEP, cache `cep_bairros`), frete grátis só nos 7 bairros centrais e cotação de envio no SuperFrete (`SUPERFRETE_TOKEN`; sem ele nada é inventado) |
 | `loja-arquivo` | não (público; confere o pedido do site e a assinatura do PDF) | Recebe o PDF da arte no checkout (só PDF, até 50 MB), guarda em `order-files` e registra em `order_files` |
 | `mp-extrato` | não (dono, service role ou `x-cron-secret`) | Financeiro ao vivo: lê os pagamentos do Mercado Pago (bruto, taxa real, líquido, estornos) e o saldo a cada 5 min, grava em `mp_movimentos` e `mp_saldo_historico` |
+| `checkout-dados` | não (público, o token do pedido é o comprovante) | Checkout próprio `/pagar/<token>`: carrega o resumo público, salva dados no contato, troca a arte, adiciona ou remove sugestões e informa o status |
+| `checkout-mp-processar` | não (público, valor e referência vêm do banco) | Cobra Pix ou cartão (até 2x sem juros) por `/v1/payments` e grava pelo mesmo caminho do webhook; falhas viram alerta ao dono. Ver `docs/checkout-proprio.md` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
 
 ### Preço sob demanda e condição especial (Etapa 3)
@@ -183,6 +185,8 @@ supabase functions deploy bling-webhook --no-verify-jwt
 supabase functions deploy meta-conversions-api --no-verify-jwt
 supabase functions deploy blog-pautas --no-verify-jwt
 supabase functions deploy mp-extrato --no-verify-jwt
+supabase functions deploy checkout-dados --no-verify-jwt
+supabase functions deploy checkout-mp-processar --no-verify-jwt
 supabase functions deploy loja-frete --no-verify-jwt
 supabase db push        # migrations
 ```

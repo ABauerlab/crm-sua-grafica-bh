@@ -320,3 +320,7 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Kits agregados e link automático (18/11/2026)
 `kits_agregados` + `kits_agregados_componentes` (crachá + cordão), `orcamentos.kit_agregado_id/kit_abatimento`, `private.kit_agregado_aplicar`, `public.montar_orcamento` (wrapper de `montar_orcamento_pre_kit`). `orcamento-pdf` envia o link de pagamento em mensagem separada depois do PDF (`link_enviado`). `preparar_link_pagamento` não exige mais aprovação do cliente. UI: `src/features/catalog/KitsAgregados.tsx` (aba Kits do Catálogo). Detalhes em `docs/agente/progresso.md`.
+
+
+## Checkout próprio (18/11/2026)
+`orders.checkout_token`, `checkout_eventos`, `order_items.checkout_extra`; Edge Functions `checkout-dados` e `checkout-mp-processar`; `mp-criar-link` devolve `https://suagraficabh.com.br/pagar/<token>` (kill switch `CHECKOUT_PROPRIO=false`). Página em `ecommerce/app/pagar/[token]` e `ecommerce/components/pagar/`. Ver `docs/checkout-proprio.md`.
