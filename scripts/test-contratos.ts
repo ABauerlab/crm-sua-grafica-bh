@@ -53,6 +53,8 @@ for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_falta
 for (const r of ['O) ENCERRAMENTO', 'P) PAGAMENTO VALE COMO APROVACAO', 'Q) CONDICAO FORA DO PADRAO', 'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU', 'S) NOTA FISCAL', 'T) CRACHA E CORDAO', 'W) CLIENTE DIZ QUE VOLTA']) {
   if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra da rodada 18/11 "${r}"`)
 }
+const mig18c = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000003_orcamento_alinhado_ao_chat_e_motivo_de_perda.sql'), 'utf8')
+for (const marca of ['montar_orcamento_base', 'alinhado_ao_chat', 'motivo_perda_trg']) if (!mig18c.includes(marca)) falhas.push(`migration do orçamento alinhado ao chat perdeu ${marca}`)
 const mig18 = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000002_atendimento_rodada_18.sql'), 'utf8')
 for (const marca of ['fiscal_extrair', 'condicao_fora_padrao_trg', 'saida_travas_extra', 'saida_repeticao', 'dedupe_orientacao', 'aprov_pagamento_v2']) {
   if (!mig18.includes(marca)) falhas.push(`migration da rodada 18/11 perdeu ${marca}`)

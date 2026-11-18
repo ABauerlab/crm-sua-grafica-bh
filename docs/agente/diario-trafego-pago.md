@@ -102,7 +102,9 @@ Observações e riscos:
 - A regra O (encerrar em uma mensagem) é exceção à diretriz "toda resposta termina com pergunta de avanço", só para recusa explícita.
 - "Ok", "sim" e afins só aprovam quando são a mensagem inteira e depois do PDF.
 - O limite de 2 Q por dia e 2 h de intervalo suaviza a decisão de 17/11 do dono (lembrete de 10 min para cliente quente): o primeiro lembrete continua em 10 min, os seguintes esperam.
-- Não feito: fotos em segundo plano (continuam sequenciais, a foto única por opção exige isso), preço do PDF igual ao dito no chat (G1711-11), balões: o corte de 2 mensagens segue só no prompt (regra D), criativo do anúncio de crachá (decisão do dono), pergunta do motivo da perda (G1711-15).
+- Causa do preço do PDF diferente do dito (caso Patrícia): dois SKUs equivalentes (CRT0007 a R$ 177,90 e CRT0002 a R$ 159,90, mesma categoria, tamanho, cores e quantidade). Correção na raiz em `montar_orcamento` (migration `20261218000003`): se o último valor único dito ao cliente nos últimos 60 min não bate com nenhum item, troca o item pelo equivalente cujo preço é o valor combinado (preço sempre de `calcular_preco`, com as travas de piso). Regra do dono: nunca travar o atendimento, então não há bloqueio de envio; em qualquer dúvida segue o orçamento normal. Testado com rollback: sem valor dito o orçamento sai R$ 217,80; com R$ 159,90 dito sai R$ 199,80 (159,90 + arte 39,90).
+- Balões: o WF1 agora junta tudo o que passa do segundo balão no segundo (máximo 2 mensagens por resposta).
+- Não feito: fotos em segundo plano (continuam sequenciais: a regra de nunca repetir a mesma foto entre opções depende disso) e criativo do anúncio de crachá (decisão do dono).
 - Testes: `npm run gate` verde e `supabase/tests/rodada18_atendimento.sql` (rodado com rollback, resultado OK). Nenhum cenário `e5-*`, `mvp-*`, `e12-*` ou `e17-*` foi rodado.
 
 
@@ -122,10 +124,10 @@ Observações e riscos:
 | M1711-8 | Correção de `buscar_produto` (família, quantidade, PVC) | G1711-8 | Parcial 18/11 (abertura honesta e sem lote enorme em `produto-opcoes` v14; causa exata da busca de credencial de papel do Hudson não reproduzida) |
 | M1711-9 | Função de faixa de quantidade | G1711-9 | Parcial 18/11 (regra U do WF2: só fala mínimo se vier da ferramenta; `buscar_produto` já devolve lote maior) |
 | M1711-10 | Novas travas de saída (prazo, frete, NF) | G1711-10, G1711-12 | Aplicada 18/11 (`private.saida_travas_extra`) |
-| M1711-11 | Preço do PDF igual ao dito no chat | G1711-11 | Proposta (não feito) |
-| M1711-12 | Máximo de 2 balões e anti-repetição | G1711-13 | Parcial 18/11 (anti-repetição em `private.saida_repeticao` e regra V; corte de balões já existia na regra D e o modelo a ignora) |
+| M1711-11 | Preço do PDF igual ao dito no chat | G1711-11 | Aplicada 18/11 na raiz (`montar_orcamento` confere o último valor dito no chat e troca o item pelo equivalente com o preço combinado; nunca bloqueia; alerta baixo só como rede de segurança) |
+| M1711-12 | Máximo de 2 balões e anti-repetição | G1711-13 | Aplicada 18/11 (WF1 junta o excedente no 2º balão; anti-repetição em `private.saida_repeticao`; regra V) |
 | M1711-13 | Criativo e preço do anúncio de crachá | G1711-14 | Regra T aplicada (cordão opcional); criativo e kit dependem do dono |
-| M1711-14 | Motivo de perda na recusa | G1711-15 | Proposta |
+| M1711-14 | Motivo de perda na recusa | G1711-15 | Aplicada 18/11 (`private.motivo_perda_trg` grava preco, prazo, decidiu_depois ou outro) |
 | M1711-15 | Primeira resposta já avança | geral | Proposta |
 
 Status possíveis: Proposta, Em andamento, Aplicada (com data e PR), Descartada (com motivo).
