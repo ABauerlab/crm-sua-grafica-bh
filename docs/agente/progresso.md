@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## 18/11/2026: avaliação do atendimento de 17/11 e diário do tráfego pago
+- Criado `docs/agente/diario-trafego-pago.md`: diário dia a dia desde o início do tráfego real (16/11), com quadro de números, gargalos (códigos `G1711-n`), melhorias (`M1711-n`), backlog com status e consultas de apoio. Rotina: o dono verifica por dia e registra lá.
+- Análise de 17/11 (17 conversas, 375 mensagens, 5 orçamentos, 1 pago de R$ 78,90, lucro real R$ 60,39 contra R$ 42,59 de anúncio). Principais gargalos: lentidão (P50 53 s, P90 347 s), lembrete Q1 de 10 min virou insistência (Wender recebeu 4), lembrete depois de recusa (Artur), fechamento travado no "APROVADO", dados fiscais em modo humano não salvos (NFC-e nº 71 rejeitada), orçamentos abertos sem lembrete depois que o humano assume (Edson e Patrícia) e opções de produto erradas (Hudson). Nada foi alterado em produção nesta rodada; as melhorias estão como Proposta.
+
 ## 17/11/2026: aviso de versão nova do CRM
 - Aba aberta antes do deploy continuava na versão antiga (o dono achou que o merge não tinha entrado; o servidor já tinha). Agora `NovaVersao` confere a cada 5 min e ao voltar para a aba se o arquivo principal publicado mudou e mostra "Tem uma versão nova do CRM" com botão "Atualizar agora". `sw.js`, `manifest.webmanifest` e `offline.html` passaram a `no-cache` no `.htaccess`.
 
