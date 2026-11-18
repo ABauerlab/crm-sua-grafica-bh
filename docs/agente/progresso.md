@@ -1,5 +1,15 @@
 # Progresso do agente de IA
 
+## 18/11/2026 (noite): checkout próprio em /pagar/<token> (Pix + cartão 2x sem juros no nosso domínio)
+- **Motivo**: o Checkout Pro abria o app do Mercado Pago no celular (Paulo Moreira não conseguiu pagar) e o dono não recebia aviso de falhas que nunca chegavam ao Mercado Pago. Detalhes completos, fluxo, alertas e ordem de publicação em `docs/checkout-proprio.md`.
+- **Banco** (migration `20261218000012`, aplicada): `orders.checkout_token`, `order_items.checkout_extra`, `checkout_eventos`, funções `checkout_carregar/status/salvar_dados/definir_arte/adicionar_produto/remover_item/registrar_evento` (só service role) e `private.checkout_sugestoes`. Teste de banco rodado em transação com rollback: `supabase/tests/checkout_proprio.sql`.
+- **Edge Functions (no repositório, ainda NÃO deployadas)**: `checkout-dados`, `checkout-mp-processar` (novas) e `mp-criar-link` (devolve o link `/pagar/<token>`; `CHECKOUT_PROPRIO=false` volta ao Checkout Pro). Bundles em `docs/agente/funcoes/`.
+- **Loja** (`ecommerce/`): rota `/pagar/[token]`, sem cabeçalho nem rodapé da loja, banners desktop e celular, logo animada no carregamento, upsell de arte, cross-sell, Pix com QR e copia e cola, Payment Brick só de crédito (máx. 2x), confirmação em tempo real. Prints conferidos em 390 px e 1360 px com servidor simulado.
+- **Alertas ao dono**: recusa repetida, erro técnico, Pix sem código e parcelamento com juros viram `pagamento_problema` (push e WhatsApp).
+- **Falta o dono**: segredo `MP_PUBLIC_KEY_PRODUCAO`; deploy das 3 funções na ordem do doc; ativar 2x sem juros na conta do Mercado Pago; PR e merge (não abri PR).
+- **Não testado com dinheiro real**: Pix e cartão ao vivo dependem da chave pública e do deploy.
+- **Sugestões**: lembrete automático quando o checkout foi aberto e ficou 15 min sem pagar; mostrar `checkout_eventos` na aba Pagamento do pedido; Pix com desconto pequeno só por decisão do dono; Apple Pay e Google Pay no Brick.
+
 ## 18/11/2026 (fechamento): lembrete de pagamento sem conversa
 - **Causa**: pedido manual cujo contato não tem conversa de WhatsApp gerava lembretes PAG que falhavam com "conversation_id inválido" (5 casos, 2 pedidos). Migration `20261218000011` (aplicada): `followup_agendar` só agenda PAG quando o contato tem conversa, `followup_montar` pula com motivo `sem_conversa` se chegar algum sem conversa, e as linhas que já tinham falhado viraram `pulado` (`sem_conversa`). Conferido: nenhum erro restante e o agendamento rodou sem criar linha nova para esses pedidos.
 
