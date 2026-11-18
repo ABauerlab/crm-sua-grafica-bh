@@ -460,7 +460,6 @@ function pagouComJuros(p: Record<string, any>): { juros: number } | null {
   return juros > 0.01 ? { juros } : null
 }
 
-{ toCents }
 
 interface MpConfig {
   modo: MpModo | null

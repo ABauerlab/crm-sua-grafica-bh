@@ -1,5 +1,5 @@
 // Checkout próprio (/pagar/<token>): regras puras. Sem APIs de Deno, para rodar também nos testes em Node.
-import { buildItems, toCents } from './mp.ts'
+import { buildItems } from './mp.ts'
 
 export const CHECKOUT_BASE_PADRAO = 'https://suagraficabh.com.br'
 export const TOKEN_CHECKOUT = /^[0-9a-f]{32}$/
@@ -149,4 +149,3 @@ export function pagouComJuros(p: Record<string, any>): { juros: number } | null 
   return juros > 0.01 ? { juros } : null
 }
 
-export { toCents }

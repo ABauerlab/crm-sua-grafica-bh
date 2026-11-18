@@ -587,7 +587,6 @@ function pagouComJuros(p: Record<string, any>): { juros: number } | null {
   return juros > 0.01 ? { juros } : null
 }
 
-{ toCents }
 
 // Checkout próprio: cobra Pix ou cartão (até 2x sem juros) pela API de pagamentos do Mercado Pago, sem redirecionar o cliente.
 // O VALOR e a REFERÊNCIA vêm sempre do banco (nunca do navegador). O resultado entra pelo mesmo caminho do webhook
