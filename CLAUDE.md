@@ -124,6 +124,9 @@ Decisão do dono: cada SKU é um produto (página, foto, descrição e URL `/pro
 ### Catálogo do fornecedor e SKU (Etapa 2)
 A tabela de preços do fornecedor é **privada**: PDF e derivados nunca entram no repositório (original no bucket privado `catalogo-fornecedor`). Só o dono lê `catalogo` e custo; o agente e o front de atendimento usam `buscar_produto`, `agente_preco` e `buscar_conhecimento`, que não devolvem custo. SKU é obrigatório em orçamento e pedido novos e é INTERNO (nunca no PDF nem ao cliente). `preco_base_custo` é só referência; o preço válido vem de `calcular_preco` (planilha oficial). Detalhes em `docs/catalogo-e-sku.md` e `docs/conhecimento.md`. Testes SQL locais: `supabase/tests/rodar-local.sh`.
 
+### Cobertura de orçamento concorrente (19/11/2026)
+`public.cobrir_orcamento` (só service role, chamada pelo `despachar`) cobre orçamento de gráfica concorrente de BH e região com CNPJ válido e endereço, sem chamar o dono. Exceção decidida pelo dono: o piso da cobertura é custo + lucro bruto mínimo (R$ 65), respeitando o piso duro; o piso de tabela (custo x 1,5) segue valendo para o resto. Preço R$ 4,10 abaixo do concorrente, nunca abaixo desse piso; versão equivalente sem acabamento só com aviso ao cliente. Config em `app_settings.cobertura`, auditoria em `cobertura_log`. Imagem e PDF antes do pagamento são lidos com Gemini no WF1. Devolver a conversa para a IA limpa `needs_human` e reprocessa a última mensagem sem resposta. Lead de anúncio parado 5 min recebe opções e preços (`Q1_ANUNCIO`). Detalhes em `docs/agente/cobertura-orcamento.md`.
+
 ### /resetchat (12/11/2026)
 `/resetchat` no chat apaga TODO o histórico do número (função `resetar_chat_completo`). Só para números da tabela `numeros_teste` (Configurações > Números de teste; inicial 3132232356), nunca com pedido pago, sempre auditado em `reset_chat_auditoria`.
 
