@@ -1772,6 +1772,19 @@
         "language": "javaScript",
         "mode": "runOnceForAllItems"
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Regras adicionais (19/11/2026): campanha Black Friday e qualificação logo de cara (produto, quantidade e prazo).\n// A campanha vem do banco (contexto.campanha): quando acaba, a regra some sozinha. O modelo nunca calcula preço, prazo nem desconto.\nconst it = $input.first().json || {};\nlet ctx = {};\ntry { ctx = ($('Adaptar contexto').first().json || {}).contexto || {}; } catch (e) { ctx = {}; }\nconst camp = ctx.campanha || {};\nconst q = ctx.qualificacao || {};\nconst regras = [];\nif (camp.ativa) {\n  const dias = Number(camp.dias_restantes || 0);\n  const urg = dias === 1 ? 'HOJE é o último dia' : (dias > 1 && dias <= 4 ? 'faltam só ' + dias + ' dias' : 'vale até 30/11');\n  regras.push('BF) CAMPANHA BLACK FRIDAY NO AR (' + urg + '): a criação de arte é GRÁTIS em QUALQUER pedido pago até 30/11. Isso vale para a loja inteira e vale agora. Use como ARGUMENTO DE ABERTURA: na primeira resposta da conversa, depois de cumprimentar, mostre a vantagem em uma frase curta (ex.: \"Esse mês tá com arte grátis em qualquer pedido pago até 30/11\") e só então qualifique (regra Q). Em seguida, retome a vantagem de forma curta quando o cliente pedir orçamento, hesitar, comparar preço ou na hora de pagar, sem repetir em toda mensagem (no máximo uma vez a cada três respostas).');\n  regras.push('BF2) URGÊNCIA E ESCASSEZ COM VERDADE: a urgência é a DATA (pagamento confirmado até 30/11, ' + urg + ') e a fila de produção (quanto antes paga, mais cedo entra na fila; pago até 10h30 em dia útil começa no mesmo dia). Pode dizer que a condição é por tempo limitado e que depois de 30/11 a arte volta a ser cobrada. É PROIBIDO inventar estoque, número de vagas, \"últimas unidades\" ou qualquer outra data. Não fale de valor da arte nem de quanto o cliente economiza: o sistema mostra o orçamento. Vale para a CRIAÇÃO da arte (o cliente que já tem arte não paga criação); conferência técnica de arquivo não entra na promoção e não é desconto no produto. Se o cliente quiser fechar depois de 30/11, não prometa a promoção: chame o dono.');\n}\nconst produtoAnuncio = q.produto_do_anuncio ? ' O cliente veio do anúncio \"' + String(q.produto_do_anuncio) + '\": reconheça esse produto e não pergunte qual produto.' : '';\nregras.push('Q) QUALIFICAR LOGO DE CARA (separa curioso de comprador): na PRIMEIRA resposta, e sempre que o cliente ainda não deu os três dados, descubra PRODUTO, QUANTIDADE e PRAZO (para quando precisa) em UMA mensagem curta e natural, com uma pergunta só no fim, sem formulário nem lista numerada (ex.: \"Me conta rapidinho: que produto, quantas unidades e pra quando você precisa?\"). Antes de perguntar, confira a ficha e o histórico: pergunte SÓ o que falta e nunca repita o que já foi respondido.' + produtoAnuncio + ' Se o cliente responder só um dado, peça os outros juntos na resposta seguinte.');\nregras.push('Q2) COM OS TRÊS DADOS, ACELERE: chame montar_orcamento na hora (regra de um orçamento por pedido), informe o total, o valor por unidade e a data de pronto que o SISTEMA devolveu, e conduza para o aprovado e o link. Guarde o prazo que o cliente pediu em salvar_contato (campo notas, ex.: \"prazo desejado: sexta\"). Se o prazo pedido for menor que o prazo oficial, nunca prometa a data do cliente: diga a data oficial e pergunte se ainda atende.');\nregras.push('Q3) SEM PRODUTO NEM QUANTIDADE (\"quanto custa?\", \"tem orçamento?\", só curiosidade): NÃO passe tabela, lista de preços nem faixa de valor. Faça uma única pergunta de qualificação com ajuda concreta (\"posso montar o valor certinho pra você agora, é só me dizer produto e quantidade\"). Quem responde vira orçamento; quem não responde fica no follow-up normal. Cliente de anúncio com produto conhecido: pergunte só quantidade e prazo. Cliente recorrente: use o histórico e pergunte só o que mudou.');\nit.system = String(it.system || '') + '\\n\\nREGRAS DA CAMPANHA E QUALIFICAÇÃO (19/11; em conflito com as anteriores, estas vencem, exceto regras de preço, piso e trava de saída):\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];\n"
+      },
+      "id": "b1f00000-bf19-4a11-9e11-000000000001",
+      "name": "Regras adicionais (Black Friday e qualificação)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        420
+      ]
     }
   ],
   "connections": {
@@ -2229,6 +2242,17 @@
       ]
     },
     "Regras adicionais (rodada 19/11 tarde)": {
+      "main": [
+        [
+          {
+            "node": "Regras adicionais (Black Friday e qualificação)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (Black Friday e qualificação)": {
       "main": [
         [
           {

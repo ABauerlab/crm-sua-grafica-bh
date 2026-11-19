@@ -29,7 +29,7 @@ export function ArteUpsell({ c, ocupado, onEscolher }: { c: Checkout; ocupado: b
               {o.codigo === 'criacao' && <span className="absolute -top-2.5 right-3 rounded-full bg-amarelo px-2 py-0.5 text-[11px] font-black text-tinta">Mais pedida</span>}
               <span className="flex w-full items-center gap-2"><Icone className={`h-5 w-5 ${ativo ? 'text-magenta' : 'text-black/55'}`} aria-hidden /><span className="flex-1 font-bold leading-tight">{o.titulo}</span></span>
               <span className="text-xs text-black/60">{o.texto}</span>
-              <span className="mt-auto pt-1 text-sm font-black">{o.valor > 0 ? `+ ${brl(o.valor)}` : 'Sem custo'}</span>
+              <span className="mt-auto pt-1 text-sm font-black">{o.valor > 0 ? `+ ${brl(o.valor)}` : o.codigo === 'criacao' && c.campanha?.ativa ? 'Grátis na Black Friday' : 'Sem custo'}</span>
             </button>
           )
         })}

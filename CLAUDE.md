@@ -213,6 +213,8 @@ Só texto e templates. Mídia recebida aparece como "[imagem recebida]" etc., co
 - Fechamento padrão: (1) PDF formal via `gerar_pdf_orcamento`; (2) aceite do cliente com "APROVADO"; (3) link do Mercado Pago com Pix via `gerar_link_pagamento`.
 
 
+- **Black Friday 2026 (19/11):** criação de arte grátis em todo pedido pago até 30/11/2026; restauração automática do valor depois da data (`app_settings.black_friday`, cron `black-friday-encerrar`). A Laura abre com essa vantagem, usa urgência e escassez só com verdade (data e fila de produção) e qualifica produto, quantidade e prazo logo na primeira resposta. Detalhes em `docs/agente/decisoes-e-melhorias.md`.
+
 ## Diretrizes comerciais do SDR Closer (atualização 07/11/2026)
 
 - **Postura de fechamento:** atendimento consultivo orientado à conversão. Não encerrar orçamento passivamente; conduzir para aprovação formal e próximo passo.
