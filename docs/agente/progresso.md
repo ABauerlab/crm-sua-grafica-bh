@@ -1181,3 +1181,6 @@ Pedido do dono: o agente tem de perceber o erro, voltar, pensar e resolver sozin
 
 ## Rodada 19/11/2026 (2): Black Friday e qualificação
 Migration `20261221000001_black_friday_arte_gratis.sql` (aplicada), faixa e aviso na loja, nó novo no WF2 (cópia em `n8n/GBH-WF2-Agente.json`). Detalhes e como encerrar em `docs/agente/decisoes-e-melhorias.md` (seção Black Friday 2026). Sem cenários e5-*, mvp-* nem e17-* rodados (regra do dono: gastam o Gemini); validado por SQL (contexto, campanha, trava de saída) e leitura das conversas reais.
+
+## Rodada 19/11/2026 (3): frete do cordão
+Checkout dizia "não conseguimos cotar o envio" para pedidos com cordão: a embalagem do fornecedor tem até 162 cm (limite dos Correios: 100 cm) e `loja-frete` devolvia `pacote_grande` sem consultar o SuperFrete. Migration `20261222000001_frete_cordao_dobrado.sql` (aplicada): na categoria CORDÕES o pacote é dobrado até caber em 100 cm (altura x número de dobras). Bandeiras, banners, totens e afins continuam `pacote_grande` de propósito. O checkout agora explica o motivo (grande demais, tamanho a confirmar, a confirmar pelo WhatsApp ou indisponível) em vez da mensagem genérica. Vale conferir com a transportadora se 2 dobras no cordão atendem na prática.
