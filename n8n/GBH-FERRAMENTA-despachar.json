@@ -198,13 +198,7 @@
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 800,
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
-        }
-      }
+      "onError": "continueRegularOutput"
     },
     {
       "id": "b364976e-e9ed-406f-8eaf-710db3fbdbfd",
@@ -990,37 +984,37 @@
           "value": "JQp5BTgu2Hum8PfE"
         },
         "workflowInputs": {
+          "attemptToConvertTypes": true,
           "mappingMode": "defineBelow",
           "matchingColumns": [],
-          "attemptToConvertTypes": true,
-          "value": {
-            "cep_ou_bairro": "={{ $json.cep_ou_bairro }}",
-            "itens": "={{ $json.itens }}",
-            "valor_pedido": 0,
-            "conversation_id": "={{ $json.conversation_id }}"
-          },
           "schema": [
             {
-              "id": "cep_ou_bairro",
               "displayName": "cep_ou_bairro",
+              "id": "cep_ou_bairro",
               "type": "string"
             },
             {
-              "id": "itens",
               "displayName": "itens",
+              "id": "itens",
               "type": "string"
             },
             {
-              "id": "valor_pedido",
               "displayName": "valor_pedido",
+              "id": "valor_pedido",
               "type": "number"
             },
             {
-              "id": "conversation_id",
               "displayName": "conversation_id",
+              "id": "conversation_id",
               "type": "string"
             }
-          ]
+          ],
+          "value": {
+            "cep_ou_bairro": "={{ $json.cep_ou_bairro }}",
+            "conversation_id": "={{ $json.conversation_id }}",
+            "itens": "={{ $json.itens }}",
+            "valor_pedido": 0
+          }
         },
         "options": {
           "waitForSubWorkflow": true
@@ -1332,13 +1326,7 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
-        }
-      }
+      "onError": "continueRegularOutput"
     },
     {
       "id": "1321acb3-c1bc-4f00-8d74-d70ee4b66f3b",
@@ -1365,13 +1353,7 @@
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 800,
-      "onError": "continueRegularOutput",
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
-        }
-      }
+      "onError": "continueRegularOutput"
     },
     {
       "id": "4382b3fc-edbc-47bb-8c63-1e0bc9fbd648",
@@ -1503,12 +1485,6 @@
         "sendBody": true,
         "specifyBody": "json",
         "url": "={{ $json.espera_url }}"
-      },
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
-        }
       }
     },
     {
@@ -1532,12 +1508,6 @@
         "sendBody": true,
         "specifyBody": "json",
         "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/arte_receber"
-      },
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
-        }
       }
     },
     {
@@ -1561,13 +1531,61 @@
         "sendBody": true,
         "specifyBody": "json",
         "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/arte_baixa_ok"
-      },
-      "credentials": {
-        "supabaseApi": {
-          "id": "g3WlIOkLdfsc4XIJ",
-          "name": "Supabase account"
+      }
+    },
+    {
+      "id": "8031a686-98f9-4b69-b0e0-8d87ec32a7e6",
+      "name": "É cobrir_orcamento?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1400,
+        1700
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ferramenta === 'cobrir_orcamento' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              }
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          }
         }
       }
+    },
+    {
+      "id": "175323b4-6e6c-455a-80d9-8faf28ee4abb",
+      "name": "cobrir_orcamento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1620,
+        1700
+      ],
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "contentType": "json",
+        "jsonBody": "={{ { p_contact: $json.contact_id, p_itens_concorrente: (() => { try { const v = JSON.parse(String($json.itens || '[]')); return Array.isArray(v) ? v.slice(0, 6) : []; } catch (e) { return []; } })(), p_opcoes: (() => { let o = {}; try { const v = JSON.parse(String($json.opcoes || '{}')); o = (v && typeof v === 'object' && !Array.isArray(v)) ? v : {}; } catch (e) { o = {}; } o.conversation_id = $json.conversation_id; if ($json.teste === 'true') o.teste = true; return o; })() } }}",
+        "method": "POST",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/cobrir_orcamento"
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -1969,7 +1987,7 @@
         ],
         [
           {
-            "node": "Qual ferramenta?",
+            "node": "É cobrir_orcamento?",
             "type": "main",
             "index": 0
           }
@@ -2033,6 +2051,35 @@
       ]
     },
     "arte_baixa_ok": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É cobrir_orcamento?": {
+      "main": [
+        [
+          {
+            "node": "cobrir_orcamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Qual ferramenta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cobrir_orcamento": {
       "main": [
         [
           {

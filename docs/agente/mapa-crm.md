@@ -324,3 +324,6 @@ Antes: o CRM não guardava nenhuma imagem de produto. Agora: tabelas `produto_fo
 
 ## Checkout próprio (18/11/2026)
 `orders.checkout_token`, `checkout_eventos`, `order_items.checkout_extra`; Edge Functions `checkout-dados` e `checkout-mp-processar`; `mp-criar-link` devolve `https://suagraficabh.com.br/pagar/<token>` (kill switch `CHECKOUT_PROPRIO=false`). Página em `ecommerce/app/pagar/[token]` e `ecommerce/components/pagar/`. Ver `docs/checkout-proprio.md`.
+
+## Destravar IA, cobertura de orçamento e lembrete de anúncio (19/11/2026)
+Banco: `private.agente_reprocessar_conversa` + gatilhos `conversations_devolvida_limpar` e `conversations_devolvida_reprocessar` (voltar para a IA reprocessa); `public.cobrir_orcamento`, `private.cobertura_processar`, `private.cnpj_valido`, `private.texto_norm`, `cobertura_log`, `app_settings.cobertura`; regra `Q1_ANUNCIO` (`followup_regras.referencia = 'anuncio_parado'`), `private.fu_agendar_anuncio`, `private.fu_texto_anuncio`, `private.desc_publica`; `followup_agendar` e `followup_montar` viraram invólucros de `private.followup_agendar_base` e `private.followup_montar_base`; `public.agente_anexo_pre_pagamento`. n8n: ferramenta `cobrir_orcamento` (WF2 e `despachar`), leitura de anexo com Gemini no WF1 (nós "Anexo: ..."), frase de espera única no WF2, prompt rodada 19/11. Ver `docs/agente/cobertura-orcamento.md`.
