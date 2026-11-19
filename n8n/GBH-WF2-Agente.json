@@ -272,7 +272,7 @@
             "conversation_id": "={{ $(\"Montar prompt\").first().json.conversation_id }}",
             "contact_id": "={{ $(\"Montar prompt\").first().json.contact_id }}",
             "teste": "={{ $(\"Montar prompt\").first().json.teste }}",
-            "itens": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('itens', 'Texto JSON com os itens: [{\\\"sku\\\":\\\"codigo de buscar_produto\\\",\\\"quantidade\\\":1,\\\"acabamento\\\":\\\"opcional\\\",\\\"largura_mm\\\":0,\\\"altura_mm\\\":0}]. quantidade é o número de pacotes da opção (normalmente 1)') }}",
+            "itens": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('itens', 'Texto JSON com os itens do pedido todos juntos: [{\"sku\":\"codigo de buscar_produto\",\"unidades\":6,\"acabamento\":\"opcional\",\"largura_mm\":0,\"altura_mm\":0}]. unidades é EXATAMENTE a quantidade que o cliente pediu; o sistema escolhe o lote do fornecedor sozinho') }}",
             "opcoes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('opcoes', 'Texto JSON: {\"arte\":\"nenhuma|cliente|paga|com_frete\",\"bairro\":\"...\",\"cep\":\"...\",\"metodo\":\"pix\",\"data_evento\":\"YYYY-MM-DD\",\"frete_servico\":\"pac ou sedex, so para cliente de fora de BH, depois de verificar_frete\"}', 'string', '{}') }}"
           },
           "schema": [
@@ -1757,6 +1757,21 @@
           }
         }
       }
+    },
+    {
+      "id": "6f3abea5-9091-469f-9087-2078033d0b1e",
+      "name": "Regras adicionais (rodada 19/11 tarde)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        644,
+        640
+      ],
+      "parameters": {
+        "jsCode": "// Regras adicionais (rodada 19/11/2026 tarde): unidades exatas do cliente e um orcamento por pedido.\nconst it = $input.first().json || {};\nconst regras = [\n  'REGRAS DA RODADA 19/11 TARDE (valem junto com as anteriores; em conflito, estas vencem):',\n  'V) QUANTIDADE EXATA: em montar_orcamento passe SEMPRE o campo unidades em cada item, com EXATAMENTE o que o cliente pediu (6 crachas com cordao = unidades 6 no cracha e unidades 6 no cordao), mesmo que o fornecedor venda em lotes diferentes. O sistema escolhe o lote mais barato e guarda o ajuste so na anotacao interna. Fale ao cliente sempre as unidades que ele pediu e o total; nunca diga pacote de 5, lote nem a quantidade do fornecedor, e nunca troque a quantidade pedida por outra.',\n  'U2) UM ORCAMENTO POR PEDIDO: monte UM unico orcamento com todos os itens do pedido (crachas e cordoes juntos). Nao chame montar_orcamento mais de uma vez na mesma rodada para o mesmo pedido. Se precisar refazer porque o cliente mudou algo (frete, arte, quantidade), chame uma vez so: o sistema substitui o orcamento anterior sozinho.'\n];\nit.system = String(it.system || '') + '\\n\\n' + regras.join('\\n') + '\\n';\nreturn [{ json: it }];",
+        "language": "javaScript",
+        "mode": "runOnceForAllItems"
+      }
     }
   ],
   "connections": {
@@ -2191,23 +2206,34 @@
         ]
       ]
     },
-    "Regras adicionais (rodada 19/11)": {
-      "main": [
-        [
-          {
-            "node": "Ficha do que o cliente já respondeu",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "cobrir_orcamento": {
       "ai_tool": [
         [
           {
             "node": "Agente de atendimento",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (rodada 19/11)": {
+      "main": [
+        [
+          {
+            "node": "Regras adicionais (rodada 19/11 tarde)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Regras adicionais (rodada 19/11 tarde)": {
+      "main": [
+        [
+          {
+            "node": "Ficha do que o cliente já respondeu",
+            "type": "main",
             "index": 0
           }
         ]
