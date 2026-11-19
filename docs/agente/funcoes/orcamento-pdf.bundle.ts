@@ -101,7 +101,7 @@ interface OrcamentoDoc {
   itens: { descricao: string; especificacao?: string | null; quantidade: number; valor_unitario: number; valor_total: number }[]
   subtotal: number
   arte: { modo: 'nenhuma' | 'cliente' | 'paga' | 'com_frete'; valor: number; opcoes?: { texto: string; valor: number }[] | null }
-  frete: { modo: 'retirada' | 'bike_gratis' | 'uber_cliente'; valor: number }
+  frete: { modo: 'retirada' | 'bike_gratis' | 'uber_cliente' | 'correios'; valor: number }
   desconto: number
   total: number
   condicao_especial?: { valida_ate: string; tipo: string; total: number; texto: string } | null
@@ -212,10 +212,19 @@ footer b { color: #171717; }
 
 function orcamentoHtml(d: OrcamentoDoc): string {
   const emp = d.empresa
+  // Lote vendido como 1 linha ("5 un." na especificação ou no nome): mostra as unidades e o valor de cada uma, nunca "1 x total"
+  const unidadesReais = (i: OrcamentoDoc['itens'][number]): { qtd: number; unit: number } => {
+    const qtd = Number(i.quantidade)
+    if (qtd !== 1) return { qtd, unit: Number(i.valor_unitario) }
+    const m = `${i.especificacao ?? ''} ${i.descricao}`.match(/([\d.]+)\s*un\./i)
+    const n = m ? Number(m[1].replace(/\./g, '')) : 0
+    return n > 1 ? { qtd: n, unit: Number(i.valor_total) / n } : { qtd, unit: Number(i.valor_unitario) }
+  }
   const linhas = d.itens
-    .map(
-      (i) => `<tr><td>${esc(i.descricao)}${i.especificacao ? `<small>${esc(i.especificacao)}</small>` : ''}</td><td class="n">${esc(i.quantidade)}</td><td class="n">${brl(i.valor_unitario)}</td><td class="n">${brl(i.valor_total)}</td></tr>`,
-    )
+    .map((i) => {
+      const u = unidadesReais(i)
+      return `<tr><td>${esc(i.descricao)}${i.especificacao ? `<small>${esc(i.especificacao)}</small>` : ''}</td><td class="n">${esc(u.qtd)}</td><td class="n">${brl(u.unit)}</td><td class="n">${brl(i.valor_total)}</td></tr>`
+    })
     .join('')
 
   // quadro de alternativas (consultoria) e nota de arredondamento, quando o unitário exibido não multiplica exatamente até o total
@@ -224,7 +233,7 @@ function orcamentoHtml(d: OrcamentoDoc): string {
         .map((a) => `<p><b>${esc(a.titulo)}.</b> ${esc(a.texto)}</p>`)
         .join('')}</section>`
     : ''
-  const arredonda = d.itens.some((i) => Math.abs(Number(i.quantidade) * Number(i.valor_unitario) - Number(i.valor_total)) >= 0.01)
+  const arredonda = d.itens.some((i) => { const u = unidadesReais(i); return Math.abs(u.qtd * u.unit - Number(i.valor_total)) >= 0.01 })
     ? '<p class="arredonda">Valores unitários arredondados; vale o total de cada item.</p>'
     : ''
 
@@ -232,9 +241,11 @@ function orcamentoHtml(d: OrcamentoDoc): string {
   const freteLinha =
     d.frete.modo === 'bike_gratis'
       ? `<div class="l g"><span>Entrega (região central)</span><span>Grátis</span></div>`
-      : d.frete.modo === 'uber_cliente'
-        ? `<div class="l"><span>Entrega por Uber</span><span>por conta do cliente</span></div>`
-        : `<div class="l g"><span>Retirada</span><span>Grátis</span></div>`
+      : d.frete.modo === 'correios'
+        ? `<div class="l"><span>Frete (Correios)</span><span>${brl(d.frete.valor)}</span></div>`
+        : d.frete.modo === 'uber_cliente'
+          ? `<div class="l"><span>Entrega por Uber</span><span>por conta do cliente</span></div>`
+          : `<div class="l g"><span>Retirada</span><span>Grátis</span></div>`
 
   const totais = `<div class="totais">
     <div class="l"><span>Subtotal</span><span>${brl(d.subtotal)}</span></div>
@@ -294,15 +305,15 @@ ${alternativas}${arredonda}
 <section class="cols">
   <div>
     <p class="sec">Pagamento</p>
-    <p class="nota">Pix ou cartão, pelo link que enviamos no WhatsApp depois da sua aprovação. O pedido só entra em produção depois da confirmação do pagamento e da aprovação da arte.</p>
+    <p class="nota">Pix ou cartão em até 2x sem juros, pelo link que enviamos no WhatsApp logo depois deste PDF. O pedido só entra em produção depois da confirmação do pagamento e da aprovação da arte.</p>
   </div>
   <div>
     <p class="sec">Retirada e entrega</p>
-    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}</p>
+    <p class="nota">Retirada grátis no centro de BH. O endereço e o horário de retirada são enviados depois da confirmação do pagamento.${d.frete.modo === 'bike_gratis' ? ' Entrega grátis na região central, em horário comercial.' : ''}${d.frete.modo === 'uber_cliente' ? ' Se preferir receber em casa, a entrega é por Uber Entrega, por conta do cliente.' : ''}${d.frete.modo === 'correios' ? ' O frete dos Correios já está somado ao total.' : ''}</p>
   </div>
 </section>
 <section class="passos"><p class="sec">Como fechar seu pedido</p><ol>
-  <li><b>Aprove e pague</b>Responda APROVADO no WhatsApp, receba o link e pague no Pix ou cartão.</li>
+  <li><b>Pague</b>Use o link que enviamos logo depois deste PDF: Pix ou cartão em até 2x sem juros.</li>
   <li><b>Envie a arte</b>${d.arte.modo === 'paga' || d.arte.modo === 'com_frete' ? 'Ou aprove a que criamos para você.' : 'Pronta para impressão, até o horário de corte.'}</li>
   <li><b>Receba ou retire</b>Avisamos assim que estiver pronto.</li>
 </ol></section>
@@ -370,13 +381,14 @@ function resumoDoPedido(doc: OrcamentoDoc): string {
   if (doc.arte.modo === 'paga' || doc.arte.modo === 'com_frete') linhas.push(`Criação da arte: ${brl(doc.arte.valor)}`)
   else if (doc.arte.modo === 'cliente') linhas.push('Arte: você envia pronta')
   if (doc.frete.modo === 'bike_gratis') linhas.push('Entrega: grátis na região central, em horário comercial')
+  else if (doc.frete.modo === 'correios') linhas.push(`Frete (Correios): ${brl(doc.frete.valor)}`)
   else if (doc.frete.modo === 'uber_cliente') linhas.push(`Entrega: Uber ou 99 Entrega por conta do cliente, saindo da Praça Sete${doc.frete.valor > 0 ? ` (valor de referência ${brl(doc.frete.valor)})` : ''}`)
   else linhas.push('Retirada: grátis no centro de BH, depois do pagamento')
   if (doc.desconto > 0) linhas.push(`Desconto: ${brl(doc.desconto)}`)
   linhas.push('', `Total: ${brl(doc.total)}`)
   if (doc.data_prevista) linhas.push(`Fica pronto em ${dm(doc.data_prevista)}, pagando e enviando a arte até as ${doc.corte_hora}h`)
   if (doc.validade_ate) linhas.push(`Válido até ${dm(doc.validade_ate)}`)
-  linhas.push('', 'Se estiver tudo certo, responda APROVADO que eu envio o link de pagamento.')
+  linhas.push('', 'O link de pagamento (Pix ou cartão em até 2x sem juros) vai na mensagem seguinte.')
   return linhas.join('\n')
 }
 
@@ -521,5 +533,61 @@ Deno.serve(async (req) => {
   await db.from('messages').insert({ conversation_id: conv.id, wa_message_id: result?.messages?.[0]?.id ?? null, direction: 'out', type: 'document', body: `[Orçamento ${doc.numero} em PDF] ${legenda}`, status: 'sent', created_at: agora })
   await db.from('conversations').update({ last_message_at: agora, last_message_preview: `Orçamento ${doc.numero} (PDF)` }).eq('id', conv.id)
   await db.from('orcamentos').update({ pdf_enviado_em: agora }).eq('id', id)
-  return json({ ...resposta, enviado: true })
+
+  // Decisão do dono (18/11/2026): todo orçamento enviado já leva o link de pagamento na mensagem seguinte
+  // (o cliente está quente) e não depende de APROVADO. A trava de lucro vale dentro de preparar_link_pagamento.
+  const link = await enviarLinkDePagamento(db, env, { id, numero: doc.numero, conversationId: conv.id, waId })
+  return json({ ...resposta, enviado: true, ...link })
 })
+
+const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** Cria (ou reaproveita) o link do Mercado Pago e manda numa mensagem de texto logo depois do PDF. Nunca derruba o envio do PDF. */
+async function enviarLinkDePagamento(
+  // deno-lint-ignore no-explicit-any
+  db: any,
+  env: Record<string, string>,
+  p: { id: string; numero: string; conversationId: string; waId: string },
+): Promise<{ link_enviado: boolean; link_motivo?: string }> {
+  try {
+    const { data: prep, error } = await db.rpc('preparar_link_pagamento', { p_orcamento: p.id })
+    if (error || !prep?.ok) {
+      console.error('Link automático não preparado:', error?.message ?? prep?.motivo)
+      return { link_enviado: false, link_motivo: prep?.motivo ?? 'erro_ao_preparar' }
+    }
+    const base = Deno.env.get('SUPABASE_URL')
+    const chave = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!base || !chave) return { link_enviado: false, link_motivo: 'sem_configuracao' }
+    const r = await fetch(`${base}/functions/v1/mp-criar-link`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${chave}`, apikey: chave, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pedido_id: prep.order_id, expira_horas: prep.expira_horas }),
+    })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok || !j?.link) {
+      console.error('Mercado Pago não devolveu link:', r.status)
+      return { link_enviado: false, link_motivo: 'mp_sem_link' }
+    }
+    await db.rpc('orcamento_registrar_link', { p_orcamento: p.id, p_link: j.link, p_expira: j.expira_em ?? null })
+
+    await dormir(1500) // o PDF chega primeiro, o link vem na mensagem seguinte
+    const texto = `Aqui está o link pra pagar o orçamento ${p.numero}:\n${j.link}\n\nDá pra pagar no Pix (de qualquer banco) ou no cartão de crédito em até 2x sem juros.`
+    const res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: p.waId, type: 'text', text: { body: texto, preview_url: true } }),
+    })
+    const out = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error('Erro da Meta ao enviar o link:', out?.error?.code)
+      return { link_enviado: false, link_motivo: 'meta_recusou' }
+    }
+    const agora = new Date().toISOString()
+    await db.from('messages').insert({ conversation_id: p.conversationId, wa_message_id: out?.messages?.[0]?.id ?? null, direction: 'out', type: 'text', body: texto, status: 'sent', created_at: agora })
+    await db.from('conversations').update({ last_message_at: agora, last_message_preview: 'Link de pagamento enviado' }).eq('id', p.conversationId)
+    return { link_enviado: true }
+  } catch (e) {
+    console.error('Falha ao enviar o link automático:', (e as Error).message)
+    return { link_enviado: false, link_motivo: 'erro_inesperado' }
+  }
+}

@@ -1,5 +1,5 @@
 // Checkout próprio (/pagar/<token>): tipos e chamadas. Tudo passa pelas rotas /api/v1/pagar (a chave secreta nunca vem ao navegador).
-export interface ItemPedido { id: string | null; descricao: string; quantidade: number; unitario: number; subtotal: number; extra: boolean; tipo: 'arte' | 'produto' }
+export interface ItemPedido { id: string | null; descricao: string; quantidade: number; unitario: number; subtotal: number; extra: boolean; tipo: 'arte' | 'produto' | 'frete' }
 export interface OpcaoArte { codigo: 'pronta' | 'conferencia' | 'criacao'; titulo: string; texto: string; valor: number }
 export interface Sugestao { ref: string; slug: string | null; titulo: string; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis: number | null; foto: string | null; motivo: string; selo: string }
 export interface OpcaoQuantidade { ref: string; quantidade: number; preco: number; unitario: number; atual: boolean }
@@ -19,6 +19,8 @@ export interface Checkout {
   arte: { atual: OpcaoArte['codigo']; inclusa: boolean; opcoes: OpcaoArte[] }
   sugestoes: Sugestao[]
   quantidades: Quantidade[]
+  cupom?: { codigo: string; percentual: number } | null
+  frete?: { valor: number; descricao: string | null; cep_final: string }
   whatsapp: string
   mp: { chave_publica: string | null; modo: 'teste' | 'producao' | null }
 }
@@ -64,3 +66,20 @@ export const emailValido = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.tr
 
 export const dataCurta = (iso: string | null) => (iso ? new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', weekday: 'long', timeZone: 'America/Sao_Paulo' }) : null)
 export const dataHora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : null)
+
+/** Unidades reais do item. Um lote vem como "5 un." na descrição e quantidade 1: o cliente precisa ver 5 un. x valor unitário, nunca 1x. */
+export function unidadesDoItem(i: { descricao: string; quantidade: number; subtotal: number }): { unidades: number; unitario: number } {
+  const m = i.descricao.match(/·\s*([\d.]+)\s*un\./i)
+  const n = m ? Number(m[1].replace(/\./g, '')) : 0
+  const unidades = i.quantidade > 1 ? i.quantidade : n > 1 ? n : i.quantidade
+  return { unidades, unitario: unidades > 0 ? i.subtotal / unidades : i.subtotal }
+}
+
+export interface ProdutoBusca { produto_slug: string; titulo: string; foto: string | null; a_partir_de: number; opcoes: { ref: string; quantidade: number; preco: number; parcela_2x: number }[] }
+export interface OpcaoFrete { servico: string; nome: string; valor: number; prazo_dias: number | null }
+export interface CotacaoFrete {
+  ok: boolean; erro?: string; mensagem?: string
+  endereco?: { logradouro: string | null; bairro: string | null; cidade: string | null; uf: string | null }
+  frete_gratis?: boolean; grande_bh?: boolean
+  envio?: { disponivel: boolean; motivo: string | null; opcoes: OpcaoFrete[] }
+}

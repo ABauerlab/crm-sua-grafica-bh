@@ -7,6 +7,9 @@ import { brl, linkWhatsApp, MENSAGENS_WHATSAPP } from '@/lib/site'
 import { chamar, type Checkout, type OpcaoArte } from '@/lib/pagar'
 import { ArteUpsell } from './ArteUpsell'
 import { BannerCheckout } from './BannerCheckout'
+import { BuscaProdutos } from './BuscaProdutos'
+import { Cupom } from './Cupom'
+import { FreteCep } from './FreteCep'
 import { Confirmado } from './Confirmado'
 import { DadosCliente } from './DadosCliente'
 import { Estado } from './Estados'
@@ -55,7 +58,7 @@ export function CheckoutCliente({ token }: { token: string }) {
   async function acao(corpo: Record<string, unknown>) {
     setOcupado(true); setAviso(null)
     const r = await chamar('dados', { token, ...corpo })
-    if (!r.dados.ok) setAviso(String(r.dados.mensagem ?? ({ link_expirado: 'Este link venceu.', limite_de_itens: 'Você já adicionou o máximo de sugestões.', ja_no_pedido: 'Este item já está no seu pedido.', arte_incluida: 'A arte já está inclusa.' } as Record<string, string>)[String(r.dados.erro)] ?? 'Não foi possível atualizar o pedido.'))
+    if (!r.dados.ok) setAviso(String(r.dados.mensagem ?? ({ link_expirado: 'Este link venceu.', muitas_tentativas: 'Muitas tentativas. Aguarde alguns minutos.', limite_de_itens: 'Você já adicionou o máximo de sugestões.', ja_no_pedido: 'Este item já está no seu pedido.', arte_incluida: 'A arte já está inclusa.' } as Record<string, string>)[String(r.dados.erro)] ?? 'Não foi possível atualizar o pedido.'))
     await carregar(true)
     setOcupado(false)
   }
@@ -86,7 +89,7 @@ export function CheckoutCliente({ token }: { token: string }) {
   return (
     <>
       {topo}
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:pt-6">
+      <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6 lg:pb-10">
         <BannerCheckout />
         {c.pedido.teste && <p className="mt-3 rounded-lg bg-amarelo px-3 py-2 text-center text-sm font-black">PEDIDO DE TESTE</p>}
         <h1 className="mb-1 mt-5 text-2xl font-black sm:text-3xl">Finalize o seu pedido</h1>
@@ -108,7 +111,10 @@ export function CheckoutCliente({ token }: { token: string }) {
             <Quantidades itens={c.quantidades} ocupado={ocupado} onTrocar={(item, ref) => acao({ acao: 'trocar', item, ref })} />
             <ArteUpsell c={c} ocupado={ocupado} onEscolher={(a: OpcaoArte['codigo']) => acao({ acao: 'arte', arte: a })} />
 
-            <section aria-labelledby="pag-t" className="rounded-xl2 bg-white p-5 shadow-sm">
+            <FreteCep token={token} c={c} ocupado={ocupado} onMudou={() => void carregar(true)} />
+            <Cupom c={c} ocupado={ocupado} onAplicar={(codigo) => acao({ acao: 'cupom', codigo })} onRemover={() => acao({ acao: 'cupom_remover' })} />
+
+            <section id="pagamento" aria-labelledby="pag-t" className="scroll-mt-4 rounded-xl2 bg-white p-5 shadow-sm">
               <h2 id="pag-t" className="text-lg font-black">3. Pagamento</h2>
               {!dadosOk ? (
                 <p className="mt-3 rounded-lg bg-papel p-4 text-sm text-black/70"><Lock className="mr-1 inline h-4 w-4" aria-hidden />Preencha e salve os seus dados acima para liberar o pagamento.</p>
@@ -133,6 +139,7 @@ export function CheckoutCliente({ token }: { token: string }) {
             </section>
 
             <Sugestoes itens={c.sugestoes} ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
+            <BuscaProdutos ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
           </div>
 
           <aside className="hidden lg:block">
@@ -144,7 +151,13 @@ export function CheckoutCliente({ token }: { token: string }) {
         </div>
         <p className="mt-6 text-center text-xs text-black/50">Sua Gráfica BH · CNPJ 58.481.181/0001-03 · <a className="underline" href={linkWhatsApp(MENSAGENS_WHATSAPP.checkout)} target="_blank" rel="noopener">Ajuda pelo WhatsApp</a></p>
       </main>
-      <a href={linkWhatsApp(MENSAGENS_WHATSAPP.checkout)} target="_blank" rel="noopener" aria-label="Ajuda pelo WhatsApp" className="fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-lg lg:hidden"><MessageCircle className="h-6 w-6" aria-hidden /></a>
+      <a href={linkWhatsApp(MENSAGENS_WHATSAPP.checkout)} target="_blank" rel="noopener" aria-label="Ajuda pelo WhatsApp" className="fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-lg lg:hidden"><MessageCircle className="h-6 w-6" aria-hidden /></a>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="min-w-0"><p className="text-xs text-black/60">Total do pedido</p><p className="text-xl font-black leading-tight">{brl(c.total)}</p></div>
+          <a href="#pagamento" className="inline-flex h-12 shrink-0 items-center justify-center rounded-lg bg-magenta px-5 text-base font-black text-white">Ir para o pagamento</a>
+        </div>
+      </div>
     </>
   )
 }

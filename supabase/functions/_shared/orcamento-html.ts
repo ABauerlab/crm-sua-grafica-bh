@@ -122,10 +122,19 @@ footer b { color: #171717; }
 
 export function orcamentoHtml(d: OrcamentoDoc): string {
   const emp = d.empresa
+  // Lote vendido como 1 linha ("5 un." na especificação ou no nome): mostra as unidades e o valor de cada uma, nunca "1 x total"
+  const unidadesReais = (i: OrcamentoDoc['itens'][number]): { qtd: number; unit: number } => {
+    const qtd = Number(i.quantidade)
+    if (qtd !== 1) return { qtd, unit: Number(i.valor_unitario) }
+    const m = `${i.especificacao ?? ''} ${i.descricao}`.match(/([\d.]+)\s*un\./i)
+    const n = m ? Number(m[1].replace(/\./g, '')) : 0
+    return n > 1 ? { qtd: n, unit: Number(i.valor_total) / n } : { qtd, unit: Number(i.valor_unitario) }
+  }
   const linhas = d.itens
-    .map(
-      (i) => `<tr><td>${esc(i.descricao)}${i.especificacao ? `<small>${esc(i.especificacao)}</small>` : ''}</td><td class="n">${esc(i.quantidade)}</td><td class="n">${brl(i.valor_unitario)}</td><td class="n">${brl(i.valor_total)}</td></tr>`,
-    )
+    .map((i) => {
+      const u = unidadesReais(i)
+      return `<tr><td>${esc(i.descricao)}${i.especificacao ? `<small>${esc(i.especificacao)}</small>` : ''}</td><td class="n">${esc(u.qtd)}</td><td class="n">${brl(u.unit)}</td><td class="n">${brl(i.valor_total)}</td></tr>`
+    })
     .join('')
 
   // quadro de alternativas (consultoria) e nota de arredondamento, quando o unitário exibido não multiplica exatamente até o total
@@ -134,7 +143,7 @@ export function orcamentoHtml(d: OrcamentoDoc): string {
         .map((a) => `<p><b>${esc(a.titulo)}.</b> ${esc(a.texto)}</p>`)
         .join('')}</section>`
     : ''
-  const arredonda = d.itens.some((i) => Math.abs(Number(i.quantidade) * Number(i.valor_unitario) - Number(i.valor_total)) >= 0.01)
+  const arredonda = d.itens.some((i) => { const u = unidadesReais(i); return Math.abs(u.qtd * u.unit - Number(i.valor_total)) >= 0.01 })
     ? '<p class="arredonda">Valores unitários arredondados; vale o total de cada item.</p>'
     : ''
 

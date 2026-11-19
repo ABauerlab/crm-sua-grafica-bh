@@ -33,6 +33,22 @@ Deno.serve(async (req) => {
     }
   }
 
+
+  /** Cota o frete pelo CEP (loja-frete: bairros de entrega grátis em BH e SuperFrete para o Brasil). O valor sempre vem daqui, nunca do navegador. */
+  async function cotar(cep: string) {
+    const { data: it, error } = await db.rpc('checkout_itens_frete', { p_token: token })
+    if (error || !it?.ok) return { status: 503, corpo: { ok: false, erro: 'indisponivel', mensagem: 'Não conseguimos calcular agora. Tente de novo em instantes.' } }
+    if (it.pago) return { status: 409, corpo: { ok: false, erro: 'pedido_ja_pago' } }
+    if (!Array.isArray(it.itens) || !it.itens.length) return { status: 409, corpo: { ok: false, erro: 'sem_itens_para_frete', mensagem: 'Não foi possível calcular o frete deste pedido. Fale com a gente no WhatsApp.' } }
+    const res = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/loja-frete`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: JSON.stringify({ cep, itens: it.itens, arte: 'pronta' }),
+    }).catch(() => null)
+    const f = await res?.json().catch(() => null) as Record<string, any> | null
+    if (!res || !res.ok || !f?.ok) return { status: res?.status === 404 ? 404 : 502, corpo: { ok: false, erro: 'frete_indisponivel', mensagem: f?.error ?? 'Não conseguimos calcular o frete agora. Retire no balcão ou fale com a gente.' } }
+    return { status: 200, corpo: f }
+  }
+
   const rpc = async (fn: string, args: Record<string, unknown>, mudaPedido = false) => {
     const { data, error } = await db.rpc(fn, args)
     if (error) {
@@ -65,6 +81,36 @@ Deno.serve(async (req) => {
       if (!emailValido(b.email)) return json({ ok: false, erro: 'email_invalido', mensagem: 'Confira o e-mail.' }, 400)
       if (!documentoValido(b.documento)) return json({ ok: false, erro: 'documento_invalido', mensagem: 'CPF ou CNPJ inválido. Confira os números.' }, 400)
       return rpc('checkout_salvar_dados', { p_token: token, p_nome: String(b.nome), p_email: String(b.email), p_documento: String(b.documento) })
+    }
+    case 'cupom':
+      return rpc('checkout_aplicar_cupom', { p_token: token, p_codigo: String(b.codigo ?? '').slice(0, 30) }, true)
+    case 'cupom_remover':
+      return rpc('checkout_remover_cupom', { p_token: token }, true)
+    case 'frete_cotar': {
+      const cep = String(b.cep ?? '').replace(/\D/g, '')
+      if (!/^\d{8}$/.test(cep)) return json({ ok: false, erro: 'cep_invalido', mensagem: 'CEP inválido. Digite os 8 números.' }, 400)
+      const r = await cotar(cep)
+      return json(r.corpo, r.status)
+    }
+    case 'frete_definir': {
+      const cep = String(b.cep ?? '').replace(/\D/g, '')
+      if (!/^\d{8}$/.test(cep)) return json({ ok: false, erro: 'cep_invalido', mensagem: 'CEP inválido. Digite os 8 números.' }, 400)
+      const escolha = String(b.servico ?? '')
+      let valor = 0, nome = 'retirada', prazo: number | null = null, endereco: Record<string, unknown> = {}
+      if (escolha !== 'gratis' && escolha !== 'retirada') {
+        const r = await cotar(cep)
+        if (r.status !== 200) return json(r.corpo, r.status)
+        endereco = (r.corpo as any).endereco ?? {}
+        const op = ((r.corpo as any).envio?.opcoes ?? []).find((o: any) => o.servico === escolha)
+        if (!op) return json({ ok: false, erro: 'opcao_invalida', mensagem: 'Essa opção de envio não está disponível. Escolha outra.' }, 400)
+        valor = Number(op.valor); nome = String(op.nome); prazo = op.prazo_dias ?? null
+      } else if (escolha === 'gratis') {
+        const r = await cotar(cep)
+        if (r.status !== 200) return json(r.corpo, r.status)
+        if ((r.corpo as any).frete_gratis !== true) return json({ ok: false, erro: 'sem_frete_gratis', mensagem: 'Este CEP não tem entrega grátis.' }, 409)
+        endereco = (r.corpo as any).endereco ?? {}
+      }
+      return rpc('checkout_definir_frete', { p_token: token, p_valor: valor, p_nome: nome, p_prazo_dias: prazo, p_cep: cep, p_endereco: endereco }, true)
     }
     case 'arte':
       return rpc('checkout_definir_arte', { p_token: token, p_arte: String(b.arte ?? '') }, true)

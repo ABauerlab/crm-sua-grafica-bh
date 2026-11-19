@@ -70,3 +70,6 @@ Só falta a chave PÚBLICA do aplicativo do Mercado Pago, como segredo da Edge F
 3. Cartão 2x: pague um pedido de teste com o cartão de teste do Mercado Pago (nome do titular `APRO`) e confira "2x de R$ X sem juros" na confirmação.
 4. Recusa: titular `OTHE`; confira o alerta no app.
 Testes automáticos: `npm run test:checkout` (regras puras) e `supabase/tests/checkout_proprio.sql` (banco, termina em "OK").
+
+## Cupom, frete e tiragens (19/11/2026)
+Cupom em `cupons_checkout` (cadastro pelo dono), frete por CEP pelo SuperFrete via `loja-frete` e carrossel com todas as tiragens. Detalhes e pendências em `docs/agente/progresso.md`.
