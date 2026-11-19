@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Montserrat } from 'next/font/google'
 import { ChromeLoja } from '@/components/ChromeLoja'
 import { Footer } from '@/components/Footer'
+import { FaixaBlackFriday } from '@/components/FaixaBlackFriday'
 import { Header } from '@/components/Header'
 import { WhatsAppButton } from '@/components/WhatsAppButton'
 import { Suspense } from 'react'
@@ -46,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={fonte.variable}>
       <body className="font-sans">
         <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-amarelo focus:px-3 focus:py-2">Pular para o conteúdo</a>
-        <ChromeLoja><Header /></ChromeLoja>
+        <ChromeLoja><FaixaBlackFriday /><Header /></ChromeLoja>
         <main id="conteudo">{children}</main>
         <ChromeLoja><Footer /><WhatsAppButton /></ChromeLoja>
         <ChromeLoja><Consentimento /></ChromeLoja>

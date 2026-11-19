@@ -19,6 +19,7 @@ export interface Checkout {
   arte: { atual: OpcaoArte['codigo']; inclusa: boolean; opcoes: OpcaoArte[] }
   sugestoes: Sugestao[]
   quantidades: Quantidade[]
+  campanha?: { ativa: boolean; titulo?: string; ate?: string; dias_restantes?: number; texto?: string }
   cupom?: { codigo: string; percentual: number } | null
   frete?: { valor: number; descricao: string | null; cep_final: string }
   whatsapp: string

@@ -1178,3 +1178,6 @@ Pedido do dono: o agente tem de perceber o erro, voltar, pensar e resolver sozin
 - **Bling, indicador de presença:** a API v3 de pedido de venda NÃO tem campo de indicador de presença; o valor vem da configuração do Bling (Preferências > Vendas > NF-e/NFC-e). O dono precisa trocar lá de "5 - fora do estabelecimento" para "1 - operação presencial". O payload já leva `indicador_presenca: 1` para uso futuro.
 - **Site (/checkout):** o carrinho do site já tem CEP e SuperFrete próprios; o cartão abre o `/pagar` (depois do passo 5 do deploy), onde valem cupom, tiragens, busca e frete. Pix do site segue no próprio fluxo.
 - **Publicar:** migration `20261220000001`, deploy de `checkout-dados` e `orcamento-pdf`, merge para publicar a loja.
+
+## Rodada 19/11/2026 (2): Black Friday e qualificação
+Migration `20261221000001_black_friday_arte_gratis.sql` (aplicada), faixa e aviso na loja, nó novo no WF2 (cópia em `n8n/GBH-WF2-Agente.json`). Detalhes e como encerrar em `docs/agente/decisoes-e-melhorias.md` (seção Black Friday 2026). Sem cenários e5-*, mvp-* nem e17-* rodados (regra do dono: gastam o Gemini); validado por SQL (contexto, campanha, trava de saída) e leitura das conversas reais.
