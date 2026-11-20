@@ -355,3 +355,7 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 - Tabela `previas_arte` (fila: pendente/processando/pronta/erro/aguardando_limite), funções `previa_arte_criar/status/enviar_briefing/regenerar/ajustar/fechar/proxima/concluir`, buckets `previas-uploads` e `previas-arte`. Migrations `20261222000006` e `20261222000007`.
 - Edge Functions `previa-arte`, `previa-arte-upload`, `previa-arte-processar` (worker: API oficial configurável, Gotenberg para o PNG com marca d'água).
 - Página `/previa/<token>` no e-commerce; ferramenta `gerar_link_previa` (15ª do despachante, as 14 anteriores intactas) ainda não chamada pelo prompt da Laura (decisão do dono). Detalhes em `docs/ecommerce.md`.
+
+## Item 7 do Plano de Ação: confirmação de pagamento sem dado fiscal (20/11/2026)
+- `montarConfirmacaoCliente`/`templateConfirmacaoCliente` (`_shared/alertas.ts` e a cópia em `cliente-pago-avisar/index.ts`): mensagem fixa "Oi, {nome}! Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido {numero} já entrou na fila. Previsão de ficar pronto: {data_prevista}.", sem pedido de CPF/CNPJ/e-mail/CEP nem o trecho da Praça Sete (o checkout próprio `/pagar/<token>` já coleta esses dados). `pagamento_pos_reservar_msg` devolve `nome` por `private.fu_nome` (nulo sem nome válido → saudação "Oi!"/"você", nunca "cliente"). Migration `20261222000009`.
+- `GBH | WF2 | Agente`: regra "NOTA FISCAL E CADASTRO" reescrita — a Laura só pergunta pelo chat o que faltar depois do checkout, não pede tudo de novo por reflexo.
