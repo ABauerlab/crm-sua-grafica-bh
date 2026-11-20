@@ -331,3 +331,11 @@ Banco: `private.agente_reprocessar_conversa` + gatilhos `conversations_devolvida
 Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 'recusa_preco'`), `private.fu_resposta_fria`, `private.fu_ultima_cotacao`, `private.fu_texto_tiragens_menores`, `private.fu_agendar_recusa`; `followup_montar` anterior em `private.followup_montar_pre_recusa`. Teste `supabase/tests/recusa_preco_tiragens.sql`.
 
 - Checkout `/pagar`: `ecommerce/components/pagar/{Quantidades,Cupom,FreteCep,BuscaProdutos}.tsx`; banco `20261220000001_checkout_cupom_frete_quantidades.sql`; ações `cupom`, `cupom_remover`, `frete_cotar`, `frete_definir` em `checkout-dados`.
+
+## Plano de Ação, Fase 1 (20/11/2026)
+- `calcular_preco` ganhou os parâmetros `piso_sem_lucro_minimo` e `preco_minimo_reais` (piso de R$ 65 validado por pedido composto, não por item); `private.montar_orcamento_base` e `private.confirmar_pagamento` (fecha `pagamentos_alertas` abertos) atualizadas. Migration `20261222000002` e `20261222000003`.
+- `private.fu_nome` devolve `null` (não mais `'cliente'`); `followup_montar_base`, `fu_texto_q`, `fu_texto_anuncio`, `fu_texto_tiragens_menores` tratam a saudação sem nome; PAG_6H corrigido ("fechamento do seu pedido"). Migration `20261222000003`.
+- `carrinhos_abandonados` ganhou automação: `private.carrinho_abandonado_varrer` (cron `carrinho-abandonado-varrer`, 15 em 15 min), regra `CARRINHO_ABANDONADO` em `followup_regras` (reaproveita `followup_fila`/WF6). Migration `20261222000004`.
+- `meta-conversions-api` alerta o dono (gravidade alta, dedupe por dia) quando faltam `META_PIXEL_ID`/`META_CAPI_TOKEN`, em vez do retorno silencioso antigo.
+- `GBH | WF2 | Agente`: 9 nós "Regras adicionais" + `systemMessage` de 37 regras (>50 mil caracteres) viraram 1 nó ("Prompt consolidado (Fase 1)", ~7,5 mil caracteres); `Agente de atendimento.systemMessage` agora é só `{{ $json.system }}`. 38 nós (antes 45). Detalhes em `docs/n8n-mapa.md`.
+- Fora do escopo desta rodada (ver `docs/agente/progresso.md`): loop de 6 saudações do WF1, timeout de `buscar_produto`, `agente_falhou` silencioso, divergência preço-texto×PDF ("Lead #15"), ampliação da leitura de imagem/PDF do cliente.
