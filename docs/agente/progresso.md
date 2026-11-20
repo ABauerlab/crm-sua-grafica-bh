@@ -1,5 +1,19 @@
 # Progresso do agente de IA
 
+## 20/11/2026 (Fase 2): gerador de prévia de arte com marca d'água (`/previa/<token>`)
+
+Implementa a Fase 2 do Plano de Ação (prévia de arte), depois do Passo 1 (blindagem) e dos 6 bugs urgentes já mesclados.
+
+- **Fila e travas no banco**: tabela `previas_arte` com status (`pendente`/`processando`/`pronta`/`erro`/`aguardando_limite`), expiração de 48h e contadores `geracoes` (máx. 2) e `ajustes` (máx. 1, à parte das gerações); depois do limite, o feedback só é salvo (`orcamentos.alternativas`) para a equipe de criação aplicar na arte final pós-pagamento, sem gastar API de novo. `previa_arte_fechar` roda `validar_margem` antes de converter o orçamento em pedido para o botão "Gostei, quero fechar agora". Testado em transação com rollback (criar, reutilizar, 1ª e 2ª geração, 3ª bloqueada, ajuste, 2º ajuste só salva, fechar). Migrations `20261222000006` e `20261222000007` (agendamento).
+- **Worker** (`previa-arte-processar`, Edge Function): usa só API oficial configurável por variável de ambiente (Claude ou Gemini, nunca credencial de assinatura pessoal), monta a arte em HTML, sobrepõe à foto real do produto com marca d'água forte e renderiza em PNG no Gotenberg (mesmo serviço do PDF de orçamento). Sem a chave configurada, alerta o dono (gravidade alta) em vez de falhar quieto — mesmo padrão já usado na Meta CAPI. Limite de taxa da API vira `aguardando_limite`, tenta de novo em 5 min, e quando sai dessa situação a Laura avisa o cliente no WhatsApp com o link atualizado.
+- **Página `/previa/<token>`** no e-commerce: briefing, upload de até 2 imagens, acompanhamento (polling), resultado com marca d'água e os botões de fechar/gerar de novo/ajustar.
+- **Ferramenta nova do despachante**: `gerar_link_previa` (15ª ferramenta; as 14 anteriores do Plano de Ação continuam 100% intactas), recebe `orcamento_id` e devolve o link `/previa/<token>`. **Ainda não está chamada pelo prompt da Laura** (fica para o dono decidir quando ligar essa regra, por ser uma chamada de API paga por geração).
+- Achado de passagem corrigido no caminho: o export de `GBH-WF2-Agente.json` no repositório tinha uma duplicação (um `parameters.jsCode` órfão dentro do próprio `parameters`), introduzida por uma edição anterior feita com script em vez de reexportar direto do n8n. Já saneado nos últimos reexports (bugs urgentes e Fase 2).
+
+**Validação**: `npm run gate` e `typecheck` do e-commerce verdes. Sem teste ponta a ponta com chave real de Claude/Gemini (nenhuma foi configurada nesta sessão); o worker foi validado só até o ponto do alerta por falta de segredo.
+
+**Pendências para o dono**: cadastrar `PREVIA_ARTE_API_KEY` (e opcionalmente `PREVIA_ARTE_PROVEDOR`/`PREVIA_ARTE_MODELO`) nas Secrets das Edge Functions do Supabase para o worker funcionar de verdade; decidir se e quando o prompt da Laura deve chamar `gerar_link_previa` sozinha.
+
 ## 20/11/2026 (bugs urgentes): 6 bugs reais achados pelo dono em atendimentos do dia
 
 Auditoria de 3 atendimentos reais citados pelo dono, mais 2 pedidos de complemento. Causas raiz e correções:

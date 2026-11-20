@@ -117,3 +117,15 @@ verify_jwt = false
 
 [functions.checkout-mp-processar]
 verify_jwt = false
+
+# Fase 2: página /previa/<token>, pública, o token é o comprovante; a função confere tudo no banco
+[functions.previa-arte]
+verify_jwt = false
+
+# Fase 2: upload do logo/referência do cliente na página /previa/<token>; público, o token é o comprovante
+[functions.previa-arte-upload]
+verify_jwt = false
+
+# Fase 2: worker da fila de prévia de arte (agendamento com x-cron-secret, ou dono/service role)
+[functions.previa-arte-processar]
+verify_jwt = false
