@@ -31,7 +31,7 @@ export function PagamentoPix({ token, total, onErro }: { token: string; total: n
   if (!pix) {
     return (
       <div className="text-center">
-        <p className="mb-1 text-sm text-black/70">Aprovação na hora, de qualquer banco, todos os dias.</p>
+        <p className="mb-1 text-sm text-black/70">Aprovação na hora, todos os dias.</p>
         <button type="button" onClick={gerar} disabled={gerando} className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#0E8A3E] px-6 text-lg font-black text-white shadow-md hover:brightness-110 disabled:opacity-70">
           {gerando ? <><Loader2 className="h-5 w-5 animate-spin" aria-hidden />Gerando o Pix...</> : <><QrCode className="h-5 w-5" aria-hidden />Pagar {brl(total)} no Pix</>}
         </button>

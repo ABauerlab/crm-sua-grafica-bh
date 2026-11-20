@@ -360,7 +360,7 @@
     "titulo": "Formas de pagamento",
     "categoria": "pagamento",
     "quando_usar": "Cliente pergunta como pode pagar.",
-    "resposta_pronta": "Você paga pelo link que eu te mando, com Pix ou cartão. O Pix pode ser feito de qualquer banco.",
+    "resposta_pronta": "Você paga pelo link que eu te mando, com Pix ou cartão.",
     "fatos": "O link de pagamento é do Mercado Pago e aceita Pix e cartão. Boleto não está disponível. O pedido só entra em produção depois do pagamento confirmado.",
     "proximo_passo": "Perguntar se pode enviar o link.",
     "tags": [
@@ -460,7 +460,7 @@
     "quando_usar": "Cliente tem receio do link de pagamento.",
     "resposta_pronta": "Pode ficar tranquilo, o pagamento é pelo Mercado Pago, que é seguro e conhecido. Eu nunca peço dados de cartão por aqui.",
     "fatos": "O link é do Mercado Pago. O pagamento confirmado chega ao pedido automaticamente. Nunca peça senha, código ou dados de cartão.",
-    "proximo_passo": "Enviar o link e avisar que o Pix aceita qualquer banco.",
+    "proximo_passo": "Enviar o link.",
     "tags": [
       "e seguro",
       "o link e seguro",
@@ -1246,8 +1246,8 @@
     "titulo": "Envio do link de pagamento",
     "categoria": "fechamento",
     "quando_usar": "Hora de mandar o link.",
-    "resposta_pronta": "Aqui está o link! Pode pagar no Pix de qualquer banco ou no cartão. Pagando e mandando a arte até 12h, conta o prazo de hoje.",
-    "fatos": "Link novo e único por orçamento. Avisar que o Pix aceita qualquer banco. Não peça dados de cartão no chat.",
+    "resposta_pronta": "Aqui está o link! Pode pagar no Pix ou no cartão. Pagando e mandando a arte até 12h, conta o prazo de hoje.",
+    "fatos": "Link novo e único por orçamento. Não peça dados de cartão no chat.",
     "proximo_passo": "Acompanhar o pagamento e tirar dúvidas.",
     "tags": [
       "cade o link",
