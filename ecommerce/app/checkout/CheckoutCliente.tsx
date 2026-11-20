@@ -324,7 +324,7 @@ export function CheckoutCliente() {
             <h1 className="text-xl font-black">Pagamento</h1>
             <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${metodo === 'pix' ? 'border-tinta bg-papel' : 'border-black/15'}`}>
               <input type="radio" name="metodo" checked={metodo === 'pix'} onChange={() => setMetodo('pix')} className="mt-1 accent-magenta" />
-              <span className="text-sm"><b className="flex items-center gap-1"><QrCode className="h-4 w-4" aria-hidden />Pix · {total != null ? brl(total) : '...'}</b>QR Code e copia e cola na próxima tela. Aprovação na hora, de qualquer banco.</span>
+              <span className="text-sm"><b className="flex items-center gap-1"><QrCode className="h-4 w-4" aria-hidden />Pix · {total != null ? brl(total) : '...'}</b>QR Code e copia e cola na próxima tela. Aprovação na hora.</span>
             </label>
             <label className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${metodo === 'cartao' ? 'border-tinta bg-papel' : 'border-black/15'}`}>
               <input type="radio" name="metodo" checked={metodo === 'cartao'} onChange={() => setMetodo('cartao')} className="mt-1 accent-magenta" />

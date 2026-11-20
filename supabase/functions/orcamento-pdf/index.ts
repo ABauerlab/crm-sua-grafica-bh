@@ -249,7 +249,7 @@ async function enviarLinkDePagamento(
     await db.rpc('orcamento_registrar_link', { p_orcamento: p.id, p_link: j.link, p_expira: j.expira_em ?? null })
 
     await dormir(1500) // o PDF chega primeiro, o link vem na mensagem seguinte
-    const texto = `Aqui está o link pra pagar o orçamento ${p.numero}:\n${j.link}\n\nDá pra pagar no Pix (de qualquer banco) ou no cartão de crédito em até 2x sem juros.`
+    const texto = `Aqui está o link pra pagar o orçamento ${p.numero}:\n${j.link}\n\nDá pra pagar no Pix ou no cartão de crédito em até 2x sem juros.`
     const res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },

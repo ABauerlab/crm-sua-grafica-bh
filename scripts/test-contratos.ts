@@ -66,5 +66,10 @@ const wf1 = readFileSync(join(n8n, 'GBH-WF1-Entrada-e-roteamento.json'), 'utf8')
 for (const no of ['Rascunho: receber pedido', 'Rascunho: chamar o agente', 'Rascunho: extrair o texto', 'Rascunho: salvar para o atendente']) if (!wf1.includes(no)) falhas.push(`WF1 perdeu o nó do botão Responder com IA: ${no}`)
 if (!wf2.includes('MODO RASCUNHO') || !/NUNCA assine nem se apresente como Jo[ãa]o Victor/.test(wf2)) falhas.push('WF2 perdeu a regra do modo rascunho (voz da Laura, nunca João Victor)')
 if (!existsSync(join(raiz, 'supabase/functions/ia-rascunho/index.ts'))) falhas.push('Edge Function ia-rascunho não existe')
+
+// Decisão do dono (20/11/2026): nunca dizer "de qualquer banco" ao citar o Pix. O prompt mantém um filtro
+// defensivo (comentário "frase proibida") mas o texto de regra não deve mais instruir isso.
+const wf2SemFiltro = wf2.replace(/frase proibida: Pix em qualquer banco/i, '').replace(/\/qualquer banco\/i/i, '')
+if (/\bqualquer banco\b/i.test(wf2SemFiltro)) falhas.push('WF2 voltou a instruir "qualquer banco" no texto da regra')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)

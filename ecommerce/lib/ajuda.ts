@@ -39,7 +39,7 @@ export const AJUDA: CategoriaAjuda[] = [
   {
     id: 'pagamento', titulo: 'Pagamentos', resumo: 'Pix na hora, cartão em 2x sem juros e parcelado no Mercado Pago.',
     perguntas: [
-      { p: 'Quais as formas de pagamento?', r: 'Pix (de qualquer banco, com confirmação na hora) e cartão de crédito em até 2x sem juros. Se preferir parcelar mais, o Mercado Pago oferece até 12x com juros da própria operadora, mostrados antes de você confirmar.' },
+      { p: 'Quais as formas de pagamento?', r: 'Pix (confirmação na hora) e cartão de crédito em até 2x sem juros. Se preferir parcelar mais, o Mercado Pago oferece até 12x com juros da própria operadora, mostrados antes de você confirmar.' },
       { p: 'O pagamento é seguro?', r: 'Sim. Todo pagamento é feito pelo Mercado Pago, em ambiente protegido. A gente não vê nem guarda os dados do seu cartão.' },
       { p: 'Quando meu pedido é confirmado?', r: 'Assim que o Mercado Pago aprova o pagamento. No Pix isso costuma levar poucos segundos; você recebe a confirmação no WhatsApp.' },
       { p: 'Vocês emitem nota fiscal?', r: 'Emitimos. Informe no pedido ou no WhatsApp o CPF ou CNPJ, nome ou razão social, endereço com CEP e e-mail.' },

@@ -43,7 +43,7 @@ const celular = `<html><style>${css(1080, 620, true)}</style><body><div class="p
 <div class="selo" style="right:54px;top:34px;padding:18px 26px;font-size:62px;transform:rotate(5deg)">2x<div style="font-size:20px;margin-top:5px">SEM JUROS</div></div>
 <h1 style="left:54px;top:160px;font-size:84px;width:960px">Pague no Pix ou em até<br><span>2x sem juros</span></h1>
 <div class="chips" style="left:54px;top:410px;width:980px"><div class="chip"><span class="ic" style="background:#32BCAD">✓</span>Pix aprova na hora</div><div class="chip"><span class="ic" style="background:#FFD500">★</span>Entrega grátis na região central de BH</div></div>
-<div style="position:absolute;left:54px;bottom:38px;font-size:24px;color:#ffffffb3;font-weight:600">Cartão de crédito em até 2x sem juros · Pix de qualquer banco</div>
+<div style="position:absolute;left:54px;bottom:38px;font-size:24px;color:#ffffffb3;font-weight:600">Cartão de crédito em até 2x sem juros · Pix com aprovação na hora</div>
 </body></html>`
 
 ;(async () => {
