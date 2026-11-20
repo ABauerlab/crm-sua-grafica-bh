@@ -104,28 +104,23 @@ export function montarTexto(a: AlertaFila): string {
   return `Atenção no atendimento. Cliente: ${str(d.cliente, '-')}.\nMotivo: ${a.motivo}\nAbra no CRM: ${url}`
 }
 
-/** Mensagem ao cliente depois do pagamento. Sem SKU, custo, margem ou lucro. Endereço só aqui, depois de pago. */
+/** Mensagem limpa e direta ao cliente depois do pagamento (item 7, 20/11/2026). Sem SKU, custo, margem,
+ * lucro, pedido de dados fiscais (o checkout próprio /pagar/<token> já coleta isso) nem o trecho fixo
+ * de retirada na Praça Sete. Saudação neutra sem "cliente" quando o contato não tem nome válido. */
 export function montarConfirmacaoCliente(i: {
-  nome: string
+  nome: string | null
   pedido: string
   previsao: string
-  arte_status?: string | null
-  entrega?: string | null
-  /** Persona do pós-pagamento (ex.: João Victor) e o artigo ("o" ou "a"). Sem persona, a mensagem é a de sempre. */
-  persona?: string | null
-  artigo?: string | null
 }): string {
-  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona} da Sua Gráfica BH! ` : ''
+  const saudacao = i.nome ? `Oi, ${i.nome}!` : 'Oi!'
   const prazo = `Previsão de ficar pronto: ${i.previsao}.`
-  const saida = i.entrega === 'uber'
-    ? 'Quando estiver prontinho, combinamos a entrega por aqui.'
-    : 'Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete.'
-  return `Oi, ${i.nome}! ${quem}Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo} ${saida}`
+  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo}`
 }
 
-/** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
-export function templateConfirmacaoCliente(i: { nome: string; pedido: string; previsao: string }): string[] {
-  return [varTemplate(i.nome, 60), varTemplate(i.pedido, 30), varTemplate(i.previsao, 30)]
+/** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. A Meta exige
+ * variável não vazia; sem nome válido usa 'você' (nunca 'cliente' como vocativo). */
+export function templateConfirmacaoCliente(i: { nome: string | null; pedido: string; previsao: string }): string[] {
+  return [varTemplate(i.nome || 'você', 60), varTemplate(i.pedido, 30), varTemplate(i.previsao, 30)]
 }
 
 /** O erro da Meta é definitivo para este canal (não adianta repetir)? Hoje: nenhum; o recuo do banco decide. */

@@ -62,32 +62,24 @@ function varTemplate(v: unknown, max = 200): string {
   return corta(s || '-', max)
 }
 
-/** Mensagem humanizada e personalizada ao cliente depois do pagamento. Sem 'assistente virtual' e respeitando o checklist da arte e prazo manual. */
+/** Mensagem limpa e direta ao cliente depois do pagamento (item 7, 20/11/2026): sem pedido de dados
+ * fiscais (o checkout próprio /pagar/<token> já coleta isso) e sem o trecho fixo de retirada na
+ * Praça Sete. Saudação neutra sem "cliente" quando o contato não tem nome válido. */
 function montarConfirmacaoCliente(i: {
-  nome: string
+  nome: string | null
   pedido: string
   previsao: string
   prazo_manual?: boolean
-  arte_status?: string | null
-  entrega?: string | null
-  persona?: string | null
-  artigo?: string | null
-  faltaNota?: string[]
 }): string {
-  const quem = i.persona ? `Aqui é ${i.artigo ? i.artigo + ' ' : ''}${i.persona} da Sua Gráfica BH! ` : ''
+  const saudacao = i.nome ? `Oi, ${i.nome}!` : 'Oi!'
   const prazo = i.prazo_manual ? `Prazo combinado: ${i.previsao}.` : `Previsão de ficar pronto: ${i.previsao}.`
-  const saida = i.entrega === 'uber'
-    ? 'Quando estiver prontinho, combinamos a entrega por aqui.'
-    : 'Quando estiver prontinho para retirada, te aviso por aqui com o endereço certinho da Praça Sete.'
-  const nota = i.faltaNota && i.faltaNota.length
-    ? ` Pra emitir a sua nota fiscal, me passa por aqui: ${i.faltaNota.join(', ')}.`
-    : ''
-  return `Oi, ${i.nome}! ${quem}Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo} ${saida}${nota}`
+  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo}`
 }
 
-/** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. */
-function templateConfirmacaoCliente(i: { nome: string; pedido: string; previsao: string }): string[] {
-  return [varTemplate(i.nome, 60), varTemplate(i.pedido, 30), varTemplate(i.previsao, 30)]
+/** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. A Meta exige
+ * variável não vazia; sem nome válido usa 'você' (não 'cliente' como vocativo). */
+function templateConfirmacaoCliente(i: { nome: string | null; pedido: string; previsao: string }): string[] {
+  return [varTemplate(i.nome || 'você', 60), varTemplate(i.pedido, 30), varTemplate(i.previsao, 30)]
 }
 
 function janelaAberta(janelaAte: string | null | undefined, agora = Date.now()): boolean {
@@ -188,28 +180,17 @@ Deno.serve(async (req) => {
   if (!r?.enviar) return json({ ok: true, enviado: false, msg_status: r?.msg_status ?? null })
 
   const dados = {
-    nome: r.nome as string,
+    nome: (r.nome as string | null) ?? null,
     pedido: r.pedido as string,
     previsao: r.previsao as string,
     prazo_manual: r.prazo_manual === true,
-    arte_status: r.arte_status,
-    entrega: r.entrega,
-    persona: (r.persona as string | undefined) ?? null,
-    artigo: (r.artigo as string | undefined) ?? null,
   }
   let corpo = ''
   let tipo: 'text' | 'template' = 'text'
   let envio = { ok: false, wa_message_id: undefined as string | undefined, erro: undefined as string | undefined }
 
   if (janelaAberta(r.janela_ate)) {
-    const { data: ct } = await db.from('conversations').select('contacts(name, document, email, cep, address)').eq('id', r.conversation_id).maybeSingle()
-    const c = ((ct as { contacts?: Record<string, string | null> } | null)?.contacts ?? {}) as Record<string, string | null>
-    const faltaNota: string[] = []
-    if (!String(c.document ?? '').trim()) faltaNota.push('CPF ou CNPJ')
-    if (!String(c.name ?? '').trim()) faltaNota.push('nome completo ou razão social')
-    if (!String(c.email ?? '').trim()) faltaNota.push('e-mail')
-    if (!String(c.cep ?? '').trim() || !String(c.address ?? '').trim()) faltaNota.push('endereço com CEP')
-    corpo = montarConfirmacaoCliente({ ...dados, faltaNota })
+    corpo = montarConfirmacaoCliente(dados)
     const x = await enviarTexto(env, r.wa_id, corpo)
     envio = { ok: x.ok, wa_message_id: x.wa_message_id, erro: x.erro }
   }
