@@ -31,7 +31,7 @@ const wf2 = readFileSync(join(n8n, 'GBH-WF2-Agente.json'), 'utf8')
 for (const proibido of ['COTE LOGO, SEM ENROLAR', 'Conduza com fechamento assumido', 'cote tudo, envie o PDF e só depois pergunte', 'AVANCE PARA A COTAÇÃO!']) {
   if (wf2.includes(proibido)) falhas.push(`WF2 voltou a conter a instrução "${proibido}" (conflita com a regra 19: qualificar antes de orçar)`)
 }
-for (const obrigatorio of ['19) QUALIFIQUE ANTES DE ORÇAR', '22) EMBALAGENS', '24) PRODUTO CERTO COM MUITAS OPÇÕES', '25) SEM LINKS DO SITE', '26) NOME REAL DO CLIENTE', '27) NÃO REPETIR PERGUNTA', '28) OPÇÕES E DESCRIÇÃO', '29) CUPOM VOLTEI5']) {
+for (const obrigatorio of ['espere a resposta do cliente antes de orçar', 'largura, profundidade e altura finais', 'conferindo que nenhum ficou de fora', 'Nunca envie link do site', 'Não use o nome do perfil do WhatsApp', 'nunca repita pergunta já respondida', 'em_palavras, descricao, numero', 'Cupom VOLTEI5']) {
   if (!wf2.includes(obrigatorio)) falhas.push(`WF2 perdeu a regra "${obrigatorio}"`)
 }
 // A loja ainda não está aberta: nenhum fluxo do agente pode mandar link do site ao cliente
@@ -49,9 +49,10 @@ for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_falta
   if (!wf2.includes(chave)) falhas.push(`WF2 não lê mais a chave de contexto ${chave}`)
 }
 
-// Rodada 18/11: regras do diário do tráfego pago e travas no banco
-for (const r of ['O) ENCERRAMENTO', 'P) PEDIU O LINK', 'AC) LINK DEPOIS DO PDF', 'AF) CRACHA COM CORDAO', 'AH) MENSAGEM CITADA', 'Q) CONDICAO FORA DO PADRAO', 'R) NAO PROMETA O QUE A FERRAMENTA NAO DEU', 'S) NOTA FISCAL', 'T) CRACHA E CORDAO', 'W) CLIENTE DIZ QUE VOLTA', 'X) CURIOSO OU DECIDIDO', 'Y) PAPEL E ACABAMENTO EM UMA FRASE', 'Z) PAR NATURAL UMA VEZ', 'AA) ARQUIVO CONFERIDO COMO VALOR', 'AB) URGENCIA SO HONESTA']) {
-  if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra da rodada 18/11 "${r}"`)
+// Fase 1 (20/11/2026): prompt consolidado num bloco só, sem os rótulos antigos por rodada;
+// confere a SUBSTÂNCIA de cada regra que antes vinha de rounds separados (ver docs/n8n-mapa.md).
+for (const r of ['ENCERRAMENTO:', 'pedir aprovação ou confirmação', 'Kit cracha + cordão', '[respondendo a:', 'chame chamar_dono (gravidade alta)', 'nunca prometa entrega ou serviço que a ferramenta não trouxe', 'nota fiscal é padrão em todo pedido', 'chame agendar_followup e não faça pergunta nova', 'explique a diferença em uma frase simples', 'sugira uma vez um complemento natural', 'a equipe confere sangria e corte de todo pedido', 'urgência só real']) {
+  if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra "${r}"`)
 }
 const mig18c = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000003_orcamento_alinhado_ao_chat_e_motivo_de_perda.sql'), 'utf8')
 for (const marca of ['montar_orcamento_base', 'alinhado_ao_chat', 'motivo_perda_trg']) if (!mig18c.includes(marca)) falhas.push(`migration do orçamento alinhado ao chat perdeu ${marca}`)
@@ -63,7 +64,7 @@ for (const marca of ['fiscal_extrair', 'condicao_fora_padrao_trg', 'saida_travas
 // Botão Responder com IA: gatilho de rascunho no WF1, regra do modo rascunho no WF2 (voz da Laura, nunca João Victor) e função do servidor
 const wf1 = readFileSync(join(n8n, 'GBH-WF1-Entrada-e-roteamento.json'), 'utf8')
 for (const no of ['Rascunho: receber pedido', 'Rascunho: chamar o agente', 'Rascunho: extrair o texto', 'Rascunho: salvar para o atendente']) if (!wf1.includes(no)) falhas.push(`WF1 perdeu o nó do botão Responder com IA: ${no}`)
-if (!wf2.includes('MODO RASCUNHO') || !/NUNCA assine nem se apresente como Joao Victor/.test(wf2)) falhas.push('WF2 perdeu a regra do modo rascunho (voz da Laura, nunca João Victor)')
+if (!wf2.includes('MODO RASCUNHO') || !/NUNCA assine nem se apresente como Jo[ãa]o Victor/.test(wf2)) falhas.push('WF2 perdeu a regra do modo rascunho (voz da Laura, nunca João Victor)')
 if (!existsSync(join(raiz, 'supabase/functions/ia-rascunho/index.ts'))) falhas.push('Edge Function ia-rascunho não existe')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)

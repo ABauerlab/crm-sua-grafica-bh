@@ -1,5 +1,6 @@
 // E-commerce Fase 7: envia a fila meta_eventos para a Conversions API da Meta (deduplicada com o Pixel pelo event_id).
-// Chamada pelo agendamento (x-cron-secret) ou pelo dono/service role. Sem META_PIXEL_ID e META_CAPI_TOKEN não consome a fila.
+// Chamada pelo agendamento (x-cron-secret) ou pelo dono/service role. Sem META_PIXEL_ID e META_CAPI_TOKEN não consome a fila
+// e avisa o dono uma vez por dia (Fase 1 do Plano de Ação: antes o retorno era silencioso e a fila nunca era conferida).
 // Logs sem dados pessoais.
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
 import { corpoMeta, type EventoFila } from '../_shared/meta.ts'
@@ -17,7 +18,17 @@ Deno.serve(async (req) => {
 
   const pixel = Deno.env.get('META_PIXEL_ID')
   const token = Deno.env.get('META_CAPI_TOKEN')
-  if (!pixel || !token) return json({ ok: true, configurado: false })
+  if (!pixel || !token) {
+    const { count } = await db.from('meta_eventos').select('id', { count: 'exact', head: true }).eq('status', 'pendente')
+    const hoje = new Date().toISOString().slice(0, 10)
+    const faltando = [!pixel && 'META_PIXEL_ID', !token && 'META_CAPI_TOKEN'].filter(Boolean).join(' e ')
+    await db.rpc('alerta_criar', {
+      p_tipo: 'meta_capi_sem_segredo', p_gravidade: 'alta', p_contact: null, p_conversation: null, p_order: null,
+      p_motivo: `A Conversions API da Meta está sem ${faltando}: ${count ?? 0} eventos de venda parados na fila, sem chegar à Meta. Cadastre o(s) segredo(s) nas Secrets das Edge Functions do Supabase.`,
+      p_dados: { pendentes: count ?? 0, faltando: faltando }, p_chave: `meta_capi_sem_segredo:${hoje}`, p_canais: ['whatsapp'],
+    }).then(({ error }) => { if (error) console.error('meta-conversions-api: alerta falhou', error.message) })
+    return json({ ok: true, configurado: false })
+  }
   const { data: cfg } = await db.from('app_settings').select('value').eq('key', 'meta_capi').maybeSingle()
   const c = (cfg?.value ?? {}) as { ligado?: boolean; test_event_code?: string | null }
   if (c.ligado === false) return json({ ok: true, desligado: true })
