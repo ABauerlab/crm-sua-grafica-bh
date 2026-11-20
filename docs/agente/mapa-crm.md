@@ -338,3 +338,9 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 - `meta-conversions-api` alerta o dono (gravidade alta, dedupe por dia) quando faltam `META_PIXEL_ID`/`META_CAPI_TOKEN`, em vez do retorno silencioso antigo.
 - `GBH | WF2 | Agente`: 9 nós "Regras adicionais" + `systemMessage` de 37 regras (>50 mil caracteres) viraram 1 nó ("Prompt consolidado (Fase 1)", ~7,5 mil caracteres); `Agente de atendimento.systemMessage` agora é só `{{ $json.system }}`. 38 nós (antes 45). Detalhes em `docs/n8n-mapa.md`.
 - Fora do escopo desta rodada (ver `docs/agente/progresso.md`): loop de 6 saudações do WF1, timeout de `buscar_produto`, `agente_falhou` silencioso, divergência preço-texto×PDF ("Lead #15"), ampliação da leitura de imagem/PDF do cliente.
+
+## Passo 1, blindagem final (20/11/2026)
+- `public.agente_iniciar` ganhou idempotência: reconfere o status da própria execução dentro da trava da conversa e devolve `ok=false, motivo='ja_processada'` em vez de reiniciar uma rodada que um retry do n8n (timeout de rede, não falha real) já tinha começado. Fecha o loop de saudações duplicadas do WF1. Migration `20261222000005`.
+- `GBH | FERRAMENTA | buscar_produto`: timeout de 20 s/25 s para 12 s/10 s nos dois nós que chamam `buscar_produto` (busca principal e busca de reserva).
+- `GBH | WF2 | Agente` (prompt consolidado): regra de PREÇO E FERRAMENTAS reforçada — o SKU passado para `montar_orcamento` tem que ser exatamente o mesmo que `buscar_produto` devolveu para a opção citada nesta rodada (fecha a divergência preço-texto×PDF/link, "Lead #15"); `orcamento-pdf` e `preparar_link_pagamento` já tinham as travas certas (orçamento encerrado/vencido recusado, valor do pedido conferido contra o orçamento antes do link).
+- Meta CAPI confirmada operando com as Secrets já cadastradas pelo dono (fila sem pendentes travados).
