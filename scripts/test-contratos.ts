@@ -51,7 +51,7 @@ for (const chave of ['campos_ja_cadastrados_nao_repetir_pergunta', 'campos_falta
 
 // Fase 1 (20/11/2026): prompt consolidado num bloco só, sem os rótulos antigos por rodada;
 // confere a SUBSTÂNCIA de cada regra que antes vinha de rounds separados (ver docs/n8n-mapa.md).
-for (const r of ['ENCERRAMENTO:', 'não peça confirmação nem aprovação', 'Kit cracha + cordão', '[respondendo a:', 'chame chamar_dono (gravidade alta)', 'nunca prometa entrega ou serviço que a ferramenta não trouxe', 'nota fiscal é padrão em todo pedido', 'chame agendar_followup e não faça pergunta nova', 'explique a diferença em uma frase simples', 'sugira uma vez um complemento natural', 'a equipe confere sangria e corte de todo pedido', 'urgência só real']) {
+for (const r of ['ENCERRAMENTO:', 'pedir aprovação ou confirmação', 'Kit cracha + cordão', '[respondendo a:', 'chame chamar_dono (gravidade alta)', 'nunca prometa entrega ou serviço que a ferramenta não trouxe', 'nota fiscal é padrão em todo pedido', 'chame agendar_followup e não faça pergunta nova', 'explique a diferença em uma frase simples', 'sugira uma vez um complemento natural', 'a equipe confere sangria e corte de todo pedido', 'urgência só real']) {
   if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra "${r}"`)
 }
 const mig18c = readFileSync(join(raiz, 'supabase', 'migrations', '20261218000003_orcamento_alinhado_ao_chat_e_motivo_de_perda.sql'), 'utf8')
