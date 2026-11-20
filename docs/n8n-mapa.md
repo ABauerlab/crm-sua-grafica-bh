@@ -144,3 +144,8 @@ O `GBH | WF2 | Agente` (`NKN7RgAJmRWZXRIT`) tinha o `systemMessage` fixo de 37 r
 - Nenhuma das 14 ferramentas do despachante foi tocada (nomes, parâmetros e sub-workflows idênticos).
 - Export atualizado em `n8n/GBH-WF2-Agente.json` (sem credenciais); 38 nós (antes 45).
 - **Não validado com cenário real do Gemini** (regra do dono: `e5-*`/`mvp-*` gastam crédito de produção, no máximo 2 por mudança, avisando antes). Validação feita por leitura do JSON exportado (cadeia de nós e `systemMessage` corretos) e pela leitura das conversas reais já registradas em `agent_logs`/`/laura` depois do deploy.
+
+### Passo 1, blindagem final (20/11/2026)
+- "Prompt consolidado (Fase 1)" ganhou mais uma frase na regra de PREÇO E FERRAMENTAS: o SKU passado para `montar_orcamento` tem que ser exatamente o mesmo que `buscar_produto` devolveu para a opção citada nesta rodada (fecha a divergência preço-texto×PDF/link, "Lead #15"). Export atualizado em `n8n/GBH-WF2-Agente.json`.
+- `GBH | FERRAMENTA | buscar_produto` (`2BkgUaqxkS198jmA`): timeout de 20 s/25 s para 12 s/10 s nos nós "Buscar produto no banco" e "Buscar reserva". Export atualizado em `n8n/GBH-FERRAMENTA-buscar_produto.json`.
+- `public.agente_iniciar` (banco, não é nó do n8n, mas é quem o nó "Trava da conversa" do WF1 chama): ganhou a checagem de idempotência que fecha o loop de saudações duplicadas (migration `20261222000005`, detalhes em `docs/agente/progresso.md`). Nenhuma mudança de nó/conexão foi necessária no WF1: o `ok=false` novo (`motivo='ja_processada'`) cai no mesmo caminho que "ocupado" já tratava.
