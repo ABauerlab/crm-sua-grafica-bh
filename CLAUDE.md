@@ -96,6 +96,9 @@ Extras além do pedido original: `conversations.last_message_preview` (prévia n
 | `checkout-dados` | não (público, o token do pedido é o comprovante) | Checkout próprio `/pagar/<token>`: carrega o resumo público, salva dados no contato, troca a arte, adiciona ou remove sugestões e informa o status |
 | `checkout-mp-processar` | não (público, valor e referência vêm do banco) | Cobra Pix ou cartão (até 2x sem juros) por `/v1/payments` e grava pelo mesmo caminho do webhook; falhas viram alerta ao dono. Ver `docs/checkout-proprio.md` |
 | `meta-ads-sync` | sim + `profiles` | puxa campanhas, anúncios e gasto diário da conta de anúncios (segredos `META_ADS_TOKEN` e `META_AD_ACCOUNT_ID`) |
+| `previa-arte` | não (público, o token é o comprovante) | Página `/previa/<token>`: carrega o status, recebe o briefing e os uploads, pede nova geração ou ajuste, fecha para `/pagar/<token>` |
+| `previa-arte-upload` | não (público, o token é o comprovante) | Recebe o logo/referência do cliente (JPEG/PNG, até 8 MB) no bucket privado `previas-uploads` |
+| `previa-arte-processar` | não (dono, service role ou `x-cron-secret`) | Worker da fila de prévia de arte: gera a arte com API oficial (`PREVIA_ARTE_API_KEY`), sobrepõe à foto do produto com marca d'água e renderiza no Gotenberg; agendamento a cada minuto enquanto houver pendente |
 
 ### Preço sob demanda e condição especial (Etapa 3)
 `calcular_preco` é a única autoridade do preço. **Desde 09/11/2026 o preço vem da planilha oficial de preços de venda** (`catalogo.preco_venda`, carregada por `importar_precos_planilha` + `aplicar_planilha_precos_lote`, na tela Catálogo > Produtos > "Importar planilha de preços" ou por `scripts/importar-planilha-precos.ts`), com as travas `piso` (custo x 1,5 e lucro bruto mínimo `parametros_comerciais.lucro_bruto_minimo`, R$ 65) e `piso_duro` (lucro líquido zero). SKU sem preço de planilha usa a fórmula antiga (`private.calcular_preco_mercado`) com o aviso `sem_preco_de_planilha`; `parametros_comerciais.fonte_preco = 'mercado'` volta tudo à fórmula antiga. A pesquisa de mercado (`GBH | FERRAMENTA | pesquisar_preco_mercado`, `precos_mercado`, `fontes_pesquisa`) está desligada e fica só como histórico. Desconto só existe como condição especial (`oferecer_condicao_especial`, degraus 1 a 3, validade de 24 h, nunca abaixo do piso); `aplicar_desconto` foi removida. Edição manual de preço no pedido: abaixo do `piso_duro` bloqueia, entre o piso duro e o piso exige confirmação do dono (`precos_manuais_log`). Detalhes em `docs/agente-ia.md`, `docs/agente/etapa3-validacao.md` e `docs/n8n-mapa.md`. Testes SQL: `supabase/tests/preco_etapa3.sql`.
@@ -150,6 +153,7 @@ Alertas (Etapa 6, opcionais): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SU
 Meta Pixel e Conversions API (Fase 7): `META_PIXEL_ID`, `META_CAPI_TOKEN` (segredos das Edge Functions) e `NEXT_PUBLIC_META_PIXEL_ID` (variável da loja na Hostinger).
 Envio nacional (Fase 9): `SUPERFRETE_TOKEN` (opcionais `SUPERFRETE_USER_AGENT`, `SUPERFRETE_CEP_ORIGEM`).
 Bling (Fase 6, preparado; nada é enviado ainda): `BLING_CLIENT_ID`, `BLING_CLIENT_SECRET`.
+Prévia de arte (Fase 2, 20/11/2026): `PREVIA_ARTE_API_KEY` (API oficial, nunca credencial de assinatura pessoal; sem ela o worker só alerta o dono) e, opcionais, `PREVIA_ARTE_PROVEDOR` (`claude`|`gemini`, padrão `gemini`) e `PREVIA_ARTE_MODELO`. Usa também `GOTENBERG_URL`/`GOTENBERG_USER`/`GOTENBERG_PASSWORD` já cadastrados.
 Mercado Pago: `MP_MODO` (`teste`|`producao`), `MP_ACCESS_TOKEN_TESTE`, `MP_WEBHOOK_SECRET_TESTE`, `MP_ACCESS_TOKEN_PRODUCAO`, `MP_WEBHOOK_SECRET_PRODUCAO`.
 (`SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são injetados pelo Supabase.)
 Front (`.env`, ignorado pelo git): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (chave publicável; nunca a service role).
@@ -191,6 +195,9 @@ supabase functions deploy mp-extrato --no-verify-jwt
 supabase functions deploy checkout-dados --no-verify-jwt
 supabase functions deploy checkout-mp-processar --no-verify-jwt
 supabase functions deploy loja-frete --no-verify-jwt
+supabase functions deploy previa-arte --no-verify-jwt
+supabase functions deploy previa-arte-upload --no-verify-jwt
+supabase functions deploy previa-arte-processar --no-verify-jwt
 supabase db push        # migrations
 ```
 (`supabase/config.toml` já fixa `verify_jwt` de cada função.) O deploy também pode ser feito pelo conector do Supabase.

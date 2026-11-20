@@ -1,0 +1,250 @@
+{
+  "name": "GBH | FERRAMENTA | gerar_link_previa",
+  "nodes": [
+    {
+      "id": "a88710ea-b32c-4366-af20-85fdd640bc76",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "orcamento_id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5bbe2526-a7ff-4e53-8b43-f8461f5d8cc4",
+      "name": "Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.orcamento_id || \"\").length === 36 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "0ea15fd2-0330-4314-a262-25fb01c38ffb",
+      "name": "Chamar previa_arte_criar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/previa_arte_criar",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { p_orcamento: $json.orcamento_id } }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f34533bd-7124-4662-ae73-b76174b96aad",
+      "name": "Prévia criada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true && !!$json.token }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "b65f9441-fa71-4376-8d56-e40abc3605c9",
+      "name": "Resposta: link pronto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = $input.first().json || {};\nreturn [{ json: { ok: true, link_previa: 'https://suagraficabh.com.br/previa/' + r.token, status: r.status, reutilizado: r.reutilizado === true } }];"
+      }
+    },
+    {
+      "id": "321a9a9e-fb13-47aa-b736-d26947783af4",
+      "name": "Resposta: sem prévia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        192
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const j = $input.first().json || {};\nconst motivo = j.motivo || 'erro_ao_criar_previa';\nconst textos = {\n  orcamento_nao_encontrado: 'Não achei esse orçamento. Confira o id e tente de novo.',\n  orcamento_encerrado: 'Este orçamento já foi encerrado (pago, cancelado ou perdido). Não dá para gerar prévia.',\n  orcamento_sem_item: 'Este orçamento ainda não tem item. Monte o orçamento antes de pedir a prévia.'\n};\nreturn [{ json: { ok: false, motivo, alternativa: textos[motivo] || 'Não consegui gerar a prévia agora. Diga que vai confirmar e tente de novo em instantes.' } }];"
+      }
+    },
+    {
+      "id": "12bd8398-e482-40ae-8b7f-044e707f820e",
+      "name": "Resposta: entrada inválida",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        288
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "r2",
+              "name": "motivo",
+              "value": "orcamento_id_invalido",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d07d25c7-7274-44f9-81ff-f335c43353d0",
+      "name": "Sticky Note a2b0a80d",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        384,
+        288
+      ],
+      "parameters": {
+        "content": "## GBH | FERRAMENTA | gerar_link_previa (Fase 2)\n**Objetivo:** gerar (ou reaproveitar) o link publico /previa/<token> para o cliente ver uma previa de arte com marca d'agua antes de pagar.\n**Entrada:** orcamento_id.\n**Saida minima:** { ok, link_previa, status, reutilizado } ou { ok: false, motivo, alternativa }.\n**Dependencias:** credencial Supabase (service role); funcao previa_arte_criar; migration 20261222000006.",
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Chamar previa_arte_criar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar previa_arte_criar": {
+      "main": [
+        [
+          {
+            "node": "Prévia criada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prévia criada?": {
+      "main": [
+        [
+          {
+            "node": "Resposta: link pronto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta: sem prévia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "tags": [
+    "gbh"
+  ]
+}

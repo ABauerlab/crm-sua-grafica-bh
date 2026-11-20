@@ -350,3 +350,8 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 - `private.fu_assunto`: bordas de palavra em todos os padrões (corrige "stamping" virando "bottons" pela substring "pin") e só olha mensagens do cliente (`direction = 'in'`), nunca as da própria Laura.
 - `private.saida_travas_extra`: nova trava para "cliente" usado como vocativo quando o contato não tem nome válido.
 - "Pix de qualquer banco" removido de `fu_texto_anuncio`, `fu_texto_tiragens_menores`, `followup_montar_base`, `cobertura_processar`, da tabela `conhecimento`, de `orcamento-pdf`, do prompt do WF2, da sticky note do `gerar_link_pagamento`, do site e do banner de checkout. `followup_regras.Q1_ANUNCIO` desativada (redundante com a abertura de anúncio da Fase 1). Migration `20261222000008`.
+
+## Fase 2 do Plano de Ação: prévia de arte (20/11/2026)
+- Tabela `previas_arte` (fila: pendente/processando/pronta/erro/aguardando_limite), funções `previa_arte_criar/status/enviar_briefing/regenerar/ajustar/fechar/proxima/concluir`, buckets `previas-uploads` e `previas-arte`. Migrations `20261222000006` e `20261222000007`.
+- Edge Functions `previa-arte`, `previa-arte-upload`, `previa-arte-processar` (worker: API oficial configurável, Gotenberg para o PNG com marca d'água).
+- Página `/previa/<token>` no e-commerce; ferramenta `gerar_link_previa` (15ª do despachante, as 14 anteriores intactas) ainda não chamada pelo prompt da Laura (decisão do dono). Detalhes em `docs/ecommerce.md`.

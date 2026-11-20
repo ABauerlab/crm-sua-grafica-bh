@@ -601,6 +601,27 @@
                 }
               },
               "outputKey": "arte_baixa_ok"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ferramenta }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "gerar_link_previa"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "gerar_link_previa"
             }
           ]
         }
@@ -1586,6 +1607,43 @@
         "url": "https://bhlosshvwmlyzhbghsrc.supabase.co/rest/v1/rpc/cobrir_orcamento"
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "401e629d-9d67-4afb-a0ab-7aab783bbe7d",
+      "name": "gerar_link_previa",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1568,
+        1680
+      ],
+      "parameters": {
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "e1xNazSlMf3WkTkG"
+        },
+        "workflowInputs": {
+          "attemptToConvertTypes": false,
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "schema": [
+            {
+              "displayName": "orcamento_id",
+              "id": "orcamento_id",
+              "type": "string"
+            }
+          ],
+          "value": {
+            "orcamento_id": "={{ $json.orcamento_id }}"
+          }
+        }
+      }
     }
   ],
   "connections": {
@@ -1780,6 +1838,13 @@
         [
           {
             "node": "arte_baixa_ok",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "gerar_link_previa",
             "type": "main",
             "index": 0
           }
@@ -2089,6 +2154,17 @@
           }
         ]
       ]
+    },
+    "gerar_link_previa": {
+      "main": [
+        [
+          {
+            "node": "Normalizar e proteger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -2100,9 +2176,6 @@
     "errorWorkflow": "vmaMVnZydmHpkW57"
   },
   "tags": [
-    {
-      "id": "3v3X7fxvimbtoign",
-      "name": "gbh"
-    }
+    "gbh"
   ]
 }
