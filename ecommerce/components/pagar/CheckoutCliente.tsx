@@ -91,6 +91,7 @@ export function CheckoutCliente({ token }: { token: string }) {
       {topo}
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:pt-6 lg:pb-10">
         <BannerCheckout />
+        {c.campanha?.ativa && <p className="mt-3 rounded-lg bg-tinta px-3 py-2.5 text-center text-sm font-bold text-white"><span className="text-amarelo">Black Friday:</span> criação de arte grátis em pedidos pagos até 30/11{c.campanha.dias_restantes === 1 ? ' (último dia!)' : c.campanha.dias_restantes && c.campanha.dias_restantes <= 4 ? ` (faltam ${c.campanha.dias_restantes} dias)` : ''}</p>}
         {c.pedido.teste && <p className="mt-3 rounded-lg bg-amarelo px-3 py-2 text-center text-sm font-black">PEDIDO DE TESTE</p>}
         <h1 className="mb-1 mt-5 text-2xl font-black sm:text-3xl">Finalize o seu pedido</h1>
         <p className="mb-4 text-sm text-black/65">Falta pouco: confira os dados, escolha como está a sua arte e pague. Leva menos de 2 minutos.</p>

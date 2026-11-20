@@ -331,7 +331,6 @@ Banco: `private.agente_reprocessar_conversa` + gatilhos `conversations_devolvida
 Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 'recusa_preco'`), `private.fu_resposta_fria`, `private.fu_ultima_cotacao`, `private.fu_texto_tiragens_menores`, `private.fu_agendar_recusa`; `followup_montar` anterior em `private.followup_montar_pre_recusa`. Teste `supabase/tests/recusa_preco_tiragens.sql`.
 
 - Checkout `/pagar`: `ecommerce/components/pagar/{Quantidades,Cupom,FreteCep,BuscaProdutos}.tsx`; banco `20261220000001_checkout_cupom_frete_quantidades.sql`; ações `cupom`, `cupom_remover`, `frete_cotar`, `frete_definir` em `checkout-dados`.
-
 ## Plano de Ação, Fase 1 (20/11/2026)
 - `calcular_preco` ganhou os parâmetros `piso_sem_lucro_minimo` e `preco_minimo_reais` (piso de R$ 65 validado por pedido composto, não por item); `private.montar_orcamento_base` e `private.confirmar_pagamento` (fecha `pagamentos_alertas` abertos) atualizadas. Migration `20261222000002` e `20261222000003`.
 - `private.fu_nome` devolve `null` (não mais `'cliente'`); `followup_montar_base`, `fu_texto_q`, `fu_texto_anuncio`, `fu_texto_tiragens_menores` tratam a saudação sem nome; PAG_6H corrigido ("fechamento do seu pedido"). Migration `20261222000003`.

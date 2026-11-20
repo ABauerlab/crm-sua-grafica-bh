@@ -4,6 +4,12 @@ import { Loader2, MapPin, Store, Truck } from 'lucide-react'
 import { brl } from '@/lib/site'
 import { chamar, dataCurta, type Checkout, type CotacaoFrete } from '@/lib/pagar'
 
+const MOTIVO: Record<string, string> = {
+  pacote_grande: 'Algum item do seu pedido é grande demais para os Correios. Retire no balcão ou fale com a gente no WhatsApp que combinamos o envio.',
+  dimensao_desconhecida: 'Ainda estamos confirmando o tamanho do envio deste pedido. Retire no balcão ou fale com a gente no WhatsApp para calcular.',
+  a_confirmar: 'O envio para este CEP é confirmado pelo WhatsApp. Fale com a gente e respondemos rapidinho.',
+  indisponivel: 'Não conseguimos cotar o envio para este CEP agora. Tente de novo em instantes, retire no balcão ou fale com a gente no WhatsApp.',
+}
 const mascara = (v: string) => v.replace(/\D/g, '').slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2')
 
 /** Entrega opcional: o cliente digita o CEP, vê as opções do SuperFrete (ou a entrega grátis nos bairros centrais) e o total e o orçamento se atualizam. */
@@ -62,7 +68,7 @@ export function FreteCep({ token, c, ocupado, onMudou }: { token: string; c: Che
               <b className="shrink-0">{brl(o.valor)}</b>
             </button>
           ))}
-          {!cot.frete_gratis && !(cot.envio?.opcoes?.length) && <p className="rounded-lg bg-papel p-3 text-sm text-black/70">Não conseguimos cotar o envio para este CEP agora. Retire no balcão ou fale com a gente no WhatsApp.</p>}
+          {!cot.frete_gratis && !(cot.envio?.opcoes?.length) && <p className="rounded-lg bg-papel p-3 text-sm text-black/70">{MOTIVO[cot.envio?.motivo ?? ''] ?? MOTIVO.indisponivel}</p>}
           <button type="button" disabled={busy} onClick={() => void escolher('retirada')} className={opc}><Store className="h-5 w-5 shrink-0 text-black/55" aria-hidden /><span className="flex-1"><b>Retirar no balcão</b><br /><span className="text-black/60">Praça Sete, com hora marcada</span></span><b className="text-[#0E8A3E]">Grátis</b></button>
         </div>
       )}
