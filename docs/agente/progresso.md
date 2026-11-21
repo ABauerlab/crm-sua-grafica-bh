@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 21/11/2026 (correção): SuperFrete (Correio/PAC) também dentro de BH
+O fix do item 1 abaixo só adicionava a opção de aplicativo dentro da Grande BH, sem chamar o SuperFrete — o dono pediu as 3 opções sempre disponíveis para pedidos em BH: retirada grátis, aplicativo (valor na hora do envio) e Correio/PAC. `loja-frete` agora chama o SuperFrete em todos os casos (dentro ou fora de BH) e soma as opções em vez de escolher uma ou outra. Testado: CEP de BH (30670020) devolve SEDEX, PAC e aplicativo juntos; Ubatuba (fora de BH) e Centro de BH (frete grátis) continuam corretos.
+
 ## 21/11/2026: 4 frentes (frete perdido, prévia de arte, alertas/condição 24h, recompra)
 
 Pedido do dono com 4 itens prioritários.
