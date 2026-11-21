@@ -7,7 +7,7 @@ import { extrairHtml, montarPaginaPreview, montarPromptArte, type PreviaBriefing
 
 const SITE_BASE = 'https://suagraficabh.com.br'
 
-const PRODUTO_FOTO_LARGURA = 1400
+const PRODUTO_FOTO_LARGURA = 1120
 
 async function chamarClaude(prompt: string, chave: string, modelo: string): Promise<string> {
   const ctl = new AbortController()
@@ -16,7 +16,7 @@ async function chamarClaude(prompt: string, chave: string, modelo: string): Prom
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal: ctl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: modelo, max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: modelo, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] }),
     })
     if (res.status === 429) throw new RateLimitError('claude: limite de uso atingido')
     if (!res.ok) throw new Error(`claude: ${res.status}`)
@@ -35,7 +35,7 @@ async function chamarGemini(prompt: string, chave: string, modelo: string): Prom
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${chave}`, {
       method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 2000 } }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 8192 } }),
     })
     if (res.status === 429) throw new RateLimitError('gemini: limite de uso atingido')
     if (!res.ok) throw new Error(`gemini: ${res.status}`)
@@ -115,13 +115,9 @@ Deno.serve(async (req) => {
       const prompt = montarPromptArte(item.produto_descricao ?? item.sku ?? 'produto gráfico', item.briefing ?? {}, item.feedback ?? null)
       const texto = provedor === 'claude' ? await chamarClaude(prompt, chave, modelo) : await chamarGemini(prompt, chave, modelo)
       const artHtml = extrairHtml(texto)
-      if (!artHtml) throw new Error('o modelo não devolveu HTML utilizável')
+      if (!artHtml) throw new Error(`o modelo não devolveu HTML utilizável (${texto.length} caracteres)`)
 
-      let fotoUrl: string | null = null
-      if (item.produto_foto_path) {
-        fotoUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/${item.produto_foto_path}`
-      }
-      const pagina = montarPaginaPreview(artHtml, fotoUrl)
+      const pagina = montarPaginaPreview(artHtml, null)
       const png = await renderizarPng(pagina)
       const caminho = `${item.id}/${Date.now()}.png`
       const up = await db.storage.from('previas-arte').upload(caminho, png, { contentType: 'image/png', upsert: true })
@@ -150,6 +146,22 @@ Deno.serve(async (req) => {
       }
     }
   }
-  console.log(`previa-arte-processar: ${processados} ok, ${erros} com erro, ${limites} no limite de uso`)
-  return json({ ok: true, processados, erros, limites })
+  // Limpeza das prévias vencidas (48h) de pedidos não pagos: só no disparo do cron, nunca no disparo imediato
+  // do formulário (não atrasa a resposta ao cliente). Preserva as prévias de pedidos pagos.
+  let limpas = 0
+  if (fromCron) {
+    const { data: limpeza, error: erroLimpeza } = await db.rpc('previa_arte_limpar_expiradas')
+    if (erroLimpeza) console.error('previa-arte-processar: limpeza falhou', erroLimpeza)
+    else {
+      const l = limpeza as { removidos?: number; resultado_paths?: string[]; upload_paths?: string[] }
+      limpas = l.removidos ?? 0
+      const caminhosArte = (l.resultado_paths ?? []).map((p) => p.replace(/^previas-arte\//, '')).filter(Boolean)
+      const caminhosUpload = (l.upload_paths ?? []).map((p) => p.replace(/^previas-uploads\//, '')).filter(Boolean)
+      if (caminhosArte.length) await db.storage.from('previas-arte').remove(caminhosArte).catch((e: unknown) => console.error('previa-arte-processar: remoção de arte falhou', e))
+      if (caminhosUpload.length) await db.storage.from('previas-uploads').remove(caminhosUpload).catch((e: unknown) => console.error('previa-arte-processar: remoção de upload falhou', e))
+    }
+  }
+
+  console.log(`previa-arte-processar: ${processados} ok, ${erros} com erro, ${limites} no limite de uso, ${limpas} prévias vencidas limpas`)
+  return json({ ok: true, processados, erros, limites, limpas })
 })

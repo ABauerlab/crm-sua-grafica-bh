@@ -1,6 +1,9 @@
 // E-commerce Fase 9: frete do site. Público (limite no banco e na loja). Resolve o CEP (bairro e cidade, em cache),
 // diz se a entrega é grátis (só nos bairros ativos de zonas_frete_gratis) e cota o envio para o Brasil no SuperFrete.
 // Sem SUPERFRETE_TOKEN o envio nacional fica "a confirmar pelo WhatsApp": nunca inventa valor. Logs sem dados pessoais.
+// Dentro da Grande BH mas fora dos bairros centrais (grátis): usa o valor de referência de entrega por aplicativo que
+// public.verificar_frete já calcula (mesmo valor que a Laura usa manualmente no WhatsApp); sem isso, o checkout ficava
+// sem nenhuma opção de envio para esses CEPs (bug real: cliente do bairro Castanheira não conseguiu fechar o pedido).
 import { corsHeaders, json, serviceClient } from '../_shared/http.ts'
 import { cepLimpo, corpoSuperFrete, juntarPacotes, lerEnderecoCep, opcoesEnvio, pacoteValido, type Pacote } from '../_shared/loja-frete.ts'
 
@@ -51,6 +54,19 @@ Deno.serve(async (req) => {
     pedido_minimo_frete_gratis: frete.pedido_minimo_frete_gratis ?? null,
     grande_bh: grandeBh,
     envio: { disponivel: false, motivo: null as string | null, opcoes: [] as unknown[] },
+  }
+
+  // Grande BH fora dos bairros centrais grátis: entrega por aplicativo, valor de referência já calculado por verificar_frete.
+  if (grandeBh && !resposta.frete_gratis) {
+    const envio = resposta.envio as { disponivel: boolean; motivo: string | null; opcoes: unknown[] }
+    const appOpcao = ((frete.opcoes as { tipo?: string; valor_referencia?: unknown }[] | undefined) ?? []).find((o) => o.tipo === 'entrega_app')
+    const valorRef = Number(appOpcao?.valor_referencia)
+    if (Number.isFinite(valorRef) && valorRef > 0) {
+      envio.opcoes = [{ servico: 'uber', nome: 'Entrega por aplicativo (moto ou carro)', valor: Math.round(valorRef * 100) / 100, prazo_dias: null }]
+      envio.disponivel = true
+    } else {
+      envio.motivo = 'a_confirmar'
+    }
   }
 
   // Fora da Grande BH: envio nacional pelo SuperFrete

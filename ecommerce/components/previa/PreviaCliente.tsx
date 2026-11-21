@@ -5,27 +5,18 @@ import { chamarPrevia, enviarImagem, fotoPublica, type PreviaStatus } from '@/li
 
 type Fase = { tipo: 'carregando' } | { tipo: 'invalido' } | { tipo: 'expirado' } | { tipo: 'ok'; s: PreviaStatus }
 
-const CAMPOS: { chave: keyof Briefing; rotulo: string; placeholder: string }[] = [
-  { chave: 'nome', rotulo: 'Seu nome', placeholder: 'Como você se chama' },
-  { chave: 'empresa', rotulo: 'Empresa (opcional)', placeholder: 'Nome da empresa' },
-  { chave: 'telefone', rotulo: 'Telefone (opcional)', placeholder: '(31) 99999-9999' },
-  { chave: 'instagram', rotulo: 'Instagram (opcional)', placeholder: '@seuperfil' },
-  { chave: 'servicos', rotulo: 'O que você faz / vende', placeholder: 'Ex: estética, advocacia, loja de roupas...' },
-  { chave: 'cores_estilo', rotulo: 'Cores ou estilo (opcional)', placeholder: 'Ex: tons de azul, moderno e clean' },
-]
+const IDEIA_MAX = 500
 
-interface Briefing {
-  nome: string; empresa: string; telefone: string; instagram: string; servicos: string; cores_estilo: string
-}
-const BRIEFING_VAZIO: Briefing = { nome: '', empresa: '', telefone: '', instagram: '', servicos: '', cores_estilo: '' }
+const ETAPAS = ['Recebendo sua ideia...', 'Montando o layout...', 'Finalizando prévia...']
 
 export function PreviaCliente({ token }: { token: string }) {
   const [fase, setFase] = useState<Fase>({ tipo: 'carregando' })
-  const [briefing, setBriefing] = useState<Briefing>(BRIEFING_VAZIO)
+  const [ideia, setIdeia] = useState('')
   const [uploads, setUploads] = useState<string[]>([])
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState<string | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [zoom, setZoom] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const carregar = useCallback(async (silencioso = false) => {
@@ -59,7 +50,7 @@ export function PreviaCliente({ token }: { token: string }) {
   async function enviarBriefing() {
     setEnviando(true)
     setErroEnvio(null)
-    const r = await chamarPrevia({ acao: 'enviar_briefing', token, briefing, uploads })
+    const r = await chamarPrevia({ acao: 'enviar_briefing', token, briefing: { servicos: ideia.trim().slice(0, IDEIA_MAX) }, uploads })
     setEnviando(false)
     if (!r.dados.ok) return setErroEnvio('Não foi possível enviar agora. Tente de novo em instantes.')
     void carregar()
@@ -96,12 +87,20 @@ export function PreviaCliente({ token }: { token: string }) {
         {fase.tipo === 'expirado' && <Centro>Esse link venceu (as prévias ficam disponíveis por 48 horas). Peça um novo link no WhatsApp.</Centro>}
         {fase.tipo === 'ok' && (
           <Conteudo
-            s={fase.s} briefing={briefing} setBriefing={setBriefing} uploads={uploads} onUpload={handleUpload}
+            s={fase.s} ideia={ideia} setIdeia={setIdeia} uploads={uploads} onUpload={handleUpload}
             enviando={enviando} erroEnvio={erroEnvio} feedback={feedback} setFeedback={setFeedback}
             onEnviarBriefing={enviarBriefing} onRegenerar={regenerar} onAjustar={ajustar} onFechar={fecharAgora}
+            onZoom={setZoom}
           />
         )}
       </div>
+      {zoom && (
+        <button type="button" onClick={() => setZoom(null)} aria-label="Fechar ampliação"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 cursor-zoom-out">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoom} alt="Ampliada" className="max-h-full max-w-full rounded-lg object-contain" />
+        </button>
+      )}
     </div>
   )
 }
@@ -110,14 +109,31 @@ function Centro({ children }: { children: React.ReactNode }) {
   return <p className="text-center text-gray-600 py-8">{children}</p>
 }
 
+/** Animação de carregamento com etapas (a geração real demora alguns segundos: modelo + render). */
+function Carregando() {
+  const [etapa, setEtapa] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setEtapa((e) => Math.min(e + 1, ETAPAS.length - 1)), 2500)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <div className="flex flex-col items-center gap-3 py-10">
+      <span className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-magenta" aria-hidden />
+      <p className="text-sm text-gray-600">{ETAPAS[etapa]}</p>
+    </div>
+  )
+}
+
 function Conteudo(props: {
-  s: PreviaStatus; briefing: Briefing; setBriefing: (b: Briefing) => void; uploads: string[]
+  s: PreviaStatus; ideia: string; setIdeia: (v: string) => void; uploads: string[]
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; enviando: boolean; erroEnvio: string | null
   feedback: string; setFeedback: (v: string) => void
   onEnviarBriefing: () => void; onRegenerar: () => void; onAjustar: () => void; onFechar: () => void
+  onZoom: (url: string) => void
 }) {
   const { s } = props
   const foto = fotoPublica(s.produto_foto_path)
+  const semIdeiaAinda = s.status === 'pendente' && !s.briefing?.servicos
 
   return (
     <div className="space-y-5">
@@ -126,34 +142,38 @@ function Conteudo(props: {
         <p className="text-sm text-gray-500">{s.produto_descricao ?? s.sku}</p>
       </div>
 
-      {foto && (s.status === 'pendente' || !s.briefing?.nome) && (
-        <img src={foto} alt={s.produto_descricao ?? 'produto'} className="w-full rounded-xl object-cover max-h-48" />
+      {foto && (
+        <button type="button" onClick={() => props.onZoom(foto)} className="block w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={foto} alt={s.produto_descricao ?? 'produto'} className="w-full rounded-xl border border-gray-100 object-contain max-h-56 bg-gray-50" />
+          <span className="mt-1 block text-xs text-gray-400">Foto do produto no nosso catálogo (toque para ampliar)</span>
+        </button>
       )}
 
-      {(s.status === 'pendente' && !s.briefing?.nome) && (
+      {semIdeiaAinda && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">Preencha rapidinho pra gente montar a arte com as suas informações.</p>
-          {CAMPOS.map((c) => (
-            <input key={c.chave} value={props.briefing[c.chave]} placeholder={c.placeholder}
-              onChange={(e) => props.setBriefing({ ...props.briefing, [c.chave]: e.target.value })}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ciano" />
-          ))}
+          <label className="block">
+            <span className="text-sm text-gray-600">Me conta sua ideia: nome, empresa, contato, cores, estilo... o que quiser na arte.</span>
+            <textarea value={props.ideia} maxLength={IDEIA_MAX} rows={5}
+              placeholder="Ex: Salão Bella Flor, (31) 99999-9999, @salaobelaflor, tons de rosa e dourado, estilo elegante"
+              onChange={(e) => props.setIdeia(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ciano" />
+            <span className="mt-1 block text-right text-xs text-gray-400">{props.ideia.length}/{IDEIA_MAX}</span>
+          </label>
           <div>
             <label className="text-sm text-gray-600 block mb-1">Logo ou imagem de referência (opcional, até 2)</label>
             <input type="file" accept="image/jpeg,image/png" onChange={props.onUpload} disabled={props.uploads.length >= 2} className="text-sm" />
             {props.uploads.length > 0 && <p className="text-xs text-gray-500 mt-1">{props.uploads.length} imagem(ns) enviada(s)</p>}
           </div>
           {props.erroEnvio && <p className="text-sm text-red-600">{props.erroEnvio}</p>}
-          <button onClick={props.onEnviarBriefing} disabled={props.enviando}
+          <button onClick={props.onEnviarBriefing} disabled={props.enviando || !props.ideia.trim()}
             className="w-full rounded-lg bg-magenta text-white font-medium py-2.5 disabled:opacity-60">
             {props.enviando ? 'Enviando...' : 'Gerar minha prévia'}
           </button>
         </div>
       )}
 
-      {(s.status === 'pendente' || s.status === 'processando') && s.briefing?.nome && (
-        <Centro>Estamos montando a sua prévia, só um instante...</Centro>
-      )}
+      {(s.status === 'pendente' || s.status === 'processando') && s.briefing?.servicos && <Carregando />}
 
       {s.status === 'aguardando_limite' && (
         <Centro>A fila de criação está um pouco cheia agora. Pode fechar essa página sem problema: assim que a sua prévia ficar pronta, a gente manda o link atualizado no seu WhatsApp.</Centro>
@@ -168,7 +188,13 @@ function Conteudo(props: {
 
       {s.status === 'pronta' && (
         <div className="space-y-4">
-          {s.resultado_url && <img src={s.resultado_url} alt="Prévia da arte" className="w-full rounded-xl border border-gray-100" />}
+          {s.resultado_url && (
+            <button type="button" onClick={() => props.onZoom(s.resultado_url!)} className="block w-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={s.resultado_url} alt="Prévia da arte" className="w-full rounded-xl border border-gray-100" />
+              <span className="mt-1 block text-xs text-gray-400">Toque para ampliar</span>
+            </button>
+          )}
           <p className="text-xs text-gray-400 text-center">Prévia com marca d'água, só para conferir o layout. A arte final (sem marca d'água) é aprovada por você no WhatsApp antes da impressão.</p>
 
           <button onClick={props.onFechar} disabled={props.enviando} className="w-full rounded-lg bg-magenta text-white font-semibold py-3 disabled:opacity-60">

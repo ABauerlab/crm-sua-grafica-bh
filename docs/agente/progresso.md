@@ -1,5 +1,21 @@
 # Progresso do agente de IA
 
+## 21/11/2026: 4 frentes (frete perdido, prévia de arte, alertas/condição 24h, recompra)
+
+Pedido do dono com 4 itens prioritários.
+
+- **1. Frete não calculava (venda real perdida, atendimento do bairro Castanheira):** causa raiz: `loja-frete` (chamada por `checkout-dados` no `/pagar/<token>`) só cotava pelo SuperFrete fora da "Grande BH"; dentro da Grande BH mas fora dos 7 bairros centrais grátis, devolvia `envio: { opcoes: [] }` sem nenhuma alternativa — o checkout não tinha nada pra mostrar. Corrigido: nesses CEPs, `loja-frete` agora expõe a opção "Entrega por aplicativo" com o valor de referência que `verificar_frete` já calcula (o mesmo valor que a Laura usa manualmente no WhatsApp). Testado com o CEP real da cliente (30670020): `envio.disponivel = true`, `R$ 25,00`. Regressão conferida: bairro central (frete grátis) e CEP fora de BH (SuperFrete PAC/SEDEX) continuam iguais.
+- **2. Prévia de arte, 3 bugs reais:**
+  - `previa_arte_regenerar` (botão "Tentar de novo") só aceitava `status='pronta'`; depois de qualquer falha do worker (`status='erro'`), o botão existia mas não fazia nada. Corrigido: aceita `erro` também.
+  - Causa raiz do "quadrado branco": o modelo gerava CSS decorativo extenso (ribbons, badges) e era cortado pelo limite de tokens ainda dentro do `<head>`, antes do conteúdo da arte. `maxOutputTokens`/`max_tokens` 2000→8192 e prompt reescrito (só `<div id="arte">` com estilo inline, proíbe ornamentos). Validação real do HTML antes de marcar `pronta` (tamanho mínimo, tags balanceadas, não pode terminar truncado). Confirmado com log de diagnóstico temporário (removido depois) e nova geração real de ponta a ponta.
+  - Worker disparado imediatamente ao enviar o formulário (`EdgeRuntime.waitUntil`); cron reduzido de 1 para 5 minutos, só como reforço.
+  - Página `/previa/<token>` sem cabeçalho/menu/carrinho da loja (`ChromeLoja`); arte renderizada sozinha (sem compor com a foto do catálogo, que agora é mostrada separada, `object-contain`); foto e prévia clicáveis para ampliar; formulário com um único campo de texto (até 500 caracteres) em vez de vários campos; animação de carregamento em etapas.
+  - Limpeza automática: `previa_arte_limpar_expiradas`, chamada pelo worker a cada cron, remove do banco e do Storage as prévias com mais de 48h de pedidos não pagos (preserva as de pedidos pagos).
+- **3. Alertas recorrentes e condição especial pós-24h:** auditoria dos alertas dos últimos 7 dias não mostrou volume anormal (a fila está saudável desde os ajustes de gravidade de 17-18/11). `alertas-enviar` aparece nos logs a cada minuto só como polling vazio (sem alerta pendente), sem origem em `pg_cron` nem no n8n desta conta — não achei a fonte exata da chamada e não é prejudicial (não gera envio nem custo de API), então não mexi nisso para não arriscar quebrar algo sem causa raiz confirmada. **PAG_24H corrigido de fato:** antes só repetia a cobrança fria; agora, sem uma condição especial já vigente, aciona `oferecer_condicao_especial` (gatilho G1, vantagem operacional) para tentar destravar o fechamento, sempre respeitando piso e piso duro (se a trava de lucro recusar, volta ao texto normal sem nenhuma mudança visível).
+- **4. Recompra (30 dias):** `RECOMPRA_CARTAO`/`RECOMPRA_ADESIVO`/`RECOMPRA_PANFLETO` estavam escalonadas (60/45/30 dias) e marcadas `revisar=true`. O mecanismo de agendamento (`trigger orders_entregue_agenda` + `private.fu_agendar_pos`) já funcionava certo, inclusive para pedidos futuros (confirmado com um pedido real já entregue). Padronizado para 30 dias e `revisar=false`; reagendada a linha pendente existente e rodado o backfill para todo pedido já entregue (só havia 1 caso real elegível, já coberto).
+
+**Validação:** `npm run gate` verde; teste real do frete com o CEP da cliente; teste real de geração de prévia de ponta a ponta (2ª causa raiz corrigida depois de diagnóstico com log temporário). Sem cenários `e5-*`/`mvp-*`/`e12-*`/`e17-*` do Gemini de produção.
+
 ## 20-21/11/2026 (Fase 2, continuação): segredo cadastrado, prompt liberado e geração real testada
 
 O dono cadastrou `PREVIA_ARTE_API_KEY` (Gemini) e `PREVIA_ARTE_PROVEDOR=gemini` nas Secrets.
