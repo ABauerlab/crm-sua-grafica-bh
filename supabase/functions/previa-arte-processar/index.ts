@@ -16,7 +16,7 @@ async function chamarClaude(prompt: string, chave: string, modelo: string): Prom
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal: ctl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: modelo, max_tokens: 4096, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: modelo, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] }),
     })
     if (res.status === 429) throw new RateLimitError('claude: limite de uso atingido')
     if (!res.ok) throw new Error(`claude: ${res.status}`)
@@ -35,7 +35,7 @@ async function chamarGemini(prompt: string, chave: string, modelo: string): Prom
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${chave}`, {
       method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 4096 } }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 8192 } }),
     })
     if (res.status === 429) throw new RateLimitError('gemini: limite de uso atingido')
     if (!res.ok) throw new Error(`gemini: ${res.status}`)
@@ -115,10 +115,7 @@ Deno.serve(async (req) => {
       const prompt = montarPromptArte(item.produto_descricao ?? item.sku ?? 'produto gráfico', item.briefing ?? {}, item.feedback ?? null)
       const texto = provedor === 'claude' ? await chamarClaude(prompt, chave, modelo) : await chamarGemini(prompt, chave, modelo)
       const artHtml = extrairHtml(texto)
-      if (!artHtml) {
-        console.error('previa-arte-processar: DIAGNOSTICO extrairHtml falhou', JSON.stringify({ len: texto.length, fim: texto.slice(-120), comeco: texto.slice(0, 80) }))
-        throw new Error('o modelo não devolveu HTML utilizável')
-      }
+      if (!artHtml) throw new Error(`o modelo não devolveu HTML utilizável (${texto.length} caracteres)`)
 
       const pagina = montarPaginaPreview(artHtml, null)
       const png = await renderizarPng(pagina)

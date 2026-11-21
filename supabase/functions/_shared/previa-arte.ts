@@ -20,10 +20,13 @@ export function montarPromptArte(produtoDescricao: string, briefing: PreviaBrief
     `Produto: ${produtoDescricao}.`,
     campos ? `A ideia do cliente, nas próprias palavras dele: ${campos}.` : 'O cliente não informou dados; use um exemplo genérico e elegante.',
     feedback ? `Ajuste pedido pelo cliente na rodada anterior: ${feedback}.` : '',
-    'Responda SOMENTE com um documento HTML completo e autônomo (um único arquivo, CSS inline ou em <style>, sem imagens externas,',
-    'sem JavaScript), com um elemento raiz <div id="arte"> de exatamente 1000x1000 pixels (unidades em px), fundo preenchido,',
-    'tipografia legível e hierarquia visual clara (nome/empresa em destaque, dados de contato menores). Não inclua marca d\'água,',
-    'não inclua texto algum sobre preço, SKU, fornecedor ou a própria Sua Gráfica BH. Não escreva nada fora do HTML.',
+    'Responda SOMENTE com <div id="arte"> ... </div> (nada de <html>, <head> nem <!doctype>, nada fora dessa div),',
+    'de exatamente 1000x1000 pixels (unidades em px), CSS só inline (atributo style, nunca <style> nem classes), sem imagens',
+    'externas nem JavaScript. Fundo preenchido, tipografia legível, hierarquia visual clara (nome/empresa em destaque, dados',
+    'de contato menores). Design simples e direto: no máximo 2 cores de fundo (gradiente simples permitido) e no máximo um',
+    'elemento decorativo (uma borda, uma faixa ou um ícone simples em CSS); nunca use ribbons, selos, badges, logos ou',
+    'ornamentos elaborados. Seja econômico: a resposta inteira deve ficar bem abaixo de 1500 palavras. Não inclua marca d\'água,',
+    'não inclua texto algum sobre preço, SKU, fornecedor ou a própria Sua Gráfica BH. Não escreva nada fora da div.',
   ].filter(Boolean).join(' ')
 }
 
