@@ -1,5 +1,16 @@
 # Progresso do agente de IA
 
+## 20-21/11/2026 (Fase 2, continuação): segredo cadastrado, prompt liberado e geração real testada
+
+O dono cadastrou `PREVIA_ARTE_API_KEY` (Gemini) e `PREVIA_ARTE_PROVEDOR=gemini` nas Secrets.
+
+- **Worker já reconhecia o provedor**: `previa-arte-processar` já lia `PREVIA_ARTE_PROVEDOR` (padrão `gemini`) e, com Gemini, usava `PREVIA_ARTE_MODELO` ou um modelo padrão. Nenhuma mudança necessária para o reconhecimento em si.
+- **Bug real achado no teste**: o modelo padrão (`gemini-2.0-flash`) estava descontinuado e devolvia 404 em toda tentativa de geração (mesmo padrão de descontinuação já visto com `gemini-2.5-flash`/`gemini-2.5-flash-lite` nas notas de 18/11). Corrigido: fallback passa a ser `gemini-3.8-flash`, o mesmo modelo já confirmado funcionando em produção no agente de atendimento (`agente_config.modelo_padrao`). Redeployado.
+- **`gerar_link_previa` liberado no prompt**: regra ARTE E AMOSTRA do WF2 (nó "Prompt consolidado (Fase 1)") ganhou a chamada condicional — só para lead qualificado (produto e quantidade já definidos, ou orçamento já aberto) que pede prévia/amostra ou trava por medo de pagar antes de ver a arte; nunca na primeira mensagem nem sem qualificação. Publicado e reexportado para `n8n/GBH-WF2-Agente.json`.
+- **Teste de geração real**: criada uma prévia de teste num orçamento real existente (`previa_arte_criar`), aguardado o agendamento de 1 minuto (`previa-arte-processar`, `pg_cron`) processar a fila. Primeira tentativa confirmou o bug do modelo (status `erro`, `gemini: 404`); após a correção e reset do item, a segunda tentativa concluiu com `status = 'pronta'` e `resultado_path` preenchido (PNG de ~350 KB no bucket privado `previas-arte`). Marca d'água é aplicada incondicionalmente pelo código (`montarPaginaPreview`, 48 repetições de "PRÉVIA · SUA GRÁFICA BH" sobre a imagem), não depende do modelo. `previa_arte_status` confirmou o vínculo com o pedido (`order_id`), o caminho de `/previa/<token>` para `/pagar/<token>` depois de "Gostei, quero fechar agora". A trava de saída (`agente_saida_segura`/`agente_saida_base_execucao`) não tem nenhum bloqueio de link por domínio, então o link de `/previa/<token>` passa normalmente. Linha de teste removida do banco depois da validação (o PNG de teste ficou órfão no bucket privado, sem risco: nunca é exposto por URL pública ou assinada sem o token certo).
+
+**Validação**: `npm run gate` verde; geração real confirmada ponta a ponta (fila → Gemini → Gotenberg → bucket → status `pronta`).
+
 ## 20/11/2026 (Fase 2): gerador de prévia de arte com marca d'água (`/previa/<token>`)
 
 Implementa a Fase 2 do Plano de Ação (prévia de arte), depois do Passo 1 (blindagem) e dos 6 bugs urgentes já mesclados.
