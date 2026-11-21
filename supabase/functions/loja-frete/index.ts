@@ -1,9 +1,11 @@
 // E-commerce Fase 9: frete do site. Público (limite no banco e na loja). Resolve o CEP (bairro e cidade, em cache),
-// diz se a entrega é grátis (só nos bairros ativos de zonas_frete_gratis) e cota o envio para o Brasil no SuperFrete.
-// Sem SUPERFRETE_TOKEN o envio nacional fica "a confirmar pelo WhatsApp": nunca inventa valor. Logs sem dados pessoais.
-// Dentro da Grande BH mas fora dos bairros centrais (grátis): usa o valor de referência de entrega por aplicativo que
-// public.verificar_frete já calcula (mesmo valor que a Laura usa manualmente no WhatsApp); sem isso, o checkout ficava
-// sem nenhuma opção de envio para esses CEPs (bug real: cliente do bairro Castanheira não conseguiu fechar o pedido).
+// diz se a entrega é grátis (só nos bairros ativos de zonas_frete_gratis) e cota o envio pelo SuperFrete (Correios).
+// Sem SUPERFRETE_TOKEN o envio fica "a confirmar pelo WhatsApp": nunca inventa valor. Logs sem dados pessoais.
+// Dentro de BH (Grande BH): sempre as 3 opções (21/11/2026, pedido do dono) — retirada grátis (tratada no
+// checkout-dados, fora daqui), entrega por aplicativo (valor de referência que public.verificar_frete já calcula,
+// mesmo valor que a Laura usa manualmente no WhatsApp) e Correio/PAC pelo SuperFrete, igual a qualquer outro CEP do
+// Brasil. Antes, dentro da Grande BH o SuperFrete nunca era chamado — o checkout só mostrava a opção de aplicativo
+// (e, antes disso, nenhuma opção: bug real, cliente do bairro Castanheira não conseguiu fechar o pedido).
 import { corsHeaders, json, serviceClient } from '../_shared/http.ts'
 import { cepLimpo, corpoSuperFrete, juntarPacotes, lerEnderecoCep, opcoesEnvio, pacoteValido, type Pacote } from '../_shared/loja-frete.ts'
 
@@ -56,45 +58,47 @@ Deno.serve(async (req) => {
     envio: { disponivel: false, motivo: null as string | null, opcoes: [] as unknown[] },
   }
 
-  // Grande BH fora dos bairros centrais grátis: entrega por aplicativo, valor de referência já calculado por verificar_frete.
+  const envio = resposta.envio as { disponivel: boolean; motivo: string | null; opcoes: Record<string, unknown>[] }
+
+  // Dentro de BH: entrega por aplicativo, valor de referência já calculado por verificar_frete (além do SuperFrete abaixo).
   if (grandeBh && !resposta.frete_gratis) {
-    const envio = resposta.envio as { disponivel: boolean; motivo: string | null; opcoes: unknown[] }
     const appOpcao = ((frete.opcoes as { tipo?: string; valor_referencia?: unknown }[] | undefined) ?? []).find((o) => o.tipo === 'entrega_app')
     const valorRef = Number(appOpcao?.valor_referencia)
     if (Number.isFinite(valorRef) && valorRef > 0) {
-      envio.opcoes = [{ servico: 'uber', nome: 'Entrega por aplicativo (moto ou carro)', valor: Math.round(valorRef * 100) / 100, prazo_dias: null }]
-      envio.disponivel = true
-    } else {
-      envio.motivo = 'a_confirmar'
+      envio.opcoes.push({ servico: 'uber', nome: 'Entrega por aplicativo (moto ou carro)', valor: Math.round(valorRef * 100) / 100, prazo_dias: null })
     }
   }
 
-  // Fora da Grande BH: envio nacional pelo SuperFrete
-  if (!grandeBh) {
-    const token = Deno.env.get('SUPERFRETE_TOKEN')
-    const envio = resposta.envio as { disponivel: boolean; motivo: string | null; opcoes: unknown[] }
-    if (!token) envio.motivo = 'a_confirmar'
-    else if (!b.pacotes?.length) envio.motivo = 'dimensao_desconhecida'
-    else {
-      const pacote = juntarPacotes(b.pacotes)
-      if (!pacoteValido(pacote)) envio.motivo = 'pacote_grande'
-      else {
-        try {
-          const r = await fetch('https://api.superfrete.com/api/v0/calculator', {
-            method: 'POST', signal: AbortSignal.timeout(8000),
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': Deno.env.get('SUPERFRETE_USER_AGENT') ?? 'SuaGraficaBH Loja' },
-            body: JSON.stringify(corpoSuperFrete(ORIGEM, cep, pacote)),
-          })
-          if (!r.ok) { console.error('loja-frete: SuperFrete respondeu', r.status); envio.motivo = 'indisponivel' }
-          else {
-            const opcoes = opcoesEnvio(await r.json().catch(() => null))
-            envio.opcoes = opcoes
-            envio.disponivel = opcoes.length > 0
-            if (!opcoes.length) envio.motivo = 'indisponivel'
-          }
-        } catch { console.error('loja-frete: SuperFrete sem resposta'); envio.motivo = 'indisponivel' }
+  // Sempre tenta o SuperFrete (Correios), dentro ou fora de BH.
+  const token = Deno.env.get('SUPERFRETE_TOKEN')
+  if (!token) {
+    if (!envio.opcoes.length) envio.motivo = 'a_confirmar'
+  } else if (!b.pacotes?.length) {
+    if (!envio.opcoes.length) envio.motivo = 'dimensao_desconhecida'
+  } else {
+    const pacote = juntarPacotes(b.pacotes)
+    if (!pacoteValido(pacote)) {
+      if (!envio.opcoes.length) envio.motivo = 'pacote_grande'
+    } else {
+      try {
+        const r = await fetch('https://api.superfrete.com/api/v0/calculator', {
+          method: 'POST', signal: AbortSignal.timeout(8000),
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': Deno.env.get('SUPERFRETE_USER_AGENT') ?? 'SuaGraficaBH Loja' },
+          body: JSON.stringify(corpoSuperFrete(ORIGEM, cep, pacote)),
+        })
+        if (!r.ok) { console.error('loja-frete: SuperFrete respondeu', r.status); if (!envio.opcoes.length) envio.motivo = 'indisponivel' }
+        else {
+          const opcoesCorreios = opcoesEnvio(await r.json().catch(() => null))
+          envio.opcoes.push(...opcoesCorreios)
+          if (!opcoesCorreios.length && !envio.opcoes.length) envio.motivo = 'indisponivel'
+        }
+      } catch {
+        console.error('loja-frete: SuperFrete sem resposta')
+        if (!envio.opcoes.length) envio.motivo = 'indisponivel'
       }
     }
   }
+  envio.disponivel = envio.opcoes.length > 0
+  envio.opcoes.sort((a, b) => Number(a.valor ?? 0) - Number(b.valor ?? 0))
   return json(resposta)
 })
