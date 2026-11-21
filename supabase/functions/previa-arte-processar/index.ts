@@ -115,7 +115,10 @@ Deno.serve(async (req) => {
       const prompt = montarPromptArte(item.produto_descricao ?? item.sku ?? 'produto gráfico', item.briefing ?? {}, item.feedback ?? null)
       const texto = provedor === 'claude' ? await chamarClaude(prompt, chave, modelo) : await chamarGemini(prompt, chave, modelo)
       const artHtml = extrairHtml(texto)
-      if (!artHtml) throw new Error('o modelo não devolveu HTML utilizável')
+      if (!artHtml) {
+        console.error('previa-arte-processar: DIAGNOSTICO extrairHtml falhou', JSON.stringify({ len: texto.length, fim: texto.slice(-120), comeco: texto.slice(0, 80) }))
+        throw new Error('o modelo não devolveu HTML utilizável')
+      }
 
       const pagina = montarPaginaPreview(artHtml, null)
       const png = await renderizarPng(pagina)
