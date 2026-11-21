@@ -28,6 +28,19 @@ Deno.serve(async (req) => {
     return { ...r, resultado_url: data?.signedUrl ?? null, resultado_path: undefined }
   }
 
+  /** Dispara o worker agora (o cliente não espera o agendamento de até 1 min); o cron de 1 min continua
+   * como reforço se essa chamada falhar ou demorar além do tempo desta requisição. */
+  function dispararWorker(): void {
+    const chamada = fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/previa-arte-processar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+      body: '{}',
+    }).catch((e: unknown) => console.error('previa-arte: disparo do worker falhou', e))
+    // deno-lint-ignore no-explicit-any
+    const rt = (globalThis as any).EdgeRuntime
+    if (rt?.waitUntil) rt.waitUntil(chamada)
+  }
+
   switch (b.acao) {
     case 'carregar': {
       const { data, error } = await db.rpc('previa_arte_status', { p_token: token })
@@ -46,17 +59,20 @@ Deno.serve(async (req) => {
       const uploads = Array.isArray(b.uploads) ? b.uploads.filter((u) => typeof u === 'string').slice(0, 2) : []
       const { data, error } = await db.rpc('previa_arte_enviar_briefing', { p_token: token, p_briefing: camposOk, p_uploads: uploads })
       if (error) { console.error('previa-arte: enviar_briefing falhou', error.code); return json({ ok: false, erro: 'indisponivel' }, 503) }
+      if ((data as { ok?: boolean })?.ok !== false) dispararWorker()
       return json(data, (data as { ok?: boolean })?.ok === false ? 409 : 200)
     }
     case 'regenerar': {
       const { data, error } = await db.rpc('previa_arte_regenerar', { p_token: token })
       if (error) { console.error('previa-arte: regenerar falhou', error.code); return json({ ok: false, erro: 'indisponivel' }, 503) }
+      if ((data as { ok?: boolean })?.ok !== false) dispararWorker()
       return json(data, (data as { ok?: boolean })?.ok === false ? 409 : 200)
     }
     case 'ajustar': {
       const feedback = String(b.feedback ?? '').slice(0, 2000)
       const { data, error } = await db.rpc('previa_arte_ajustar', { p_token: token, p_feedback: feedback })
       if (error) { console.error('previa-arte: ajustar falhou', error.code); return json({ ok: false, erro: 'indisponivel' }, 503) }
+      if ((data as { ok?: boolean })?.ok !== false) dispararWorker()
       return json(data, (data as { ok?: boolean })?.ok === false ? 409 : 200)
     }
     case 'fechar': {

@@ -2,7 +2,7 @@
 
 export interface EnderecoCep { cep: string; logradouro: string | null; bairro: string | null; cidade: string | null; uf: string | null; codigo_ibge?: string | null }
 export interface Pacote { peso_kg: number; altura_cm: number; largura_cm: number; comprimento_cm: number }
-export interface OpcaoEnvio { servico: 'pac' | 'sedex' | 'mini'; nome: string; valor: number; prazo_dias: number | null }
+export interface OpcaoEnvio { servico: 'pac' | 'sedex' | 'mini' | 'uber'; nome: string; valor: number; prazo_dias: number | null }
 
 export const cepLimpo = (v: unknown): string | null => {
   const d = String(v ?? '').replace(/\D/g, '')

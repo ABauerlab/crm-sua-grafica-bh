@@ -9,20 +9,16 @@ export interface PreviaBriefing {
   cores_estilo?: string
 }
 
-/** Prompt para o modelo de IA: só pede o HTML/CSS/SVG da arte (sem a foto do produto nem a marca d'água, que entram depois). */
+/** Prompt para o modelo de IA: só pede o HTML/CSS/SVG da arte (sem a foto do produto nem a marca d'água, que entram depois).
+ * O cliente escreve a ideia num único campo de texto livre (nome, empresa, contato, cores, estilo, o que quiser);
+ * os campos estruturados antigos (nome/empresa/telefone/instagram/cores_estilo) ficam como fallback de compatibilidade. */
 export function montarPromptArte(produtoDescricao: string, briefing: PreviaBriefing, feedback: string | null): string {
-  const campos = [
-    briefing.nome && `nome: ${briefing.nome}`,
-    briefing.empresa && `empresa: ${briefing.empresa}`,
-    briefing.telefone && `telefone: ${briefing.telefone}`,
-    briefing.instagram && `instagram: ${briefing.instagram}`,
-    briefing.servicos && `serviços/produtos: ${briefing.servicos}`,
-    briefing.cores_estilo && `cores ou estilo pedido: ${briefing.cores_estilo}`,
-  ].filter(Boolean).join('; ')
+  const campos = briefing.servicos ||
+    [briefing.nome, briefing.empresa, briefing.telefone, briefing.instagram, briefing.cores_estilo].filter(Boolean).join('; ')
   return [
     'Você é um designer gráfico. Crie o layout de uma arte profissional para o seguinte item de gráfica rápida:',
     `Produto: ${produtoDescricao}.`,
-    campos ? `Informações do cliente: ${campos}.` : 'O cliente não informou dados; use um exemplo genérico e elegante.',
+    campos ? `A ideia do cliente, nas próprias palavras dele: ${campos}.` : 'O cliente não informou dados; use um exemplo genérico e elegante.',
     feedback ? `Ajuste pedido pelo cliente na rodada anterior: ${feedback}.` : '',
     'Responda SOMENTE com um documento HTML completo e autônomo (um único arquivo, CSS inline ou em <style>, sem imagens externas,',
     'sem JavaScript), com um elemento raiz <div id="arte"> de exatamente 1000x1000 pixels (unidades em px), fundo preenchido,',
@@ -31,11 +27,19 @@ export function montarPromptArte(produtoDescricao: string, briefing: PreviaBrief
   ].filter(Boolean).join(' ')
 }
 
-/** Extrai o HTML da resposta do modelo (às vezes vem em bloco markdown ```html ... ```). */
+/** Extrai o HTML da resposta do modelo (às vezes vem em bloco markdown ```html ... ```) e valida que não ficou
+ * truncado (resposta cortada pelo limite de tokens virava quadrado branco com um fragmento de texto solto, ex.: "ion"). */
 export function extrairHtml(texto: string): string | null {
-  const m = texto.match(/```(?:html)?\s*([\s\S]*?)```/i)
-  const bruto = (m ? m[1] : texto).trim()
-  if (!/<html|<div/i.test(bruto)) return null
+  const fechado = texto.match(/```(?:html)?\s*([\s\S]*?)```/i)
+  // Bloco markdown sem fechar (resposta cortada no meio): usa o que vier depois da cerca de abertura.
+  const aberto = !fechado ? texto.match(/```(?:html)?\s*([\s\S]*)/i) : null
+  const bruto = (fechado ? fechado[1] : aberto ? aberto[1] : texto).trim()
+  if (bruto.length < 200) return null
+  if (!/<div[^>]*id=["']arte["']/i.test(bruto)) return null
+  const abertura = (bruto.match(/<div\b/gi) ?? []).length
+  const fechamento = (bruto.match(/<\/div>/gi) ?? []).length
+  if (abertura === 0 || abertura !== fechamento) return null
+  if (!/<\/div>\s*$/i.test(bruto) && !/<\/html>\s*$/i.test(bruto)) return null
   return bruto
 }
 
@@ -43,24 +47,22 @@ const ESCAPAR: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;'
 export const esc = (s: string): string => String(s ?? '').replace(/[&<>"]/g, (c) => ESCAPAR[c])
 
 /**
- * Monta a página final renderizada pelo Gotenberg: a arte do modelo sobreposta à foto real do produto,
- * com uma marca d'água forte cobrindo toda a imagem (texto repetido, diagonal, semi-transparente).
- * fotoUrl é uma URL já assinada/pública; nunca o caminho interno do bucket.
+ * Monta a página final renderizada pelo Gotenberg: só a arte do modelo (1000x1000, proporção exata), com
+ * moldura/sombra limpa e uma marca d'água forte cobrindo toda a imagem (texto repetido, diagonal,
+ * semi-transparente). A foto real do produto é mostrada separada, pela própria página /previa (sem cortar,
+ * object-contain), não fica mais composta nesta imagem — item 2 do pedido do dono, 21/11/2026.
  */
-export function montarPaginaPreview(artHtml: string, fotoUrl: string | null): string {
+export function montarPaginaPreview(artHtml: string, _fotoUrl: string | null): string {
   const marcaDagua = Array.from({ length: 48 }, () => '<span>PRÉVIA · SUA GRÁFICA BH</span>').join('')
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     * { box-sizing: border-box; }
-    body { margin: 0; width: 1400px; height: 1400px; background: #e8e8ec; font-family: Arial, Helvetica, sans-serif; }
-    .palco { position: relative; width: 1400px; height: 1400px; overflow: hidden; }
-    .foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.96); }
-    .semfoto { position: absolute; inset: 0; background: linear-gradient(135deg, #d9d9e3, #c3c3cf); }
-    .moldura { position: absolute; left: 200px; top: 200px; width: 1000px; height: 1000px; box-shadow: 0 30px 60px rgba(0,0,0,.35); border-radius: 8px; overflow: hidden; background: #fff; }
+    body { margin: 0; width: 1120px; height: 1120px; background: #e8e8ec; font-family: Arial, Helvetica, sans-serif; }
+    .palco { position: relative; width: 1120px; height: 1120px; overflow: hidden; }
+    .moldura { position: absolute; left: 60px; top: 60px; width: 1000px; height: 1000px; box-shadow: 0 20px 45px rgba(0,0,0,.25); border-radius: 8px; overflow: hidden; background: #fff; }
     .marca-dagua { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 40px; transform: rotate(-28deg) scale(1.4); opacity: .22; pointer-events: none; }
     .marca-dagua span { font-size: 34px; font-weight: 800; color: #111; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; }
   </style></head><body>
     <div class="palco">
-      ${fotoUrl ? `<img class="foto" src="${esc(fotoUrl)}">` : '<div class="semfoto"></div>'}
       <div class="moldura">${artHtml}</div>
       <div class="marca-dagua">${marcaDagua}</div>
     </div>
