@@ -18,7 +18,7 @@ export function FreteCep({ token, c, ocupado, onMudou }: { token: string; c: Che
   const [cot, setCot] = useState<CotacaoFrete | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
-  const comFrete = !!c.frete && c.frete.valor > 0
+  const comFrete = !!c.frete && (c.frete.valor > 0 || !!c.frete.aplicativo)
 
   async function calcular(e?: React.FormEvent) {
     e?.preventDefault()
@@ -45,7 +45,7 @@ export function FreteCep({ token, c, ocupado, onMudou }: { token: string; c: Che
       <p className="mb-3 text-sm text-black/65">Quer receber em casa? Digite o CEP e escolha. Se preferir, retire no balcão da Praça Sete sem custo.</p>
       {comFrete && (
         <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#0E8A3E]/5 p-3 text-sm">
-          <span className="flex min-w-0 items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-[#0E8A3E]" aria-hidden /><span className="min-w-0 break-words font-semibold">{c.frete!.descricao} · {brl(c.frete!.valor)}</span></span>
+          <span className="flex min-w-0 items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-[#0E8A3E]" aria-hidden /><span className="min-w-0 break-words font-semibold">{c.frete!.aplicativo ? 'Entrega por aplicativo · valor na hora da entrega' : `${c.frete!.descricao} · ${brl(c.frete!.valor)}`}</span></span>
           <button type="button" disabled={busy || ocupado} onClick={() => void escolher('retirada')} className="shrink-0 text-xs font-bold text-magenta underline">Retirar no balcão</button>
         </div>
       )}
@@ -64,8 +64,8 @@ export function FreteCep({ token, c, ocupado, onMudou }: { token: string; c: Che
           {(cot.envio?.opcoes ?? []).map((o) => (
             <button key={o.servico} type="button" disabled={busy} onClick={() => void escolher(o.servico)} className={opc}>
               <Truck className="h-5 w-5 shrink-0 text-magenta" aria-hidden />
-              <span className="min-w-0 flex-1"><b>{o.nome}</b><br /><span className="text-black/60">{o.prazo_dias ? `até ${o.prazo_dias} dias úteis depois de pronto` : 'prazo informado na postagem'}</span></span>
-              <b className="shrink-0">{brl(o.valor)}</b>
+              <span className="min-w-0 flex-1"><b>{o.nome}</b><br /><span className="text-black/60">{o.a_combinar ? 'Moto ou carro. O valor é calculado na hora da entrega e não entra no pagamento agora' : o.prazo_dias ? `até ${o.prazo_dias} dias úteis depois de pronto` : 'prazo informado na postagem'}</span></span>
+              <b className="shrink-0">{o.a_combinar ? 'A combinar' : brl(o.valor)}</b>
             </button>
           ))}
           {!cot.frete_gratis && !(cot.envio?.opcoes?.length) && <p className="rounded-lg bg-papel p-3 text-sm text-black/70">{MOTIVO[cot.envio?.motivo ?? ''] ?? MOTIVO.indisponivel}</p>}

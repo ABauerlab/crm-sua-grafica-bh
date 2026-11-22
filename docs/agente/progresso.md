@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## 22/11/2026: checkout, entrega que não abria e checkout mais enxuto
+- **Causa raiz do "Não conseguimos carregar agora" ao escolher a entrega:** a linha de frete entra no pedido como repasse (custo = valor) e o gatilho `order_items_validar` barrava como "abaixo do piso duro" (valor x (1 - imposto - taxa) < custo). Ou seja, QUALQUER frete pago (Correios ou aplicativo) falhava com P0001 (visto nos logs de `checkout-dados`). Migration `20261222000012`: a trava de piso não se aplica à linha de frete do checkout (`checkout_extra` + descrição "Frete"); continua valendo para produto e arte. A linha agora se chama "Frete Correios ..." para o orçamento PDF ignorá-la, como já fazia.
+- **Entrega por aplicativo deixou de ter valor fixo:** `loja-frete` devolve a opção com `a_combinar: true` (valor 0, sem número). No checkout aparece "A combinar" e o texto explica que o valor é calculado na hora da entrega e não entra no pagamento. O pedido guarda a escolha numa linha de frete a R$ 0,00 (fora do orçamento) e registra o evento. A Laura/equipe combina o valor no WhatsApp.
+- **Checkout mais curto:** caminho principal = dados (recolhidos se já cadastrados), arte e pagamento. Entrega, quantidade, cupom e "levar mais alguma coisa" (sugestões + busca) viraram linhas recolhidas (`components/pagar/Linha.tsx`) mostrando a escolha atual; numeração dos títulos removida e texto de abertura encurtado.
+- Validação: `npm run gate` e typecheck/build da loja verdes; transações com rollback no banco (Correios e aplicativo, como service role). `loja-frete` implantada pelo conector (v16). `checkout-dados` não mudou.
+
 ## 21/11/2026 (correção): SuperFrete (Correio/PAC) também dentro de BH
 O fix do item 1 abaixo só adicionava a opção de aplicativo dentro da Grande BH, sem chamar o SuperFrete — o dono pediu as 3 opções sempre disponíveis para pedidos em BH: retirada grátis, aplicativo (valor na hora do envio) e Correio/PAC. `loja-frete` agora chama o SuperFrete em todos os casos (dentro ou fora de BH) e soma as opções em vez de escolher uma ou outra. Testado: CEP de BH (30670020) devolve SEDEX, PAC e aplicativo juntos; Ubatuba (fora de BH) e Centro de BH (frete grátis) continuam corretos.
 

@@ -63,9 +63,9 @@ Deno.serve(async (req) => {
   // Dentro de BH: entrega por aplicativo, valor de referência já calculado por verificar_frete (além do SuperFrete abaixo).
   if (grandeBh && !resposta.frete_gratis) {
     const appOpcao = ((frete.opcoes as { tipo?: string; valor_referencia?: unknown }[] | undefined) ?? []).find((o) => o.tipo === 'entrega_app')
-    const valorRef = Number(appOpcao?.valor_referencia)
-    if (Number.isFinite(valorRef) && valorRef > 0) {
-      envio.opcoes.push({ servico: 'uber', nome: 'Entrega por aplicativo (moto ou carro)', valor: Math.round(valorRef * 100) / 100, prazo_dias: null })
+    // O valor do aplicativo não é fixo: é calculado na hora da entrega (decisão do dono, 22/11/2026). Não vai para o pagamento.
+    if (appOpcao) {
+      envio.opcoes.push({ servico: 'uber', nome: 'Entrega por aplicativo (moto ou carro)', valor: 0, a_combinar: true, prazo_dias: null })
     }
   }
 
@@ -99,6 +99,6 @@ Deno.serve(async (req) => {
     }
   }
   envio.disponivel = envio.opcoes.length > 0
-  envio.opcoes.sort((a, b) => Number(a.valor ?? 0) - Number(b.valor ?? 0))
+  envio.opcoes.sort((a, b) => (a.a_combinar ? 1e9 : Number(a.valor ?? 0)) - (b.a_combinar ? 1e9 : Number(b.valor ?? 0)))
   return json(resposta)
 })

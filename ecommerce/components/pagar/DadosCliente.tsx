@@ -40,7 +40,7 @@ export function DadosCliente({ token, c, onSalvo }: { token: string; c: Checkout
   const campo = 'mt-1 h-12 w-full rounded-lg border border-black/20 bg-white px-3 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/25'
   return (
     <form onSubmit={salvar} className="rounded-xl2 bg-white p-5 shadow-sm" aria-labelledby="dados-t" noValidate>
-      <h2 id="dados-t" className="text-lg font-black">1. Seus dados</h2>
+      <h2 id="dados-t" className="text-lg font-black">Seus dados</h2>
       <p className="mb-3 text-sm text-black/60">Usamos para emitir a nota fiscal e confirmar o pagamento. Seus dados ficam protegidos.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm font-semibold sm:col-span-2">Nome completo<input className={campo} value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" /></label>

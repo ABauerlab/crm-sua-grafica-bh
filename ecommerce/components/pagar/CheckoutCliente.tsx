@@ -9,6 +9,7 @@ import { ArteUpsell } from './ArteUpsell'
 import { BannerCheckout } from './BannerCheckout'
 import { BuscaProdutos } from './BuscaProdutos'
 import { Cupom } from './Cupom'
+import { Linha } from './Linha'
 import { FreteCep } from './FreteCep'
 import { Confirmado } from './Confirmado'
 import { DadosCliente } from './DadosCliente'
@@ -94,7 +95,7 @@ export function CheckoutCliente({ token }: { token: string }) {
         {c.campanha?.ativa && <p className="mt-3 rounded-lg bg-tinta px-3 py-2.5 text-center text-sm font-bold text-white"><span className="text-amarelo">Black Friday:</span> criação de arte grátis em pedidos pagos até 30/11{c.campanha.dias_restantes === 1 ? ' (último dia!)' : c.campanha.dias_restantes && c.campanha.dias_restantes <= 4 ? ` (faltam ${c.campanha.dias_restantes} dias)` : ''}</p>}
         {c.pedido.teste && <p className="mt-3 rounded-lg bg-amarelo px-3 py-2 text-center text-sm font-black">PEDIDO DE TESTE</p>}
         <h1 className="mb-1 mt-5 text-2xl font-black sm:text-3xl">Finalize o seu pedido</h1>
-        <p className="mb-4 text-sm text-black/65">Falta pouco: confira os dados, escolha como está a sua arte e pague. Leva menos de 2 minutos.</p>
+        <p className="mb-4 text-sm text-black/65">Confira os dados, escolha a arte e pague. Leva menos de 2 minutos.</p>
 
         {/* Resumo recolhido no celular */}
         <details className="group mb-4 rounded-xl2 bg-white shadow-sm lg:hidden">
@@ -109,14 +110,23 @@ export function CheckoutCliente({ token }: { token: string }) {
           <div className="space-y-5">
             {aviso && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-700">{aviso}</p>}
             <DadosCliente key={dadosOk ? 'ok' : 'falta'} token={token} c={c} onSalvo={() => void carregar(true)} />
-            <Quantidades itens={c.quantidades} ocupado={ocupado} onTrocar={(item, ref) => acao({ acao: 'trocar', item, ref })} />
             <ArteUpsell c={c} ocupado={ocupado} onEscolher={(a: OpcaoArte['codigo']) => acao({ acao: 'arte', arte: a })} />
 
-            <FreteCep token={token} c={c} ocupado={ocupado} onMudou={() => void carregar(true)} />
-            <Cupom c={c} ocupado={ocupado} onAplicar={(codigo) => acao({ acao: 'cupom', codigo })} onRemover={() => acao({ acao: 'cupom_remover' })} />
+            {/* Opções secundárias recolhidas: quem só quer pagar não precisa abrir nenhuma */}
+            <div className="space-y-2">
+              <Linha titulo="Entrega" valor={c.frete?.aplicativo ? 'Aplicativo, valor combinado na hora da entrega' : c.frete && c.frete.valor > 0 ? `${c.frete.descricao ?? 'Envio'} · ${brl(c.frete.valor)}` : c.entrega.texto}>
+                <FreteCep token={token} c={c} ocupado={ocupado} onMudou={() => void carregar(true)} />
+              </Linha>
+              {c.quantidades.length > 0 && (
+                <Linha titulo="Quantidade" valor="Trocar a tiragem do pedido">
+                  <Quantidades itens={c.quantidades} ocupado={ocupado} onTrocar={(item, ref) => acao({ acao: 'trocar', item, ref })} />
+                </Linha>
+              )}
+              <Cupom c={c} ocupado={ocupado} onAplicar={(codigo) => acao({ acao: 'cupom', codigo })} onRemover={() => acao({ acao: 'cupom_remover' })} />
+            </div>
 
             <section id="pagamento" aria-labelledby="pag-t" className="scroll-mt-4 rounded-xl2 bg-white p-5 shadow-sm">
-              <h2 id="pag-t" className="text-lg font-black">3. Pagamento</h2>
+              <h2 id="pag-t" className="text-lg font-black">Pagamento</h2>
               {!dadosOk ? (
                 <p className="mt-3 rounded-lg bg-papel p-4 text-sm text-black/70"><Lock className="mr-1 inline h-4 w-4" aria-hidden />Preencha e salve os seus dados acima para liberar o pagamento.</p>
               ) : emAnalise ? (
@@ -139,8 +149,12 @@ export function CheckoutCliente({ token }: { token: string }) {
               <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-black/55"><ShieldCheck className="h-4 w-4" aria-hidden />Ambiente protegido. Os dados do cartão vão direto ao Mercado Pago e nunca passam pelo nosso servidor.</p>
             </section>
 
-            <Sugestoes itens={c.sugestoes} ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
-            <BuscaProdutos ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
+            <Linha titulo="Quer levar mais alguma coisa?" valor="Sugestões e busca de produtos">
+              <div className="space-y-4">
+                <Sugestoes itens={c.sugestoes} ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
+                <BuscaProdutos ocupado={ocupado} onAdicionar={(ref) => acao({ acao: 'adicionar', ref })} />
+              </div>
+            </Linha>
           </div>
 
           <aside className="hidden lg:block">
