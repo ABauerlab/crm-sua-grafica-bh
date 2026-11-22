@@ -1,5 +1,8 @@
 # Progresso do agente de IA
 
+## 22/11/2026: indexação do conhecimento a cada 5 minutos
+O cron `conhecimento-reindexar` rodava a cada 6 horas (a documentação dizia 5 min), então ficha editada ficava até 6 h sem vetor. Migration `20261222000013` passa para `*/5 * * * *` (a função só processa trechos sem vetor). Também atualizada a ficha `frete_fora` (entrega por aplicativo a combinar) e reindexada.
+
 ## 22/11/2026: checkout, entrega que não abria e checkout mais enxuto
 - **Causa raiz do "Não conseguimos carregar agora" ao escolher a entrega:** a linha de frete entra no pedido como repasse (custo = valor) e o gatilho `order_items_validar` barrava como "abaixo do piso duro" (valor x (1 - imposto - taxa) < custo). Ou seja, QUALQUER frete pago (Correios ou aplicativo) falhava com P0001 (visto nos logs de `checkout-dados`). Migration `20261222000012`: a trava de piso não se aplica à linha de frete do checkout (`checkout_extra` + descrição "Frete"); continua valendo para produto e arte. A linha agora se chama "Frete Correios ..." para o orçamento PDF ignorá-la, como já fazia.
 - **Entrega por aplicativo deixou de ter valor fixo:** `loja-frete` devolve a opção com `a_combinar: true` (valor 0, sem número). No checkout aparece "A combinar" e o texto explica que o valor é calculado na hora da entrega e não entra no pagamento. O pedido guarda a escolha numa linha de frete a R$ 0,00 (fora do orçamento) e registra o evento. A Laura/equipe combina o valor no WhatsApp.
