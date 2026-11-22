@@ -21,7 +21,7 @@ export interface Checkout {
   quantidades: Quantidade[]
   campanha?: { ativa: boolean; titulo?: string; ate?: string; dias_restantes?: number; texto?: string }
   cupom?: { codigo: string; percentual: number } | null
-  frete?: { valor: number; descricao: string | null; cep_final: string }
+  frete?: { valor: number; descricao: string | null; cep_final: string; aplicativo?: boolean }
   whatsapp: string
   mp: { chave_publica: string | null; modo: 'teste' | 'producao' | null }
 }
@@ -77,7 +77,7 @@ export function unidadesDoItem(i: { descricao: string; quantidade: number; subto
 }
 
 export interface ProdutoBusca { produto_slug: string; titulo: string; foto: string | null; a_partir_de: number; opcoes: { ref: string; quantidade: number; preco: number; parcela_2x: number }[] }
-export interface OpcaoFrete { servico: string; nome: string; valor: number; prazo_dias: number | null }
+export interface OpcaoFrete { servico: string; nome: string; valor: number; prazo_dias: number | null; a_combinar?: boolean }
 export interface CotacaoFrete {
   ok: boolean; erro?: string; mensagem?: string
   endereco?: { logradouro: string | null; bairro: string | null; cidade: string | null; uf: string | null }

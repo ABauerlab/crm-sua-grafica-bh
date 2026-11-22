@@ -17,7 +17,7 @@ export function ArteUpsell({ c, ocupado, onEscolher }: { c: Checkout; ocupado: b
   }
   return (
     <section aria-labelledby="arte-t" className="rounded-xl2 bg-white p-5 shadow-sm">
-      <h2 id="arte-t" className="text-lg font-black">2. Como está a sua arte?</h2>
+      <h2 id="arte-t" className="text-lg font-black">Como está a sua arte?</h2>
       <p className="mb-3 text-sm text-black/65">Arquivo fora do gabarito não imprime direito (corta, fica borrado ou com cor errada). A gente cuida disso para o seu material sair perfeito.</p>
       <div role="radiogroup" aria-labelledby="arte-t" className="grid gap-2.5 md:grid-cols-3">
         {c.arte.opcoes.map((o) => {

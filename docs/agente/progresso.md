@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## 22/11/2026: checkout, entrega que não abria e checkout mais enxuto
+- **Causa raiz do "Não conseguimos carregar agora" ao escolher a entrega:** a linha de frete entra no pedido como repasse (custo = valor) e o gatilho `order_items_validar` barrava como "abaixo do piso duro" (valor x (1 - imposto - taxa) < custo). Ou seja, QUALQUER frete pago (Correios ou aplicativo) falhava com P0001 (visto nos logs de `checkout-dados`). Migration `20261222000012`: a trava de piso não se aplica à linha de frete do checkout (`checkout_extra` + descrição "Frete"); continua valendo para produto e arte. A linha agora se chama "Frete Correios ..." para o orçamento PDF ignorá-la, como já fazia.
+- **Entrega por aplicativo deixou de ter valor fixo:** `loja-frete` devolve a opção com `a_combinar: true` (valor 0, sem número). No checkout aparece "A combinar" e o texto explica que o valor é calculado na hora da entrega e não entra no pagamento. O pedido guarda a escolha numa linha de frete a R$ 0,00 (fora do orçamento) e registra o evento. A Laura/equipe combina o valor no WhatsApp.
+- **Checkout mais curto:** caminho principal = dados (recolhidos se já cadastrados), arte e pagamento. Entrega, quantidade, cupom e "levar mais alguma coisa" (sugestões + busca) viraram linhas recolhidas (`components/pagar/Linha.tsx`) mostrando a escolha atual; numeração dos títulos removida e texto de abertura encurtado.
+- Validação: `npm run gate` e typecheck/build da loja verdes; transações com rollback no banco (Correios e aplicativo, como service role). `loja-frete` implantada pelo conector (v16). `checkout-dados` não mudou.
+
 ## 22/11/2026: prévia de arte virou mockup real (image-to-image)
 
 O dono testou a prévia e mandou print: a arte saía "a parte" (um cartão de visita chapado ao lado da foto do catálogo), quando o certo é o produto de verdade com a informação do cliente aplicada nele, como se tivesse mandado a peça em branco e pedido "coloca isso aqui". Perguntado, o dono escolheu a abordagem "IA gera a imagem final direto" em vez de overlay fixo por categoria.
