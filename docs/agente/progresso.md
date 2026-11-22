@@ -1,5 +1,16 @@
 # Progresso do agente de IA
 
+## 22/11/2026: prévia de arte virou mockup real (image-to-image)
+
+O dono testou a prévia e mandou print: a arte saía "a parte" (um cartão de visita chapado ao lado da foto do catálogo), quando o certo é o produto de verdade com a informação do cliente aplicada nele, como se tivesse mandado a peça em branco e pedido "coloca isso aqui". Perguntado, o dono escolheu a abordagem "IA gera a imagem final direto" em vez de overlay fixo por categoria.
+
+- **Geração deixou de ser HTML/texto e virou image-to-image**: o worker (`previa-arte-processar`) agora manda a FOTO REAL do produto (baixada do Storage, em base64) junto com o prompt para o Gemini (`generationConfig.responseModalities: ['IMAGE']`) e recebe de volta a imagem já pronta — o produto, na mesma pose/material/perspectiva da foto, com a arte do cliente aplicada de forma realista. `_shared/previa-arte.ts` trocou `montarPromptArte`/`extrairHtml` por `montarPromptMockup`/`extrairImagemGemini`; `montarPaginaPreview` agora só emoldura a imagem recebida e aplica a marca d'água por código (nunca pelo modelo, como antes).
+- **Modelo**: `gemini-3.8-flash-image` (primeira tentativa, mesmo padrão de nome do texto) devolveu 404; `gemini-2.5-flash-image` funcionou e ficou como padrão de `PREVIA_ARTE_MODELO`.
+- **Testado**: nova geração de ponta a ponta no token de teste existente — `status = 'pronta'`, sem `erro_detalhe`, `resultado_path` preenchido (o worker só marca `pronta` depois do Gemini devolver imagem e do Gotenberg renderizar o PNG com sucesso; qualquer falha nessas etapas vira `erro`).
+- Frontend (`PreviaCliente.tsx`/`ChromeLoja.tsx`) não precisou de nenhuma mudança — já mostrava a foto do produto e o resultado como imagens separadas antes/depois da geração.
+
+**Validação:** `npm run gate` verde; geração real confirmada ponta a ponta (fila → Gemini com foto do produto → Gotenberg → bucket → status `pronta`). Sem cenários `e5-*`/`mvp-*`/`e12-*`/`e17-*` do Gemini de produção.
+
 ## 21/11/2026 (correção): SuperFrete (Correio/PAC) também dentro de BH
 O fix do item 1 abaixo só adicionava a opção de aplicativo dentro da Grande BH, sem chamar o SuperFrete — o dono pediu as 3 opções sempre disponíveis para pedidos em BH: retirada grátis, aplicativo (valor na hora do envio) e Correio/PAC. `loja-frete` agora chama o SuperFrete em todos os casos (dentro ou fora de BH) e soma as opções em vez de escolher uma ou outra. Testado: CEP de BH (30670020) devolve SEDEX, PAC e aplicativo juntos; Ubatuba (fora de BH) e Centro de BH (frete grátis) continuam corretos.
 
