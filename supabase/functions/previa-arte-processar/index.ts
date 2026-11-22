@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
 
   const provedor = (Deno.env.get('PREVIA_ARTE_PROVEDOR') ?? 'gemini').toLowerCase()
   const chave = Deno.env.get('PREVIA_ARTE_API_KEY')
-  const modelo = Deno.env.get('PREVIA_ARTE_MODELO') ?? 'gemini-3.8-flash-image'
+  const modelo = Deno.env.get('PREVIA_ARTE_MODELO') ?? 'gemini-2.5-flash-image'
 
   if (!chave) {
     const { count } = await db.from('previas_arte').select('id', { count: 'exact', head: true }).eq('status', 'pendente')
