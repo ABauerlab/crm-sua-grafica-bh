@@ -362,7 +362,8 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 
 ## 4 frentes (21/11/2026): frete, prévia de arte, condição 24h e recompra
 - `loja-frete`: dentro da Grande BH fora dos 7 bairros centrais grátis, expõe "Entrega por aplicativo" com o valor de referência de `verificar_frete` (antes não oferecia nenhuma opção; venda real perdida). `OpcaoEnvio.servico` ganhou `'uber'`.
-- Prévia de arte: `previa_arte_regenerar` aceita `status='erro'` (botão "Tentar de novo" estava travado); prompt reescrito (só `<div id="arte">` inline, sem ornamentos), `maxOutputTokens` 8192; worker disparado no envio do formulário (cron cai para 5 min, só reforço); `/previa` sem chrome da loja; foto do produto e arte mostradas separadas e clicáveis; formulário com um campo de texto único; `previa_arte_limpar_expiradas` (48h, só não pagos). Migration `20261222000010`.
+- Prévia de arte: `previa_arte_regenerar` aceita `status='erro'` (botão "Tentar de novo" estava travado); worker disparado no envio do formulário (cron cai para 5 min, só reforço); `/previa` sem chrome da loja; formulário com um campo de texto único; `previa_arte_limpar_expiradas` (48h, só não pagos). Migration `20261222000010`.
+- Prévia de arte (22/11/2026): geração virou image-to-image — o worker manda a foto real do produto pro Gemini (`responseModalities: ['IMAGE']`) e recebe o mockup já com a arte do cliente aplicada nele (não mais HTML/arte solta ao lado da foto). `_shared/previa-arte.ts`: `montarPromptMockup`/`extrairImagemGemini` substituem `montarPromptArte`/`extrairHtml`; marca d'água continua só por código. Modelo padrão `gemini-2.5-flash-image` (`gemini-3.8-flash-image` deu 404).
 - `private.followup_montar_base`: `PAG_24H` sem condição vigente aciona `oferecer_condicao_especial` (G1) antes de cobrar frio. `followup_regras` RECOMPRA_* padronizadas em 30 dias (`revisar=false`). Migration `20261222000011`.
 
 ## Checkout próprio: entrega e layout (22/11/2026)

@@ -1,4 +1,9 @@
 // Fase 2: gerador de prévia de arte com marca d'água. Funções puras (sem APIs do Deno), testáveis em Node.
+// 21/11/2026 (pedido do dono): a prévia não é mais uma arte solta ao lado da foto do catálogo — o modelo
+// recebe a FOTO REAL do produto e aplica a ideia do cliente nela, devolvendo o mockup já pronto (a arte
+// impressa no produto, com a perspectiva e o material reais), como se o cliente tivesse mandado a própria
+// peça em branco e pedido pra "colocar isso aqui". Por isso a geração virou image-to-image (Gemini), não
+// mais texto/HTML.
 
 export interface PreviaBriefing {
   nome?: string
@@ -9,64 +14,56 @@ export interface PreviaBriefing {
   cores_estilo?: string
 }
 
-/** Prompt para o modelo de IA: só pede o HTML/CSS/SVG da arte (sem a foto do produto nem a marca d'água, que entram depois).
- * O cliente escreve a ideia num único campo de texto livre (nome, empresa, contato, cores, estilo, o que quiser);
- * os campos estruturados antigos (nome/empresa/telefone/instagram/cores_estilo) ficam como fallback de compatibilidade. */
-export function montarPromptArte(produtoDescricao: string, briefing: PreviaBriefing, feedback: string | null): string {
+/** Prompt para o modelo gerar a IMAGEM do mockup a partir da foto real do produto (anexada à chamada). */
+export function montarPromptMockup(produtoDescricao: string, briefing: PreviaBriefing, feedback: string | null): string {
   const campos = briefing.servicos ||
     [briefing.nome, briefing.empresa, briefing.telefone, briefing.instagram, briefing.cores_estilo].filter(Boolean).join('; ')
   return [
-    'Você é um designer gráfico. Crie o layout de uma arte profissional para o seguinte item de gráfica rápida:',
-    `Produto: ${produtoDescricao}.`,
-    campos ? `A ideia do cliente, nas próprias palavras dele: ${campos}.` : 'O cliente não informou dados; use um exemplo genérico e elegante.',
+    `A imagem anexada é a foto real de um produto da gráfica (${produtoDescricao}), em branco ou com arte genérica.`,
+    'Gere uma nova imagem mostrando ESSE MESMO produto, na mesma pose, ângulo, iluminação e material da foto original,',
+    'mas com a arte impressa nele aplicada de forma realista (respeitando a perspectiva e a curvatura da peça), com o',
+    'seguinte conteúdo:',
+    campos ? `${campos}.` : 'o cliente não informou dados; use um exemplo genérico e elegante.',
     feedback ? `Ajuste pedido pelo cliente na rodada anterior: ${feedback}.` : '',
-    'Responda SOMENTE com <div id="arte"> ... </div> (nada de <html>, <head> nem <!doctype>, nada fora dessa div),',
-    'de exatamente 1000x1000 pixels (unidades em px), CSS só inline (atributo style, nunca <style> nem classes), sem imagens',
-    'externas nem JavaScript. Fundo preenchido, tipografia legível, hierarquia visual clara (nome/empresa em destaque, dados',
-    'de contato menores). Design simples e direto: no máximo 2 cores de fundo (gradiente simples permitido) e no máximo um',
-    'elemento decorativo (uma borda, uma faixa ou um ícone simples em CSS); nunca use ribbons, selos, badges, logos ou',
-    'ornamentos elaborados. Seja econômico: a resposta inteira deve ficar bem abaixo de 1500 palavras. Não inclua marca d\'água,',
-    'não inclua texto algum sobre preço, SKU, fornecedor ou a própria Sua Gráfica BH. Não escreva nada fora da div.',
+    'Tipografia legível, hierarquia visual clara (nome/empresa em destaque, dados de contato menores), no máximo 2 cores',
+    'de fundo e design simples, sem ribbons, selos, badges ou ornamentos elaborados. Não altere o produto, o fundo nem o',
+    'enquadramento da foto original além de aplicar a arte na superfície certa. Não inclua marca d\'água, preço, SKU,',
+    'fornecedor nem o nome da própria gráfica na arte.',
   ].filter(Boolean).join(' ')
 }
 
-/** Extrai o HTML da resposta do modelo (às vezes vem em bloco markdown ```html ... ```) e valida que não ficou
- * truncado (resposta cortada pelo limite de tokens virava quadrado branco com um fragmento de texto solto, ex.: "ion"). */
-export function extrairHtml(texto: string): string | null {
-  const fechado = texto.match(/```(?:html)?\s*([\s\S]*?)```/i)
-  // Bloco markdown sem fechar (resposta cortada no meio): usa o que vier depois da cerca de abertura.
-  const aberto = !fechado ? texto.match(/```(?:html)?\s*([\s\S]*)/i) : null
-  const bruto = (fechado ? fechado[1] : aberto ? aberto[1] : texto).trim()
-  if (bruto.length < 200) return null
-  if (!/<div[^>]*id=["']arte["']/i.test(bruto)) return null
-  const abertura = (bruto.match(/<div\b/gi) ?? []).length
-  const fechamento = (bruto.match(/<\/div>/gi) ?? []).length
-  if (abertura === 0 || abertura !== fechamento) return null
-  if (!/<\/div>\s*$/i.test(bruto) && !/<\/html>\s*$/i.test(bruto)) return null
-  return bruto
+/** Extrai a primeira imagem (base64 + mime type) de uma resposta do Gemini (generateContent com imagem na saída). */
+export function extrairImagemGemini(resp: unknown): { base64: string; mimeType: string } | null {
+  // deno-lint-ignore no-explicit-any
+  const partes = (resp as any)?.candidates?.[0]?.content?.parts
+  if (!Array.isArray(partes)) return null
+  for (const p of partes) {
+    const inline = p?.inlineData ?? p?.inline_data
+    if (inline?.data && typeof inline.data === 'string') {
+      return { base64: inline.data, mimeType: inline.mimeType ?? inline.mime_type ?? 'image/png' }
+    }
+  }
+  return null
 }
 
-const ESCAPAR: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
-export const esc = (s: string): string => String(s ?? '').replace(/[&<>"]/g, (c) => ESCAPAR[c])
-
 /**
- * Monta a página final renderizada pelo Gotenberg: só a arte do modelo (1000x1000, proporção exata), com
- * moldura/sombra limpa e uma marca d'água forte cobrindo toda a imagem (texto repetido, diagonal,
- * semi-transparente). A foto real do produto é mostrada separada, pela própria página /previa (sem cortar,
- * object-contain), não fica mais composta nesta imagem — item 2 do pedido do dono, 21/11/2026.
+ * Monta a página final renderizada pelo Gotenberg: o mockup gerado pelo modelo (já com a arte aplicada no
+ * produto), com uma marca d'água forte cobrindo toda a imagem (texto repetido, diagonal, semi-transparente)
+ * — a marca d'água nunca depende do modelo, é sempre aplicada aqui por código.
  */
-export function montarPaginaPreview(artHtml: string, _fotoUrl: string | null): string {
+export function montarPaginaPreview(imagemDataUrl: string): string {
   const marcaDagua = Array.from({ length: 48 }, () => '<span>PRÉVIA · SUA GRÁFICA BH</span>').join('')
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     * { box-sizing: border-box; }
     body { margin: 0; width: 1120px; height: 1120px; background: #e8e8ec; font-family: Arial, Helvetica, sans-serif; }
     .palco { position: relative; width: 1120px; height: 1120px; overflow: hidden; }
     .moldura { position: absolute; left: 60px; top: 60px; width: 1000px; height: 1000px; box-shadow: 0 20px 45px rgba(0,0,0,.25); border-radius: 8px; overflow: hidden; background: #fff; }
+    .moldura img { width: 100%; height: 100%; object-fit: contain; }
     .marca-dagua { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 40px; transform: rotate(-28deg) scale(1.4); opacity: .22; pointer-events: none; }
     .marca-dagua span { font-size: 34px; font-weight: 800; color: #111; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; }
   </style></head><body>
     <div class="palco">
-      <div class="moldura">${artHtml}</div>
+      <div class="moldura"><img src="${imagemDataUrl}"></div>
       <div class="marca-dagua">${marcaDagua}</div>
     </div>
   </body></html>`
