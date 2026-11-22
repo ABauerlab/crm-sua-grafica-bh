@@ -1,54 +1,56 @@
 // Fase 2: worker da fila de prévia de arte. Chamado pelo agendamento (x-cron-secret) a cada minuto enquanto houver
-// pendente. Usa só API oficial configurável por variável de ambiente (nunca credencial de assinatura pessoal):
-// PREVIA_ARTE_PROVEDOR ('claude'|'gemini') + PREVIA_ARTE_API_KEY. Gera o HTML da arte com o modelo, sobrepõe à foto
-// real do produto com marca d'água forte (ver _shared/previa-arte.ts) e renderiza em PNG no Gotenberg (Chromium).
+// pendente, ou disparado na hora pela própria página /previa. Usa só API oficial configurável por variável de
+// ambiente (nunca credencial de assinatura pessoal): PREVIA_ARTE_PROVEDOR ('gemini', único com geração de imagem
+// hoje) + PREVIA_ARTE_API_KEY. 21/11/2026 (pedido do dono): a prévia deixou de ser uma arte solta e virou um
+// mockup de verdade — o modelo recebe a FOTO REAL do produto (image-to-image) e devolve o produto com a arte do
+// cliente aplicada nele, com a mesma pose, material e perspectiva da foto. A marca d'água continua sendo aplicada
+// sempre por código (nunca pelo modelo), sobre o resultado, renderizada no Gotenberg.
 import { corsHeaders, json, requireOwnerOrServer, serviceClient } from '../_shared/http.ts'
-import { extrairHtml, montarPaginaPreview, montarPromptArte, type PreviaBriefing } from '../_shared/previa-arte.ts'
+import { extrairImagemGemini, montarPaginaPreview, montarPromptMockup, type PreviaBriefing } from '../_shared/previa-arte.ts'
 
 const SITE_BASE = 'https://suagraficabh.com.br'
+const PALCO_LARGURA = 1120
 
-const PRODUTO_FOTO_LARGURA = 1120
+class RateLimitError extends Error {}
 
-async function chamarClaude(prompt: string, chave: string, modelo: string): Promise<string> {
-  const ctl = new AbortController()
-  const t = setTimeout(() => ctl.abort(), 45000)
+async function fotoBase64(url: string): Promise<{ base64: string; mimeType: string } | null> {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', signal: ctl.signal,
-      headers: { 'Content-Type': 'application/json', 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: modelo, max_tokens: 8192, messages: [{ role: 'user', content: prompt }] }),
-    })
-    if (res.status === 429) throw new RateLimitError('claude: limite de uso atingido')
-    if (!res.ok) throw new Error(`claude: ${res.status}`)
-    const j = await res.json()
-    const texto = (j?.content ?? []).map((b: { text?: string }) => b.text ?? '').join('')
-    if (!texto) throw new Error('claude: resposta vazia')
-    return texto
-  } finally {
-    clearTimeout(t)
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) return null
+    const mimeType = res.headers.get('content-type') ?? 'image/jpeg'
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    let binario = ''
+    for (let i = 0; i < bytes.length; i++) binario += String.fromCharCode(bytes[i])
+    return { base64: btoa(binario), mimeType }
+  } catch {
+    return null
   }
 }
 
-async function chamarGemini(prompt: string, chave: string, modelo: string): Promise<string> {
+/** Gera o mockup (produto + arte aplicada) a partir da foto real do produto. Gemini: único provedor com geração de imagem hoje. */
+async function gerarMockup(
+  prompt: string, foto: { base64: string; mimeType: string } | null, chave: string, modelo: string,
+): Promise<{ base64: string; mimeType: string }> {
   const ctl = new AbortController()
-  const t = setTimeout(() => ctl.abort(), 45000)
+  const t = setTimeout(() => ctl.abort(), 55000)
   try {
+    const parts: Record<string, unknown>[] = []
+    if (foto) parts.push({ inlineData: { mimeType: foto.mimeType, data: foto.base64 } })
+    parts.push({ text: prompt })
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${chave}`, {
       method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 8192 } }),
+      body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseModalities: ['IMAGE'] } }),
     })
     if (res.status === 429) throw new RateLimitError('gemini: limite de uso atingido')
     if (!res.ok) throw new Error(`gemini: ${res.status}`)
     const j = await res.json()
-    const texto = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? ''
-    if (!texto) throw new Error('gemini: resposta vazia')
-    return texto
+    const imagem = extrairImagemGemini(j)
+    if (!imagem) throw new Error('gemini: resposta sem imagem')
+    return imagem
   } finally {
     clearTimeout(t)
   }
 }
-
-class RateLimitError extends Error {}
 
 async function renderizarPng(html: string): Promise<Uint8Array> {
   const base = Deno.env.get('GOTENBERG_URL')?.replace(/\/$/, '')
@@ -59,8 +61,8 @@ async function renderizarPng(html: string): Promise<Uint8Array> {
   if (user && pass) headers.Authorization = `Basic ${btoa(`${user}:${pass}`)}`
   const form = new FormData()
   form.append('files', new Blob([html], { type: 'text/html' }), 'index.html')
-  form.append('width', String(PRODUTO_FOTO_LARGURA))
-  form.append('height', String(PRODUTO_FOTO_LARGURA))
+  form.append('width', String(PALCO_LARGURA))
+  form.append('height', String(PALCO_LARGURA))
   form.append('format', 'png')
   form.append('waitDelay', '500ms')
   const ctl = new AbortController()
@@ -85,7 +87,7 @@ Deno.serve(async (req) => {
 
   const provedor = (Deno.env.get('PREVIA_ARTE_PROVEDOR') ?? 'gemini').toLowerCase()
   const chave = Deno.env.get('PREVIA_ARTE_API_KEY')
-  const modelo = Deno.env.get('PREVIA_ARTE_MODELO') ?? (provedor === 'claude' ? 'claude-sonnet-5-5' : 'gemini-3.8-flash')
+  const modelo = Deno.env.get('PREVIA_ARTE_MODELO') ?? 'gemini-2.5-flash-image'
 
   if (!chave) {
     const { count } = await db.from('previas_arte').select('id', { count: 'exact', head: true }).eq('status', 'pendente')
@@ -112,12 +114,13 @@ Deno.serve(async (req) => {
     if (!item?.ok) break
 
     try {
-      const prompt = montarPromptArte(item.produto_descricao ?? item.sku ?? 'produto gráfico', item.briefing ?? {}, item.feedback ?? null)
-      const texto = provedor === 'claude' ? await chamarClaude(prompt, chave, modelo) : await chamarGemini(prompt, chave, modelo)
-      const artHtml = extrairHtml(texto)
-      if (!artHtml) throw new Error(`o modelo não devolveu HTML utilizável (${texto.length} caracteres)`)
-
-      const pagina = montarPaginaPreview(artHtml, null)
+      if (provedor !== 'gemini') throw new Error(`provedor "${provedor}" não suporta geração de imagem (mockup)`)
+      const prompt = montarPromptMockup(item.produto_descricao ?? item.sku ?? 'produto gráfico', item.briefing ?? {}, item.feedback ?? null)
+      const foto = item.produto_foto_path
+        ? await fotoBase64(`${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/${item.produto_foto_path}`)
+        : null
+      const imagem = await gerarMockup(prompt, foto, chave, modelo)
+      const pagina = montarPaginaPreview(`data:${imagem.mimeType};base64,${imagem.base64}`)
       const png = await renderizarPng(pagina)
       const caminho = `${item.id}/${Date.now()}.png`
       const up = await db.storage.from('previas-arte').upload(caminho, png, { contentType: 'image/png', upsert: true })
