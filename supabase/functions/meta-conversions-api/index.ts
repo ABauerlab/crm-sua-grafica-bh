@@ -16,6 +16,30 @@ Deno.serve(async (req) => {
   const doCron = !!cron && !!enviado && enviado.length === cron.length && enviado === cron
   if (!doCron && !(await requireOwnerOrServer(req, db))) return json({ error: 'Não autorizado.' }, 401)
 
+  const body = await req.json().catch(() => ({})) as { acao?: string; criar?: boolean }
+  // O WhatsApp tem dataset próprio (GET /{WABA}/dataset). A rotina só LÊ; criar exige body.criar = true, pedido de propósito.
+  if (body.acao === 'dataset_whatsapp') {
+    const wabaId = Deno.env.get('WHATSAPP_WABA_ID')
+    if (!wabaId) return json({ error: 'Falta o segredo WHATSAPP_WABA_ID.' }, 400)
+    const detalhe: string[] = []
+    for (const nome of ['META_CAPI_TOKEN', 'WHATSAPP_TOKEN']) {
+      const t = Deno.env.get(nome)
+      if (!t) continue
+      try {
+        const res = await fetch(`https://graph.facebook.com/${VERSAO}/${wabaId}/dataset?access_token=${encodeURIComponent(t)}`, body.criar ? { method: 'POST' } : undefined)
+        const r = await res.json().catch(() => ({})) as { id?: string; data?: { id?: string }[]; error?: { message?: string; code?: number; error_subcode?: number } }
+        const id = r.id ?? r.data?.[0]?.id
+        if (res.ok && id) {
+          const { data: atual } = await db.from('app_settings').select('value').eq('key', 'meta_capi').maybeSingle()
+          await db.from('app_settings').update({ value: { ...((atual?.value ?? {}) as Record<string, unknown>), dataset_whatsapp: id, token_whatsapp: nome } }).eq('key', 'meta_capi')
+          return json({ ok: true, dataset_id: id, token: nome })
+        }
+        detalhe.push(`${nome}: ${res.status} ${r.error?.code ?? ''} ${r.error?.error_subcode ?? ''} ${r.error?.message ?? 'a conta não tem dataset'}`.slice(0, 220))
+      } catch { detalhe.push(`${nome}: falha de rede`) }
+    }
+    return json({ ok: false, detalhe })
+  }
+
   const pixel = Deno.env.get('META_PIXEL_ID')
   const token = Deno.env.get('META_CAPI_TOKEN')
   if (!pixel || !token) {
@@ -30,7 +54,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, configurado: false })
   }
   const { data: cfg } = await db.from('app_settings').select('value').eq('key', 'meta_capi').maybeSingle()
-  const c = (cfg?.value ?? {}) as { ligado?: boolean; test_event_code?: string | null }
+  const c = (cfg?.value ?? {}) as { ligado?: boolean; test_event_code?: string | null; dataset_whatsapp?: string; token_whatsapp?: string }
   if (c.ligado === false) return json({ ok: true, desligado: true })
 
   const { data: lote, error } = await db.rpc('meta_eventos_lote', { p_n: 500 })
