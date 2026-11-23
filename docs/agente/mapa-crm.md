@@ -372,3 +372,4 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 
 ### Checkout: unidades do cliente (23/11/2026)
 - `public.checkout_carregar` devolve `unidades` por item de produto (`private.checkout_unidades_item`: `orcamento_itens.unidades_cliente` ou pacotes x lote do catalogo). O front usa em `unidadesDoItem` (`ecommerce/lib/pagar.ts`). So exibicao, valores intactos. Teste: `supabase/tests/checkout_unidades.sql`.
+- `public.pedido_itens_unidades(order)` (equipe): unidades reais por item para o painel do pedido (`useOrderItemUnits`).

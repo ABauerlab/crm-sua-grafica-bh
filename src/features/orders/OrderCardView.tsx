@@ -22,7 +22,7 @@ export interface CardActions {
 
 function summary(o: OrderCard): string {
   if (!o.items.length) return o.title
-  const first = `${o.items[0].qty}x ${o.items[0].description}`
+  const first = o.items[0].qty > 1 ? `${o.items[0].qty}x ${o.items[0].description}` : o.items[0].description
   return o.items.length > 1 ? `${first} +${o.items.length - 1}` : first
 }
 

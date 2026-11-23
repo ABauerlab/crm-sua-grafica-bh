@@ -51,6 +51,19 @@ export function useOrderItems(orderId: string | undefined) {
   })
 }
 
+/** Unidades reais de cada item (a quantidade do item é em pacotes: 1 pacote de 5 = 5 un.). */
+export function useOrderItemUnits(orderId: string | undefined) {
+  return useQuery({
+    queryKey: ['order-item-units', orderId],
+    enabled: !!orderId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('pedido_itens_unidades', { p_order: orderId! })
+      if (error) throw error
+      return Object.fromEntries(((data ?? []) as { item_id: string; unidades: number }[]).map((r) => [r.item_id, r.unidades])) as Record<string, number>
+    },
+  })
+}
+
 export function useOrderEvents(orderId: string | undefined) {
   return useQuery({
     queryKey: ['order-events', orderId],
