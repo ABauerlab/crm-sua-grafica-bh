@@ -35,12 +35,18 @@ Deno.serve(async (req) => {
 
   const { data: lote, error } = await db.rpc('meta_eventos_lote', { p_n: 500 })
   if (error) return json({ error: 'Não foi possível ler a fila.' }, 500)
-  const eventos = (lote ?? []) as EventoFila[]
-  if (!eventos.length) return json({ ok: true, enviados: 0 })
+  const todos = (lote ?? []) as EventoFila[]
+  if (!todos.length) return json({ ok: true, enviados: 0 })
+  // Business Messaging exige o WABA; sem ele o evento volta para a fila com o motivo, sem ir quebrado para a Meta.
+  const waba = Deno.env.get('WHATSAPP_WABA_ID') || null
+  const semWaba = waba ? [] : todos.filter((e) => e.action_source === 'business_messaging')
+  if (semWaba.length) await db.rpc('meta_eventos_resultado', { p_ids: semWaba.map((e) => e.id), p_ok: false, p_erro: 'sem WHATSAPP_WABA_ID' })
+  const eventos = todos.filter((e) => !semWaba.includes(e))
+  if (!eventos.length) return json({ ok: true, enviados: 0, sem_waba: semWaba.length })
   const ids = eventos.map((e) => e.id)
   try {
     const res = await fetch(`https://graph.facebook.com/${VERSAO}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(eventos, c.test_event_code)),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(eventos, c.test_event_code, waba)),
     })
     const r = await res.json().catch(() => ({})) as { events_received?: number; error?: { message?: string; code?: number } }
     if (!res.ok) {

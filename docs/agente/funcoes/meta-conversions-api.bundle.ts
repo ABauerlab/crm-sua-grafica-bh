@@ -92,31 +92,35 @@ async function requireServiceRole(req: Request): Promise<boolean> {
 
 interface EventoFila {
   id: number; event_id: string; event_name: string; event_time: string; action_source: string
-  event_source_url: string | null; user_data: Record<string, string>; custom_data: Record<string, unknown>
+  event_source_url: string | null; messaging_channel?: string | null; user_data: Record<string, string>; custom_data: Record<string, unknown>
 }
 
 const HASHEADOS = ['em', 'ph', 'external_id', 'ct', 'st', 'zp', 'country']
 
 /** Formato da Meta: campos com hash vão em lista; ip, user agent, fbp e fbc em texto; event_time em segundos. */
-function eventoMeta(e: EventoFila) {
+function eventoMeta(e: EventoFila, waba?: string | null) {
   const u: Record<string, string | string[]> = {}
   for (const [k, v] of Object.entries(e.user_data ?? {})) {
     if (!v) continue
     if (HASHEADOS.includes(k)) { if (/^[0-9a-f]{64}$/.test(v)) u[k] = [v] } else u[k] = v
   }
+  // Business Messaging (WhatsApp): a Meta atribui pelo ctwa_clid e pelo WABA, em texto puro, e não aceita URL de origem.
+  const chat = e.action_source === 'business_messaging'
+  if (chat && waba) u.whatsapp_business_account_id = waba
   return {
     event_name: e.event_name,
     event_time: Math.floor(new Date(e.event_time).getTime() / 1000),
     event_id: e.event_id,
     action_source: e.action_source,
-    ...(e.event_source_url ? { event_source_url: e.event_source_url } : {}),
+    ...(chat ? { messaging_channel: e.messaging_channel || 'whatsapp' } : {}),
+    ...(e.event_source_url && !chat ? { event_source_url: e.event_source_url } : {}),
     user_data: u,
     ...(Object.keys(e.custom_data ?? {}).length ? { custom_data: e.custom_data } : {}),
   }
 }
 
-function corpoMeta(eventos: EventoFila[], testCode?: string | null) {
-  return { data: eventos.map(eventoMeta), ...(testCode ? { test_event_code: testCode } : {}) }
+function corpoMeta(eventos: EventoFila[], testCode?: string | null, waba?: string | null) {
+  return { data: eventos.map((e) => eventoMeta(e, waba)), ...(testCode ? { test_event_code: testCode } : {}) }
 }
 
 /** SHA-256 em hex de texto normalizado (minúsculas, sem espaços nas pontas), como a Meta pede. */
@@ -126,7 +130,8 @@ async function sha256(texto: string): Promise<string> {
 }
 
 // E-commerce Fase 7: envia a fila meta_eventos para a Conversions API da Meta (deduplicada com o Pixel pelo event_id).
-// Chamada pelo agendamento (x-cron-secret) ou pelo dono/service role. Sem META_PIXEL_ID e META_CAPI_TOKEN não consome a fila.
+// Chamada pelo agendamento (x-cron-secret) ou pelo dono/service role. Sem META_PIXEL_ID e META_CAPI_TOKEN não consome a fila
+// e avisa o dono uma vez por dia (Fase 1 do Plano de Ação: antes o retorno era silencioso e a fila nunca era conferida).
 // Logs sem dados pessoais.
 const VERSAO = 'v21.0'
 
@@ -141,19 +146,35 @@ Deno.serve(async (req) => {
 
   const pixel = Deno.env.get('META_PIXEL_ID')
   const token = Deno.env.get('META_CAPI_TOKEN')
-  if (!pixel || !token) return json({ ok: true, configurado: false })
+  if (!pixel || !token) {
+    const { count } = await db.from('meta_eventos').select('id', { count: 'exact', head: true }).eq('status', 'pendente')
+    const hoje = new Date().toISOString().slice(0, 10)
+    const faltando = [!pixel && 'META_PIXEL_ID', !token && 'META_CAPI_TOKEN'].filter(Boolean).join(' e ')
+    await db.rpc('alerta_criar', {
+      p_tipo: 'meta_capi_sem_segredo', p_gravidade: 'alta', p_contact: null, p_conversation: null, p_order: null,
+      p_motivo: `A Conversions API da Meta está sem ${faltando}: ${count ?? 0} eventos de venda parados na fila, sem chegar à Meta. Cadastre o(s) segredo(s) nas Secrets das Edge Functions do Supabase.`,
+      p_dados: { pendentes: count ?? 0, faltando: faltando }, p_chave: `meta_capi_sem_segredo:${hoje}`, p_canais: ['whatsapp'],
+    }).then(({ error }) => { if (error) console.error('meta-conversions-api: alerta falhou', error.message) })
+    return json({ ok: true, configurado: false })
+  }
   const { data: cfg } = await db.from('app_settings').select('value').eq('key', 'meta_capi').maybeSingle()
   const c = (cfg?.value ?? {}) as { ligado?: boolean; test_event_code?: string | null }
   if (c.ligado === false) return json({ ok: true, desligado: true })
 
   const { data: lote, error } = await db.rpc('meta_eventos_lote', { p_n: 500 })
   if (error) return json({ error: 'Não foi possível ler a fila.' }, 500)
-  const eventos = (lote ?? []) as EventoFila[]
-  if (!eventos.length) return json({ ok: true, enviados: 0 })
+  const todos = (lote ?? []) as EventoFila[]
+  if (!todos.length) return json({ ok: true, enviados: 0 })
+  // Business Messaging exige o WABA; sem ele o evento volta para a fila com o motivo, sem ir quebrado para a Meta.
+  const waba = Deno.env.get('WHATSAPP_WABA_ID') || null
+  const semWaba = waba ? [] : todos.filter((e) => e.action_source === 'business_messaging')
+  if (semWaba.length) await db.rpc('meta_eventos_resultado', { p_ids: semWaba.map((e) => e.id), p_ok: false, p_erro: 'sem WHATSAPP_WABA_ID' })
+  const eventos = todos.filter((e) => !semWaba.includes(e))
+  if (!eventos.length) return json({ ok: true, enviados: 0, sem_waba: semWaba.length })
   const ids = eventos.map((e) => e.id)
   try {
     const res = await fetch(`https://graph.facebook.com/${VERSAO}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(eventos, c.test_event_code)),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(eventos, c.test_event_code, waba)),
     })
     const r = await res.json().catch(() => ({})) as { events_received?: number; error?: { message?: string; code?: number } }
     if (!res.ok) {
