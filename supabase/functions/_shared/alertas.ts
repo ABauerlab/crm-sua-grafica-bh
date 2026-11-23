@@ -111,10 +111,13 @@ export function montarConfirmacaoCliente(i: {
   nome: string | null
   pedido: string
   previsao: string
+  itens?: { descricao: string; unidades: number }[]
 }): string {
   const saudacao = i.nome ? `Oi, ${i.nome}!` : 'Oi!'
   const prazo = `Previsão de ficar pronto: ${i.previsao}.`
-  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo}`
+  const lista = (i.itens ?? []).filter((x) => x.descricao && x.unidades > 0).map((x) => `${x.unidades.toLocaleString('pt-BR')} un. de ${x.descricao.trim()}`)
+  const resumo = lista.length ? ` Resumo: ${lista.join(' e ')}.` : ''
+  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila.${resumo} ${prazo}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. A Meta exige

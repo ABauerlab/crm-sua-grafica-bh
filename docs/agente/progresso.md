@@ -1,5 +1,10 @@
 # Progresso do agente de IA
 
+## 23/11/2026: trava de unidades no link e resumo na confirmação de pagamento
+- **Trava:** `preparar_link_pagamento` (embrulhada; original em `preparar_link_pagamento_pre_unidades`) recusa o link com o motivo `quantidade_do_pedido_diferente_do_orcamento` quando um SKU do pedido tem quantidade diferente da do orçamento (a Laura chama o dono, como em `valor_do_pedido_diferente_do_orcamento`). Conferido em 77 orçamentos dos últimos 60 dias: 0 divergências, sem falso bloqueio; o caso normal do #432 segue liberando.
+- **Falha minha corrigida:** `checkout_unidades_item` só usa as unidades do orçamento enquanto o pedido tem os mesmos pacotes do orçamento; se editarem a quantidade no painel, volta a pacotes x lote (testado: 5 vira 10 com qty 2).
+- **Confirmação pós-pagamento:** `pagamento_pos_reservar_msg` devolve `itens` (até 3, com unidades reais) e a mensagem de texto livre ganha "Resumo: 5 un. de X e 5 un. de Y." O template aprovado na Meta NÃO mudou (fora da janela de 24 h segue sem resumo). `cliente-pago-avisar` publicada (v25) pelo conector. Teste: `npm run test:alertas`.
+
 ## 23/11/2026: CRM mostra as unidades reais do item (seguimento do #432)
 - A mensagem pós-pagamento (`cliente-pago-avisar`) só leva nome, pedido e previsão, sem quantidades: não tinha o erro, nada a corrigir.
 - Painel do pedido: o campo de quantidade (em pacotes) agora mostra "= 5 un." quando difere, via `public.pedido_itens_unidades` (migration `20261223000003`, só equipe, usa `private.checkout_unidades_item`). Card do Kanban deixou de mostrar "1x" (só mostra o prefixo quando a quantidade é maior que 1).
