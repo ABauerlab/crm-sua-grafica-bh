@@ -43,22 +43,31 @@ Deno.serve(async (req) => {
   if (semWaba.length) await db.rpc('meta_eventos_resultado', { p_ids: semWaba.map((e) => e.id), p_ok: false, p_erro: 'sem WHATSAPP_WABA_ID' })
   const eventos = todos.filter((e) => !semWaba.includes(e))
   if (!eventos.length) return json({ ok: true, enviados: 0, sem_waba: semWaba.length })
-  const ids = eventos.map((e) => e.id)
-  try {
-    const res = await fetch(`https://graph.facebook.com/${VERSAO}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(eventos, c.test_event_code, waba)),
-    })
-    const r = await res.json().catch(() => ({})) as { events_received?: number; error?: { message?: string; code?: number } }
-    if (!res.ok) {
-      await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: false, p_erro: `${res.status} ${r.error?.code ?? ''} ${r.error?.message ?? ''}`.trim() })
-      console.error('meta-conversions-api: recusado', res.status, r.error?.code)
-      return json({ error: 'A Meta recusou o lote.', status: res.status }, 502)
+  // Chat (Business Messaging) e site vão em pedidos separados: um evento recusado de um lado não derruba o outro.
+  const grupos = [eventos.filter((e) => e.action_source !== 'business_messaging'), eventos.filter((e) => e.action_source === 'business_messaging')].filter((g) => g.length)
+  let enviados = 0
+  let falhas = 0
+  for (const g of grupos) {
+    const ids = g.map((e) => e.id)
+    try {
+      const res = await fetch(`https://graph.facebook.com/${VERSAO}/${pixel}/events?access_token=${encodeURIComponent(token)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpoMeta(g, c.test_event_code, waba)),
+      })
+      const r = await res.json().catch(() => ({})) as { events_received?: number; error?: { message?: string; code?: number } }
+      if (!res.ok) {
+        falhas++
+        await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: false, p_erro: `${res.status} ${r.error?.code ?? ''} ${r.error?.message ?? ''}`.trim() })
+        console.error('meta-conversions-api: recusado', res.status, r.error?.code)
+        continue
+      }
+      await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: true })
+      enviados += r.events_received ?? ids.length
+    } catch {
+      falhas++
+      await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: false, p_erro: 'falha de rede' })
     }
-    await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: true })
-    console.log(`meta-conversions-api: ${r.events_received ?? ids.length} eventos recebidos`)
-    return json({ ok: true, enviados: r.events_received ?? ids.length })
-  } catch {
-    await db.rpc('meta_eventos_resultado', { p_ids: ids, p_ok: false, p_erro: 'falha de rede' })
-    return json({ error: 'Falha de rede com a Meta.' }, 502)
   }
+  console.log(`meta-conversions-api: ${enviados} eventos recebidos, ${falhas} lotes com falha`)
+  if (falhas && !enviados) return json({ error: 'A Meta recusou o lote.' }, 502)
+  return json({ ok: true, enviados, lotes_com_falha: falhas })
 })
