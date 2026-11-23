@@ -9,6 +9,7 @@ import { parseMoney } from '../src/lib/money.ts'
 import { lockSeconds } from '../src/lib/lock.ts'
 import { parsePdfPages, type PdfItem } from '../src/lib/catalog-pdf.ts'
 import { buildProducts, extractGrammage, guessHeaderRow, guessMapping, readTable } from '../src/lib/spreadsheet.ts'
+import { origemObrigatoria, ORIGENS } from '../src/lib/origem.ts'
 import { mensagemNotaFiscal, motivoNaoEmitida, resumoNfFaltando } from '../src/lib/nota-fiscal.ts'
 import { goalState, groupCampaigns, metrics } from '../src/lib/campaigns.ts'
 import { AGENT_TEMPLATES, templateProblems } from '../src/lib/agent-templates.ts'
@@ -300,4 +301,14 @@ console.log('OK: regras de preço, transições do kanban, pedidos parados, logi
   assert.equal(motivoNaoEmitida({ ...base, nf_situacao: 'Rejeitada', nf_identificador: '71' }), 'Nota nº 71 rejeitada no Bling: corrigir e emitir de novo')
   assert.equal(motivoNaoEmitida({ ...base, nf_conferido_em: '2026-11-17' }), 'Nota ainda não foi gerada no Bling')
   assert.equal(motivoNaoEmitida(base), 'Aguardando a conferência com o Bling')
+}
+
+// Origem declarada do cliente (etapa 4): obrigatória no pedido manual só para quem não veio de anúncio e ainda não tem origem
+{
+  assert.equal(origemObrigatoria(null), true, 'cliente novo precisa de origem')
+  assert.equal(origemObrigatoria({ first_referral: null, origem_declarada: null }), true)
+  assert.equal(origemObrigatoria({ first_referral: { source_id: '1' }, origem_declarada: null }), false, 'veio de anúncio: origem já conhecida')
+  assert.equal(origemObrigatoria({ first_referral: null, origem_declarada: 'instagram' }), false, 'já declarada')
+  assert.deepEqual(ORIGENS.map((o) => o.value), ['instagram', 'google', 'site', 'indicacao', 'ja_era_cliente', 'balcao', 'anuncio', 'outro'])
+  console.log('OK: origem declarada do cliente (pedido manual)')
 }

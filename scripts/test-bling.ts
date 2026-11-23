@@ -37,6 +37,13 @@ assert.equal('em' in ev.user_data, false, 'texto sem hash nunca vai para a Meta'
 assert.equal(ev.user_data.fbp, 'fb.1.123.456')
 assert.equal('event_source_url' in ev, false)
 assert.equal(corpoMeta([], 'TEST123').test_event_code, 'TEST123')
+// WhatsApp (Business Messaging): ctwa_clid em texto puro, WABA e canal, sem URL de origem
+const wa = eventoMeta({ id: 2, event_id: 'purchase-123', event_name: 'Purchase', event_time: '2026-11-20T15:00:00Z', action_source: 'business_messaging', messaging_channel: 'whatsapp',
+  event_source_url: 'https://x.com.br', user_data: { ph: h, ctwa_clid: 'ARAkLkA8rmlFeiCktEJQ-QTwRiyYHAFDLMNpHk' }, custom_data: { currency: 'BRL', value: 98.5 } }, '1234567890')
+assert.equal(wa.action_source, 'business_messaging'); assert.equal(wa.messaging_channel, 'whatsapp')
+assert.equal(wa.user_data.ctwa_clid, 'ARAkLkA8rmlFeiCktEJQ-QTwRiyYHAFDLMNpHk'); assert.equal(wa.user_data.whatsapp_business_account_id, '1234567890')
+assert.equal('event_source_url' in wa, false); assert.equal(wa.event_id, 'purchase-123')
+assert.equal('messaging_channel' in ev, false, 'evento do site não leva canal de mensagens')
 
 console.log('OK: Bling (assinatura do webhook), anúncios de marketplace e Conversions API')
 

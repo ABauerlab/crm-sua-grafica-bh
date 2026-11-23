@@ -32,6 +32,7 @@ import { CLIENTE_VAZIO, useAddOrderEvent, useCreateOrder, type ClienteManual, us
 import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
 import { contactLabel } from '@/lib/format'
+import { ORIGENS, origemObrigatoria } from '@/lib/origem'
 import { formatBRL, formatPct } from '@/lib/money'
 import { DEFAULT_KANBAN, isStalled, metodoValido, ORDER_STAGES, pedidoEcommerce, pedidoWhatsApp, type OrderCard, type OrderStage } from '@/lib/orders'
 import { cn } from '@/lib/utils'
@@ -126,7 +127,8 @@ export default function Kanban() {
   }, [payConfirm])
   const [note, setNote] = useState<{ order: OrderCard; text: string } | null>(null)
   const [perda, setPerda] = useState<OrderCard | null>(null)
-  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number; cliente: ClienteManual } | null>(null)
+  const [newOrder, setNewOrder] = useState<{ contactId: string; title: string; metodo: string; parcelas: number; cliente: ClienteManual; origem: string; origemDetalhe: string } | null>(null)
+  const precisaOrigem = origemObrigatoria((contacts ?? []).find((x) => x.id === newOrder?.contactId) ?? null)
   const [viewName, setViewName] = useState('')
   const openId = params.get('pedido')
 
@@ -229,7 +231,7 @@ export default function Kanban() {
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
               <Filter className="h-4 w-4" /> Filtros{hasFilters ? ' (ativos)' : ''}
             </Button>
-            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO })}>
+            <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO, origem: '', origemDetalhe: '' })}>
               <Plus className="h-4 w-4" /> Novo pedido
             </Button>
           </div>
@@ -354,7 +356,7 @@ export default function Kanban() {
           {(orders?.length ?? 0) === 0 && (
             <div className="mx-4 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-brand-cyan/40 bg-brand-cyan/10 px-3 py-2 text-sm">
               <p><strong>Nenhum pedido ainda.</strong> Cada pedido nasce de uma conversa e anda por estas etapas até a entrega.</p>
-              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
+              <Button size="sm" onClick={() => setNewOrder({ contactId: '', title: '', metodo: '', parcelas: 1, cliente: CLIENTE_VAZIO, origem: '', origemDetalhe: '' })}><Plus className="h-4 w-4" /> Criar primeiro pedido</Button>
             </div>
           )}
           {/* Desktop e tablet: quadro com arrastar e soltar */}
@@ -424,7 +426,7 @@ export default function Kanban() {
         <div className="space-y-3">
           <Select aria-label="Contato" value={newOrder?.contactId ?? ''} onChange={(e) => {
             const c = (contacts ?? []).find((x) => x.id === e.target.value)
-            setNewOrder((n) => n && { ...n, contactId: e.target.value, cliente: c ? { name: c.name ?? '', whatsapp: c.wa_id, email: c.email ?? '', document: c.document ?? '', address: c.address ?? '' } : CLIENTE_VAZIO })
+            setNewOrder((n) => n && { ...n, contactId: e.target.value, origem: '', origemDetalhe: '', cliente: c ? { name: c.name ?? '', whatsapp: c.wa_id, email: c.email ?? '', document: c.document ?? '', address: c.address ?? '' } : CLIENTE_VAZIO })
           }}>
             <option value="">Novo cliente (preencha abaixo)</option>
             {(contacts ?? []).map((c) => (
@@ -442,11 +444,24 @@ export default function Kanban() {
           <Input aria-label="Endereço" placeholder="Endereço completo com CEP" value={newOrder?.cliente.address ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, cliente: { ...n.cliente, address: e.target.value } })} />
           <Input aria-label="Título do pedido" placeholder="Ex.: 500 cartões de visita" value={newOrder?.title ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, title: e.target.value })} />
           <MetodoPagamentoField label="Como o cliente vai pagar" value={{ metodo: newOrder?.metodo ?? '', parcelas: newOrder?.parcelas ?? 1 }} onChange={(m) => setNewOrder((n) => n && { ...n, ...m })} />
+          {precisaOrigem ? (
+            <div className="space-y-2">
+              <Select aria-label="Como o cliente conheceu a Sua Gráfica (obrigatório)" value={newOrder?.origem ?? ''} onChange={(e) => setNewOrder((n) => n && { ...n, origem: e.target.value })}>
+                <option value="">Como o cliente conheceu a Sua Gráfica? (obrigatório)</option>
+                {ORIGENS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </Select>
+              {newOrder?.origem === 'indicacao' && (
+                <Input aria-label="Quem indicou" placeholder="Quem indicou (opcional)" value={newOrder.origemDetalhe} onChange={(e) => setNewOrder((n) => n && { ...n, origemDetalhe: e.target.value })} />
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Origem do cliente já registrada.</p>
+          )}
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setNewOrder(null)}>Cancelar</Button>
           <Button
-            disabled={(!newOrder?.contactId && (newOrder?.cliente.whatsapp.replace(/\D/g, '').length ?? 0) < 10) || !newOrder?.metodo || create.isPending}
+            disabled={(!newOrder?.contactId && (newOrder?.cliente.whatsapp.replace(/\D/g, '').length ?? 0) < 10) || !newOrder?.metodo || (precisaOrigem && !newOrder?.origem) || create.isPending}
             onClick={() =>
               newOrder &&
               create.mutate(newOrder, {
