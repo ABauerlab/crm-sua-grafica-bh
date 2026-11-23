@@ -1,5 +1,9 @@
 # Progresso do agente de IA
 
+## 23/11/2026: CRM mostra as unidades reais do item (seguimento do #432)
+- A mensagem pós-pagamento (`cliente-pago-avisar`) só leva nome, pedido e previsão, sem quantidades: não tinha o erro, nada a corrigir.
+- Painel do pedido: o campo de quantidade (em pacotes) agora mostra "= 5 un." quando difere, via `public.pedido_itens_unidades` (migration `20261223000003`, só equipe, usa `private.checkout_unidades_item`). Card do Kanban deixou de mostrar "1x" (só mostra o prefixo quando a quantidade é maior que 1).
+
 ## 23/11/2026: checkout espelha o negociado (pedido #432: 5 crachás apareciam como "1 un.")
 - **Causa raiz:** o orçamento guarda as unidades que o cliente pediu em `orcamento_itens.unidades_cliente` (5), mas o pedido grava a linha como 1 pacote (`order_items.qty = 1`, lote de 5 do catálogo). O `/pagar/<token>` mostrava "1 un. x R$ 86,90", dando a impressão de cobrança de 1 unidade. Os valores e o total (R$ 185,80) já estavam certos.
 - **Correção (só exibição, nenhum valor muda):** migration `20261223000001` cria `private.checkout_unidades_item` e envolve `public.checkout_carregar` (renomeada para `checkout_carregar_pre_unidades`) para devolver `unidades` em cada item de produto: as do orçamento quando o SKU aparece uma vez no pedido, senão pacotes x lote do catálogo. O front (`unidadesDoItem` em `ecommerce/lib/pagar.ts`) prefere `unidades`; a heurística "· N un." da descrição fica só de reserva. Resultado no #432: "5 un. x R$ 17,38 cada" e "5 un. x R$ 19,78 cada".

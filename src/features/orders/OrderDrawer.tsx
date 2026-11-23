@@ -26,6 +26,7 @@ import {
   useOrderEvents,
   useOrderFiles,
   useOrderItems,
+  useOrderItemUnits,
   useOrders,
   useSettings,
   useUpdateOrder,
@@ -206,6 +207,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
   }
   const addEvent = useAddOrderEvent()
   const { data: items, isLoading } = useOrderItems(order.id)
+  const { data: unidades } = useOrderItemUnits(order.id)
   const { data: settings } = useSettings()
   const rules = settings?.pricing ?? DEFAULT_PRICING
   const [manual, setManual] = useState(false)
@@ -326,7 +328,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
       ) : (
         <ul className="space-y-2">
           {(items ?? []).map((it) => (
-            <ItemRow key={it.id} item={it} below={belowFloor(it)} floor={unitFloor(it.unit_cost, rules)} onRemove={() => removeItem.mutate(it.id)}
+            <ItemRow key={it.id} item={it} unidades={unidades?.[it.id]} below={belowFloor(it)} floor={unitFloor(it.unit_cost, rules)} onRemove={() => removeItem.mutate(it.id)}
               onSave={(patch) => {
                 // confirmação do dono entre o piso duro e o piso já tem motivo e registro próprios (definir_preco_item_pedido)
                 if (patch.confirmar) return void saveItem.mutate({ ...it, ...patch })
@@ -406,7 +408,7 @@ function ItemsTab({ order }: { order: OrderCard }) {
 
 type SimulacaoPreco = { ok: boolean; faixa: 'ok' | 'entre_pisos' | 'abaixo_piso_duro'; lucro_liquido: number; piso: number; piso_duro: number; total_linha: number; requer_confirmacao: boolean }
 
-function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; below: boolean; floor: number; onSave: (p: Partial<OrderItem> & { confirmar?: boolean; motivo?: string }) => void; onRemove: () => void }) {
+function ItemRow({ item, unidades, below, floor, onSave, onRemove }: { item: OrderItem; unidades?: number; below: boolean; floor: number; onSave: (p: Partial<OrderItem> & { confirmar?: boolean; motivo?: string }) => void; onRemove: () => void }) {
   const [v, setV] = useState({ description: item.description, qty: String(item.qty), cost: String(item.unit_cost), price: String(item.unit_price) })
   const [confirma, setConfirma] = useState(false)
   const [motivo, setMotivo] = useState('')
@@ -437,7 +439,7 @@ function ItemRow({ item, below, floor, onSave, onRemove }: { item: OrderItem; be
           <Input className="text-foreground" value={v.description} onChange={(e) => setV({ ...v, description: e.target.value })} />
         </label>
         <label className="col-span-2 space-y-1 text-xs font-medium text-muted-foreground">
-          Quantidade
+          Pacotes / Qtd{unidades && unidades !== item.qty ? <span className="ml-1 font-bold text-foreground">= {unidades.toLocaleString('pt-BR')} un.</span> : null}
           <Input type="number" min="1" className="text-foreground" value={v.qty} onChange={(e) => setV({ ...v, qty: e.target.value })} />
         </label>
         <label className="col-span-3 space-y-1 text-xs font-medium text-muted-foreground">
