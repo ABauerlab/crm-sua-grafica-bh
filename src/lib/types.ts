@@ -32,6 +32,8 @@ export interface Contact {
   status_lead?: string | null
   motivo_perda?: string | null
   perdido_em?: string | null
+  origem_declarada?: string | null
+  origem_detalhe?: string | null
   created_at: string
 }
 

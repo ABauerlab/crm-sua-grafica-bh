@@ -1,3 +1,4 @@
+import { origemObrigatoria } from '@/lib/origem'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import {
@@ -217,16 +218,25 @@ async function salvarCliente(contactId: string, c?: ClienteManual): Promise<stri
 export function useCreateOrder() {
   const invalidate = useInvalidateOrders()
   return useMutation({
-    mutationFn: async (input: { contactId: string; title: string; metodo: string; parcelas?: number | null; cliente?: ClienteManual }) => {
+    mutationFn: async (input: { contactId: string; title: string; metodo: string; parcelas?: number | null; cliente?: ClienteManual; origem?: string; origemDetalhe?: string }) => {
       if (!input.metodo) throw new Error('Escolha o método de pagamento.')
       const contactId = await salvarCliente(input.contactId, input.cliente)
       const { data: contact, error: cErr } = await supabase
         .from('contacts')
-        .select('id, first_referral, conversations(id)')
+        .select('id, first_referral, origem_declarada, conversations(id)')
         .eq('id', contactId)
         .single()
       if (cErr) throw new Error(cErr.message)
       const ref = (contact as { first_referral: Record<string, string> | null }).first_referral
+      // Origem obrigatória no pedido manual (sem anúncio e sem origem já declarada)
+      if (origemObrigatoria(contact as { first_referral: Record<string, string> | null; origem_declarada: string | null })) {
+        if (!input.origem) throw new Error('Informe como o cliente conheceu a Sua Gráfica.')
+        const { error: oErr } = await supabase.from('contacts').update({
+          origem_declarada: input.origem, origem_fonte: 'dono', origem_declarada_em: new Date().toISOString(),
+          ...(input.origemDetalhe?.trim() ? { origem_detalhe: input.origemDetalhe.trim().slice(0, 120) } : {}),
+        }).eq('id', contactId).is('origem_declarada', null)
+        if (oErr) throw new Error('Não foi possível salvar a origem do cliente.')
+      }
       const conv = (contact as { conversations: { id: string }[] | { id: string } | null }).conversations
       const convId = Array.isArray(conv) ? conv[0]?.id : conv?.id
       const { data, error } = await supabase
