@@ -38,6 +38,12 @@ export function montarPush(a: AlertaFila): PushPayload {
       title = `${d.teste ? '[TESTE] ' : ''}Pedido pago: ${str(d.pedido, 'novo pedido')}`
       body = `${cliente} pagou ${str(d.valor, '')}. Lucro líquido ${str(d.lucro_liquido, 'a confirmar')}. Previsão ${str(d.previsao, 'a confirmar')}.`
       break
+    case 'novo_lead': {
+      const previa = str(d.previa)
+      title = 'Novo lead entrou em contato'
+      body = previa ? `${cliente}: "${previa}"` : `${cliente} chamou no WhatsApp da gráfica.`
+      break
+    }
     case 'nova_mensagem_humano':
       title = 'Nova mensagem'
       body = `${cliente} escreveu e está esperando você.`
@@ -100,6 +106,7 @@ export function montarTexto(a: AlertaFila): string {
       `Abra o pedido no CRM: ${url}`,
     ].join('\n')
   }
+  if (a.tipo === 'novo_lead') return `Novo lead entrou em contato: ${str(d.cliente, 'cliente')}.${str(d.previa) ? `\nMensagem: ${str(d.previa)}` : ''}\nAbra no CRM: ${url}`
   if (a.tipo === 'resumo') return `Resumo de avisos (${a.motivo})\nAbra o CRM: ${url}`
   return `Atenção no atendimento. Cliente: ${str(d.cliente, '-')}.\nMotivo: ${a.motivo}\nAbra no CRM: ${url}`
 }

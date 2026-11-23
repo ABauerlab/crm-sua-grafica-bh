@@ -14,6 +14,7 @@ import { ativarPush, desativarPush, ehIOS, estadoPush, instalado, type EstadoPus
 
 const TIPOS: { id: string; nome: string; ajuda: string }[] = [
   { id: 'pedido_pago', nome: 'Pedido pago', ajuda: 'Cliente, valor, lucro líquido e previsão. Sempre na hora.' },
+  { id: 'novo_lead', nome: 'Novo lead', ajuda: 'Um contato novo escreveu pela primeira vez no WhatsApp da gráfica. Só um aviso por contato.' },
   { id: 'atencao_agente', nome: 'Atenção do agente', ajuda: 'O agente chamou você: reclamação, fora do catálogo, cliente pediu uma pessoa, erro.' },
   { id: 'pagamento_problema', nome: 'Problema no pagamento', ajuda: 'Estorno, contestação ou pagamento fora das regras. O pedido não é alterado.' },
   { id: 'nova_mensagem_humano', nome: 'Nova mensagem em atendimento humano', ajuda: 'Cliente escreveu e ninguém da IA vai responder. Só uma vez a cada 30 minutos por conversa.' },

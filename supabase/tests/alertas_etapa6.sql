@@ -115,6 +115,17 @@ begin
   insert into public.messages (conversation_id, wa_message_id, direction, type, body) values (v_cv, 'w-ia1', 'in', 'text', 'oi');
   perform pg_temp.chk(not exists (select 1 from public.alertas where conversation_id = v_cv and tipo = 'nova_mensagem_humano' and criado_em > now() - interval '1 minute' and false), 'mensagem humana: gatilho não quebra a gravação da mensagem');
 
+  -- novo lead: só a primeira mensagem do contato avisa, em alta, só popup, com prévia
+  perform pg_temp.chk((select count(*) from public.alertas where conversation_id = v_cv2 and tipo = 'novo_lead') = 1, 'novo lead: duas mensagens do mesmo contato geram um aviso só');
+  perform pg_temp.chk((select gravidade = 'alta' and status_push = 'pendente' and status_whatsapp = 'desligado' and dados ->> 'previa' = 'oi' from public.alertas where conversation_id = v_cv2 and tipo = 'novo_lead'), 'novo lead: alta, só popup, com prévia');
+  perform pg_temp.chk((select dados ->> 'url' like '%/inbox/' || v_cv2::text from public.alertas where conversation_id = v_cv2 and tipo = 'novo_lead'), 'novo lead: o toque abre a conversa');
+  insert into public.messages (conversation_id, wa_message_id, direction, type, body) values (v_cv2, 'w-h3', 'in', 'text', 'voltei');
+  perform pg_temp.chk((select count(*) from public.alertas where conversation_id = v_cv2 and tipo = 'novo_lead') = 1, 'novo lead: contato que volta não gera novo aviso');
+  insert into public.contacts (wa_id, name) values ('5531900000079', 'Ana') returning id into v_ct2;
+  insert into public.conversations (contact_id) values (v_ct2) returning id into v_cv2;
+  insert into public.messages (conversation_id, wa_message_id, direction, type, body) values (v_cv2, 'w-l1', 'out', 'text', 'template enviado pelo CRM');
+  perform pg_temp.chk(not exists (select 1 from public.alertas where conversation_id = v_cv2 and tipo = 'novo_lead'), 'novo lead: mensagem enviada por nós não avisa');
+
   -- silêncio empurra push de baixa prioridade para o resumo e deixa passar o que fura
   update public.app_settings set value = jsonb_set(value, '{silencio}', '{"ativo":true,"inicio":"00:00","fim":"23:59"}') where key = 'notificacoes';
   perform public.alerta_criar('padrao_desconto', 'alta', v_ct2, null, null, 'teste silencio');
