@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## 23/11/2026: checkout espelha o negociado (pedido #432: 5 crachás apareciam como "1 un.")
+- **Causa raiz:** o orçamento guarda as unidades que o cliente pediu em `orcamento_itens.unidades_cliente` (5), mas o pedido grava a linha como 1 pacote (`order_items.qty = 1`, lote de 5 do catálogo). O `/pagar/<token>` mostrava "1 un. x R$ 86,90", dando a impressão de cobrança de 1 unidade. Os valores e o total (R$ 185,80) já estavam certos.
+- **Correção (só exibição, nenhum valor muda):** migration `20261223000001` cria `private.checkout_unidades_item` e envolve `public.checkout_carregar` (renomeada para `checkout_carregar_pre_unidades`) para devolver `unidades` em cada item de produto: as do orçamento quando o SKU aparece uma vez no pedido, senão pacotes x lote do catálogo. O front (`unidadesDoItem` em `ecommerce/lib/pagar.ts`) prefere `unidades`; a heurística "· N un." da descrição fica só de reserva. Resultado no #432: "5 un. x R$ 17,38 cada" e "5 un. x R$ 19,78 cada".
+- Aplicada em produção pelo conector (aditiva, testada com rollback no #432). Teste: `supabase/tests/checkout_unidades.sql`. `npm run gate` e build da loja verdes.
+- **Bug achado e corrigido junto:** a `20261222000012` recriou `checkout_carregar` sem o wrapper da campanha, então `campanha` vinha NULL em produção (sumiam o aviso e o selo "Grátis na Black Friday" do checkout). Migration `20261223000002` devolve `campanha` (conferido: ativa, até 30/11). `npm run test:checkout` agora cobre as unidades e a campanha.
+- Pendente de olhar: drawer do pedido no CRM e mensagem pós-pagamento ainda leem `qty` (pacotes), não as unidades.
+
 ## 22/11/2026: indexação do conhecimento a cada 5 minutos
 O cron `conhecimento-reindexar` rodava a cada 6 horas (a documentação dizia 5 min), então ficha editada ficava até 6 h sem vetor. Migration `20261222000013` passa para `*/5 * * * *` (a função só processa trechos sem vetor). Também atualizada a ficha `frete_fora` (entrega por aplicativo a combinar) e reindexada.
 
