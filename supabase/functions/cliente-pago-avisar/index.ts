@@ -70,10 +70,13 @@ function montarConfirmacaoCliente(i: {
   pedido: string
   previsao: string
   prazo_manual?: boolean
+  itens?: { descricao: string; unidades: number }[]
 }): string {
   const saudacao = i.nome ? `Oi, ${i.nome}!` : 'Oi!'
   const prazo = i.prazo_manual ? `Prazo combinado: ${i.previsao}.` : `Previsão de ficar pronto: ${i.previsao}.`
-  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila. ${prazo}`
+  const lista = (i.itens ?? []).filter((x) => x.descricao && x.unidades > 0).map((x) => `${x.unidades.toLocaleString('pt-BR')} un. de ${x.descricao.trim()}`)
+  const resumo = lista.length ? ` Resumo: ${lista.join(' e ')}.` : ''
+  return `${saudacao} Aqui é o João Victor da Sua Gráfica BH! Seu pagamento foi confirmado! Seu pedido ${i.pedido} já entrou na fila.${resumo} ${prazo}`
 }
 
 /** Variáveis do template pedido_pago_confirmacao: nome, número do pedido, previsão. A Meta exige
@@ -184,6 +187,7 @@ Deno.serve(async (req) => {
     pedido: r.pedido as string,
     previsao: r.previsao as string,
     prazo_manual: r.prazo_manual === true,
+    itens: Array.isArray(r.itens) ? (r.itens as { descricao: string; unidades: number }[]) : [],
   }
   let corpo = ''
   let tipo: 'text' | 'template' = 'text'
