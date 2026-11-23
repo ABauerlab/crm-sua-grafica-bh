@@ -72,4 +72,11 @@ for (const f of ['supabase/functions/checkout-dados/index.ts', 'supabase/functio
   const src = readFileSync(new URL('../' + f, import.meta.url), 'utf8')
   assert.ok(!/console\.(log|error)\([^)]*\b(email|documento|nome)\b/.test(src), `${f} não registra dado pessoal`)
 }
+// Checkout espelha o negociado: lote de 5 un. (qty 1) mostra 5 un. x valor unitário, nunca "1 un."; o total não muda
+const pag = readFileSync(new URL('../ecommerce/lib/pagar.ts', import.meta.url), 'utf8')
+assert.match(pag, /i\.unidades && i\.unidades > 0 \? i\.unidades/, 'unidadesDoItem prefere as unidades do banco')
+const mig = readFileSync(new URL('../supabase/migrations/20261223000001_checkout_unidades_do_cliente.sql', import.meta.url), 'utf8')
+assert.match(mig, /unidades_cliente/, 'unidades vêm do orçamento')
+const camp = readFileSync(new URL('../supabase/migrations/20261223000002_checkout_campanha_de_volta.sql', import.meta.url), 'utf8')
+assert.match(camp, /loja_campanha\(\)/, 'checkout_carregar devolve a campanha')
 console.log('test-checkout: ok')
