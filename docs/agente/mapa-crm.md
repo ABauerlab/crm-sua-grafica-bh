@@ -374,3 +374,6 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 - `public.checkout_carregar` devolve `unidades` por item de produto (`private.checkout_unidades_item`: `orcamento_itens.unidades_cliente` ou pacotes x lote do catalogo). O front usa em `unidadesDoItem` (`ecommerce/lib/pagar.ts`). So exibicao, valores intactos. Teste: `supabase/tests/checkout_unidades.sql`.
 - `public.pedido_itens_unidades(order)` (equipe): unidades reais por item para o painel do pedido (`useOrderItemUnits`).
 - Link de pagamento: trava `quantidade_do_pedido_diferente_do_orcamento` em `preparar_link_pagamento`. Pós-pagamento: `pagamento_pos_reservar_msg` devolve `itens` e a confirmação em texto livre traz o resumo.
+
+## Aviso de novo lead (23/11/2026)
+Gatilho `messages_notifica_novo_lead` (`private.trg_novo_lead`) em `messages` cria o alerta `novo_lead` (alta, só popup, um por contato, chave `novo_lead:<conversa>`) na primeira mensagem recebida. Categoria `novo_lead` em `private.alerta_categoria`; preferência em `app_settings.notificacoes.tipos.novo_lead`; texto em `_shared/alertas.ts` (`montarPush`); linha em Configurações > Notificações. Migration `20261223000005`.

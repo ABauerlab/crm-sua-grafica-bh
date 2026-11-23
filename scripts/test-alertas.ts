@@ -19,6 +19,11 @@ assert.equal(p.tag, 'pedido_pago:c1', 'mesmo tipo e conversa: a notificação su
 assert.equal(p.badge, 3)
 assert.ok(montarPush({ ...pago, tipo: 'agente_chamado', motivo: 'Cliente reclamou', dados: { cliente: 'João', url: '/inbox/x' } }).title.startsWith('Atenção: João'))
 assert.ok(montarPush({ ...pago, dados: { ...pago.dados, teste: true } }).title.startsWith('[TESTE]'))
+const lead = montarPush({ ...pago, tipo: 'novo_lead', gravidade: 'alta', motivo: 'Novo lead entrou em contato.', dados: { cliente: 'Ana', previa: 'Oi, quero cartão de visita', url: '/inbox/c1' } })
+assert.equal(lead.title, 'Novo lead entrou em contato')
+assert.equal(lead.body, 'Ana: "Oi, quero cartão de visita"')
+assert.equal(lead.url, '/inbox/c1', 'o toque abre a conversa do lead')
+assert.equal(montarPush({ ...pago, tipo: 'novo_lead', dados: { cliente: 'Ana', url: '/inbox/c1' } }).body, 'Ana chamou no WhatsApp da gráfica.', 'sem texto (foto, áudio): mensagem simples')
 assert.ok(montarPush({ ...pago, motivo: 'x'.repeat(500), tipo: 'agente_chamado' }).body.length <= 170, 'texto longo é cortado')
 
 // ---- template do WhatsApp: variáveis sem quebra de linha, nunca vazias, na ordem do texto aprovado

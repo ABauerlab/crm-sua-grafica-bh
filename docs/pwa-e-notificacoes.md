@@ -7,7 +7,7 @@ Cada alerta é gravado em `alertas` (uma só porta: `alerta_criar`) e entregue p
 
 Regras: gravidade **alta** sai na hora; **baixa** é agrupada num resumo a cada 2 horas; o mesmo alerta da mesma conversa só uma vez a cada 30 minutos; horário de silêncio (padrão 22h às 7h) segura os popups não urgentes (pedido pago, atenção do agente e problema de pagamento furam o silêncio). Se um canal falha 3 vezes, o outro avisa que o primeiro não chegou. Cada canal tem seu status em `alertas` e na tela Configurações > Notificações.
 
-Tipos: pedido pago, atenção do agente (`chamar_dono`), problema de pagamento (estorno, contestação), nova mensagem em atendimento humano (só popup por padrão), pagamento pendente há mais de 6 h, pedido pago sem arte há mais de 12 h, desconto fora do padrão e o resumo.
+Tipos: **novo lead** (primeira mensagem de um contato novo no WhatsApp da gráfica; popup "Novo lead entrou em contato" com o nome e o começo da mensagem, um aviso só por contato, só popup, respeita o silêncio da madrugada), pedido pago, atenção do agente (`chamar_dono`), problema de pagamento (estorno, contestação), nova mensagem em atendimento humano (só popup por padrão), pagamento pendente há mais de 6 h, pedido pago sem arte há mais de 12 h, desconto fora do padrão e o resumo.
 
 ## Instalar no iPhone (iOS 16.4 ou superior)
 1. Abra **crm.suagraficabh.com.br no Safari**.

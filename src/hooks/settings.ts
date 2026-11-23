@@ -46,6 +46,7 @@ export const DEFAULTS = {
   notificacoes: {
     tipos: {
       pedido_pago: { push: true, whatsapp: true, fura_silencio: true },
+      novo_lead: { push: true, whatsapp: false, fura_silencio: false },
       atencao_agente: { push: true, whatsapp: true, fura_silencio: true },
       pagamento_problema: { push: true, whatsapp: true, fura_silencio: true },
       nova_mensagem_humano: { push: true, whatsapp: false, fura_silencio: false },

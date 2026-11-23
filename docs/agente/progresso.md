@@ -1,5 +1,13 @@
 # Progresso do agente de IA
 
+## 23/11/2026: aviso de novo lead no celular (PWA)
+- Pedido do dono: popup no iPhone sempre que um contato novo escrever no WhatsApp da gráfica ("Novo lead entrou em contato"), só para ficar ciente.
+- **Banco** (migration `20261223000005`, aditiva): gatilho `messages_notifica_novo_lead` (`private.trg_novo_lead`) cria o alerta `novo_lead` (gravidade alta, chave `novo_lead:<conversa>` = um aviso por contato para sempre) na PRIMEIRA mensagem recebida da conversa. Ignora o número do dono; contato de teste fica gravado e não é entregue (regra do `alerta_criar`). Nunca quebra a gravação da mensagem. Categoria própria `novo_lead` em `private.alerta_categoria` e preferência padrão `{push: true, whatsapp: false, fura_silencio: false}` em `app_settings.notificacoes` (não sobrescreve o que o dono já salvou).
+- **Popup:** `montarPush`/`montarTexto` (`_shared/alertas.ts`) ganharam o tipo `novo_lead`: título "Novo lead entrou em contato", corpo `Nome: "começo da mensagem"` (ou "Nome chamou no WhatsApp da gráfica." se for foto ou áudio). O toque abre a conversa. A função `alertas-enviar` precisa ser publicada de novo para usar o texto novo.
+- **CRM:** Configurações > Notificações ganhou a linha "Novo lead" (liga e desliga popup, WhatsApp e silêncio).
+- **Testes:** `npm run test:alertas` (texto do popup) e 5 casos novos em `supabase/tests/alertas_etapa6.sql`. O harness local `rodar-local.sh` já falha antes disso na migration `20261105000001` (depende de funções que só existem em produção), então o SQL novo foi validado só num banco mínimo; rodar o arquivo completo contra o ambiente que tiver o schema inteiro.
+- **Latência:** o popup sai na próxima passada do WF5 (até 1 minuto). Para sair na hora, ligar o Database Webhook opcional ou chamar `alertas-enviar` por `pg_net` no gatilho (melhoria sugerida).
+
 ## 23/11/2026: trava de unidades no link e resumo na confirmação de pagamento
 - **Trava:** `preparar_link_pagamento` (embrulhada; original em `preparar_link_pagamento_pre_unidades`) recusa o link com o motivo `quantidade_do_pedido_diferente_do_orcamento` quando um SKU do pedido tem quantidade diferente da do orçamento (a Laura chama o dono, como em `valor_do_pedido_diferente_do_orcamento`). Conferido em 77 orçamentos dos últimos 60 dias: 0 divergências, sem falso bloqueio; o caso normal do #432 segue liberando.
 - **Falha minha corrigida:** `checkout_unidades_item` só usa as unidades do orçamento enquanto o pedido tem os mesmos pacotes do orçamento; se editarem a quantidade no painel, volta a pacotes x lote (testado: 5 vira 10 com qty 2).
