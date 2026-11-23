@@ -1,5 +1,5 @@
 // Checkout próprio (/pagar/<token>): tipos e chamadas. Tudo passa pelas rotas /api/v1/pagar (a chave secreta nunca vem ao navegador).
-export interface ItemPedido { id: string | null; descricao: string; quantidade: number; unitario: number; subtotal: number; extra: boolean; tipo: 'arte' | 'produto' | 'frete' }
+export interface ItemPedido { id: string | null; descricao: string; quantidade: number; unitario: number; subtotal: number; extra: boolean; tipo: 'arte' | 'produto' | 'frete'; unidades?: number }
 export interface OpcaoArte { codigo: 'pronta' | 'conferencia' | 'criacao'; titulo: string; texto: string; valor: number }
 export interface Sugestao { ref: string; slug: string | null; titulo: string; quantidade: number | null; preco: number; parcela_2x: number; prazo_dias_uteis: number | null; foto: string | null; motivo: string; selo: string }
 export interface OpcaoQuantidade { ref: string; quantidade: number; preco: number; unitario: number; atual: boolean }
@@ -68,11 +68,12 @@ export const emailValido = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.tr
 export const dataCurta = (iso: string | null) => (iso ? new Date(iso.length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', weekday: 'long', timeZone: 'America/Sao_Paulo' }) : null)
 export const dataHora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : null)
 
-/** Unidades reais do item. Um lote vem como "5 un." na descrição e quantidade 1: o cliente precisa ver 5 un. x valor unitário, nunca 1x. */
-export function unidadesDoItem(i: { descricao: string; quantidade: number; subtotal: number }): { unidades: number; unitario: number } {
+/** Unidades reais do item, como no orçamento do WhatsApp. O banco manda `unidades` (5 crachás = 5, mesmo que o pedido guarde 1 pacote);
+ *  sem isso, usa "· 5 un." da descrição. O subtotal nunca muda: só a forma de mostrar (5 un. x valor unitário), nunca "1 un." num lote de 5. */
+export function unidadesDoItem(i: { descricao: string; quantidade: number; subtotal: number; unidades?: number }): { unidades: number; unitario: number } {
   const m = i.descricao.match(/·\s*([\d.]+)\s*un\./i)
   const n = m ? Number(m[1].replace(/\./g, '')) : 0
-  const unidades = i.quantidade > 1 ? i.quantidade : n > 1 ? n : i.quantidade
+  const unidades = i.unidades && i.unidades > 0 ? i.unidades : i.quantidade > 1 ? i.quantidade : n > 1 ? n : i.quantidade
   return { unidades, unitario: unidades > 0 ? i.subtotal / unidades : i.subtotal }
 }
 

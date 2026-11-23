@@ -369,3 +369,6 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 ## Checkout próprio: entrega e layout (22/11/2026)
 - Migration `20261222000012`: `order_items_validar` não aplica o piso à linha de frete do checkout; `checkout_definir_frete` aceita entrega por aplicativo (linha a R$ 0,00, valor combinado na hora); `checkout_carregar` devolve `frete.aplicativo`; `checkout_sincronizar_orcamento` ignora a linha do aplicativo.
 - `loja-frete`: opção `uber` com `a_combinar: true` (sem valor fixo). Front: `components/pagar/Linha.tsx` recolhe entrega, quantidade e sugestões; pagamento fica logo depois de dados e arte.
+
+### Checkout: unidades do cliente (23/11/2026)
+- `public.checkout_carregar` devolve `unidades` por item de produto (`private.checkout_unidades_item`: `orcamento_itens.unidades_cliente` ou pacotes x lote do catalogo). O front usa em `unidadesDoItem` (`ecommerce/lib/pagar.ts`). So exibicao, valores intactos. Teste: `supabase/tests/checkout_unidades.sql`.
