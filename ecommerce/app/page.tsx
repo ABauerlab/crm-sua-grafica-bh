@@ -26,18 +26,8 @@ async function maisVendidos(): Promise<ProdutoResumo[]> {
   return r.map((x) => x.produtos.find((p) => p.foto) ?? x.produtos[0]).filter((p): p is ProdutoResumo => !!p)
 }
 
-// Vitrine da home: cada departamento mostra MODELOS reais (foto, SKU e preço), nunca contagem de produtos
-const DEPARTAMENTOS = [
-  { titulo: 'Cartões de visita', slug: 'cartoes-de-visita' },
-  { titulo: 'Panfletos, flyers e folhetos', slug: 'panfletos-flyers-e-folhetos' },
-  { titulo: 'Adesivos', slug: 'adesivos' },
-  { titulo: 'Banners, lonas e faixas', slug: 'banners-faixas-lonas-e-tecidos' },
-  { titulo: 'Sacolas e embalagens', slug: 'sacolas-e-sacos' },
-  { titulo: 'Canecas e brindes', slug: 'caneca-copos-e-tacas' },
-]
-
 export default async function Home() {
-  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelosDiversos([d.slug], { limite: 6 }))])
+  const [vendidos, verticais, f, destaque] = await Promise.all([maisVendidos(), arvore(), facetasHome(), modelosDiversos(null, { limite: 48 }, 3)])
   const slides: Slide[] = [
     { alt: 'Pagou até as 10h30? Produzimos hoje mesmo. Em dia útil, pedido pago até as 10h30 entra na produção no mesmo dia.', href: '/categoria/cartoes-de-visita', desktop: '/banners/mesmo-dia-desktop.jpg', celular: '/banners/mesmo-dia-celular.jpg' },
     { alt: 'Kit completo para a sua loja: cartões, adesivos e embalagens com a sua marca. 2x sem juros no cartão.', href: '/categoria/sacolas-e-sacos', desktop: '/banners/kit-loja-desktop.jpg', celular: '/banners/kit-loja-celular.jpg' },
@@ -59,15 +49,15 @@ export default async function Home() {
           ))}
         </ul>
       </section>
-      {DEPARTAMENTOS.map((d, i) => vitrines[i].modelos.length > 0 && (
-        <section key={d.slug} className="pb-2 pt-4">
+      {destaque.modelos.length > 0 && (
+        <section className="pb-2 pt-4">
           <div className="mb-4 flex items-end justify-between gap-4">
-            <h2 className="text-xl font-black md:text-2xl">{d.titulo}</h2>
-            <Link href={`/categoria/${d.slug}`} className="text-sm font-semibold text-magenta hover:underline">Ver todos os produtos</Link>
+            <h2 className="text-xl font-black md:text-2xl">Destaque</h2>
+            <Link href="/categorias" className="text-sm font-semibold text-magenta hover:underline">Ver todos os produtos</Link>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">{vitrines[i].modelos.map((m) => <ModeloCard key={m.ref} m={m} />)}</div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">{destaque.modelos.map((m) => <ModeloCard key={m.ref} m={m} />)}</div>
         </section>
-      ))}
+      )}
 
       {vendidos.length > 0 && (
         <section className="pt-10">
