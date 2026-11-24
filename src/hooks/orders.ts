@@ -280,16 +280,20 @@ export interface PagamentoPendente {
   number: number
   contact_name: string | null
   wa_id: string
-  stage: 'cotando' | 'aguardando_pagamento'
+  stage: 'cotando' | 'aguardando_pagamento' | 'perdido'
   title: string | null
   total: number
   payment_link: string | null
+  motivo_perda: string | null
+  marketing_consent: 'none' | 'opted_in' | 'opted_out'
+  janela_aberta: boolean
   created_at: string
   dias_aberto: number
+  ultima_reativacao_em: string | null
 }
 
-/** Pedidos "cotando" (orçamento já enviado) ou "aguardando_pagamento" (link ativo), excluindo os orçados hoje
- * (botão "Reativar pagamentos pendentes" do Kanban). */
+/** Pedidos "cotando" (orçamento já enviado), "aguardando_pagamento" (link ativo) ou "perdido" (reabre a conversa),
+ * excluindo os orçados hoje (botão "Reativar pagamentos pendentes" do Kanban). */
 export function usePagamentosPendentes() {
   return useQuery({
     queryKey: ['pagamentos_pendentes_reativar'],
@@ -298,5 +302,25 @@ export function usePagamentosPendentes() {
       if (error) throw new Error(error.message)
       return (data ?? []) as PagamentoPendente[]
     },
+  })
+}
+
+/** Registra que uma reativação foi enviada (histórico, para não reenviar e incomodar de novo). */
+export function useRegistrarReativacao() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (v: { orderId: string; conversationId: string; stage: string; canal: 'template' | 'livre'; templateName?: string }) => {
+      const { data: userData } = await supabase.auth.getUser()
+      const { error } = await supabase.from('reativacoes_enviadas').insert({
+        order_id: v.orderId,
+        conversation_id: v.conversationId,
+        stage: v.stage,
+        canal: v.canal,
+        template_name: v.templateName ?? null,
+        enviado_por: userData.user?.id ?? null,
+      })
+      if (error) throw new Error(error.message)
+    },
+    onSettled: () => void qc.invalidateQueries({ queryKey: ['pagamentos_pendentes_reativar'] }),
   })
 }

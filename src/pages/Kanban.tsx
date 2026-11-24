@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { Filter, Plus, Save, Trash2 } from 'lucide-react'
+import { Eye, Filter, Plus, Save, Trash2 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,7 @@ import { PerderPedido } from '@/features/orders/PerderPedido'
 import { AvisoCliente } from '@/features/orders/AvisoCliente'
 import { ReativarPagamentosPendentes } from '@/features/orders/ReativarPagamentosPendentes'
 import { textoPedidoPronto } from '@/lib/aviso-operacional'
-import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
+import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useCardsOcultos, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
 import { CLIENTE_VAZIO, useAddOrderEvent, useCreateOrder, type ClienteManual, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
 import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
@@ -144,13 +144,18 @@ export default function Kanban() {
     return lista
   }, [orders, origemPedidos])
   const filtered = useFilteredOrders(pedidosPorOrigem, filters)
+  const { isOculto, toggle: toggleOculto, reexibirTodos, ocultos } = useCardsOcultos()
+  const ocultosNaLista = useMemo(() => filtered.filter((o) => isOculto(o.id)).length, [filtered, ocultos])
   const byStage = useMemo(() => {
     const map = new Map<OrderStage, OrderCard[]>(ORDER_STAGES.map((s) => [s.value, []]))
-    for (const o of filtered) map.get(o.stage)?.push(o)
+    for (const o of filtered) {
+      if (isOculto(o.id)) continue
+      map.get(o.stage)?.push(o)
+    }
     // urgentes na frente (só ordena a fila, não muda prazo)
     for (const lista of map.values()) lista.sort((a, b) => Number(b.urgente) - Number(a.urgente))
     return map
-  }, [filtered])
+  }, [filtered, ocultos])
 
   const origins = useMemo(() => [...new Set((orders ?? []).map((o) => o.origin_label).filter((v): v is string => !!v && v !== 'ecommerce' && v !== 'site'))].sort(), [orders])
   const paid = filtered.filter((o) => o.payment_status === 'aprovado' || o.payment_manual)
@@ -191,6 +196,8 @@ export default function Kanban() {
       await navigator.clipboard.writeText(o.payment_link)
       toast('ok', 'Link de pagamento copiado.')
     },
+    toggleHide: (o) => toggleOculto(o.id),
+    isHidden: isOculto,
   }
 
   function onDragStart(e: DragStartEvent) {
@@ -230,6 +237,11 @@ export default function Kanban() {
           <h1 className="text-xl font-black">Pedidos</h1>
           <div className="flex items-center gap-2">
             <ReativarPagamentosPendentes />
+            {ocultosNaLista > 0 && (
+              <Button variant="outline" size="sm" onClick={reexibirTodos} title="Reexibir os cards que você ocultou neste navegador">
+                <Eye className="h-4 w-4" /> Ocultos ({ocultosNaLista})
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
               <Filter className="h-4 w-4" /> Filtros{hasFilters ? ' (ativos)' : ''}
             </Button>

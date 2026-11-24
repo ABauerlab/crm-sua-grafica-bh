@@ -1,6 +1,6 @@
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { AlertTriangle, Bot, Clock, MessageSquare, MoreHorizontal, User } from 'lucide-react'
+import { AlertTriangle, Bot, Clock, Eye, EyeOff, MessageSquare, MoreHorizontal, User } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { SkuBadge } from '@/components/SkuBadge'
 import { resumoNfFaltando } from '@/lib/nota-fiscal'
@@ -18,6 +18,8 @@ export interface CardActions {
   markPaid: (o: OrderCard) => void
   addNote: (o: OrderCard) => void
   copyPaymentLink: (o: OrderCard) => void
+  toggleHide: (o: OrderCard) => void
+  isHidden: (id: string) => boolean
 }
 
 function summary(o: OrderCard): string {
@@ -71,6 +73,15 @@ export function OrderCardView({
         >
           <p className="truncate font-bold leading-tight">{order.urgente && <span className="mr-1 rounded-sm bg-brand-red px-1 text-[10px] font-black text-white" title={order.urgente_motivo ?? 'Cliente com urgência'}>URGENTE</span>}{contactLabel(order.contact)}</p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{summary(order)}</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => actions.toggleHide(order)}
+          aria-label={actions.isHidden(order.id) ? 'Mostrar este card de novo' : 'Ocultar este card (só no seu navegador)'}
+          title={actions.isHidden(order.id) ? 'Mostrar este card de novo' : 'Ocultar este card (só no seu navegador)'}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary md:h-8 md:w-8"
+        >
+          {actions.isHidden(order.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
         <Menu>
           <MenuTrigger aria-label="Ações do pedido" className="-mr-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary md:h-8 md:w-8">
