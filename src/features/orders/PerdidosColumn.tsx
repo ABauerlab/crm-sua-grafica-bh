@@ -1,3 +1,4 @@
+import { Eye } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOrcamentosPerdidos, type OrcamentoPerdido } from '@/hooks/orcamentos'
 import { MOTIVO_PERDA, orcamentoNumero } from '@/lib/orcamentos'
@@ -10,7 +11,7 @@ const dataCurta = (iso: string | null) => (iso ? new Date(iso).toLocaleDateStrin
  * Fica fora do arrastar e soltar, porque o motivo é registrado na aba Orçamentos do pedido.
  * O motivo e a observação ficam guardados para um disparo futuro (só para quem consentiu).
  */
-export function PerdidosColumn({ mobile = false }: { mobile?: boolean }) {
+export function PerdidosColumn({ mobile = false, onHide }: { mobile?: boolean; onHide: () => void }) {
   const { data, isLoading } = useOrcamentosPerdidos()
   const lista = data ?? []
 
@@ -22,7 +23,12 @@ export function PerdidosColumn({ mobile = false }: { mobile?: boolean }) {
     >
       <header className={mobile ? 'mb-2 flex items-center justify-between' : 'flex items-center justify-between gap-2 border-b px-3 py-2.5'}>
         <h2 className="text-sm font-black">Orçamento perdido</h2>
-        <span className="rounded-sm bg-background/80 px-1.5 text-xs font-bold tabular">{lista.length}</span>
+        <div className="flex items-center gap-1">
+          <span className="rounded-sm bg-background/80 px-1.5 text-xs font-bold tabular">{lista.length}</span>
+          <button type="button" onClick={onHide} aria-label="Ocultar a coluna Perdidos (só no seu navegador)" title="Ocultar esta etapa (só no seu navegador)" className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-background">
+            <Eye className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </header>
       <p className="px-3 pb-2 text-xs text-muted-foreground">Para disparo futuro: só quem consentiu recebe promoção.</p>
 

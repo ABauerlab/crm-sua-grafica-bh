@@ -108,35 +108,36 @@ export function useFilteredOrders(orders: OrderCard[] | undefined, f: OrderFilte
 
 export const countStalled = (orders: OrderCard[], settings: KanbanSettings) => orders.filter((o) => isStalled(o, settings)).length
 
-// ---------------------------------------------------------------- pedidos ocultos no Kanban (olhinho no card)
-const OCULTOS_KEY = 'sgbh.kanban.ocultos'
+// ---------------------------------------------------------------- etapas ocultas no Kanban (olhinho na coluna)
+const ETAPAS_OCULTAS_KEY = 'sgbh.kanban.etapas-ocultas'
 
-/** Esconder um card do Kanban é só uma preferência deste navegador: fica em localStorage, não afeta outros atendentes. */
-export function useCardsOcultos() {
-  const [ocultos, setOcultos] = useState<Set<string>>(() => {
+/** Esconder uma etapa (coluna) inteira do Kanban é só uma preferência deste navegador: fica em
+ * localStorage, não afeta outros atendentes. "perdidos" é a chave da coluna Perdidos (fora de ORDER_STAGES). */
+export function useEtapasOcultas() {
+  const [ocultas, setOcultas] = useState<Set<string>>(() => {
     try {
-      return new Set(JSON.parse(localStorage.getItem(OCULTOS_KEY) ?? '[]') as string[])
+      return new Set(JSON.parse(localStorage.getItem(ETAPAS_OCULTAS_KEY) ?? '[]') as string[])
     } catch {
       return new Set()
     }
   })
   useEffect(() => {
     try {
-      localStorage.setItem(OCULTOS_KEY, JSON.stringify([...ocultos]))
+      localStorage.setItem(ETAPAS_OCULTAS_KEY, JSON.stringify([...ocultas]))
     } catch {
       /* sem armazenamento */
     }
-  }, [ocultos])
+  }, [ocultas])
   return {
-    ocultos,
-    isOculto: (id: string) => ocultos.has(id),
-    toggle: (id: string) =>
-      setOcultos((s) => {
+    ocultas,
+    isOculta: (v: string) => ocultas.has(v),
+    toggle: (v: string) =>
+      setOcultas((s) => {
         const next = new Set(s)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
+        if (next.has(v)) next.delete(v)
+        else next.add(v)
         return next
       }),
-    reexibirTodos: () => setOcultos(new Set()),
+    reexibirTodas: () => setOcultas(new Set()),
   }
 }
