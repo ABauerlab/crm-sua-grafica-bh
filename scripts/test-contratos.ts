@@ -71,5 +71,21 @@ if (!existsSync(join(raiz, 'supabase/functions/ia-rascunho/index.ts'))) falhas.p
 // defensivo (comentário "frase proibida") mas o texto de regra não deve mais instruir isso.
 const wf2SemFiltro = wf2.replace(/frase proibida: Pix em qualquer banco/i, '').replace(/\/qualquer banco\/i/i, '')
 if (/\bqualquer banco\b/i.test(wf2SemFiltro)) falhas.push('WF2 voltou a instruir "qualquer banco" no texto da regra')
+// Regressão 24/11/2026 (Jordan, Alice, Paulo + cron): busca por medida/frente e verso, guarda de loop, pedido pago e permissão do cron
+const mReg = readFileSync(join(raiz, 'supabase/migrations/20261224020000_regressao_busca_loop_pos_pagamento_cron.sql'), 'utf8')
+for (const marca of ['medida_axb_cm', "then '4X4'", 'v_tam2', 'max_ferramenta_por_rodada = 20', 'max_chamadas_por_rodada = 50', 'alteracao_pos_pagamento', "session_user in ('postgres', 'supabase_admin')"]) {
+  if (!mReg.includes(marca)) falhas.push(`migration de regressão 24/11 perdeu "${marca}"`)
+}
+// "10x15cm frente e verso" tem que virar 100 x 150 (PA65G6, 4X4): reproduz a conta da migration em TypeScript
+const medida = (t: string) => { const m = t.match(/(?:^| )([0-9]{1,2}(?:[.,][0-9])?) ?x ?([0-9]{1,2}(?:[.,][0-9])?)( ?cm)?(?: |$)/); if (!m) return null; const a = Number(m[1].replace(',', '.')), b = Number(m[2].replace(',', '.')); return m[3] || Math.min(a, b) >= 5 ? `${Math.round(a * 10)} x ${Math.round(b * 10)}` : null }
+if (medida('panfleto 10x15cm frente e verso') !== '100 x 150') falhas.push('medida 10x15cm deve virar 100 x 150')
+if (medida('panfleto 10 x 15 cm') !== '100 x 150') falhas.push('medida "10 x 15 cm" deve virar 100 x 150')
+if (medida('flyer 4x4') !== null || medida('cartao 4x0') !== null) falhas.push('cores 4x4 e 4x0 não podem virar medida')
+// Lista grande: o despachante não pode voltar ao limite curto e o prompt libera uma busca por item distinto
+if (!wf2.includes('uma busca por item distinto') || !wf2.includes('UM único montar_orcamento')) falhas.push('WF2 perdeu a regra de lista grande (uma busca por item e um único orçamento)')
+if (wf2.includes('no máximo 2 chamadas por resposta')) falhas.push('WF2 voltou ao limite de 2 buscas por resposta')
+// Pedido pago nunca altera
+for (const r of ['PEDIDO PAGO: NUNCA confirme alteração', 'PEDIDO PAGO NUNCA ALTERA']) if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra pós-pagamento "${r}"`)
+if (!existsSync(join(raiz, 'supabase/tests/regressao_24nov.sql'))) falhas.push('supabase/tests/regressao_24nov.sql não existe')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)
