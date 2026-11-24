@@ -26,6 +26,7 @@ import { OrderCardView, type CardActions } from '@/features/orders/OrderCardView
 import { PerdidosColumn } from '@/features/orders/PerdidosColumn'
 import { PerderPedido } from '@/features/orders/PerderPedido'
 import { AvisoCliente } from '@/features/orders/AvisoCliente'
+import { ReativarPagamentosPendentes } from '@/features/orders/ReativarPagamentosPendentes'
 import { textoPedidoPronto } from '@/lib/aviso-operacional'
 import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
 import { CLIENTE_VAZIO, useAddOrderEvent, useCreateOrder, type ClienteManual, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
@@ -228,6 +229,7 @@ export default function Kanban() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-black">Pedidos</h1>
           <div className="flex items-center gap-2">
+            <ReativarPagamentosPendentes />
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
               <Filter className="h-4 w-4" /> Filtros{hasFilters ? ' (ativos)' : ''}
             </Button>
