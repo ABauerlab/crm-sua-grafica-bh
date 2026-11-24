@@ -119,20 +119,23 @@ export async function modelos(categoriasSlug: string[] | null, opts: { termo?: s
   return modelosFiltrados(categoriasSlug, opts)
 }
 
-/** Como modelos(), mas evita que um só tipo de produto (ex.: um adesivo com várias medidas) tome todos os
- *  espaços: busca um lote maior e escolhe no máximo 1 por "sub" (tipo dentro da categoria) antes de completar
- *  com o restante, mantendo a ordem de relevância. */
+/** Como modelos(), mas evita que um só tipo de produto (ex.: um adesivo com várias medidas, ou a mesma
+ *  caneca em cores diferentes) tome todos os espaços: busca um lote maior e escolhe no máximo 1 por "sub"
+ *  (tipo dentro da categoria), ou pelo título quando não há sub, mantendo a ordem de relevância. Nunca
+ *  repete pra completar a cota: se a categoria não tem variedade suficiente, a seção sai com menos cards. */
 export async function modelosDiversos(categoriasSlug: string[] | null, opts: { termo?: string | null; limite?: number; pagina?: number } = {}) {
   const limite = opts.limite ?? 6
   const r = await modelosFiltrados(categoriasSlug, { ...opts, limite: Math.max(limite * 5, 30) })
   const vistos = new Set<string>()
   const diversos: Modelo[] = []
-  const resto: Modelo[] = []
   for (const m of r.modelos) {
-    const chave = m.sub ?? m.subcategoria ?? m.categoria_slug
-    if (!vistos.has(chave)) { vistos.add(chave); diversos.push(m) } else { resto.push(m) }
+    const chave = m.sub ?? m.subcategoria ?? m.titulo
+    if (vistos.has(chave)) continue
+    vistos.add(chave)
+    diversos.push(m)
+    if (diversos.length >= limite) break
   }
-  return { total: r.total, modelos: [...diversos, ...resto].slice(0, limite) }
+  return { total: r.total, modelos: diversos }
 }
 
 // ---- Fase 12: taxonomia, filtros facetados e busca por sinônimos ----
