@@ -12,6 +12,9 @@ type Previa = { arquivo: string; linhas: LinhaPlanilha[]; resumo: ReturnType<typ
 type Relatorio = Record<string, number | string | null>
 
 const LOTE = 2000
+// Aplicar no catálogo sincroniza a vitrine do site por SKU (mais pesado que só gravar na staging);
+// um lote de 2.000 passa do limite de 8 s do papel autenticado com planilhas maiores. 300 fica folgado.
+const LOTE_APLICAR = 300
 
 /** Importa a planilha oficial de preços de venda: confere no navegador, envia em lotes e aplica em lotes (cada chamada fica abaixo de 8 s). */
 export function PlanilhaPrecosImport() {
@@ -49,7 +52,7 @@ export function PlanilhaPrecosImport() {
       let feitos = 0
       for (;;) {
         setProgresso(`Aplicando no catálogo e na vitrine… ${formatNumber(feitos)}`)
-        const { data, error } = await supabase.rpc('aplicar_planilha_precos_lote', { p_depois: depois, p_limite: LOTE })
+        const { data, error } = await supabase.rpc('aplicar_planilha_precos_lote', { p_depois: depois, p_limite: LOTE_APLICAR })
         if (error) throw error
         const r = data as { processados: number; ultimo: string | null; fim: boolean }
         feitos += r.processados
