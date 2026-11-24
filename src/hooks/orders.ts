@@ -280,12 +280,16 @@ export interface PagamentoPendente {
   number: number
   contact_name: string | null
   wa_id: string
-  payment_link: string
+  stage: 'cotando' | 'aguardando_pagamento'
+  title: string | null
+  total: number
+  payment_link: string | null
   created_at: string
   dias_aberto: number
 }
 
-/** Pedidos aguardando pagamento, com link ativo, excluindo os orçados hoje (botão "Reativar pagamentos pendentes"). */
+/** Pedidos "cotando" (orçamento já enviado) ou "aguardando_pagamento" (link ativo), excluindo os orçados hoje
+ * (botão "Reativar pagamentos pendentes" do Kanban). */
 export function usePagamentosPendentes() {
   return useQuery({
     queryKey: ['pagamentos_pendentes_reativar'],

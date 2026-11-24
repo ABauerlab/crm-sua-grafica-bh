@@ -1,5 +1,11 @@
 # Progresso do agente de IA
 
+## 24/11/2026 (complemento): "Reativar pagamentos pendentes" ganha a etapa "Cotando"
+- Pedido do dono: o botão tinha que servir também para quem está só "cotando" (orçamento já enviado ao cliente, card criado por `orcamento_marcar_enviado`, mas ainda sem link de pagamento), deixando escolher quais cards quer reativar.
+- **Banco** (migration `20261224000002`, recria a função): `pagamentos_pendentes_reativar_listar()` passou a devolver também pedidos `stage = 'cotando'` com orçamento `enviado` ou `expirado` (confirmado no banco: `cotando` só nasce depois do orçamento ser enviado, nunca antes — etapa `novo`, que é antes do envio, continua de fora porque lá não haveria template verdadeiro). Novas colunas: `stage`, `title` (produto) e `total` (de `order_financials`), para montar a mensagem certa de cada etapa.
+- **CRM:** o modal (`ReativarPagamentosPendentes.tsx`) ganhou abas de filtro (Todos / Cotando / Aguardando pagamento), "marcar/desmarcar visíveis" e escolhe o template certo por card: `orcamento_pronto` (nome, produto, valor total) para "cotando", `pagamento_pendente` (nome, nº do pedido, link) para "aguardando pagamento". Card sem o template correspondente aprovado/sincronizado fica desmarcado e sinalizado, sem travar o envio dos demais.
+- **Validação:** `npm run gate` verde. Testado direto no banco: 15 pedidos elegíveis hoje (6 cotando + 9 aguardando pagamento). Sem teste de envio real (precisa de atendente logado).
+
 ## 24/11/2026: botão "Reativar pagamentos pendentes" no Kanban
 - Pedido do dono (atendimento comercial): reativar em lote quem está com pedido em "aguardando pagamento", link ativo e sem pagar, sem precisar abrir conversa por conversa.
 - **Banco** (migration `20261224000001`): `public.pagamentos_pendentes_reativar_listar()` (SECURITY INVOKER, só `authenticated`/`private.is_staff()`) lista pedido, conversa, número, nome, WhatsApp, link de pagamento e dias parados; filtra `stage='aguardando_pagamento'`, `payment_status='pendente'`, link não nulo, sem exclusão/cancelamento/arquivamento e **exclui quem orçou hoje** (`created_at::date < current_date`, calculado na hora da consulta, não fixo).
