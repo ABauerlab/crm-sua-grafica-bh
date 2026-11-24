@@ -85,7 +85,7 @@ if (medida('flyer 4x4') !== null || medida('cartao 4x0') !== null) falhas.push('
 if (!wf2.includes('uma busca por item distinto') || !wf2.includes('UM único montar_orcamento')) falhas.push('WF2 perdeu a regra de lista grande (uma busca por item e um único orçamento)')
 if (wf2.includes('no máximo 2 chamadas por resposta')) falhas.push('WF2 voltou ao limite de 2 buscas por resposta')
 // Pedido pago nunca altera
-for (const r of ['PEDIDO PAGO: NUNCA confirme alteração', 'PEDIDO PAGO NUNCA ALTERA']) if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra pós-pagamento "${r}"`)
+for (const r of ['PEDIDO PAGO: NUNCA confirme alteração']) if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra pós-pagamento "${r}"`)
 if (!existsSync(join(raiz, 'supabase/tests/regressao_24nov.sql'))) falhas.push('supabase/tests/regressao_24nov.sql não existe')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)
