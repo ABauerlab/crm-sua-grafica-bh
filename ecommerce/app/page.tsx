@@ -7,7 +7,7 @@ import { ModeloCard } from '@/components/ModeloCard'
 import { CobrimosBanner } from '@/components/CobrimosBanner'
 import { ProdutoCard } from '@/components/ProdutoCard'
 import { SITE, linkWhatsApp } from '@/lib/site'
-import { arvore, buscar, facetasHome, modelos, type ProdutoResumo } from '@/lib/vitrine'
+import { arvore, buscar, facetasHome, modelosDiversos, type ProdutoResumo } from '@/lib/vitrine'
 
 export const revalidate = 3600
 
@@ -37,7 +37,7 @@ const DEPARTAMENTOS = [
 ]
 
 export default async function Home() {
-  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelos([d.slug], { limite: 6 }))])
+  const [vendidos, verticais, f, ...vitrines] = await Promise.all([maisVendidos(), arvore(), facetasHome(), ...DEPARTAMENTOS.map((d) => modelosDiversos([d.slug], { limite: 6 }))])
   const slides: Slide[] = [
     { alt: 'Pagou até as 10h30? Produzimos hoje mesmo. Em dia útil, pedido pago até as 10h30 entra na produção no mesmo dia.', href: '/categoria/cartoes-de-visita', desktop: '/banners/mesmo-dia-desktop.jpg', celular: '/banners/mesmo-dia-celular.jpg' },
     { alt: 'Kit completo para a sua loja: cartões, adesivos e embalagens com a sua marca. 2x sem juros no cartão.', href: '/categoria/sacolas-e-sacos', desktop: '/banners/kit-loja-desktop.jpg', celular: '/banners/kit-loja-celular.jpg' },
