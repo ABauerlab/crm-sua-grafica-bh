@@ -119,6 +119,22 @@ export async function modelos(categoriasSlug: string[] | null, opts: { termo?: s
   return modelosFiltrados(categoriasSlug, opts)
 }
 
+/** Como modelos(), mas evita que um só tipo de produto (ex.: um adesivo com várias medidas) tome todos os
+ *  espaços: busca um lote maior e escolhe no máximo 1 por "sub" (tipo dentro da categoria) antes de completar
+ *  com o restante, mantendo a ordem de relevância. */
+export async function modelosDiversos(categoriasSlug: string[] | null, opts: { termo?: string | null; limite?: number; pagina?: number } = {}) {
+  const limite = opts.limite ?? 6
+  const r = await modelosFiltrados(categoriasSlug, { ...opts, limite: Math.max(limite * 5, 30) })
+  const vistos = new Set<string>()
+  const diversos: Modelo[] = []
+  const resto: Modelo[] = []
+  for (const m of r.modelos) {
+    const chave = m.sub ?? m.subcategoria ?? m.categoria_slug
+    if (!vistos.has(chave)) { vistos.add(chave); diversos.push(m) } else { resto.push(m) }
+  }
+  return { total: r.total, modelos: [...diversos, ...resto].slice(0, limite) }
+}
+
 // ---- Fase 12: taxonomia, filtros facetados e busca por sinônimos ----
 export interface Subcategoria { slug: string; nome: string; modelos: number; foto?: string | null }
 export interface CategoriaArvore { slug: string; nome: string; produtos: number; modelos: number; a_partir_de: number; foto: string | null; subcategorias: Subcategoria[] }
