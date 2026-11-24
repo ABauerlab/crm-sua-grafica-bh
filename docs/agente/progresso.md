@@ -1,5 +1,12 @@
 # Progresso do agente de IA
 
+## 24/11/2026 (3º complemento): olhinho passa a ocultar a etapa inteira, não o card
+O dono corrigiu o pedido anterior: o olho não é para esconder cada venda, é pra esconder uma etapa (coluna) inteira do Kanban.
+- Removido: `useCardsOcultos`, o botão de olho em cada `OrderCardView` e `CardActions.toggleHide`/`isHidden`.
+- Novo: `useEtapasOcultas` (mesmo arquivo, `localStorage` com outra chave, `sgbh.kanban.etapas-ocultas`), por etapa (`ORDER_STAGES`) e pela coluna Perdidos (chave `perdidos`, fora de `ORDER_STAGES`). Ícone de olho no header de cada coluna (`Column` e `PerdidosColumn`, via prop `onHide`) some com a coluna inteira: some do quadro do computador, do nav de etapas no celular e do seletor de etapa no celular. Se a etapa escolhida no seletor do celular for ocultada, pula pra primeira etapa visível automaticamente. Botão "Etapas ocultas (N)" no header reexibe todas de uma vez.
+- Continua só preferência do navegador de quem oculta (decisão já tomada antes), e os números do topo (faturamento, lucro etc.) continuam somando pedidos de todas as etapas, ocultas ou não.
+- **Validação:** `npm run gate` verde.
+
 ## 24/11/2026 (2º complemento): perdidos, histórico de reativação e olhinho no card
 Mais 2 pedidos do dono sobre o mesmo botão, mais um item avulso no Kanban:
 

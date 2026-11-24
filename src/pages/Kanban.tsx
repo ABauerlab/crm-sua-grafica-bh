@@ -28,7 +28,7 @@ import { PerderPedido } from '@/features/orders/PerderPedido'
 import { AvisoCliente } from '@/features/orders/AvisoCliente'
 import { ReativarPagamentosPendentes } from '@/features/orders/ReativarPagamentosPendentes'
 import { textoPedidoPronto } from '@/lib/aviso-operacional'
-import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useCardsOcultos, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
+import { countStalled, EMPTY_FILTERS, PRESET_VIEWS, useEtapasOcultas, useFilteredOrders, useSavedViews, type OrderFilters } from '@/features/orders/useOrderFilters'
 import { CLIENTE_VAZIO, useAddOrderEvent, useCreateOrder, type ClienteManual, useMoveOrder, useOrders, useSettings } from '@/hooks/orders'
 import { useConfirmarManual } from '@/hooks/payments'
 import { useContacts } from '@/hooks/queries'
@@ -53,11 +53,13 @@ function Column({
   orders,
   actions,
   settings,
+  onHide,
 }: {
   stage: (typeof ORDER_STAGES)[number]
   orders: OrderCard[]
   actions: CardActions
   settings: typeof DEFAULT_KANBAN
+  onHide: () => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value })
   const [limit, setLimit] = useState(PAGE)
@@ -73,7 +75,12 @@ function Column({
       <header className="px-3 py-2">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-black uppercase tracking-wide">{stage.label}</h2>
-          <span className="rounded-sm bg-background px-1.5 py-0.5 text-xs font-bold tabular">{orders.length}</span>
+          <div className="flex items-center gap-1">
+            <span className="rounded-sm bg-background px-1.5 py-0.5 text-xs font-bold tabular">{orders.length}</span>
+            <button type="button" onClick={onHide} aria-label={`Ocultar a coluna ${stage.label} (só no seu navegador)`} title="Ocultar esta etapa (só no seu navegador)" className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-background">
+              <Eye className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground tabular">{formatBRL(total)}</p>
       </header>
@@ -144,18 +151,19 @@ export default function Kanban() {
     return lista
   }, [orders, origemPedidos])
   const filtered = useFilteredOrders(pedidosPorOrigem, filters)
-  const { isOculto, toggle: toggleOculto, reexibirTodos, ocultos } = useCardsOcultos()
-  const ocultosNaLista = useMemo(() => filtered.filter((o) => isOculto(o.id)).length, [filtered, ocultos])
+  const { toggle: toggleEtapa, reexibirTodas: reexibirEtapas, ocultas: etapasOcultas } = useEtapasOcultas()
+  const etapasVisiveis = useMemo(() => ORDER_STAGES.filter((s) => !etapasOcultas.has(s.value)), [etapasOcultas])
+  const perdidosOculto = etapasOcultas.has('perdidos')
+  useEffect(() => {
+    if (etapasOcultas.has(mobileStage) && etapasVisiveis[0]) setMobileStage(etapasVisiveis[0].value)
+  }, [etapasOcultas, etapasVisiveis, mobileStage])
   const byStage = useMemo(() => {
     const map = new Map<OrderStage, OrderCard[]>(ORDER_STAGES.map((s) => [s.value, []]))
-    for (const o of filtered) {
-      if (isOculto(o.id)) continue
-      map.get(o.stage)?.push(o)
-    }
+    for (const o of filtered) map.get(o.stage)?.push(o)
     // urgentes na frente (só ordena a fila, não muda prazo)
     for (const lista of map.values()) lista.sort((a, b) => Number(b.urgente) - Number(a.urgente))
     return map
-  }, [filtered, ocultos])
+  }, [filtered])
 
   const origins = useMemo(() => [...new Set((orders ?? []).map((o) => o.origin_label).filter((v): v is string => !!v && v !== 'ecommerce' && v !== 'site'))].sort(), [orders])
   const paid = filtered.filter((o) => o.payment_status === 'aprovado' || o.payment_manual)
@@ -196,8 +204,6 @@ export default function Kanban() {
       await navigator.clipboard.writeText(o.payment_link)
       toast('ok', 'Link de pagamento copiado.')
     },
-    toggleHide: (o) => toggleOculto(o.id),
-    isHidden: isOculto,
   }
 
   function onDragStart(e: DragStartEvent) {
@@ -237,9 +243,14 @@ export default function Kanban() {
           <h1 className="text-xl font-black">Pedidos</h1>
           <div className="flex items-center gap-2">
             <ReativarPagamentosPendentes />
-            {ocultosNaLista > 0 && (
-              <Button variant="outline" size="sm" onClick={reexibirTodos} title="Reexibir os cards que você ocultou neste navegador">
-                <Eye className="h-4 w-4" /> Ocultos ({ocultosNaLista})
+            {etapasOcultas.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={reexibirEtapas}
+                title={`Reexibir: ${[...etapasOcultas].map((v) => (v === 'perdidos' ? 'Perdidos' : ORDER_STAGES.find((s) => s.value === v)?.label ?? v)).join(', ')}`}
+              >
+                <Eye className="h-4 w-4" /> Etapas ocultas ({etapasOcultas.size})
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} aria-expanded={showFilters}>
@@ -270,7 +281,7 @@ export default function Kanban() {
         </nav>
 
         <nav aria-label="Etapas do pedido" className="flex gap-1.5 overflow-x-auto rounded-md border bg-card p-1.5">
-          {ORDER_STAGES.map((st) => (
+          {etapasVisiveis.map((st) => (
             <button
               key={st.value}
               onClick={() => {
@@ -376,10 +387,10 @@ export default function Kanban() {
           {/* Desktop e tablet: quadro com arrastar e soltar */}
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
             <div className="hidden min-h-0 flex-1 gap-3 overflow-x-auto p-4 md:flex">
-              {ORDER_STAGES.map((s) => (
-                <Column key={s.value} stage={s} orders={byStage.get(s.value) ?? []} actions={actions} settings={settings} />
+              {etapasVisiveis.map((s) => (
+                <Column key={s.value} stage={s} orders={byStage.get(s.value) ?? []} actions={actions} settings={settings} onHide={() => toggleEtapa(s.value)} />
               ))}
-              <PerdidosColumn />
+              {!perdidosOculto && <PerdidosColumn onHide={() => toggleEtapa('perdidos')} />}
             </div>
             <DragOverlay>{active ? <OrderCardView order={active} settings={settings} actions={actions} stalled={isStalled(active, settings)} dragging draggable={false} /> : null}</DragOverlay>
           </DndContext>
@@ -387,7 +398,7 @@ export default function Kanban() {
           {/* Celular: lista por etapa com seletor */}
           <div className="min-h-0 flex-1 overflow-y-auto p-4 md:hidden">
             <Select aria-label="Etapa" value={mobileStage} onChange={(e) => setMobileStage(e.target.value as OrderStage)}>
-              {ORDER_STAGES.map((s) => (
+              {etapasVisiveis.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label} ({byStage.get(s.value)?.length ?? 0})
                 </option>
@@ -399,7 +410,7 @@ export default function Kanban() {
               ))}
               {(byStage.get(mobileStage) ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum pedido nesta etapa.</p>}
             </div>
-            <PerdidosColumn mobile />
+            {!perdidosOculto && <PerdidosColumn mobile onHide={() => toggleEtapa('perdidos')} />}
           </div>
         </>
       )}
