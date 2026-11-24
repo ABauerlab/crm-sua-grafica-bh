@@ -107,3 +107,36 @@ export function useFilteredOrders(orders: OrderCard[] | undefined, f: OrderFilte
 }
 
 export const countStalled = (orders: OrderCard[], settings: KanbanSettings) => orders.filter((o) => isStalled(o, settings)).length
+
+// ---------------------------------------------------------------- pedidos ocultos no Kanban (olhinho no card)
+const OCULTOS_KEY = 'sgbh.kanban.ocultos'
+
+/** Esconder um card do Kanban é só uma preferência deste navegador: fica em localStorage, não afeta outros atendentes. */
+export function useCardsOcultos() {
+  const [ocultos, setOcultos] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(OCULTOS_KEY) ?? '[]') as string[])
+    } catch {
+      return new Set()
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(OCULTOS_KEY, JSON.stringify([...ocultos]))
+    } catch {
+      /* sem armazenamento */
+    }
+  }, [ocultos])
+  return {
+    ocultos,
+    isOculto: (id: string) => ocultos.has(id),
+    toggle: (id: string) =>
+      setOcultos((s) => {
+        const next = new Set(s)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      }),
+    reexibirTodos: () => setOcultos(new Set()),
+  }
+}
