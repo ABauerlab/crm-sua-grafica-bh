@@ -272,3 +272,27 @@ export function useCreateOrder() {
     onSettled: () => invalidate(),
   })
 }
+
+// ---------------------------------------------------------------- reativação de pagamentos pendentes
+export interface PagamentoPendente {
+  order_id: string
+  conversation_id: string
+  number: number
+  contact_name: string | null
+  wa_id: string
+  payment_link: string
+  created_at: string
+  dias_aberto: number
+}
+
+/** Pedidos aguardando pagamento, com link ativo, excluindo os orçados hoje (botão "Reativar pagamentos pendentes"). */
+export function usePagamentosPendentes() {
+  return useQuery({
+    queryKey: ['pagamentos_pendentes_reativar'],
+    queryFn: async (): Promise<PagamentoPendente[]> => {
+      const { data, error } = await supabase.rpc('pagamentos_pendentes_reativar_listar')
+      if (error) throw new Error(error.message)
+      return (data ?? []) as PagamentoPendente[]
+    },
+  })
+}

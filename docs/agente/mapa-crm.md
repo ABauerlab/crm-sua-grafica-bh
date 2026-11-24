@@ -377,3 +377,6 @@ Recusa de preço (19/11/2026): regra `Q2_RECUSA` (`followup_regras.referencia = 
 
 ## Aviso de novo lead (23/11/2026)
 Gatilho `messages_notifica_novo_lead` (`private.trg_novo_lead`) em `messages` cria o alerta `novo_lead` (alta, só popup, um por contato, chave `novo_lead:<conversa>`) na primeira mensagem recebida. Categoria `novo_lead` em `private.alerta_categoria`; preferência em `app_settings.notificacoes.tipos.novo_lead`; texto em `_shared/alertas.ts` (`montarPush`); linha em Configurações > Notificações. Migration `20261223000005`.
+
+## Reativar pagamentos pendentes (24/11/2026)
+`public.pagamentos_pendentes_reativar_listar()` (função só leitura, `private.is_staff()`) lista pedidos `aguardando_pagamento`/`pendente` com link ativo, não excluídos/cancelados/arquivados e não orçados hoje. Front: `usePagamentosPendentes` (`src/hooks/orders.ts`) + `src/features/orders/ReativarPagamentosPendentes.tsx` (botão no header do Kanban), dispara o template `pagamento_pendente` (categoria UTILITY) em lote pela Edge Function `whatsapp-send` já existente, uma chamada por contato. Migration `20261224000001`.
