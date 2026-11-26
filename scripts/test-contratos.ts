@@ -146,5 +146,31 @@ if (!agente || agente.maxTries !== 2 || !agente.retryOnFail) falhas.push('agente
 if ((wf2L1.settings.executionTimeout ?? 999) > 300) falhas.push('WF2 precisa de teto de execução de 300 s')
 const desp = readFileSync(join(n8n, 'GBH-FERRAMENTA-despachar.json'), 'utf8')
 if (!desp.includes('p_args: { termo: String($json.termo')) falhas.push('despachante precisa enviar termo e quantidade ao agente_tool_inicio (freio de buscas)')
+// Lote 2 (26/11/2026): sinônimos, acabamento por ficha e prefixo, SKUs gêmeos, anúncio determinístico e tokens do WF2.
+const mL2 = readFileSync(join(raiz, 'supabase/migrations/20261227000001_lote2_catalogo_acabamento.sql'), 'utf8')
+const mL2b = readFileSync(join(raiz, 'supabase/migrations/20261227000002_lote2_gemeos_completar.sql'), 'utf8')
+for (const marca of ["'raspadinha'", "'carteirinha'", "'plaquinha'", "('CVL',", "'verniz_localizado_fv'", "('COM0013', 'SÓ A LONA / REFIL, SEM ESTRUTURA'", "('ROLLUP001', 'KIT COMPLETO: ESTRUTURA + LONA'", 'acabamento_nao_encontrado', 'orientacao_acabamento', "v_origem := 'anuncio'", 'buscar_produto_base', "cron.schedule('catalogo-acabamento'"]) {
+  if (!mL2.includes(marca)) falhas.push(`migration do Lote 2 perdeu "${marca}"`)
+}
+if (!mL2b.includes('buscar_completar_gemeos') || !mL2b.includes("lucro_ok")) falhas.push('migration dos gêmeos precisa completar os SKUs gêmeos com calcular_preco e a trava de lucro')
+if (!/NUNCA diga "hoje só trabalhamos com/.test(mL2)) falhas.push('a orientação de acabamento precisa proibir "hoje só trabalhamos com..."')
+// Regex de acabamento: pedido do cliente e título do anúncio
+const acabs: Record<string, RegExp> = {}
+for (const m of mL2.matchAll(/^\s*\('([a-z_]+)', '[^']+', '(.+?)', (?:true|false)\)[,]?$/gm)) acabs[m[1]] = pgParaJs(m[2].replace(/\\s/g, '\\s'))
+if (!acabs.verniz_localizado?.test('cartao de visita verniz localizado frente e verso') || !acabs.verniz_localizado.test('brilho especial nos detalhes')) falhas.push('regex de verniz localizado precisa casar o pedido do cliente e o título da ficha')
+if (!acabs.hot_stamping?.test('cartao de visita com hot stamping') || !acabs.hot_stamping.test('hotstamping')) falhas.push('regex de hot stamping precisa casar as duas grafias')
+if (acabs.hot_stamping?.test('cartao de visita fosco')) falhas.push('regex de hot stamping casou texto sem hot stamping')
+// WF2: tokens no campo certo do nó Gemini (options.maxOutputTokens, nunca parameters.options)
+const wf2L2 = JSON.parse(wf2) as { nodes: { name: string; parameters: { options?: { maxOutputTokens?: number }; parameters?: unknown } }[] }
+const gem = wf2L2.nodes.find((n) => n.name.startsWith('Modelo Gemini'))
+if (!gem || gem.parameters.options?.maxOutputTokens !== 4096 || gem.parameters.parameters !== undefined) falhas.push('nó Gemini do WF2 precisa de options.maxOutputTokens = 4096 e sem parameters.options perdido')
+const promptL2 = wf2L2.nodes.find((n) => n.name === 'Prompt consolidado (Fase 1)') as unknown as { parameters: { jsCode: string } } | undefined
+if (!promptL2 || !promptL2.parameters.jsCode.includes('acabamento_nao_encontrado') || !promptL2.parameters.jsCode.includes('hoje só trabalhamos com') || !promptL2.parameters.jsCode.includes('orientacao_gemeos')) falhas.push('prompt do WF2 perdeu as regras de acabamento e de SKUs gêmeos')
+// Sub-workflow e despachante levam acabamento, anúncio e diferencial até a Laura
+const subL2 = readFileSync(join(n8n, 'GBH-FERRAMENTA-buscar_produto.json'), 'utf8')
+for (const marca of ['filtros.acabamento', 'filtros.conversation_id', 'diferencial: o.diferencial', 'orientacao_acabamento', 'orientacao_gemeos']) {
+  if (!subL2.includes(marca)) falhas.push(`sub-workflow buscar_produto perdeu "${marca}"`)
+}
+if (!desp.includes('f.conversation_id = $json.conversation_id')) falhas.push('despachante precisa enviar conversation_id nos filtros da busca (anúncio determinístico)')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)
