@@ -5,7 +5,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Modal } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
-import { usePagamentosPendentes, useRegistrarReativacao, type PagamentoPendente } from '@/hooks/orders'
+import { useQueryClient } from '@tanstack/react-query'
+import { usePagamentosPendentes, type PagamentoPendente } from '@/hooks/orders'
 import { useTemplates } from '@/hooks/queries'
 import { invokeFunction } from '@/lib/api'
 import { formatPhone } from '@/lib/format'
@@ -14,6 +15,8 @@ import { MOTIVO_PERDA, orcamentoNumero, type MotivoPerda } from '@/lib/orcamento
 import { cn } from '@/lib/utils'
 
 const COOLDOWN_DIAS = 7
+/** Acima disso o orçamento já não é "recém-pronto": template de utilidade (orcamento_pronto) fica proibido. */
+const ORCAMENTO_RECENTE_HORAS = 24
 const DIA_MS = 86_400_000
 
 const ROTULO_ETAPA: Record<PagamentoPendente['stage'], string> = {
@@ -37,13 +40,15 @@ type FiltroEtapa = 'todos' | PagamentoPendente['stage']
 
 /** Botão + modal: lista quem está "cotando", "aguardando pagamento" ou "perdido", não orçado hoje e sem
  * reativação recente, e dispara a ação certa por card: template de utilidade, mensagem livre (perdido com
- * janela aberta) ou template de marketing (perdido com opt-in), selecionando quais quer. */
+ * janela aberta) ou template de marketing (perdido com opt-in), selecionando quais quer.
+ * A trava anti-spam é do servidor (whatsapp-send + reativacao_reservar): 1 proativa por contato por dia,
+ * nunca para opt-out, e orcamento_pronto só até 24 h. A tela só espelha as regras para avisar antes. */
 export function ReativarPagamentosPendentes() {
   const [open, setOpen] = useState(false)
   const toast = useToast()
   const { data: pendentes, isLoading } = usePagamentosPendentes()
   const { data: templates } = useTemplates()
-  const registrar = useRegistrarReativacao()
+  const qc = useQueryClient()
   const [filtro, setFiltro] = useState<FiltroEtapa>('todos')
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set())
   const [resultados, setResultados] = useState<Map<string, Resultado>>(new Map())
@@ -53,15 +58,24 @@ export function ReativarPagamentosPendentes() {
 
   function acaoPara(p: PagamentoPendente): { acao?: Acao; bloqueado?: string } {
     const nome = p.contact_name?.trim() || formatPhone(p.wa_id)
+    if (p.marketing_consent === 'opted_out') return { bloqueado: 'Este contato pediu para não receber mensagens.' }
+    if (p.proativa_hoje) return { bloqueado: 'Já recebeu uma mensagem proativa hoje. Só 1 por dia.' }
     if (p.stage === 'aguardando_pagamento') {
       const tpl = tplPorNome.get('pagamento_pendente')
       if (!tpl) return { bloqueado: 'Template "pagamento_pendente" não aprovado/sincronizado.' }
       return { acao: { tipo: 'template', nome: tpl.name, linguagem: tpl.language, variaveis: [nome, orcamentoNumero(p.number), p.payment_link ?? ''] } }
     }
     if (p.stage === 'cotando') {
-      const tpl = tplPorNome.get('orcamento_pronto')
-      if (!tpl) return { bloqueado: 'Template "orcamento_pronto" não aprovado/sincronizado.' }
-      return { acao: { tipo: 'template', nome: tpl.name, linguagem: tpl.language, variaveis: [nome, p.title?.trim() || orcamentoNumero(p.number), formatBRL(p.total)] } }
+      // até 24 h: orcamento_pronto (utilidade). Acima disso só template de marketing, e só com opt-in.
+      if (p.idade_horas <= ORCAMENTO_RECENTE_HORAS) {
+        const tpl = tplPorNome.get('orcamento_pronto')
+        if (!tpl) return { bloqueado: 'Template "orcamento_pronto" não aprovado/sincronizado.' }
+        return { acao: { tipo: 'template', nome: tpl.name, linguagem: tpl.language, variaveis: [nome, p.title?.trim() || orcamentoNumero(p.number), formatBRL(p.total)] } }
+      }
+      if (p.marketing_consent !== 'opted_in') return { bloqueado: 'Orçamento com mais de 24 h: só por template de marketing, e este contato não tem opt-in.' }
+      const tpl = tplPorNome.get('retomar_orcamento')
+      if (!tpl) return { bloqueado: 'Template "retomar_orcamento" não aprovado/sincronizado.' }
+      return { acao: { tipo: 'template', nome: tpl.name, linguagem: tpl.language, variaveis: [nome, p.title?.trim() || orcamentoNumero(p.number)] } }
     }
     // perdido: janela aberta manda texto livre (não depende de opt-in); fechada, só com opt-in de promoção
     const produto = p.title?.trim() || orcamentoNumero(p.number)
@@ -128,19 +142,14 @@ export function ReativarPagamentosPendentes() {
       const acao = acaoPara(p).acao!
       setResultados((r) => new Map(r).set(p.order_id, 'enviando'))
       try {
+        // o servidor confere a trava (1 por dia, opt-out, orcamento_pronto velho) e registra o envio
+        const proativo = { order_id: p.order_id }
         await invokeFunction(
           'whatsapp-send',
           acao.tipo === 'template'
-            ? { conversation_id: p.conversation_id, template_name: acao.nome, language: acao.linguagem, variables: acao.variaveis }
-            : { conversation_id: p.conversation_id, text: acao.texto },
+            ? { conversation_id: p.conversation_id, template_name: acao.nome, language: acao.linguagem, variables: acao.variaveis, proativo }
+            : { conversation_id: p.conversation_id, text: acao.texto, proativo },
         )
-        await registrar.mutateAsync({
-          orderId: p.order_id,
-          conversationId: p.conversation_id,
-          stage: p.stage,
-          canal: acao.tipo,
-          templateName: acao.tipo === 'template' ? acao.nome : undefined,
-        })
         setResultados((r) => new Map(r).set(p.order_id, 'ok'))
         ok++
       } catch {
@@ -149,6 +158,7 @@ export function ReativarPagamentosPendentes() {
       }
     }
     setEnviando(false)
+    void qc.invalidateQueries({ queryKey: ['pagamentos_pendentes_reativar'] })
     toast(falhas ? 'error' : 'ok', falhas ? `${ok} enviado(s), ${falhas} falhou(aram).` : `${ok} mensagem(ns) enviada(s).`)
   }
 
@@ -163,7 +173,7 @@ export function ReativarPagamentosPendentes() {
         open={open}
         onOpenChange={setOpen}
         title="Reativar pedidos parados"
-        description='Pedidos "cotando", "aguardando pagamento" ou "perdido" que não orçaram hoje. Cada card recebe a ação certa (template de utilidade, mensagem livre ou template de marketing com opt-in).'
+        description='Um card por contato (nunca opt-out, no máximo 1 mensagem proativa por dia). Cada card recebe a ação certa: template de utilidade (orçamento até 24 h), mensagem livre ou template de marketing com opt-in.'
       >
         {isLoading && <Skeleton className="h-32" />}
 

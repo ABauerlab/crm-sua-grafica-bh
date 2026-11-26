@@ -190,7 +190,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ { p_execucao: $json.execucao_id, p_ferramenta: $json.ferramenta } }}",
+        "jsonBody": "={{ { p_execucao: $json.execucao_id, p_ferramenta: $json.ferramenta, p_args: { termo: String($json.termo || ''), quantidade: String($json.quantidade || '') } } }}",
         "options": {
           "timeout": 15000
         }
