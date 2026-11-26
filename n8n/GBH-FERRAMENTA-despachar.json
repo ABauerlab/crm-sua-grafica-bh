@@ -695,7 +695,7 @@
           "value": {
             "termo": "={{ $json.termo }}",
             "quantidade": "={{ $json.quantidade_num }}",
-            "filtros": "={{ $json.filtros }}"
+            "filtros": "={{ (() => { let f = {}; try { f = JSON.parse($json.filtros || '{}'); } catch (e) { f = {}; } if (!f || typeof f !== 'object' || Array.isArray(f)) f = {}; f.conversation_id = $json.conversation_id; return JSON.stringify(f); })() }}"
           },
           "schema": [
             {
