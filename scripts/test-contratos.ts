@@ -87,5 +87,64 @@ if (wf2.includes('no máximo 2 chamadas por resposta')) falhas.push('WF2 voltou 
 // Pedido pago nunca altera
 for (const r of ['PEDIDO PAGO: NUNCA confirme alteração']) if (!wf2.includes(r)) falhas.push(`WF2 perdeu a regra pós-pagamento "${r}"`)
 if (!existsSync(join(raiz, 'supabase/tests/regressao_24nov.sql'))) falhas.push('supabase/tests/regressao_24nov.sql não existe')
+// Lote 1 (26/11/2026): blindagem da API do WhatsApp. Confere a migration, o servidor de envio, o modal, o WF2 e o despachante.
+const mL1 = readFileSync(join(raiz, 'supabase/migrations/20261226000001_lote1_blindagem_whatsapp.sql'), 'utf8')
+for (const marca of ['msg_recusa_forte', 'proativas_hoje', 'contato_bloqueado_proativo', 'recusa_desde_proativa', 'trava_diaria_global', 'optout_total', 'messages_recusa_cancela_followups',
+  'reativacao_reservar', 'reativacao_cancelar', 'orcamento_pronto_vencido', 'margem_financeira', 'saida_rascunho_bloqueado', 'busca_repetida', 'busca_sem_progresso', 'buscas_sem_retorno',
+  'agente_vigia_rodadas', 'agente_lento', 'timeout_vigia']) {
+  if (!mL1.includes(marca)) falhas.push(`migration do Lote 1 perdeu "${marca}"`)
+}
+if (!existsSync(join(raiz, 'supabase/tests/lote1_blindagem.sql'))) falhas.push('supabase/tests/lote1_blindagem.sql não existe')
+// O regex de recusa é o mesmo no banco e aqui: \m e \M do Postgres viram \b no JavaScript
+const pgParaJs = (re: string) => new RegExp(re.replace(/\\m/g, '\\b').replace(/\\M/g, '\\b'), 'i')
+const reRecusa = mL1.match(/create or replace function private\.msg_recusa_forte[\s\S]*?~\* '(.+?)';\n\$f\$/)
+if (!reRecusa) falhas.push('não achei o regex de msg_recusa_forte na migration do Lote 1')
+else {
+  const rec = pgParaJs(reRecusa[1])
+  for (const frase of ['Agora não', 'agora nao', 'Depois eu vejo', 'No momento não', 'no momento nao', 'Por enquanto não', 'por enquanto nao', 'Não quero', 'nao quero mais', 'Não tenho interesse', 'nao tenho interesse']) {
+    if (!rec.test(frase)) falhas.push(`recusa não reconhecida: "${frase}"`)
+  }
+  for (const frase of ['Quero 500 cartões', 'Pode mandar o link?', 'Ok, vou pagar agora', 'Qual o prazo de entrega?', '🤍']) {
+    if (rec.test(frase)) falhas.push(`falso positivo de recusa: "${frase}"`)
+  }
+}
+// vazamento:margem só em contexto financeiro (Wesley e Waner)
+const reMargem = mL1.match(/array\['margem', '(.+?)'\], \/\* margem_financeira \*\//)
+if (!reMargem) falhas.push('não achei o regex de margem financeira na migration do Lote 1')
+else {
+  const mg = pgParaJs(reMargem[1])
+  for (const ok of ['a frente tem a margem diferente do verso', 'Fique atento às margens de segurança', 'deixe uma margem de segurança de 3 mm', 'a margem de corte fica livre']) {
+    if (mg.test(ok)) falhas.push(`margem técnica não pode ser bloqueada: "${ok}"`)
+  }
+  for (const ruim of ['nossa margem de lucro é de 65 reais', 'a nossa margem é pequena', 'meu lucro mínimo é 65', 'a margem líquida é 40%']) {
+    if (!mg.test(ruim)) falhas.push(`margem financeira deveria ser bloqueada: "${ruim}"`)
+  }
+}
+// Trava pós-pagamento (Paulo): bloqueia promessa de logística/priorização, deixa passar "vou verificar com o responsável"
+const rePago = mL1.match(/saida_sem_verificacao\(p_texto\) ~\* '(.+?)' then/)
+if (!rePago) falhas.push('não achei o regex pós-pagamento na migration do Lote 1')
+else {
+  const pg = pgParaJs(rePago[1].replace(/\\y/g, '\\b'))
+  const semVerificacao = (t: string) => t.split(/(?<=[.!?])\s+|\n+/).filter((x) => !/(verific|ver se|confer|checar|saber se|se (ainda )?(d[aá]|é poss[ií]vel|consigo|conseguimos|podemos|posso))/i.test(x)).join(' ')
+  for (const ruim of ['Já anotei aqui para priorizarmos a saída depois das 17h.', 'Já estou organizando o envio das suas carteirinhas.', 'Confirmei com a produção para saírem sem furo.', 'Já alterei a cor do texto na arte.']) {
+    if (!pg.test(semVerificacao(ruim))) falhas.push(`promessa pós-pagamento deveria ser bloqueada: "${ruim}"`)
+  }
+  for (const ok of ['Vou verificar com o responsável se ainda dá tempo.', 'Seu pedido já entrou na fila e te aviso quando estiver pronto.']) {
+    if (pg.test(semVerificacao(ok))) falhas.push(`resposta neutra não pode ser bloqueada: "${ok}"`)
+  }
+}
+// Envio: a reativação passa pela reserva do servidor (trava diária, opt-out, orcamento_pronto velho) antes de falar com a Meta
+const send = readFileSync(join(raiz, 'supabase/functions/whatsapp-send/index.ts'), 'utf8')
+if (!send.includes("rpc('reativacao_reservar'") || !send.includes("rpc('reativacao_cancelar'")) falhas.push('whatsapp-send perdeu a reserva da reativação')
+if (send.indexOf("rpc('reativacao_reservar'") > send.indexOf('await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`')) falhas.push('whatsapp-send precisa reservar a reativação ANTES de enviar à Meta')
+const modal = readFileSync(join(raiz, 'src/features/orders/ReativarPagamentosPendentes.tsx'), 'utf8')
+if (!modal.includes('proativo') || !modal.includes('ORCAMENTO_RECENTE_HORAS') || modal.includes('useRegistrarReativacao')) falhas.push('modal de reativação precisa usar o envio com trava no servidor (proativo, 24 h) e não registrar no navegador')
+// WF2 e despachante
+const wf2L1 = JSON.parse(wf2) as { nodes: { name: string; maxTries?: number; retryOnFail?: boolean }[]; settings: { executionTimeout?: number } }
+const agente = wf2L1.nodes.find((n) => n.name === 'Agente de atendimento')
+if (!agente || agente.maxTries !== 2 || !agente.retryOnFail) falhas.push('agente do WF2 precisa de exatamente 1 retry (maxTries 2)')
+if ((wf2L1.settings.executionTimeout ?? 999) > 300) falhas.push('WF2 precisa de teto de execução de 300 s')
+const desp = readFileSync(join(n8n, 'GBH-FERRAMENTA-despachar.json'), 'utf8')
+if (!desp.includes('p_args: { termo: String($json.termo')) falhas.push('despachante precisa enviar termo e quantidade ao agente_tool_inicio (freio de buscas)')
 if (falhas.length) { console.error('FALHOU contratos:\n- ' + falhas.join('\n- ')); process.exit(1) }
 console.log(`OK: contratos (${rpcs.size} RPCs e ${edges.size} Edge Functions do n8n conferidas, prompt sem instruções conflitantes)`)

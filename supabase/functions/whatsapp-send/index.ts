@@ -39,6 +39,9 @@ interface SendBody {
   action?: 'delete' | 'restore' | 'react'
   message_id?: string
   emoji?: string
+  /** Envio de REATIVAÇÃO (modal "Reativar pedidos parados"): passa pela trava global (1 proativa por dia,
+   * sem opt-out, orcamento_pronto só até 24 h) e fica registrado em reativacoes_enviadas. */
+  proativo?: { order_id?: string }
 }
 
 const META_ERRORS: Record<number, string> = {
@@ -225,6 +228,28 @@ Deno.serve(async (req) => {
     storedBody = (tpl.body ?? `[template ${tpl.name}]`).replace(/\{\{(\d+)\}\}/g, (_m: string, n: string) => vars[Number(n) - 1] ?? '')
   }
 
+  // Trava global anti-spam da reativação: reserva (e registra) o envio ANTES de falar com a Meta.
+  // Sem a reserva (opt-out, já recebeu proativa hoje, orcamento_pronto velho) nada é enviado.
+  let reservaId: string | null = null
+  if (input.proativo) {
+    const orderId = input.proativo.order_id ?? ''
+    if (!UUID.test(orderId)) return json({ error: 'Pedido da reativação inválido.' }, 400)
+    const { data: rv, error: rvErr } = await db.rpc('reativacao_reservar', {
+      p_order: orderId,
+      p_conversation: conv.id,
+      p_template: tipoMsg === 'template' ? templateName : null,
+      p_canal: tipoMsg === 'template' ? 'template' : 'livre',
+      p_por: staff.userId,
+    })
+    if (rvErr) return json({ error: 'Não foi possível conferir a trava anti-spam. Tente novamente.' }, 500)
+    const rj = rv as { ok?: boolean; id?: string; motivo?: string; mensagem?: string } | null
+    if (!rj?.ok) return json({ error: rj?.mensagem ?? 'Envio proativo bloqueado pela trava anti-spam.', code: 'trava_proativa', motivo: rj?.motivo ?? null }, 409)
+    reservaId = rj.id ?? null
+  }
+  const soltarReserva = async () => {
+    if (reservaId) await db.rpc('reativacao_cancelar', { p_id: reservaId })
+  }
+
   let res: Response
   try {
     res = await fetch(`${GRAPH}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
@@ -233,11 +258,13 @@ Deno.serve(async (req) => {
       body: JSON.stringify(metaBody),
     })
   } catch {
+    await soltarReserva()
     return json({ error: 'Não foi possível falar com a API do WhatsApp. Tente novamente.' }, 502)
   }
 
   const result = await res.json().catch(() => ({}))
   if (!res.ok) {
+    await soltarReserva()
     const code = Number(result?.error?.code)
     const detail = result?.error?.error_data?.details ?? result?.error?.message ?? 'erro desconhecido'
     console.error('Erro da Meta ao enviar:', code, detail)

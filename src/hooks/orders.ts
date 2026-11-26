@@ -290,6 +290,10 @@ export interface PagamentoPendente {
   created_at: string
   dias_aberto: number
   ultima_reativacao_em: string | null
+  /** Idade do orçamento (ou do pedido, se não houver) em horas. */
+  idade_horas: number
+  /** O contato já recebeu uma mensagem proativa hoje (follow-up ou reativação). */
+  proativa_hoje: boolean
 }
 
 /** Pedidos "cotando" (orçamento já enviado), "aguardando_pagamento" (link ativo) ou "perdido" (reabre a conversa),
